@@ -5,7 +5,7 @@
 This file contains various utility functions which can be used to ease the
 trials and tribulations of using Python and the Unix command line.
 
-The following packages are used within the script,
+The following packages are used within the file,
     - sys
     - subprocess
     - platform
