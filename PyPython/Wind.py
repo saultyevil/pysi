@@ -8,7 +8,7 @@ functions from creating data tables, as well as functions to create plots of the
 wind.
 """
 
-from .error import CoordError
+from .Error import CoordError
 
 import os
 from typing import Tuple

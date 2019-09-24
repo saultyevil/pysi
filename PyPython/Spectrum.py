@@ -8,8 +8,9 @@ from finding these spectrum files, as well as functions to create plots of the
 spectra.
 """
 
-from .error import DimensionError, InvalidFileContents
-from .consts import C, ANGSTROM
+from .Error import DimensionError, InvalidFileContents
+from .Constants import C, ANGSTROM
+from .Util import split_root_directory
 
 from pathlib import Path
 import pandas as pd
@@ -19,12 +20,18 @@ from scipy.signal import convolve, boxcar
 from matplotlib import pyplot as plt
 
 
-def find_specs(path: str = "./") -> List[str]:
+MIN_SPEC_COMP_FLUX = 1e-17
+
+
+def find_specs(root: str = None, path: str = "./") -> List[str]:
     """
     Find root.spec files recursively in provided directory path.
 
     Parameters
     ----------
+    root: str [optional]
+        If root is set, then only .spec files with this root name will be
+        returned
     path: str [optional]
         The path to recursively search from
 
@@ -36,7 +43,13 @@ def find_specs(path: str = "./") -> List[str]:
 
     spec_files = []
     for filename in Path(path).glob("**/*.spec"):
-        spec_files.append(str(filename))
+        fname = str(filename)
+        if root:
+            froot, wd = split_root_directory(fname)
+            if froot == root:
+                spec_files.append(fname)
+            continue
+        spec_files.append(fname)
 
     return spec_files
 
@@ -177,7 +190,7 @@ def check_inclination(inclination: str, spec: Union[pd.DataFrame, np.ndarray]) -
     return allowed
 
 
-def smooth(flux: np.ndarray, smooth: Union[int, float]) -> np.ndarray:
+def smooth_spectrum(flux: np.ndarray, smooth: Union[int, float]) -> np.ndarray:
     """
     Smooth a 1D array of data using a boxcar filter of width smooth pixels.
 
@@ -194,7 +207,7 @@ def smooth(flux: np.ndarray, smooth: Union[int, float]) -> np.ndarray:
         The smoothed data
     """
 
-    n = smooth.__name__
+    n = smooth_spectrum.__name__
 
     if type(flux) != list and type(flux) != np.ndarray:
         raise TypeError("{}: expecting list or np.ndarray".format(n))
@@ -403,9 +416,9 @@ def plot_line_ids(ax: plt.Axes, lines: list, rotation: str = "vertical", fontsiz
     return ax
 
 
-def tau_spectrum(root: str, wd: str, inclination: List[str] = ["all"], wmin: float = None, wmax: float = None,
-                 logy: bool = True, loglog: bool = False, show_absorption_edge_labels: bool = True,
-                 frequency_space: bool = False, axes_label_fontsize: float = 15) -> Tuple[plt.Figure, plt.Axes]:
+def plot_tau_spectrum(root: str, wd: str, inclination: List[str] = ["all"], wmin: float = None, wmax: float = None,
+                      logy: bool = True, loglog: bool = False, show_absorption_edge_labels: bool = True,
+                      frequency_space: bool = False, axes_label_fontsize: float = 15) -> Tuple[plt.Figure, plt.Axes]:
     """
     Create an optical depth spectrum for a given Python simulation. This figure
     can be created in both wavelength or frequency space and with various
@@ -436,9 +449,16 @@ def tau_spectrum(root: str, wd: str, inclination: List[str] = ["all"], wmin: flo
         Create the figure in frequency space instead of wavelength space
     axes_label_fontsize: float [optional]
         The fontsize for labels on the plot
+
+    Returns
+    -------
+    fig: pyplot.Figure
+        The pyplot.Figure object for the created figure
+    ax: pyplot.Axes
+        The pyplot.Axes object for the created figure
     """
 
-    n = tau_spectrum.__name__
+    n = plot_tau_spectrum.__name__
     fig, ax = plt.subplots(1, 1, figsize=(12, 7))
     fname = "{}/diag_{}/{}.tau_spec.diag".format(wd, root, root)
 
@@ -517,13 +537,127 @@ def tau_spectrum(root: str, wd: str, inclination: List[str] = ["all"], wmin: flo
     return fig, ax
 
 
-def spectrum_components():
+def plot_spectrum_components(root: str, wd: str, wmin: float = None, wmax: float = None, smooth: int = 5,
+                             logy: bool = True, frequency_space: bool = False, axes_label_fontsize: float = 15,
+                             verbose: bool = False) -> Tuple[plt.Figure, plt.Axes]:
+    """
+    Create a figure of the different spectrum components of a Python spectrum
+    file. Note that all of the spectrum components added together DO NOT have
+    to equal the output spectrum or the emitted spectrum (don't ask).
+
+    Parameters
+    ----------
+    root: str
+        The root name of the Python simulation
+    wd: str
+        The absolute or relative path containing the Python simulation
+    wmin: float [optional]
+        The lower wavelength boundary for the figure
+    wmax: float [optional]
+        The upper wavelength boundary for the figure
+    smooth: int [optional]
+        The size of the boxcar filter to smooth the spectrum components
+    logy: bool [optional]
+        Use a log scale for the y axis of the figure
+    frequency_space: bool [optional]
+        Create the figure in frequency space instead of wavelength space
+    axes_label_fontsize: float [optional]
+        The fontsize for labels on the plot
+    verbose: bool [optional]
+        Enable verbose output to screen
+
+    Returns
+    -------
+    fig: pyplot.Figure
+        The pyplot.Figure object for the created figure
+    ax: pyplot.Axes
+        The pyplot.Axes object for the created figure
+    """
+
+    def plot_data(ax: plt.Axes, x: np.ndarray, spec: pd.DataFrame, dname: List[str], xlims: Tuple[float, float]):
+        """
+        Create a subplot panel for a figure given the spectrum components names
+        in the list dname.
+
+        Parameters
+        ----------
+        ax: pyplot.Axes
+            The pyplot.Axes object for the subplot
+        x: np.array[float]
+            The x-axis data, i.e. wavelength or frequency
+        spec: pd.DataFrame
+            The spectrum data file as a pandas DataFrame
+        dname: list[str]
+            The name of the spectrum components to add to the subplot panel
+        xlims: Tuple[float, float]
+            The lower and upper x-axis boundaries (xlower, xupper)
+
+        Returns
+        -------
+        ax: pyplot.Axes
+            The pyplot.Axes object for the subplot
+        """
+
+        for i in range(len(dname)):
+            if verbose:
+                print("{}: plotting {}".format(n, dname[i]))
+            fl = smooth_spectrum(spec[dname[i]].values.astype(float), smooth)
+            if len(fl[fl < MIN_SPEC_COMP_FLUX]) > 0.7 * len(fl):  # Skip sparse spec components to make prettier plot
+                if verbose:
+                    print("{}: most of {} less than MIN_SPEC_COM_FLUX hence skipping".format(n, dname[i]))
+                continue
+            if frequency_space:
+                ax.loglog(x, fl, label=dname[i])
+            elif logy:
+                ax.semilogy(x, fl, label=dname[i])
+            else:
+                ax.plot(x, fl, label=dname[i])
+        ax.set_xlim(xlims[0], xlims[1])
+        if frequency_space:
+            ax.set_xlabel(r"Frequency (Hz)", fontsize=axes_label_fontsize)
+        else:
+            ax.set_xlabel(r"Wavelength ($\AA$)", fontsize=axes_label_fontsize)
+        ax.set_ylabel(r"$F_{\lambda}$ (erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)", fontsize=axes_label_fontsize)
+        ax.legend()
+
+        return ax
+
+    n = plot_spectrum_components.__name__
+    fig, ax = plt.subplots(2, 1, figsize=(12, 10))
+
+    fname = "{}/{}.spec".format(wd, root)
+    try:
+        spec = read_spec(fname)
+    except IOError:
+        print("{}: unable to open .spec file with name {}".format(n, fname))
+        return fig, ax
+
+    # Use either frequency or wavelength and set the plot limits respectively
+    if frequency_space:
+        x = spec["Freq."].values.astype(float)
+    else:
+        x = spec["Lambda"].values.astype(float)
+    xlims = [x.min(), x.max()]
+    if wmin:
+        if frequency_space:
+            xlims[0] = C / (wmin * ANGSTROM)
+        else:
+            xlims[0] = wmin
+    if wmax:
+        if frequency_space:
+            xlims[1] = C / (wmax * ANGSTROM)
+        else:
+            xlims[1] = wmax
+    xlims = (xlims[0], xlims[1])
+
+    # Now plot the data
+    ax[0] = plot_data(ax[0], x, spec, ["Created", "Emitted"], xlims)
+    ax[1] = plot_data(ax[1], x, spec, ["CenSrc", "Disk", "Wind", "HitSurf", "Scattered"], xlims)
+
+    fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+
+    return fig, ax
+
+
+def plot_spectrum():
     pass
-
-
-def spectrum():
-    pass
-
-
-if __name__ == "__main__":
-    tau_spectrum("tde_agn", "/home/saultyevil/PySims/tde/paper_models/smooth/agn/solar", inclination=["all"])

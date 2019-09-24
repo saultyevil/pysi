@@ -236,3 +236,45 @@ def subplot_dims(nplots: int) -> Tuple[int, int]:
     dims = (nrows, ncols)
 
     return dims
+
+
+def split_root_directory(path: str) -> Tuple[str, str]:
+    """
+    Split a path name into a directory path and root name for a Python
+    simulation.
+
+    TODO: probably better to use find() or rfind() string methods
+
+    Parameters
+    ----------
+    path: str
+        The directory path to a Python .pf file
+
+    Returns
+    -------
+    root: str
+        The root name of the Python simulation
+    wd: str
+        The directory path containing the provided Python .pf file
+    """
+
+    n = split_root_directory.__name__
+
+    if type(path) != str:
+        raise TypeError("{}: expected string as input".format(n))
+
+    dot = 0
+    slash = 0
+    for i in range(len(path)):
+        letter = path[i]
+        if letter == ".":
+            dot = i
+        elif letter == "/":
+            slash = i + 1
+
+    root = path[slash:dot]
+    wd = path[:slash]
+    if wd == "":
+        wd = "./"
+
+    return root, wd
