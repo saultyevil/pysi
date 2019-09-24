@@ -8,8 +8,9 @@ functions from creating data tables, as well as functions to create plots of the
 wind.
 """
 
-import error
+from .error import CoordError
 
+import os
 from typing import Tuple
 import numpy as np
 import pandas as pd
@@ -110,7 +111,7 @@ def extract_wind_var(root: str, var_name: str, var_type: str, path: str = "./", 
                 except KeyError:
                     print("{}: trying to read r theta  points in non-polar model".format(n))
         else:
-            raise error.CoordError("{}: unknown projection {}: use rectilinear or polar".format(n, coord))
+            raise CoordError("{}: unknown projection {}: use rectilinear or polar".format(n, coord))
     except KeyError:
         print("{}: could not find var {} or another key".format(n, var_name))
 

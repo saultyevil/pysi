@@ -11,4 +11,5 @@ setup(name="PyPython",
       author_email="e.j.parkinson@soton.ac.uk",
       license="MIT",
       packages=["PyPython"],
-      zip_safe=False)
+      zip_safe=False,
+      install_requires=['matplotlib', 'scipy', 'numpy', 'pandas'])

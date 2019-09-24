@@ -8,8 +8,8 @@ from finding these spectrum files, as well as functions to create plots of the
 spectra.
 """
 
-from .error import DimensionError
-from .consts import *
+from .error import DimensionError, InvalidFileContents
+from .consts import C, ANGSTROM
 
 from pathlib import Path
 import pandas as pd
@@ -245,7 +245,7 @@ def ylims(wavelength: np.array, flux: np.array, wmin: float, wmax: float, scale:
     ylower: float
         The lower y limit to use with the wavelength range
     """
-    
+
     n = ylims.__name__
 
     if wavelength.shape[0] != flux.shape[0]:
@@ -364,14 +364,14 @@ def absorption_edges(freq: bool = False, log: bool = False) -> list:
 def plot_line_ids(ax: plt.Axes, lines: list, rotation: str = "vertical", fontsize: int = 10) -> plt.Axes:
     """
     Plot line IDs onto a figure. This should probably be used after the x-limits
-    have been set on the figure which these labels are being plotted onto. 
+    have been set on the figure which these labels are being plotted onto.
 
     Parameters
     ----------
     ax: plt.Axes
         The plot object to add line IDs to
     lines: list
-        A list containing the line name and wavelength in Angstroms 
+        A list containing the line name and wavelength in Angstroms
         (ordered by wavelength)
     rotation: str [optional]
         Vertical or horizontal rotation for text ids
@@ -395,16 +395,126 @@ def plot_line_ids(ax: plt.Axes, lines: list, rotation: str = "vertical", fontsiz
             continue
         label = lines[i][0]
         ax.axvline(x, linestyle="--", linewidth=0.5, color="k", zorder=1)
-        x = x - 25
+        x = x - 50
         xnorm = (x - xlims[0]) / (xlims[1] - xlims[0])
-        ax.text(xnorm, 0.92, label, ha="center", va="center", rotation=rotation, fontsize=fontsize,
+        ax.text(xnorm, 0.90, label, ha="center", va="center", rotation=rotation, fontsize=fontsize,
                 transform=ax.transAxes)
 
     return ax
 
 
-def tau_spectrum():
-    pass
+def tau_spectrum(root: str, wd: str, inclination: List[str] = ["all"], wmin: float = None, wmax: float = None,
+                 logy: bool = True, loglog: bool = False, show_absorption_edge_labels: bool = True,
+                 frequency_space: bool = False, axes_label_fontsize: float = 15) -> Tuple[plt.Figure, plt.Axes]:
+    """
+    Create an optical depth spectrum for a given Python simulation. This figure
+    can be created in both wavelength or frequency space and with various
+    choices of axes scaling.
+
+    This function will return the Figure and Axes object used to create the
+    plot.
+
+    Parameters
+    ----------
+    root: str
+        The root name of the Python simulation
+    wd: str
+        The absolute or relative path containing the Python simulation
+    inclination: List[str] [optional]
+        A list of inclination angles to plot
+    wmin: float [optional]
+        The lower wavelength boundary for the figure
+    wmax: float [optional]
+        The upper wavelength boundary for the figure
+    logy: bool [optional]
+        Use a log scale for the y axis of the figure
+    loglog: bool [optional]
+        Use a log scale for both the x and y axes of the figure
+    show_absorption_edge_labels: bool [optional]
+        Label common absorption edges of interest onto the figure
+    frequency_space: bool [optional]
+        Create the figure in frequency space instead of wavelength space
+    axes_label_fontsize: float [optional]
+        The fontsize for labels on the plot
+    """
+
+    n = tau_spectrum.__name__
+    fig, ax = plt.subplots(1, 1, figsize=(12, 7))
+    fname = "{}/diag_{}/{}.tau_spec.diag".format(wd, root, root)
+
+    try:
+        tspec = np.loadtxt(fname, dtype=float)
+    except IOError:
+        print("{}: unable to find the optical depth spectrum {}".format(n, fname))
+        return fig, ax
+
+    # Set wavelength or frequency boundaries
+    if not wmin:
+        wmin = np.min(tspec[:, 0])
+    if not wmax:
+        wmax = np.max(tspec[:, 0])
+    if frequency_space:
+        tspec[:, 0] = C / (tspec[:, 0] * ANGSTROM)
+        if wmin:
+            wmin = C / (wmin * ANGSTROM)
+        if wmax:
+            wmax = C / (wmax * ANGSTROM)
+
+    # Determine the inclinations which are available
+    with open(fname, "r") as f:
+        angles = f.readline().split()
+    if angles[0] == "#":
+        angles = angles[2:]
+    else:
+        raise InvalidFileContents("{}: provided file is possibly not an optical depth spectrum".format(n))
+    nangles = len(angles)
+    for i in range(nangles):
+        angles[i] = angles[i][1:3]
+
+    # Determine the number of inclinations requested in a convoluted way :^)
+    ninclinations = len(inclination)
+    if inclination[0] == "all" and len(inclination) > 1:  # Ignore all if other inclinations are passed
+        inclination = inclination[1:]
+        ninclinations = len(inclination)
+    if inclination[0] == "all":
+        ninclinations = nangles
+
+    # This loop will plot the inclinations provided by the user
+    for i in range(ninclinations):
+        if inclination[0] != "all" and inclination[i] not in angles:  # Skip inclinations which don't exist
+            continue
+        if inclination[0] == "all":
+            ii = i + 1
+        else:
+            ii = angles.index(inclination[i]) + 1
+        l = r"$i$ = " + angles[ii - 1] + r"$^{\circ}$"
+        n_non_zero = np.count_nonzero(tspec[:, ii])
+        if n_non_zero == 0:  # Skip inclinations which look through empty space hence no optical depth
+            continue
+        if loglog:
+            ax.loglog(np.log10(tspec[:, 0]), tspec[:, ii], label=l)
+        elif logy:
+            ax.semilogy(tspec[:, 0], tspec[:, ii], label=l)
+        else:
+            ax.plot(tspec[:, 0], tspec[:, ii], label=l)
+
+    if frequency_space:
+        if loglog:
+            ax.set_xlabel(r"Log[Frequency], Hz", fontsize=axes_label_fontsize)
+        else:
+            ax.set_xlabel(r"Frequency, Hz", fontsize=axes_label_fontsize)
+    else:
+        ax.set_xlabel(r"Wavelength, $\AA$", fontsize=axes_label_fontsize)
+    ax.set_ylabel(r"Optical Depth, $\tau$", fontsize=axes_label_fontsize)
+    ax.set_xlim(wmin, wmax)
+    ax.legend()
+
+    if show_absorption_edge_labels:
+        plot_line_ids(ax, absorption_edges(freq=frequency_space, log=loglog))
+
+    fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+
+    return fig, ax
 
 
 def spectrum_components():
@@ -413,3 +523,7 @@ def spectrum_components():
 
 def spectrum():
     pass
+
+
+if __name__ == "__main__":
+    tau_spectrum("tde_agn", "/home/saultyevil/PySims/tde/paper_models/smooth/agn/solar", inclination=["all"])

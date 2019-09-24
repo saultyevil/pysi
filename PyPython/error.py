@@ -20,3 +20,6 @@ class DimensionError(Exception):
 class PythonError(Exception):
     """Exception for when Python has broken."""
     pass
+
+class InvalidFileContents(Exception):
+    """Exception for when a file has a different contents than expected"""
