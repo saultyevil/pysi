@@ -6,11 +6,12 @@ This file contains various utility functions which can be used to ease the
 trials and tribulations of using Python and the Unix command line.
 """
 
+from pathlib import Path
 import pandas as pd
 from subprocess import Popen, PIPE
 from platform import system
 from shutil import which
-from typing import Tuple
+from typing import Tuple, List
 
 
 def remove_data_sym_links(search_dir: str = "./", verbose: bool = False):
@@ -233,9 +234,7 @@ def subplot_dims(nplots: int) -> Tuple[int, int]:
         ncols = 1
         nrows = nplots
 
-    dims = (nrows, ncols)
-
-    return dims
+    return nrows, ncols
 
 
 def split_root_directory(path: str) -> Tuple[str, str]:
@@ -278,3 +277,36 @@ def split_root_directory(path: str) -> Tuple[str, str]:
         wd = "./"
 
     return root, wd
+
+
+def find_parameter_files(path: str = "./") -> List[str]:
+    """
+    Find Python .pf parameter files recursively from the directory path.
+
+    This function will ignore py_wind.pf parameter files, as well as any
+    root.out.pf files.
+
+    Parameters
+    ----------
+    path: str [optional]
+        The directory to search for Python .pf files from
+
+    Returns
+    -------
+    pfs: List[str]
+        The file path for any Python pf files founds
+    """
+
+    pfs = []
+    for filename in Path(path).glob("**/*.pf"):
+        fname = str(filename)
+        if fname.find("out.pf") != -1:
+            continue
+        if fname == "py_wind.pf":
+            continue
+        # if fname[0] == "/":  # TODO: why did I do this?
+        #     fname = fname[1:]
+        pfs.append(fname)
+    pfs = sorted(pfs, key=str.lower)
+
+    return pfs

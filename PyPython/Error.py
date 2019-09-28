@@ -18,8 +18,13 @@ class DimensionError(Exception):
 
 
 class PythonError(Exception):
-    """Exception for when Python has broken."""
+    """Exception for when Python has broken"""
     pass
+
 
 class InvalidFileContents(Exception):
     """Exception for when a file has a different contents than expected"""
+
+
+class InvalidParameter(Exception):
+    """Exception for when a parameter is not recognised"""

@@ -8,7 +8,8 @@ functions from creating data tables, as well as functions to create plots of the
 wind.
 """
 
-from .Error import CoordError
+
+from .Error import CoordError, InvalidParameter
 
 import os
 from typing import Tuple
@@ -54,14 +55,13 @@ def extract_wind_var(root: str, var_name: str, var_type: str, path: str = "./", 
     """
 
     n = extract_wind_var.__name__
+    err_return = np.zeros(1)
 
     assert(type(root) == str), "{}: root must be a string".format(n)
     assert(type(var_name) == str), "{}: var_name must be a string".format(n)
     assert(type(var_type) == str), "{}: var_type must be a string".format(n)
 
     # Create string containing the name of the data file required to be loaded
-    nx_cells = 0
-    nz_cells = 0
     key = var_name
     if var_type.lower() == "ion":
         ele_idx = var_name.find("_")
@@ -71,27 +71,28 @@ def extract_wind_var(root: str, var_name: str, var_type: str, path: str = "./", 
     elif var_type.lower() == "wind":
         file = "{}/{}.ep.complete".format(path, root)
     else:
-        raise KeyError("{}: var type {} not recognised for var {}".format(n, var_type, var_name))
+        raise InvalidParameter("{}: var type {} not recognised for var {}".format(n, var_type, var_name))
 
     file_exists = os.path.isfile(file)
     if not file_exists:
-        raise IOError("{}: file {} doesn't exist. var {} var type {}".format(n, file, var_name, var_type))
+        raise IOError("{}: file {} doesn't exist var {} var type {}".format(n, file, var_name, var_type))
 
-    # Open the file and remove any garbage cells for theta grids
     try:
         data = pd.read_csv(file, delim_whitespace=True)
         if coord == "polar" and var_type != "ion":
             data = data[~(data["theta"] > 90)]
     except IOError:
-        raise IOError("{}: could not open file {} for some reason".format(n, file))
+        print("{}: could not open file {} for some reason".format(n, file))
+        return err_return, err_return, err_return
 
-    # Now we can try and read the data out of the file...
-    # TODO: we should handle the two coordinates systems better..
+    # Now try and read the data from the wind file
     try:
+        # Get the i, j indices for the grid
         xi = data["i"]
         zj = data["j"]
         nx_cells = int(np.max(xi) + 1)
         nz_cells = int(np.max(zj) + 1)
+        # Get the x, z or r, theta cells depending on the coord system
         if coord == "rectilinear":
             x = data["x"].values.reshape(nx_cells, nz_cells)
             z = data["z"].values.reshape(nx_cells, nz_cells)
@@ -100,20 +101,16 @@ def extract_wind_var(root: str, var_name: str, var_type: str, path: str = "./", 
             if var_type.lower() == "ion":
                 x = data["x"].values.reshape(nx_cells, nz_cells)
                 z = data["z"].values.reshape(nx_cells, nz_cells)
-                r = np.sqrt(x ** 2 + z ** 2)
-                theta = np.rad2deg(np.arctan(z / x))
-                x = r
-                z = theta
+                x = np.sqrt(x ** 2 + z ** 2)      # r
+                z = np.rad2deg(np.arctan(z / x))  # theta
             else:
-                try:
-                    x = data["r"].values.reshape(nx_cells, nz_cells)
-                    z = data["theta"].values.reshape(nx_cells, nz_cells)
-                except KeyError:
-                    print("{}: trying to read r theta  points in non-polar model".format(n))
+                x = data["r"].values.reshape(nx_cells, nz_cells)
+                z = data["theta"].values.reshape(nx_cells, nz_cells)
         else:
             raise CoordError("{}: unknown projection {}: use rectilinear or polar".format(n, coord))
     except KeyError:
         print("{}: could not find var {} or another key".format(n, var_name))
+        return err_return, err_return, err_return
 
     # Construct mask for variable
     var = data[key].values.reshape(nx_cells, nz_cells)
