@@ -322,7 +322,3 @@ def plot_spectrum_multiple_roots():
     n = plot_spectrum_multiple_roots.__name__
 
     return
-
-
-if __name__ == "__main__":
-    plot_spectrum_single_root("tde_agn", "/home/saultyevil/PySims/tde/agn_macro/zorig")

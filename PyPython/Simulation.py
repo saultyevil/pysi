@@ -68,7 +68,7 @@ def check_convergence(root: str, wd: str = "./") -> Union[float, int]:
     return convergence
 
 
-def error_summary(root: str, wd: str = "./", print_errors: bool = False) -> dict:
+def error_summary(root: str, wd: str = "./", ncores: int = -1, print_errors: bool = False) -> dict:
     """
     Return a dictionary containing each error found in the error summary for
     each processor for a Python simulation.
@@ -81,6 +81,9 @@ def error_summary(root: str, wd: str = "./", print_errors: bool = False) -> dict
         The root name of the Python simulation
     wd: str [optional]
         The working directory of the Python simulation
+    ncores: int [optional]
+        If this is provided, then only the first ncores processes will be
+        checked for errors
     print_errors: bool [optional]
         Print the error summary to screen
 
@@ -98,7 +101,12 @@ def error_summary(root: str, wd: str = "./", print_errors: bool = False) -> dict
 
     glob_directory = "{}/diag_{}/{}_*.diag".format(wd, root, root)
     diag_files = glob(glob_directory)
-    ndiag = len(diag_files)
+
+    if ncores > 0:
+        ndiag = ncores
+    else:
+        ndiag = len(diag_files)
+
     if ndiag == 0:
         print("{}: no diag files found in path {}".format(n, glob_directory))
         return total_errors
@@ -123,8 +131,11 @@ def error_summary(root: str, wd: str = "./", print_errors: bool = False) -> dict
                 break
 
         # Now parse out the separate errors and add them the total errors dict
-        errors = lines[j:j + max_read_errors]
+        # errors = lines[j:j + max_read_errors]
+        errors = lines[j:]
         for line in errors:
+            if len(line) == 0:
+                continue
             l = line.split()
             if l[0].isdigit():
                 try:
