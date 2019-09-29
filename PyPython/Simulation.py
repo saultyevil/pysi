@@ -50,7 +50,7 @@ def check_convergence(root: str, wd: str = "./") -> Union[float, int]:
 
     convergence_per_cycle = []
     for line in diag:
-        if line.find("!!Check_convergence") != -1:
+        if line.find("!!Check_converging") != -1:
             if len(line.split()) != 11:
                 continue
             convergence_per_cycle.append(line)
