@@ -7,6 +7,7 @@ synthetic spectra which are output from Python. This includes utility functions
 from finding these spectrum files.
 """
 
+
 from .Error import DimensionError
 from .Constants import C, ANGSTROM, PARSEC
 from .Utils import split_root_directory
@@ -99,15 +100,16 @@ def read_spec(file_name: str, delim: str = None, numpy: bool = False) -> Union[n
     return pd.DataFrame(lines[1:], columns=lines[0])
 
 
-def spec_inclinations(spec_paths: List[str]) -> np.array:
+def spec_inclinations(spec: Union[pd.DataFrame, np.ndarray, List[str]]) -> np.array:
     """
     Find the unique inclination angles for a set of Python .spec files given
     the path for multiple .spec files.
 
     Parameters
     ----------
-    spec_paths: List[str]
-        The directory path to Python .spec files
+    spec: List[str]
+        A spectrum in the form of pd.DataFrame/np.ndarray or a list of
+        directories to Python .spec files
 
     Returns
     -------
@@ -118,9 +120,16 @@ def spec_inclinations(spec_paths: List[str]) -> np.array:
     n = spec_inclinations.__name__
     inclinations = []
 
+    nspec = 1
+    if type(spec) == list:
+        nspec = len(spec)
+    elif type(spec) != pd.DataFrame or type(spec) != np.ndarray:
+        raise TypeError("{}: spec passed is of unknown type {}".format(n, type(spec)))
+
     # Find the viewing angles in each .spec file
-    for i in range(len(spec_paths)):
-        spec = read_spec(spec_paths[i])
+    for i in range(nspec):
+        if nspec > 1:
+            spec = read_spec(spec[i])
 
         if type(spec) == pd.core.frame.DataFrame:
             col_names = spec.columns.values
@@ -129,6 +138,7 @@ def spec_inclinations(spec_paths: List[str]) -> np.array:
         else:
             raise TypeError("{}: bad data type {}: require pd.DataFrame or np.array".format(n, type(spec)))
 
+        # TODO: I think this could be done better with a dict or something?
         # Go over the columns and look for viewing angles
         for j in range(len(col_names)):
             if col_names[j].isdigit() is True:

@@ -73,6 +73,8 @@ def error_summary(root: str, wd: str = "./", print_errors: bool = False) -> dict
     Return a dictionary containing each error found in the error summary for
     each processor for a Python simulation.
 
+    TODO: make a dict for each processes?
+
     Parameters
     ----------
     root: str
@@ -87,7 +89,7 @@ def error_summary(root: str, wd: str = "./", print_errors: bool = False) -> dict
     total_errors: dict
         A dictionary containing the total errors over all processors. The keys
         are the error messages and the values are the number of times that
-        error occured.
+        error occurred.
     """
 
     n = error_summary.__name__
@@ -136,7 +138,7 @@ def error_summary(root: str, wd: str = "./", print_errors: bool = False) -> dict
                     total_errors[error_message] = error_count
 
     if len(broken_diag) > 0:
-        print("{}: unable to find error summaries in the following diag files".format(n))
+        print("{}: unable to find error summaries for the following diag files".format(n))
         for k in range(len(broken_diag)):
             print("  {}_{}.diag".format(root, broken_diag[k]))
 
@@ -147,3 +149,6 @@ def error_summary(root: str, wd: str = "./", print_errors: bool = False) -> dict
             print("  {:6d} -- {}".format(total_errors[key], key))
 
     return total_errors
+
+
+

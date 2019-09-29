@@ -12,4 +12,4 @@ setup(name="PyPython",
       license="MIT",
       packages=["PyPython"],
       zip_safe=False,
-      install_requires=['matplotlib', 'scipy', 'numpy', 'pandas'])
+      install_requires=["matplotlib", "scipy", "numpy", "pandas"])

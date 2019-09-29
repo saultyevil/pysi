@@ -6,12 +6,14 @@ This file contains various utility functions which can be used to ease the
 trials and tribulations of using Python and the Unix command line.
 """
 
+
 from pathlib import Path
 import pandas as pd
 from subprocess import Popen, PIPE
 from platform import system
 from shutil import which
 from typing import Tuple, List
+from psutil import cpu_count
 
 
 def remove_data_sym_links(search_dir: str = "./", verbose: bool = False):
@@ -310,3 +312,28 @@ def find_parameter_files(path: str = "./") -> List[str]:
     pfs = sorted(pfs, key=str.lower)
 
     return pfs
+
+
+def get_cpu_count(hyperthreads: bool = False):
+    """
+    Return the number of CPU cores which can be used when running a Python
+    simulation.
+
+    By default, this will only return the number of physics cores and will
+    exclude hyperthreads.
+
+    Returns
+    -------
+    ncores: int
+        The number of available CPU cores
+    """
+
+    n = get_cpu_count.__name__
+    ncores = 0
+
+    try:
+        ncores = cpu_count(logical=hyperthreads)
+    except NotImplementedError:
+        print("{}: unable to determine number of CPU cores, psutil.cpu_count not implemented".format(n))
+
+    return ncores
