@@ -129,7 +129,7 @@ def spec_inclinations(spec: Union[pd.DataFrame, np.ndarray, List[str]]) -> np.ar
         spec = [spec]
         nspec = 1
         readin = True
-    elif type(spec) != pd.DataFrame or type(spec) != np.ndarray:
+    elif type(spec) != pd.core.frame.DataFrame and type(spec) != np.ndarray:
         raise TypeError("{}: spec passed is of unknown type {}".format(n, type(spec)))
 
     # Find the viewing angles in each .spec file

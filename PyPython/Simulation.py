@@ -49,8 +49,8 @@ def check_convergence(root: str, wd: str = "./") -> Union[float, int]:
             return convergence
 
     convergence_per_cycle = []
-    for line in diag:
-        if line.find("!!Check_converging") != -1:
+    for line in diag:  # Unfortunately, there are multiple names for this line ;_;
+        if line.find("!!Check_converging") != -1 or line.find("!!Check_convergence") != -1:
             if len(line.split()) != 11:
                 continue
             convergence_per_cycle.append(line)
@@ -119,7 +119,6 @@ def error_summary(root: str, wd: str = "./", ncores: int = -1, print_errors: boo
             with open(diag, "r") as f:
                 lines = f.readlines()
         except IOError:
-            pass
             broken_diag.append(i)
             continue
 
@@ -160,6 +159,3 @@ def error_summary(root: str, wd: str = "./", ncores: int = -1, print_errors: boo
             print("  {:6d} -- {}".format(total_errors[key], key))
 
     return total_errors
-
-
-
