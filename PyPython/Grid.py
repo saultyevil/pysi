@@ -57,7 +57,7 @@ def change_parameter(pf_path: str, parameter_name: str, new_value: str, backup: 
     for i, line in enumerate(pf):
         if line.find(parameter_name) != -1:
             old = line
-            new = "{} {}\n".format(parameter_name, new_value)
+            new = "{:40s} {}\n".format(parameter_name, new_value)
             pf[i] = new
             break
     if old and new:
@@ -67,6 +67,55 @@ def change_parameter(pf_path: str, parameter_name: str, new_value: str, backup: 
     else:
         print("{}: couldn't find parameter {} in parameter file {}".format(n, parameter_name, pf_path))
         return
+
+    with open(pf_path, "w") as f:
+        f.writelines(pf)
+
+    return
+
+
+def add_parameter(pf_path: str, parameter_name: str, new_value: str, backup: bool = True, verbose: bool = False):
+    """
+    Add a parameter which doesn't already exist to the end of an already
+    existing Python parameter file. The parameter will be appended to the
+    end of the parameter file but will be cleaned up in the root.out.pf file
+    once the model is run.
+
+    Parameters
+    ----------
+    pf_path: str
+        The absolute or relative path to the parameter file
+    parameter_name: str
+        The name of the parameter being updated
+    new_value: str
+        The updated value for the parameter
+    backup: bool [optional]
+        Create a back up of the original parameter file
+    verbose: bool [optional]
+        Enable verbose output to the screen
+    """
+
+    n = add_parameter.__name__
+
+    assert(type(pf_path) == str), "{}: The path to the parameter file is not a string".format(n)
+    assert(type(parameter_name) == str), "{}: The parameter value passed is not a string".format(n)
+    assert(type(new_value) == str), "{}: The new value passed is not a string".format(n)
+
+    if pf_path.find(".pf") == -1:
+        raise IOError("{}: provided parameter file path {} is not a .pf parameter file".format(n, pf_path))
+    if verbose:
+        print("{}: updating parameter file {}".format(n, pf_path))
+    if backup:
+        copyfile(pf_path, pf_path + ".bak")
+
+    try:
+        with open(pf_path, "r") as f:
+            pf = f.readlines()
+    except IOError:
+        print("{}: unable to open parameter file {}".format(n, pf_path))
+        return
+
+    pf.append("{:40s} {}".format(parameter_name, new_value))
 
     with open(pf_path, "w") as f:
         f.writelines(pf)

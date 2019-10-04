@@ -4,7 +4,7 @@
 from setuptools import setup
 
 setup(name="PyPython",
-      version="0.1",
+      version="0.9",
       description="A Python package to make using Python a wee bit easier.",
       url="https://github.com/saultyevil/PyPython",
       author="Edward J. Parkinson",

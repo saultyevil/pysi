@@ -124,10 +124,15 @@ def error_summary(root: str, wd: str = "./", ncores: int = -1, print_errors: boo
 
         # Find the final error summary: look over the lines list in reverse
         # TODO: may be possible to take into account multiple error summaries
-        j = 0
-        for j, line in reversed(list(enumerate(lines))):
+        j = -1
+        for k, line in reversed(list(enumerate(lines))):
             if line.find("Error summary: End of program") != -1:
+                j = k
                 break
+
+        if j == -1:
+            print("{}: unable to find error summary, returning empty dict ".format(n))
+            return total_errors
 
         # Now parse out the separate errors and add them the total errors dict
         # errors = lines[j:j + max_read_errors]
@@ -135,13 +140,18 @@ def error_summary(root: str, wd: str = "./", ncores: int = -1, print_errors: boo
         for line in errors:
             if len(line) == 0:
                 continue
-            l = line.split()
-            if l[0].isdigit():
+            words = line.split()
+            try:
+                w0 = words[0]
+            except IndexError:
+                print("{}: index error when trying to process line '{}'".format(n, " ".join(words)))
+                continue
+            if w0.isdigit():
                 try:
-                    error_count = int(l[0])
+                    error_count = int(words[0])
                 except ValueError:
                     continue
-                error_message = " ".join(l[2:])
+                error_message = " ".join(words[2:])
                 try:
                     total_errors[error_message] += error_count
                 except KeyError:

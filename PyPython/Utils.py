@@ -304,10 +304,10 @@ def find_parameter_files(path: str = "./") -> List[str]:
         fname = str(filename)
         if fname.find("out.pf") != -1:
             continue
-        if fname == "py_wind.pf":
+        if fname.find("py_wind.pf") != -1:
             continue
-        # if fname[0] == "/":  # TODO: why did I do this?
-        #     fname = fname[1:]
+        if fname[0] == "/":
+            fname = "." + fname
         pfs.append(fname)
     pfs = sorted(pfs, key=str.lower)
 
