@@ -145,7 +145,8 @@ def error_summary(root: str, wd: str = "./", ncores: int = -1, print_errors: boo
                 w0 = words[0]
             except IndexError:
                 print("{}: index error when trying to process line '{}'".format(n, " ".join(words)))
-                return total_errors
+                broken_diag.append(i)
+                break
             if w0.isdigit():
                 try:
                     error_count = int(words[0])
