@@ -57,7 +57,7 @@ def change_parameter(pf_path: str, parameter_name: str, new_value: str, backup: 
     for i, line in enumerate(pf):
         if line.find(parameter_name) != -1:
             old = line
-            new = "{:40s} {}\n".format(parameter_name, new_value)
+            new = "{}{:20s}{}\n".format(parameter_name, " ", new_value)
             pf[i] = new
             break
     if old and new:

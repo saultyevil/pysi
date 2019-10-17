@@ -17,8 +17,8 @@ import numpy as np
 import pandas as pd
 
 
-def extract_wind_var(root: str, var_name: str, var_type: str, path: str = "./", coord: str = "rectilinear") \
-        -> Tuple[np.array, np.array, np.array]:
+def extract_wind_var(root: str, var_name: str, var_type: str, path: str = "./", coord: str = "rectilinear",
+                     input_file: str = None) -> Tuple[np.array, np.array, np.array]:
     """
     Read in variables contained within a root.ep.complete or ion file generated
     by windsave2table.
@@ -43,6 +43,9 @@ def extract_wind_var(root: str, var_name: str, var_type: str, path: str = "./", 
     coord: str [optional]
         The coordinate system in use. Currently this only works for polar
         and rectilinear coordinate systems
+    input_file: str [optional]
+        If this is provided, then the wind quantity will be searched from in
+        the file provided
 
     Returns
     -------
@@ -63,7 +66,11 @@ def extract_wind_var(root: str, var_name: str, var_type: str, path: str = "./", 
 
     # Create string containing the name of the data file required to be loaded
     key = var_name
-    if var_type.lower() == "ion":
+    if input_file:
+        if type(input_file) is not str:
+            print("{}: input_file should be provided as a string".format(n))
+        file = input_file
+    elif var_type.lower() == "ion":
         ele_idx = var_name.find("_")
         element = var_name[:ele_idx]
         key = var_name[ele_idx + 1:]
@@ -101,11 +108,13 @@ def extract_wind_var(root: str, var_name: str, var_type: str, path: str = "./", 
             if var_type.lower() == "ion":
                 x = data["x"].values.reshape(nx_cells, nz_cells)
                 z = data["z"].values.reshape(nx_cells, nz_cells)
-                x = np.sqrt(x ** 2 + z ** 2)      # r
-                z = np.rad2deg(np.arctan(z / x))  # theta
+                r = np.sqrt(x ** 2 + z ** 2)  # r
+                theta = np.arctan2(z, x)      # theta
+                x = r
+                z = theta
             else:
                 x = data["r"].values.reshape(nx_cells, nz_cells)
-                z = data["theta"].values.reshape(nx_cells, nz_cells)
+                z = np.deg2rad(data["theta"].values.reshape(nx_cells, nz_cells))
         else:
             raise CoordError("{}: unknown projection {}: use rectilinear or polar".format(n, coord))
     except KeyError:
