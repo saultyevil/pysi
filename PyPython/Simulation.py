@@ -144,7 +144,8 @@ def error_summary(root: str, wd: str = "./", ncores: int = -1, print_errors: boo
             try:
                 w0 = words[0]
             except IndexError:
-                print("{}: index error when trying to process line '{}'".format(n, " ".join(words)))
+                print("{}: index error when trying to process line '{}' for {}"
+                      .format(n, " ".join(words), diag_files[i]))
                 broken_diag.append(i)
                 break
             if w0.isdigit():

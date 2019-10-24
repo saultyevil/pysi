@@ -100,7 +100,7 @@ def read_spec(file_name: str, delim: str = None, numpy: bool = False) -> Union[n
     return pd.DataFrame(lines[1:], columns=lines[0])
 
 
-def spec_inclinations(spec: Union[pd.DataFrame, np.ndarray, List[str]]) -> np.array:
+def spec_inclinations(spec: Union[pd.DataFrame, np.ndarray, List[str], str]) -> np.array:
     """
     Find the unique inclination angles for a set of Python .spec files given
     the path for multiple .spec files.
