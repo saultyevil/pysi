@@ -127,11 +127,11 @@ def plot_tau_spectrum(root: str, wd: str, inclination: List[str] = "all", wmin: 
 
     if frequency_space:
         if loglog:
-            ax.set_xlabel(r"Log[Frequency], Hz", fontsize=axes_label_fontsize)
+            ax.set_xlabel(r"Log[Frequency], [Hz]", fontsize=axes_label_fontsize)
         else:
-            ax.set_xlabel(r"Frequency, Hz", fontsize=axes_label_fontsize)
+            ax.set_xlabel(r"Frequency, [Hz]", fontsize=axes_label_fontsize)
     else:
-        ax.set_xlabel(r"Wavelength, $\AA$", fontsize=axes_label_fontsize)
+        ax.set_xlabel(r"Wavelength, [$\AA$]", fontsize=axes_label_fontsize)
     ax.set_ylabel(r"Optical Depth, $\tau$", fontsize=axes_label_fontsize)
     ax.set_xlim(wmin, wmax)
     ax.legend()
@@ -217,7 +217,8 @@ def plot_spectrum_components(root: str, wd: str, wmin: float = None, wmax: float
                 continue
             if len(fl[fl < MIN_SPEC_COMP_FLUX]) > 0.7 * len(fl):  # Skip sparse spec components to make prettier plot
                 if verbose:
-                    print("{}: most of {} less than MIN_SPEC_COM_FLUX hence skipping".format(n, dname[i]))
+                    print("{}: most of {} less than MIN_SPEC_COM_FLUX ({}) hence skipping"
+                          .format(n, dname[i], MIN_SPEC_COMP_FLUX))
                 continue
             if frequency_space:
                 ax.loglog(x, fl, label=dname[i])
@@ -227,9 +228,9 @@ def plot_spectrum_components(root: str, wd: str, wmin: float = None, wmax: float
                 ax.plot(x, fl, label=dname[i])
         ax.set_xlim(xlims[0], xlims[1])
         if frequency_space:
-            ax.set_xlabel(r"Frequency (Hz)", fontsize=axes_label_fontsize)
+            ax.set_xlabel(r"Frequency ([Hz])", fontsize=axes_label_fontsize)
         else:
-            ax.set_xlabel(r"Wavelength ($\AA$)", fontsize=axes_label_fontsize)
+            ax.set_xlabel(r"Wavelength [$\AA$]", fontsize=axes_label_fontsize)
         ax.set_ylabel(r"$F_{\lambda}$ (erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)", fontsize=axes_label_fontsize)
         ax.legend()
 
