@@ -11,12 +11,10 @@ from typing import Union
 from glob import glob
 
 
-def check_convergence(root: str, wd: str = "./") -> Union[float, int]:
+def check_convergence(root: str, wd: str = "./", return_converging: bool = False) -> Union[float, int]:
     """
     Check the convergence of a Python simulation by parsing the
     !!Check_convergence line in the Python diag file.
-
-    TODO: include number of converging cells as optional return
 
     Parameters
     ----------
@@ -24,6 +22,9 @@ def check_convergence(root: str, wd: str = "./") -> Union[float, int]:
         The root name of the Python simulation
     wd: str [optional]
         The working directory of the Python simulation
+    return_converging: bool [optional]
+        Return the number of cells which are still converging instead of the
+        number of cells which have converged
 
     Returns
     -------
@@ -34,6 +35,7 @@ def check_convergence(root: str, wd: str = "./") -> Union[float, int]:
 
     n = check_convergence.__name__
     convergence = -1
+    converging = -1
 
     diag_path = "{}/diag_{}/{}_0.diag".format(wd, root, root)
     try:
@@ -50,13 +52,19 @@ def check_convergence(root: str, wd: str = "./") -> Union[float, int]:
 
     convergence_per_cycle = []
     for line in diag:  # Unfortunately, there are multiple names for this line ;_;
-        if line.find("!!Check_converging") != -1 or line.find("!!Check_convergence") != -1:
-            if len(line.split()) != 11:
-                continue
+        if line.find("converged") != -1 and line.find("converging") != -1:
+            # if len(line.split()) != 16:
+            #     continue
             convergence_per_cycle.append(line)
-            tstr = line.split()[2].replace("(", "").replace(")", "")
+            line = line.split()
             try:
+                tstr = line[2].replace("(", "").replace(")", "")
                 convergence = float(tstr)
+            except ValueError:
+                continue
+            try:
+                tstr = line[6].replace("(", "").replace(")", "")
+                converging = float(tstr)
             except ValueError:
                 continue
 
@@ -65,6 +73,8 @@ def check_convergence(root: str, wd: str = "./") -> Union[float, int]:
     if 0 > convergence > 1:
         print("{}: convergence {} is not sane".format(n, convergence))
 
+    if return_converging:
+        return converging
     return convergence
 
 

@@ -117,7 +117,31 @@ QUOTES = [
     "oretachi no JUDGEMENT. Ai saae mo shiranai furyouhin no norainu sa. da kedo chii ya kane ja edzuke wa dekinai "
     "ze. Kizutsuite kizutsuite subete ushinacchimattemo. somacchanaranee sore koso ga JUSTICE……　JUSTICE!. Wow, "
     "Breakin’ the law. Breakin’ the world　Kowase. Kirisake Tenderness. Wow, Breakin’ the rule. Roppouzensho ja "
-    "shibarenai hanran bunshi sa. Furiagero nigirikobushi wo oretachi wa…… Sou sa oretachi ga JUDGEMENT. JUDGEMENT……"
+    "shibarenai hanran bunshi sa. Furiagero nigirikobushi wo oretachi wa…… Sou sa oretachi ga JUDGEMENT. JUDGEMENT……",
+    # Cat
+    "If you were my cat, would I be able to neuter you?",
+    # Marley #1
+    "If you want to listen to Yung Lean then the leather club is two doors down",
+    # Adam #1 
+    "It's 4d chess.",
+    # Adam #2
+    "GGGG: ive had a couple mouth fulls of my own fresh piss",
+    # Adam #3
+    "GGGG: why do slightly above knee length skirts and dresses make me want to do a rape",
+    # Adam #4
+    "GGGG: I will give you one word as a clue edward\n     COUP",
+    # Adam #5
+    "GGGG: youre saying no to a girl but yes to a dick, even if it is plastic",
+    # Adam #6
+    "GGGG: i can get 12 cans of carling for 8 leffe",
+    # Adam #7
+    "GGGG: yeah but youre just odd not homo",
+    # Adam #8
+    "GGGG: you know those africans that carry shit around their heads\n     why dont they have swole necks"
+    # Sean Connery
+    "I am Sean Connery and I want a massage",
+    # Marley # 1
+    "Hypnotized: If you're gonna dress like a woman, at least get your dick out"
 ]
 
 

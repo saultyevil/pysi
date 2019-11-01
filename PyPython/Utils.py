@@ -138,7 +138,7 @@ def get_python_version(py: str = "py", verbose: bool = False) -> Tuple[str, str]
     return version, commit_hash
 
 
-def windsave2table(root: str, path: str, verbose: bool = False) -> None:
+def windsave2table(root: str, path: str, no_ep_complete: bool = False, verbose: bool = False) -> None:
     """
     Runs windsave2table in the directory path to create a bunch of data tables
     from the Python wind_save file. This function also created a
@@ -150,7 +150,9 @@ def windsave2table(root: str, path: str, verbose: bool = False) -> None:
         The root name of the Python simulation
     path: str
         The directory of the Python simulation where windsave2table will be run
-    verbose: bool, optional
+    no_ep_complete: bool [optional]
+        Return from this function before a root.ep.complete file is created.
+    verbose: bool [optional]
         Enable verbose logging
     """
 
@@ -163,9 +165,9 @@ def windsave2table(root: str, path: str, verbose: bool = False) -> None:
         run_version = lines[0]
         run_hash = lines[1]
         if run_version != version and run_hash != hash:
-            print("{}: unable to determine windsave2table and wind_save versions".format(n))
+            print("{}: windsave2table and wind_save versions are different: be careful!".format(n))
     except IOError:
-        print("{}: unable to determine windsave2table version from py_run.py version file".format(n))
+        print("{}: unable to determine wind_save version: be careful!".format(n))
 
     in_path = which("windsave2table")
     if not in_path:
@@ -182,6 +184,9 @@ def windsave2table(root: str, path: str, verbose: bool = False) -> None:
     if err:
         print("{}: the following was sent to stderr:".format(n))
         print(err)
+
+    if no_ep_complete:
+        return
 
     # Now create a "complete" file which is the master and heat put together into one csv
     heat_file = "{}/{}.0.heat.txt".format(path, root)

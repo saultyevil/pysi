@@ -95,7 +95,11 @@ def read_spec(file_name: str, delim: str = None, numpy: bool = False) -> Union[n
             lines.append(line)
 
     if numpy:
-        return np.array(lines)
+        try:
+            spec = np.array(lines, dtype=float)
+            return spec
+        except ValueError:
+            return np.array(lines)
 
     return pd.DataFrame(lines[1:], columns=lines[0])
 
@@ -426,3 +430,14 @@ def plot_line_ids(ax: plt.Axes, lines: list, offset: float = 25, rotation: str =
                 transform=ax.transAxes)
 
     return ax
+
+
+def get_wavelength_index(wl: float, target_wl: float):
+    """
+
+
+    """
+
+    index = np.abs(wl - target_wl).argmin()
+
+    return index
