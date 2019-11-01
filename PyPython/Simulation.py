@@ -148,9 +148,9 @@ def error_summary(root: str, wd: str = "./", ncores: int = -1, print_errors: boo
         # errors = lines[j:j + max_read_errors]
         errors = lines[j:]
         for line in errors:
-            if len(line) == 0:
-                continue
             words = line.split()
+            if len(words) == 0:
+                continue
             try:
                 w0 = words[0]
             except IndexError:
