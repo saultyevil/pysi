@@ -158,5 +158,6 @@ def random_quote():
     nquotes = len(QUOTES)
     quote = QUOTES[randint(0, nquotes)]
     print(quote)
+    print()
 
     return quote
