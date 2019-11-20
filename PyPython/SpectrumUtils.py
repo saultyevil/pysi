@@ -432,10 +432,23 @@ def plot_line_ids(ax: plt.Axes, lines: list, offset: float = 25, rotation: str =
     return ax
 
 
-def get_wavelength_index(wl: float, target_wl: float):
+def get_wavelength_index(wl: float, target_wl: float) -> int:
     """
+    Return the index for an array.
 
+    TODO: some form of error checking if index can't be found would be good
 
+    Parameters
+    ----------
+    wl: float
+        The array containing the wavelength values.
+    target_wl: float
+        The target wavelength or value.
+
+    Returns
+    -------
+    index: int
+        The index for where the target is in the provided array.
     """
 
     index = np.abs(wl - target_wl).argmin()
