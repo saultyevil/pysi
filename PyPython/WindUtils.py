@@ -128,3 +128,29 @@ def extract_wind_var(root: str, var_name: str, var_type: str, path: str = "./", 
     var_mask = np.ma.masked_where(mask, var)
 
     return x, z, var_mask
+
+
+def get_wind_elem_number(nx: int, nz: int, i: int, j: int) -> int:
+    """
+    Return the wind element number for the given grid indices (i, j) for a grid
+    of size (nx, nz).
+
+    Parameters
+    ----------
+    nx: int
+        The number of grid cells in the x-direction.
+    nz: int
+        The number of grid cells in the z-direction.
+    i: int
+        The i (x) index for the grid cell in question
+    j: int
+        The j (z) index for the grid cell in question
+
+
+    Returns
+    -------
+    elem: int
+        The element number in the wind array
+    """
+
+    return nz * i + j

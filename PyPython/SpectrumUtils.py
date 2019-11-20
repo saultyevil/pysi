@@ -51,7 +51,7 @@ def find_specs(root: str = None, path: str = "./") -> List[str]:
     return spec_files
 
 
-def read_spec(file_name: str, delim: str = None, numpy: bool = False) -> Union[np.ndarray, pd.DataFrame]:
+def read_spec(fname: str, delim: str = None, numpy: bool = False) -> Union[int, np.ndarray, pd.DataFrame]:
     """
     Read in data from an external file, line by line whilst ignoring comments.
         - Comments begin with #
@@ -59,7 +59,7 @@ def read_spec(file_name: str, delim: str = None, numpy: bool = False) -> Union[n
 
     Parameters
     ----------
-    file_name: str
+    fname: str
         The directory path to the spec file to be read in
     delim: str [optional]
         The delimiter between values in the file, by default a space is assumed
@@ -74,7 +74,7 @@ def read_spec(file_name: str, delim: str = None, numpy: bool = False) -> Union[n
 
     n = read_spec.__name__
 
-    with open(file_name, "r") as f:
+    with open(fname, "r") as f:
         flines = f.readlines()
 
     lines = []

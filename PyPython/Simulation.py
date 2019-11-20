@@ -51,10 +51,8 @@ def check_convergence(root: str, wd: str = "./", return_converging: bool = False
             return convergence
 
     convergence_per_cycle = []
-    for line in diag:  # Unfortunately, there are multiple names for this line ;_;
+    for line in diag:
         if line.find("converged") != -1 and line.find("converging") != -1:
-            # if len(line.split()) != 16:
-            #     continue
             convergence_per_cycle.append(line)
             line = line.split()
             try:

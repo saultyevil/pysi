@@ -115,7 +115,7 @@ def add_parameter(pf_path: str, parameter_name: str, new_value: str, backup: boo
         print("{}: unable to open parameter file {}".format(n, pf_path))
         return
 
-    pf.append("{:40s} {}".format(parameter_name, new_value))
+    pf.append("{:40s} {}\n".format(parameter_name, new_value))
 
     with open(pf_path, "w") as f:
         f.writelines(pf)
