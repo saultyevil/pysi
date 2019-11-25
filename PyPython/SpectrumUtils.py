@@ -245,8 +245,8 @@ def smooth_spectrum(flux: np.ndarray, smooth: Union[int, float]) -> np.ndarray:
     return smoothed
 
 
-def ylims(wavelength: np.array, flux: np.array, wmin: float, wmax: float, scale: float = 10,) \
-        -> Union[Tuple[float, float], Tuple[bool, bool]]:
+def ylims(wavelength: np.array, flux: np.array, wmin: Union[float, None], wmax: Union[float, None],
+          scale: float = 10,) -> Union[Tuple[float, float], Tuple[bool, bool]]:
     """
     Determine the lower and upper limit for the flux given a restricted
     wavelength range (wmin, wmax).

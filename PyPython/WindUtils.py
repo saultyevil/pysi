@@ -18,7 +18,7 @@ import pandas as pd
 
 
 def extract_wind_var(root: str, var_name: str, var_type: str, path: str = "./", coord: str = "rectilinear",
-                     input_file: str = None) -> Tuple[np.array, np.array, np.array]:
+                     input_file: str = None, return_indices: bool = False) -> Tuple[np.array, np.array, np.array]:
     """
     Read in variables contained within a root.ep.complete or ion file generated
     by windsave2table.
@@ -46,6 +46,8 @@ def extract_wind_var(root: str, var_name: str, var_type: str, path: str = "./", 
     input_file: str [optional]
         If this is provided, then the wind quantity will be searched from in
         the file provided
+    return_indices: bool [optional]
+        Return the cell i, j indicies instead of the x, z coordinates
 
     Returns
     -------
@@ -127,6 +129,10 @@ def extract_wind_var(root: str, var_name: str, var_type: str, path: str = "./", 
     mask = (inwind < 0)
     var_mask = np.ma.masked_where(mask, var)
 
+    if return_indices:
+        xi = np.reshape(xi, (nx_cells, nz_cells))
+        zj = np.reshape(zj, (nx_cells, nz_cells))
+        return xi, zj, var_mask
     return x, z, var_mask
 
 

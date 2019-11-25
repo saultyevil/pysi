@@ -129,7 +129,7 @@ QUOTES = [
     # Adam #3
     "GGGG: why do slightly above knee length skirts and dresses make me want to do a rape",
     # Adam #4
-    "GGGG: I will give you one word as a clue edward\n     COUP",
+    "GGGG: I will give you one word as a clue edward\n      COUP",
     # Adam #5
     "GGGG: youre saying no to a girl but yes to a dick, even if it is plastic",
     # Adam #6
@@ -137,7 +137,7 @@ QUOTES = [
     # Adam #7
     "GGGG: yeah but youre just odd not homo",
     # Adam #8
-    "GGGG: you know those africans that carry shit around their heads\n     why dont they have swole necks"
+    "GGGG: you know those africans that carry shit around their heads\n      why dont they have swole necks"
     # Sean Connery
     "I am Sean Connery and I want a massage",
     # Marley # 1

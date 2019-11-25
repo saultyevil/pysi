@@ -11,6 +11,7 @@ from .Error import InvalidParameter
 
 import numpy as np
 from matplotlib import pyplot as plt
+import matplotlib.colors as colors
 from typing import List, Tuple
 
 
@@ -35,7 +36,7 @@ def sightline_coords(x: np.ndarray, theta: float):
     return x * np.tan(np.pi / 2 - theta)
 
 
-def create_rectilinear_wind_plot(x: np.ndarray, z: np.ndarray, w: np.ndarray, wtype: str, wname: str,
+def create_rectilinear_wind_plot(x: np.ndarray, z: np.ndarray, w: np.ndarray, w_type: str, w_name: str,
                                  fig: plt.Figure = None, ax: plt.Axes = None, i: int = None, j: int = None,
                                  scale: str = "loglog", obs_los: List[float] = None,
                                  figsize: Tuple[int, int] = (5, 5)) -> Tuple[plt.Figure, plt.Axes]:
@@ -52,9 +53,9 @@ def create_rectilinear_wind_plot(x: np.ndarray, z: np.ndarray, w: np.ndarray, wt
         The z-coordinates of the model.
     w: np.ndarray[float]
         The value of the wind variable for each grid cell.
-    wtype: str
+    w_type: str
         The type of wind variable, this can either be "wind" or "ion".
-    wname: str
+    w_name: str
         The name of the wind variable.
     fig: plt.Figure [optional]
         A plt.Figure object to modify.
@@ -97,14 +98,14 @@ def create_rectilinear_wind_plot(x: np.ndarray, z: np.ndarray, w: np.ndarray, wt
             raise InvalidParameter("{}: fig was not provided when it was expected".format(n))
 
     with np.errstate(divide="ignore"):
-        if wname == "converge" or wname == "convergence" or wname == "converging":
-            im = ax[i, j].pcolor(x, z, w)
-        elif wtype == "ion":
-            im = ax[i, j].pcolor(x, z, np.log10(w), vmin=-5, vmax=0)
-        elif wtype == "wind":
+        if w_name == "converge" or w_name == "convergence" or w_name == "converging":
+            im = ax[i, j].pcolor(x, z, w, vmin=0, vmax=3)
+        elif w_type == "ion":
+            im = ax[i, j].pcolor(x, z, np.log10(w), norm=colors.Normalize(vmin=-10, vmax=0))
+        elif w_type == "wind":
             im = ax[i, j].pcolor(x, z, np.log10(w))
         else:
-            raise InvalidParameter("{}: unknown wind variable type {}".format(n, wtype))
+            raise InvalidParameter("{}: unknown wind variable type {}".format(n, w_type))
 
     if obs_los:
         xsight = np.linspace(0, np.max(x), int(1e5))
@@ -114,24 +115,23 @@ def create_rectilinear_wind_plot(x: np.ndarray, z: np.ndarray, w: np.ndarray, wt
 
     fig.colorbar(im, ax=ax[i, j])
 
-    if wname == "converge" or wname == "convergence" or wname == "converging":
-        ax[i, j].set_title(wname)
+    if w_name == "converge" or w_name == "convergence" or w_name == "converging":
+        ax[i, j].set_title(w_name)
     else:
-        ax[i, j].set_title(r"$\log_{10}(" + wname + ")")
+        ax[i, j].set_title(r"$\log_{10}$(" + w_name + ")")
     ax[i, j].set_xlabel("x [cm]")
     ax[i, j].set_ylabel("z [cm]")
-
+    ax[i, j].set_xlim(np.min(x[x != 0]), np.max(x))
+    ax[i, j].set_ylim(np.min(z[z != 0]), np.max(z))
     if scale == "loglog" or scale == "logx":
         ax[i, j].set_xscale("log")
-        ax[i, j].set_xlabel(r"\log_{10}(x) [cm]")
     if scale == "loglog" or scale == "logy":
         ax[i, j].set_yscale("log")
-        ax[i, j].set_ylabel(r"\log_{10}(y) [cm]")
 
     return fig, ax
 
 
-def create_polar_wind_plot(r: np.ndarray, theta: np.ndarray, w: np.ndarray, wtype: str, wname: str,
+def create_polar_wind_plot(r: np.ndarray, theta: np.ndarray, w: np.ndarray, w_type: str, w_name: str,
                            ax: plt.Axes = None, index: int = None, obs_los: List[float] = None,
                            scale: str = "log", figsize: Tuple[int, int] = (5, 5)) -> plt.Axes:
     """
@@ -146,9 +146,9 @@ def create_polar_wind_plot(r: np.ndarray, theta: np.ndarray, w: np.ndarray, wtyp
 
     w: np.ndarry
 
-    wtype: str
+    w_type: str
 
-    wname: str
+    w_name: str
 
     ax: plt.Axes [optional]
 
@@ -159,6 +159,7 @@ def create_polar_wind_plot(r: np.ndarray, theta: np.ndarray, w: np.ndarray, wtyp
     scale: str [optional]
 
     figsize: Tuple[int, int] [optional]
+
 
     Returns
     -------
@@ -172,20 +173,23 @@ def create_polar_wind_plot(r: np.ndarray, theta: np.ndarray, w: np.ndarray, wtyp
         if index is None:
             raise InvalidParameter("{}: index was expected by not provided".format(n))
     else:
-        ax = plt.subplot(1, 1, 0, projection="polar")
+        ax = plt.subplot(1, 1, 1, projection="polar")
+
+    if scale == "loglog":
+        scale = "log"
 
     if scale == "log":
         r = np.log10(r)
 
     with np.errstate(divide="ignore"):
-        if wname == "converge" or wname == "convergence" or wname == "converging":
-            im = ax.pcolor(theta, r, w)
-        elif wtype == "wind":
+        if w_name == "converge" or w_name == "convergence" or w_name == "converging":
+            im = ax.pcolor(theta, r, w, vmin=0, vmax=3)
+        elif w_type == "wind":
             im = ax.pcolor(theta, r, np.log10(w))
-        elif wtype == "ion":
-            im = ax.pcolor(theta, r, np.log10(w), vmin=-5, wmax=0)
+        elif w_type == "ion":
+            im = ax.pcolor(theta, r, np.log10(w), norm=colors.Normalize(vmin=-10, vmax=0))
         else:
-            raise InvalidParameter("{}: unknown wind variable type {}".format(n, wtype))
+            raise InvalidParameter("{}: unknown wind variable type {}".format(n, w_type))
 
     if obs_los:
         xsight = np.linspace(0, np.max(r), int(1e5))
@@ -203,16 +207,15 @@ def create_polar_wind_plot(r: np.ndarray, theta: np.ndarray, w: np.ndarray, wtyp
     ax.set_thetamin(0)
     ax.set_thetamax(90)
     ax.set_rlabel_position(90)
+    ax.set_rlim(np.min(r), np.max(r))
     if scale == "log":
-        ax.set_ylabel("Log[R] [cm]")
-        ax.set_rlim(np.log10(np.min(r)), np.log10(np.max(r)))
+        ax.set_ylabel(r"$\log_{10}(R)$ [cm]")
     else:
-        ax.set_yscale("R [cm]")
-        ax.set_rlim(np.min(r), np.max(r))
+        ax.set_ylabel("R [cm]")
 
-    if wname == "converge" or wname == "convergence" or wname == "converging":
-        ax.set_title(wname)
+    if w_name == "converge" or w_name == "convergence" or w_name == "converging":
+        ax.set_title(w_name)
     else:
-        ax.set_title(r"$\log_{10}$(" + wname + ")")
+        ax.set_title(r"$\log_{10}$(" + w_name + ")")
 
     return ax

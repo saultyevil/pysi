@@ -7,6 +7,7 @@ trials and tribulations of using Python and the Unix command line.
 """
 
 
+from os import remove
 from pathlib import Path
 import pandas as pd
 from subprocess import Popen, PIPE
@@ -206,6 +207,29 @@ def windsave2table(root: str, path: str, no_ep_complete: bool = False, verbose: 
     master.to_csv("{}/{}.ep.complete".format(path, root), sep=" ")
 
     return
+
+
+def py_wind(root: str, commands: List[str], wd: str = "./") -> List[str]:
+    """
+    Run py_wind using the provided commands.
+    """
+
+    n = py_wind.__name__
+
+    cmd_file = "{}/_tmpcmds.txt".format(wd)
+
+    with open(cmd_file, "w") as f:
+        for i in range(len(commands)):
+            f.write("{}\n".format(commands[i]))
+
+    sh = Popen("cd {}; py_wind {} < _tmpcmds.txt".format(wd, root), stdout=PIPE, stderr=PIPE, shell=True)
+    stdout, stderr = sh.communicate()
+    if stderr:
+        print(stderr.decode("utf-8"))
+
+    remove(cmd_file)
+
+    return stdout.decode("utf-8").split("\n")
 
 
 def subplot_dims(nplots: int) -> Tuple[int, int]:

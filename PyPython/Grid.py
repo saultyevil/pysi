@@ -65,7 +65,8 @@ def change_parameter(pf_path: str, parameter_name: str, new_value: str, backup: 
             print("{}: changed parameter {} from {} to {}".format(n, parameter_name, old.replace("\n", ""),
                                                                   new.replace("\n", "")))
     else:
-        print("{}: couldn't find parameter {} in parameter file {}".format(n, parameter_name, pf_path))
+        print("{}: COULDN'T FIND PARAMETER {} IN PARAMETER FILE {}".format(n, parameter_name, pf_path))
+        print("  : THIS ROUTINE HAS FAILED PLEASE PAY ATTENTION TO THIS MESSAGE BEFORE YOU WASTE TIME AGAIN")
         return
 
     with open(pf_path, "w") as f:
