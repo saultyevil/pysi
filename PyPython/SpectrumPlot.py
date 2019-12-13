@@ -7,12 +7,11 @@
 
 from .Error import InvalidFileContents
 from .Constants import C, ANGSTROM, PARSEC
-from .Utils import subplot_dims
-from .SpectrumUtils import absorption_edges, plot_line_ids, smooth_spectrum, read_spec, spec_inclinations
+from .SpectrumUtils import absorption_edges, plot_line_ids, smooth_spectrum, read_spec
 
 import pandas as pd
 import numpy as np
-from typing import List, Union, Tuple
+from typing import List, Tuple
 from matplotlib import pyplot as plt
 
 

@@ -387,11 +387,13 @@ def absorption_edges(freq: bool = False, log: bool = False) -> list:
     return edges
 
 
-def plot_line_ids(ax: plt.Axes, lines: list, offset: float = 25, rotation: str = "vertical", fontsize: int = 10) \
+def plot_line_ids(ax: plt.Axes, lines: list, offset: float = 0, rotation: str = "vertical", fontsize: int = 10) \
         -> plt.Axes:
     """
     Plot line IDs onto a figure. This should probably be used after the x-limits
     have been set on the figure which these labels are being plotted onto.
+
+    # TODO: offset doesn't work for frequency space - setting default value to 0 for now
 
     Parameters
     ----------

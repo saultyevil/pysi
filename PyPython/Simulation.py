@@ -7,7 +7,7 @@ simulations as well as run a grid of simulations.
 """
 
 
-from typing import Union, List
+from typing import Union, List, Tuple
 from glob import glob
 
 
@@ -54,6 +54,7 @@ def check_convergence(root: str, wd: str = "./", return_per_cycle: bool = False,
             return convergence
 
     convergence_per_cycle = []
+    converging_per_cycle = []
     for line in diag:
         if line.find("converged") != -1 and line.find("converging") != -1:
             line = line.split()
@@ -62,11 +63,14 @@ def check_convergence(root: str, wd: str = "./", return_per_cycle: bool = False,
                 convergence = float(tstr)
                 convergence_per_cycle.append(convergence)
             except ValueError:
+                convergence_per_cycle.append(-1)
                 continue
             try:
                 tstr = line[6].replace("(", "").replace(")", "")
                 converging = float(tstr)
+                converging_per_cycle.append(converging)
             except ValueError:
+                converging_per_cycle.append(-1)
                 continue
 
     if convergence == -1:
@@ -75,13 +79,16 @@ def check_convergence(root: str, wd: str = "./", return_per_cycle: bool = False,
         print("{}: convergence {} is not sane".format(n, convergence))
 
     if return_converging:
+        if return_per_cycle:
+            return converging_per_cycle
         return converging
+
     if return_per_cycle:
         return convergence_per_cycle
     return convergence
 
 
-def check_convergence_criteria(root: str, wd: str = "./"):
+def check_convergence_criteria(root: str, wd: str = "./") -> Tuple[List[float], List[float], List[float], List[float]]:
     """
     Returns a break down in terms of the number of cells which have passed
     the convergence checks on radiation temperature, electron temperature and
@@ -107,7 +114,7 @@ def check_convergence_criteria(root: str, wd: str = "./"):
             diag = f.readlines()
     except IOError:
         print("{}: unable to find {}_0.diag file".format(n, root))
-        return [n_tr, n_te, n_hc, n_te_max]
+        return n_tr, n_te, n_hc, n_te_max
 
     ncells = 1
     for line in diag:
@@ -120,7 +127,7 @@ def check_convergence_criteria(root: str, wd: str = "./"):
             n_te_max.append(int(line[6]) / ncells)
             n_hc.append(int(line[8]) / ncells)
 
-    return [n_tr, n_te, n_hc, n_te_max]
+    return n_tr, n_te, n_te_max, n_hc
 
 
 def error_summary(root: str, wd: str = "./", ncores: int = -1, print_errors: bool = False) -> dict:
