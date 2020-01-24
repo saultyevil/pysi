@@ -126,12 +126,12 @@ def spec_inclinations(spec: Union[pd.DataFrame, np.ndarray, List[str], str]) -> 
 
     nspec = 1
     readin = False
+
     if type(spec) == list:
         nspec = len(spec)
         readin = True
     elif type(spec) == str:
         spec = [spec]
-        nspec = 1
         readin = True
     elif type(spec) != pd.core.frame.DataFrame and type(spec) != np.ndarray:
         raise TypeError("{}: spec passed is of unknown type {}".format(n, type(spec)))
@@ -148,17 +148,11 @@ def spec_inclinations(spec: Union[pd.DataFrame, np.ndarray, List[str], str]) -> 
         else:
             raise TypeError("{}: bad data type {}: require pd.DataFrame or np.array".format(n, type(spec)))
 
-        # TODO: I think this could be done better with a dict or something?
-        # Go over the columns and look for viewing angles
         for j in range(len(col_names)):
-            if col_names[j].isdigit() is True:
-                angle = int(col_names[j])
-                duplicate_flag = False
-                for va in inclinations:  # Check for duplicate angle
-                    if angle == va:
-                        duplicate_flag = True
-                if duplicate_flag is False:
-                    inclinations.append(angle)
+            if col_names[j].isdigit() is True and col_names[j] not in inclinations:
+                inclinations.append(col_names[j])
+
+    inclinations = sorted(inclinations)
 
     return inclinations
 
@@ -316,11 +310,12 @@ def common_lines(freq: bool = False, log: bool = False) -> list:
     """
 
     lines = [
-        ["HeII Edge", 229],
+        ["He II Edge", 229],
+        ["He I Edge", 504],
         ["Lyman Edge", 912],
         ["P V", 1118],
         [r"Ly$\alpha$/N V", 1216],
-        ["", 1240],
+        ["", 1242],
         ["O V/Si IV", 1371],
         ["", 1400],
         ["N IV", 1489],
@@ -370,7 +365,8 @@ def absorption_edges(freq: bool = False, log: bool = False) -> list:
     """
 
     edges = [
-        ["HeII Edge", 229],
+        ["He II Edge", 229],
+        ["He I Edge", 504],
         ["Lyman Edge", 912],
         ["Balmer Edge", 3646],
         ["Paschen Edge", 8204],
@@ -387,7 +383,7 @@ def absorption_edges(freq: bool = False, log: bool = False) -> list:
     return edges
 
 
-def plot_line_ids(ax: plt.Axes, lines: list, offset: float = 0, rotation: str = "vertical", fontsize: int = 10) \
+def plot_line_ids(ax: plt.Axes, lines: list, offset: float = 25, rotation: str = "vertical", fontsize: int = 10) \
         -> plt.Axes:
     """
     Plot line IDs onto a figure. This should probably be used after the x-limits
