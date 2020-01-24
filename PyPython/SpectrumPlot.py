@@ -79,18 +79,19 @@ def spec_plot_tau_spec(root: str, wd: str, inclination: List[str] = "all", wmin:
         wmin = np.min(tspec[:, 0])
     if not wmax:
         wmax = np.max(tspec[:, 0])
+    
     if frequency_space:
         tspec[:, 0] = C / (tspec[:, 0] * ANGSTROM)
-        if wmin:
-            wmin = C / (wmin * ANGSTROM)
-        if wmax:
-            wmax = C / (wmax * ANGSTROM)
+        wl_wmax = wmax
+        wl_wmin = wmin
+        wmin = C / (wl_wmax * ANGSTROM)
+        wmax = C / (wl_wmin * ANGSTROM)
 
     # Determine the inclinations which are available
     with open(fname, "r") as f:
         angles = f.readline().split()
     if angles[0] == "#":
-        angles = angles[2:]
+        angles = angles[3:]
     else:
         raise InvalidFileContents("{}: provided file is possibly not an optical depth spectrum".format(n))
     nangles = len(angles)
@@ -110,17 +111,17 @@ def spec_plot_tau_spec(root: str, wd: str, inclination: List[str] = "all", wmin:
         if inclination[0] != "all" and inclination[i] not in angles:  # Skip inclinations which don't exist
             continue
         if inclination[0] == "all":
-            ii = i + 1
+            ii = i + 2
         else:
-            ii = angles.index(inclination[i]) + 1
-        lab = r"$i$ = " + angles[ii - 1] + r"$^{\circ}$"
+            ii = angles.index(inclination[i]) + 2
+        lab = r"$i$ = " + angles[ii - 2] + r"$^{\circ}$"
         n_non_zero = np.count_nonzero(tspec[:, ii])
         if n_non_zero == 0:  # Skip inclinations which look through empty space hence no optical depth
             continue
         if loglog:
-            ax.loglog(np.log10(tspec[:, 0]), tspec[:, ii], label=lab)
+            ax.loglog(tspec[:, 0], tspec[:, ii], label=lab)
         elif logy:
-            ax.semilogy(tspec[:, 0], tspec[:, ii], label=lab)
+            ax.semilogy(tspec[:, 0], smooth_spectrum(tspec[:, ii], 1), label=lab)
         else:
             ax.plot(tspec[:, 0], tspec[:, ii], label=lab)
 
