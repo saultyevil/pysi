@@ -110,7 +110,7 @@ def create_rectilinear_wind_plot(x: np.ndarray, z: np.ndarray, w: np.ndarray, w_
     if obs_los:
         xsight = np.linspace(0, np.max(x), int(1e5))
         for inc in obs_los:
-            zsight = sightline_coords(xsight, np.deg2rad(inc))
+            zsight = sightline_coords(xsight, np.deg2rad(float(inc)))
             ax[i, j].plot(xsight, zsight, label="i = {}".format(inc) + r"$^{\circ}$ sightline")
 
     fig.colorbar(im, ax=ax[i, j])
@@ -127,6 +127,9 @@ def create_rectilinear_wind_plot(x: np.ndarray, z: np.ndarray, w: np.ndarray, w_
         ax[i, j].set_xscale("log")
     if scale == "loglog" or scale == "logy":
         ax[i, j].set_yscale("log")
+
+    if obs_los and i == 0 and j == 0:
+        ax[i, j].legend()
 
     return fig, ax
 
