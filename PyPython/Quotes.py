@@ -137,10 +137,10 @@ QUOTES = [
     # Adam #7
     "GGGG: yeah but youre just odd not homo",
     # Adam #8
-    "GGGG: you know those africans that carry shit around their heads\n      why dont they have swole necks"
+    "GGGG: you know those africans that carry shit around their heads\n      why dont they have swole necks",
     # Sean Connery
     "I am Sean Connery and I want a massage",
-    # Marley # 1
+    # Marley # 2
     "Hypnotized: If you're gonna dress like a woman, at least get your dick out"
 ]
 
