@@ -143,31 +143,32 @@ def create_polar_wind_plot(r: np.ndarray, theta: np.ndarray, w: np.ndarray, w_ty
 
     Parameters
     ----------
-    r: np.ndarray
-
-    theta: np.ndarray
-
-    w: np.ndarry
-
+    r: np.ndarray[float]
+        The r-coordinates of the model.
+    theta: np.ndarrayp[float]
+        The theta-coordinates of the model.
+    w: np.ndarray[float]
+        The value of the wind variable for each grid cell.
     w_type: str
-
+        The type of wind variable, this can either be "wind" or "ion".
     w_name: str
-
+        The name of the wind variable.
     ax: plt.Axes [optional]
-
+        A plt.Axes object to modify.
     index: int [optional]
-
+        The subplot index.
     obs_los: List[float] [optional]
-
+        A list of inclination angles to overplot observer line of sights.
     scale: str [optional]
-
+        The scaling of the x and y axes, this can either be "logx", "logy" or
+        "loglog".
     figsize: Tuple[int, int] [optional]
-
+        The size of the figure in inches (width, height).
 
     Returns
     -------
     ax: plt.Axes
-
+        The plt.Axes object.
     """
 
     n = create_polar_wind_plot.__name__

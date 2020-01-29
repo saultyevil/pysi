@@ -432,9 +432,8 @@ def plot_line_ids(ax: plt.Axes, lines: list, offset: float = 25, rotation: str =
 
 def get_wavelength_index(wl: float, target_wl: float) -> int:
     """
-    Return the index for an array.
-
-    TODO: some form of error checking if index can't be found would be good
+    Return the index for an array, generally this is used to find the index
+    for a certain wavelength value.
 
     Parameters
     ----------
