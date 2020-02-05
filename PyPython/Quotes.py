@@ -100,48 +100,30 @@ QUOTES = [
     "people on my network are doing on their screens. I can even set it so that i can see the code of their computers. "
     "can you guys do any of that? I dont think so. I bet you dont know where all the websites real hackers hang out "
     "are either? if you name them, I just might tell them that marshviperX sent you.",
-    # Baka Mitai
-    "Baka mitai Kodomo na no ne. Yume wo otte kidzutsuite .Uso ga heta na kuse ni waraenai egao wo miseta. I love you "
-    "mo roku ni iwanai. Kuchibeta de honma ni bukiyou. Na no ni na no ni doushite sayonara ha ieta no. Dame da ne. "
-    "Dame yo dame na no yo. Anta ga suki de sukisugite. Dore dake tsuyoi osake demo. Yugamanai omoide ga baka mitai. "
-    "Baka mitai hontou baka ne. Anta shinjiru bakari de. Tsuyoi onna no furi setsunasa no yokaze abiru. Hitori ni "
-    "natte sannen ga sugi. Machinami sae mo kawarimashita. Na no ni na no ni doushite miren dake okizari. Honma ni roku"
-    " na otoko ya nai. Soroi no yubiwa hazushimasu. Zamaa miro seisei suru wa. Ii kagen mattete mo baka mitai. Dame da"
-    " ne Dame yo dame na no yo. Anta ga sukide sukisugite. Dore dake tsuyoi osake demo. Yugamanai omoide ga baka "
-    "mitai. Honma ni roku na otoko ya nai. Soroi no yubiwa hazushimasu. Zamaa miro seisei suru wa. Nan na yo kono "
-    "namida baka mitai",
-    # Judgement
-    "Reeru kara hazureta furyouhin no norainu sa. Da kedo kantan ni wa teeru wa furanai ze. Iesuman ni narisobireta. "
-    "Waru ni nokosareta no to iu na no Justice. Wow, Breakin’ the law. Breakin’ the world　Kowase. Kirisake "
-    "Tenderness. Wow, Breakin’ the rule. Roppouzensho ja shibarenai hanran bunshi sa. Furiageta nigirikobushi ga "
-    "oretachi no JUDGEMENT. Ai saae mo shiranai furyouhin no norainu sa. da kedo chii ya kane ja edzuke wa dekinai "
-    "ze. Kizutsuite kizutsuite subete ushinacchimattemo. somacchanaranee sore koso ga JUSTICE……　JUSTICE!. Wow, "
-    "Breakin’ the law. Breakin’ the world　Kowase. Kirisake Tenderness. Wow, Breakin’ the rule. Roppouzensho ja "
-    "shibarenai hanran bunshi sa. Furiagero nigirikobushi wo oretachi wa…… Sou sa oretachi ga JUDGEMENT. JUDGEMENT……",
     # Cat
     "If you were my cat, would I be able to neuter you?",
     # Marley #1
     "If you want to listen to Yung Lean then the leather club is two doors down",
     # Adam #1 
-    "It's 4d chess.",
+    "GGG: It's 4d chess.",
     # Adam #2
-    "GGGG: ive had a couple mouth fulls of my own fresh piss",
+    "GGG: ive had a couple mouth fulls of my own fresh piss",
     # Adam #3
-    "GGGG: why do slightly above knee length skirts and dresses make me want to do a rape",
+    "GGG: why do slightly above knee length skirts and dresses make me want to do a rape",
     # Adam #4
-    "GGGG: I will give you one word as a clue edward\n      COUP",
+    "GGG: I will give you one word as a clue edward\n      COUP",
     # Adam #5
-    "GGGG: youre saying no to a girl but yes to a dick, even if it is plastic",
+    "GGG: youre saying no to a girl but yes to a dick, even if it is plastic",
     # Adam #6
-    "GGGG: i can get 12 cans of carling for 8 leffe",
+    "GGG: i can get 12 cans of carling for 8 leffe",
     # Adam #7
-    "GGGG: yeah but youre just odd not homo",
+    "GGG: yeah but youre just odd not homo",
     # Adam #8
-    "GGGG: you know those africans that carry shit around their heads\n      why dont they have swole necks",
+    "GGG: you know those africans that carry shit around their heads\n      why dont they have swole necks",
     # Sean Connery
     "I am Sean Connery and I want a massage",
     # Marley # 2
-    "Hypnotized: If you're gonna dress like a woman, at least get your dick out"
+    "Hypnotized: If you're gonna dress like a woman, at least get yo' dick out"
 ]
 
 
