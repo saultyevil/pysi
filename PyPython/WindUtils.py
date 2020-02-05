@@ -125,6 +125,8 @@ def extract_wind_var(root: str, var_name: str, var_type: str, path: str = "./", 
 
     # Construct mask for variable
     var = data[key].values.reshape(nx_cells, nz_cells)
+    var[var == 0] = np.nan
+
     inwind = data["inwind"].values.reshape(nx_cells, nz_cells)
     mask = (inwind < 0)
     var_mask = np.ma.masked_where(mask, var)
@@ -132,7 +134,7 @@ def extract_wind_var(root: str, var_name: str, var_type: str, path: str = "./", 
     if return_indices:
         xi = np.reshape(xi, (nx_cells, nz_cells))
         zj = np.reshape(zj, (nx_cells, nz_cells))
-        return xi, zj, var_mask
+        return xi, zj, var
     return x, z, var_mask
 
 

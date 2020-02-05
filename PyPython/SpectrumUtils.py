@@ -87,7 +87,7 @@ def read_spec(fname: str, delim: str = None, numpy: bool = False) -> Union[int, 
         if len(line) > 0:
             if line[0] == "#":
                 continue
-            if line[0] == "Freq.":
+            if line[0] == "Freq." or line[0] == "Lambda":
                 for j in range(len(line)):
                     if line[j][0] == "A":
                         index = line[j].find("P")
@@ -101,7 +101,7 @@ def read_spec(fname: str, delim: str = None, numpy: bool = False) -> Union[int, 
         except ValueError:
             return np.array(lines)
 
-    return pd.DataFrame(lines[1:], columns=lines[0])
+    return pd.DataFrame(lines[1:], columns=lines[0]).astype(float)
 
 
 def spec_inclinations(spec: Union[pd.DataFrame, np.ndarray, List[str], str]) -> np.array:
@@ -198,7 +198,7 @@ def check_inclination(inclination: str, spec: Union[pd.DataFrame, np.ndarray]) -
     return allowed
 
 
-def smooth_spectrum(flux: np.ndarray, smooth: Union[int, float]) -> np.ndarray:
+def smooth(flux: np.ndarray, smooth_amount: Union[int, float]) -> np.ndarray:
     """
     Smooth a 1D array of data using a boxcar filter of width smooth pixels.
 
@@ -206,7 +206,7 @@ def smooth_spectrum(flux: np.ndarray, smooth: Union[int, float]) -> np.ndarray:
     ----------
     flux: np.array[float]
         The data to smooth using the boxcar filter
-    smooth: int
+    smooth_amount: int
         The size of the window for the boxcar filter
 
     Returns
@@ -215,7 +215,7 @@ def smooth_spectrum(flux: np.ndarray, smooth: Union[int, float]) -> np.ndarray:
         The smoothed data
     """
 
-    n = smooth_spectrum.__name__
+    n = smooth.__name__
 
     if type(flux) != list and type(flux) != np.ndarray:
         raise TypeError("{}: expecting list or np.ndarray".format(n))
@@ -226,15 +226,15 @@ def smooth_spectrum(flux: np.ndarray, smooth: Union[int, float]) -> np.ndarray:
     if len(flux.shape) > 2:
         raise DimensionError("{}: data is not 1 dimensional but has shape {}".format(n, flux.shape))
 
-    if type(smooth) != int:
+    if type(smooth_amount) != int:
         try:
-            smooth = int(smooth)
+            smooth_amount = int(smooth_amount)
         except ValueError:
-            print("{}: could not convert smooth = {} into an integer. Returning original array.".format(n, smooth))
+            print("{}: could not convert smooth = {} into an integer. Returning original array.".format(n, smooth_amount))
             return flux
 
     flux = np.reshape(flux, (len(flux),))
-    smoothed = convolve(flux, boxcar(smooth) / float(smooth), mode="same")
+    smoothed = convolve(flux, boxcar(smooth_amount) / float(smooth_amount), mode="same")
 
     return smoothed
 
@@ -288,7 +288,7 @@ def ylims(wavelength: np.array, flux: np.array, wmin: Union[float, None], wmax: 
     return yupper, ylower
 
 
-def common_lines(freq: bool = False, log: bool = False) -> list:
+def common_lines(freq: bool = False) -> list:
     """
     Return a list containing the names of line transitions and the
     wavelength of the transition in Angstroms. Instead of returning the
@@ -299,8 +299,6 @@ def common_lines(freq: bool = False, log: bool = False) -> list:
     ----------
     freq: bool [optional]
         Label the transitions in frequency space
-    log: bool [optional]
-        Label the transitions in log space
 
     Returns
     -------
@@ -336,14 +334,10 @@ def common_lines(freq: bool = False, log: bool = False) -> list:
         for i in range(len(lines)):
             lines[i][1] = C / (lines[i][1] * ANGSTROM)
 
-    if log:
-        for i in range(len(lines)):
-            lines[i][1] = np.log10(lines[i][1])
-
     return lines
 
 
-def absorption_edges(freq: bool = False, log: bool = False) -> list:
+def absorption_edges(freq: bool = False) -> list:
     """
     Return a list containing the names of line transitions and the
     wavelength of the transition in Angstroms. Instead of returning the
@@ -354,8 +348,6 @@ def absorption_edges(freq: bool = False, log: bool = False) -> list:
     ----------
     freq: bool [optional]
         Label the transitions in frequency space
-    log: bool [optional]
-        Label the transitions in log space
 
     Returns
     -------
@@ -375,10 +367,6 @@ def absorption_edges(freq: bool = False, log: bool = False) -> list:
     if freq:
         for i in range(len(edges)):
             edges[i][1] = C / (edges[i][1] * ANGSTROM)
-
-    if log:
-        for i in range(len(edges)):
-            edges[i][1] = np.log10(edges[i][1])
 
     return edges
 
