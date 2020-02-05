@@ -139,7 +139,7 @@ def get_python_version(py: str = "py", verbose: bool = False) -> Tuple[str, str]
     return version, commit_hash
 
 
-def windsave2table(root: str, path: str, no_ep_complete: bool = False, verbose: bool = False) -> None:
+def windsave2table(root: str, path: str, ion_density: bool = False, no_ep_complete: bool = False, verbose: bool = False) -> None:
     """
     Runs windsave2table in the directory path to create a bunch of data tables
     from the Python wind_save file. This function also created a
@@ -151,6 +151,8 @@ def windsave2table(root: str, path: str, no_ep_complete: bool = False, verbose: 
         The root name of the Python simulation
     path: str
         The directory of the Python simulation where windsave2table will be run
+    ion_density: bool [optional]
+        Pump out the ion density instead of ion fractions
     no_ep_complete: bool [optional]
         Return from this function before a root.ep.complete file is created.
     verbose: bool [optional]
@@ -174,7 +176,11 @@ def windsave2table(root: str, path: str, no_ep_complete: bool = False, verbose: 
     if not in_path:
         raise OSError("{}: windsave2table not in $PATH and executable".format(n))
 
-    command = "cd {}; Setup_Py_Dir; windsave2table {}".format(path, root)
+    command = "cd {}; Setup_Py_Dir; windsave2table".format(path)
+    if ion_density:
+        command += " -d "
+    command += "{}".format(root)
+
     cmd = Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
     stdout, stderr = cmd.communicate()
     output = stdout.decode("utf-8")
