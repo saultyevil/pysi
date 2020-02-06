@@ -110,8 +110,8 @@ def get_wind_variable(root: str, var_name: str, var_type: str, path: str = "./",
             if var_type.lower() == "ion":
                 x = data["x"].values.reshape(nx_cells, nz_cells)
                 z = data["z"].values.reshape(nx_cells, nz_cells)
-                r = np.sqrt(x ** 2 + z ** 2)  # r
-                theta = np.arctan2(z, x)      # theta
+                r = np.sqrt(x ** 2 + z ** 2)
+                theta = np.arctan2(z, x)
                 x = r
                 z = theta
             else:
@@ -125,7 +125,7 @@ def get_wind_variable(root: str, var_name: str, var_type: str, path: str = "./",
 
     # Reshape the variable and remove 0's or NaNs
     var = data[key].values.reshape(nx_cells, nz_cells)
-    if var_name != "converge":
+    if var_name not in ["converge", "converging"]:
         var[var == 0] = np.nan
     else:
         inwind = data["inwind"].values.reshape(nx_cells, nz_cells)
@@ -162,3 +162,24 @@ def get_wind_elem_number(nx: int, nz: int, i: int, j: int) -> int:
     """
 
     return nz * i + j
+
+
+def sightline_coords(x: np.ndarray, theta: float):
+    """
+    Return the vertical coordinates for a sightline given the x coordinates
+    and the inclination of the sightline.
+
+    Parameters
+    ----------
+    x: np.ndarray[float]
+        The x-coordinates of the sightline
+    theta: float
+        The opening angle of the sightline
+
+    Returns
+    -------
+    z: np.ndarray[float]
+        The z-coordinates of the sightline
+    """
+
+    return x * np.tan(np.pi / 2 - theta)
