@@ -33,6 +33,7 @@ ECS_CONSTANT = 4.773691e16
 PARSEC = 3.086E18
 A21_CONSTANT = 7.429297e-22
 YEAR = 3.15569e7  # number of seconds in a year
+CMS_TO_KMS = 1e-5
 
 if __name__ == "__main__":
     print("consts: this file is not meant to be run :-)")
