@@ -134,7 +134,7 @@ def rectilinear_wind(x: np.ndarray, z: np.ndarray, w: np.ndarray, w_name: str, w
 
 
 def polar_wind(r: np.ndarray, theta: np.ndarray, w: np.ndarray, w_name: str, w_type: str, ax: plt.Axes = None,
-               index: int = None, obs_los: List[float] = None, scale: str = "log", figsize: Tuple[int, int] = (5, 5)) -> plt.Axes:
+               index: int = None, obs_los: List[float] = None, scale: str = "log") -> plt.Axes:
     """
     Creates a wind plot in polar coordinates. If ax is supplied then index must
     also be supplied. Note that ax should also be single plt.Axes object.
