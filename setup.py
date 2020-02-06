@@ -3,7 +3,8 @@
 
 from setuptools import setup
 
-setup(name="PyPython",
+setup(
+      name="PyPython",
       version="1.0",
       description="A Python package to make using Python a wee bit easier.",
       url="https://github.com/saultyevil/PyPython",
@@ -12,4 +13,5 @@ setup(name="PyPython",
       license="MIT",
       packages=["PyPython"],
       zip_safe=False,
-      install_requires=["matplotlib", "scipy", "numpy", "pandas"])
+      install_requires=["matplotlib", "scipy", "numpy", "pandas"]
+      )

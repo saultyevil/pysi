@@ -104,6 +104,8 @@ QUOTES = [
     "If you were my cat, would I be able to neuter you?",
     # Marley #1
     "If you want to listen to Yung Lean then the leather club is two doors down",
+    # Marley # 2
+    "Hypnotized: If you're gonna dress like a woman, at least get yo' dick out",
     # Adam #1 
     "GGG: It's 4d chess.",
     # Adam #2
@@ -122,8 +124,8 @@ QUOTES = [
     "GGG: you know those africans that carry shit around their heads\n      why dont they have swole necks",
     # Sean Connery
     "I am Sean Connery and I want a massage",
-    # Marley # 2
-    "Hypnotized: If you're gonna dress like a woman, at least get yo' dick out"
+    # Jack # 1
+    "Citrus Lime: my zesty nature keeps me celibate",
 ]
 
 
