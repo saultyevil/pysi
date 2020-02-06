@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """
@@ -12,23 +12,23 @@ for H, He, C, N, O and Si.
 
 import argparse as ap
 from sys import exit
-from time import sleep
 from typing import List, Tuple
 from matplotlib import pyplot as plt
 
 from PyPython import WindPlot
 from PyPython import WindUtils
 from PyPython import PythonUtils
+from PyPython.Error import EXIT_FAIL
 
 
-EXIT_FAIL = 1
+plt.rcParams['xtick.labelsize'] = 15
+plt.rcParams['ytick.labelsize'] = 15
 
 
-def plot_wind(root: str, wind_variables: List[str], wind_variable_types: List[str], output_name: str, wd: str = "./", 
-              projection: str = "rectilinear", axes_scales: str = "loglog", show_los: bool = False, 
-              use_cell_indices: bool = False, panel_dims: Tuple[int, int] = (4, 2), 
-              figure_size: Tuple[int, int] = (10, 15), file_ext: str = "png") \
-    -> Tuple[plt.Figure, plt.Axes]:
+def plot_wind(root: str, wind_variables: List[str], wind_variable_types: List[str], output_name: str, wd: str = "./",
+              projection: str = "rectilinear", axes_scales: str = "loglog", use_cell_indices: bool = False,
+              panel_dims: Tuple[int, int] = (4, 2), figure_size: Tuple[int, int] = (10, 15), file_ext: str = "png") \
+        -> Tuple[plt.Figure, plt.Axes]:
     """
     The purpose of this function is to oversee the creation of the different
     possible wind plots.
@@ -47,15 +47,12 @@ def plot_wind(root: str, wind_variables: List[str], wind_variable_types: List[st
     wd: str [optional]
         The directory where the simulation is stored, by default this assumes
         that it is in the calling directory.
-    projections: str [optional]
+    projection: str [optional]
         The projection required for the plot, allowed values are rectilinear or
         polar.
     axes_scales: str [optional]
         The type of scaling for the axes of the figure, allowed values are
-        logx, logy or loglog.
-    show_los: bool [optional]
-        If True then the line of sights of the observers will be overplotted
-        the wind.
+        logx, logy, loglog or linlin.
     use_cell_indices: bool [optional]
         If True then the wind will not be plotted in spatial coordinates, but
         rather cell index coordinates.
@@ -63,6 +60,8 @@ def plot_wind(root: str, wind_variables: List[str], wind_variable_types: List[st
         The number of rows and columns of subplot panels to create.
     figure_size: Tuple[int, int] [optional]
         The width and height of the figure in inches (thanks matplotlib).
+    file_ext: str [optional]
+        The extension of the final output file.
 
     Returns
     -------
@@ -93,6 +92,7 @@ def plot_wind(root: str, wind_variables: List[str], wind_variable_types: List[st
     if projection == "rectilinear":
         fig, ax = plt.subplots(panel_dims[0], panel_dims[1], figsize=figure_size, squeeze=False)
     else:
+        ax = []
         fig = plt.Figure(figsize=figure_size)
 
     # Set the scale to linear-linear when plotting with cell indices
@@ -111,23 +111,24 @@ def plot_wind(root: str, wind_variables: List[str], wind_variable_types: List[st
             if index > nsize:
                 break
 
+            quantity = wind_variables[index]
+            quantity_type = wind_variable_types[index]
+
             try:
-                quantity = wind_variables[index]
-                quantity_type = wind_variable_types[index]
                 x, z, w = WindUtils.get_wind_variable(root, quantity, quantity_type, wd, projection, 
                                                       return_indices=use_cell_indices)
             except Exception as e:
                 print("\nAn exception '{}' occurred for some reason.".format(e))
-                print("Unable to plot quantity {} with type {}.\n".format(quantity, quantity_type))
+                print("Unable to plot quantity {} with type {}.".format(quantity, quantity_type))
                 index += 1
                 continue
 
             if projection == "rectilinear":
-                fig, ax = WindPlot.rectilinear_wind(x, z, w, quantity, quantity_type, fig, ax, i, j, scale=axes_scales,
-                                                   obs_los=show_los)
+                fig, ax = WindPlot.rectilinear_wind(x, z, w, quantity, quantity_type, fig, ax, i, j, scale=axes_scales)
             else:
-                ax = plt.subplot(panel_dims[0], panel_dims[1], index +1, projection="polar")
-                WindPlot.polar_wind(x, z, w, quantity, quantity_type, ax, index + 1, show_los, axes_scales, figure_size)
+                polar_ax = plt.subplot(panel_dims[0], panel_dims[1], index +1, projection="polar")
+                axx = WindPlot.polar_wind(x, z, w, quantity, quantity_type, polar_ax, index + 1, scale=axes_scales)
+                ax.append(axx)
 
             index += 1
 
@@ -159,6 +160,7 @@ def parse_input() -> tuple:
     p = ap.ArgumentParser(description=__doc__)
     p.add_argument("root", help="The root name of the simulation.")
     p.add_argument("-wd", action="store", help="The directory containing the simulation.")
+    p.add_argument("-d", "--ion_density", action="store_true", help="Use ion densities instead of ion fractions.")
     p.add_argument("-p", "--polar", action="store_true", help="Plot using polar projection.")
     p.add_argument("-s", "--scales", action="store", help="The axes scaling to use: logx, logy, loglog, linlin.")
     p.add_argument("-c", "--cells", action="store_true", help="Plot using cell indices rather than spatial scales.")
@@ -167,6 +169,7 @@ def parse_input() -> tuple:
 
     wd = "./"
     projection = "rectilinear"
+    ion_density = False
     cell_indices = False
     file_ext = "png"
     axes_scales = "loglog"
@@ -175,6 +178,8 @@ def parse_input() -> tuple:
         wd = args.wd
     if args.polar:
         projection = "polar"
+    if args.ion_density:
+        ion_density = True
     if args.cells:
         cell_indices = True
     if args.ext:
@@ -183,6 +188,7 @@ def parse_input() -> tuple:
         allowed = ["logx", "logy", "loglog", "linlin"]
         if args.scales not in allowed:
             print("The axes scaling {} is unknown.".format(args.scales))
+            print("Allowed values are: logx, logy, loglog, linlin.")
             exit(EXIT_FAIL)
         axes_scales = args.scales
 
@@ -190,6 +196,7 @@ def parse_input() -> tuple:
         args.root,
         wd,
         projection,
+        ion_density,
         axes_scales,
         cell_indices,
         file_ext
@@ -198,14 +205,14 @@ def parse_input() -> tuple:
     return setup
 
 
-def main() -> None:
+def main() -> Tuple[plt.Figure, plt.Axes]:
     """
     The main function of the script. First, the important wind quantaties are
     plotted. This is then followed by the important ions.
     """
 
     div_len = 80
-    root, wd, projection, axes_scales, cell_indices, file_ext = parse_input()
+    root, wd, projection, use_ion_density, axes_scales, use_cell_indices, file_ext = parse_input()
 
     root = root.replace("/", "")
     wdd = wd
@@ -217,19 +224,19 @@ def main() -> None:
     
     # First, we probably need to run windsave2table
 
-    PythonUtils.windsave2table(root, wd)
+    PythonUtils.windsave2table(root, wd, ion_density=use_ion_density)
 
     # Plot the wind quantities first
 
-    wind = ["t_e", "t_r", "ne", "rho", "c4", "converge", "ip", "ntot"]
+    wind = ["t_e", "n_e", "t_r", "rho", "c4", "ip", "converge", "ntot"]
     wind_types = ["wind"] * len(wind)
     
     print("\nCreating a figure containing:\n\t", end="")
     for w in wind:
         print("{} ".format(w), end="")
-   
-    plot_wind(root, wind, wind_types, "wind", wd, projection, axes_scales=axes_scales, use_cell_indices=cell_indices, 
-              file_ext=file_ext)
+
+    fig, ax = plot_wind(root, wind, wind_types, "wind", wd, projection, axes_scales=axes_scales,
+                        use_cell_indices=use_cell_indices, file_ext=file_ext)
 
     # Plot the ions
 
@@ -253,15 +260,15 @@ def main() -> None:
 
     for i in range(len(elements)):
         extra_name = elements[i] + "_ions"
-        plot_wind(root, ions[i], ["ion"] * len(ions[i]), extra_name, wd, projection, panel_dims=dims[i], 
-                  figure_size=size[i], axes_scales=axes_scales, use_cell_indices=cell_indices, 
-                  file_ext=file_ext)
+        fig, ax = plot_wind(root, ions[i], ["ion"] * len(ions[i]), extra_name, wd, projection, axes_scales=axes_scales,
+                            use_cell_indices=use_cell_indices, panel_dims=dims[i], figure_size=size[i],
+                            file_ext=file_ext)
 
     print("\n")
     print("-" * div_len)
 
-    return
+    return fig, ax
 
 
 if __name__ == "__main__":
-    main()
+    fig, ax = main()
