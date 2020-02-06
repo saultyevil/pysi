@@ -136,7 +136,7 @@ def velocity_plot(root: str, wd: str = "./", axes_scales: str = "loglog", use_ce
         The matplotlib Axes objects for the plot panels.
     """
 
-    nrows = 3
+    nrows = 2
     ncols = 2
 
     fig, ax = plt.subplots(nrows, ncols, figsize=(15, 15), squeeze=False)
@@ -185,8 +185,8 @@ def velocity_plot(root: str, wd: str = "./", axes_scales: str = "loglog", use_ce
     # Now we can finally create the plot of the different velocities
 
     index = 0
-    vels = [vx, vy, vz, vr, vrot, vl]
-    velocities_to_plot = ["v_x", "v_y", "v_z", "v_r", "v_rot", "v_l"]
+    vels = [vx, vz, vrot, vl]
+    velocities_to_plot = ["v_x", "v_z", "v_rot", "v_l"]
     nsize = len(velocities_to_plot) - 1
 
     for i in range(nrows):
