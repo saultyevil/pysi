@@ -139,7 +139,8 @@ def get_python_version(py: str = "py", verbose: bool = False) -> Tuple[str, str]
     return version, commit_hash
 
 
-def windsave2table(root: str, path: str, ion_density: bool = False, no_ep_complete: bool = False, verbose: bool = False) -> None:
+def windsave2table(root: str, path: str, ion_density: bool = False,
+                   no_ep_complete: bool = False, verbose: bool = False) -> None:
     """
     Runs windsave2table in the directory path to create a bunch of data tables
     from the Python wind_save file. This function also created a
@@ -168,9 +169,11 @@ def windsave2table(root: str, path: str, ion_density: bool = False, no_ep_comple
         run_version = lines[0]
         run_hash = lines[1]
         if run_version != version and run_hash != hash:
-            print("{}: windsave2table and wind_save versions are different: be careful!".format(n))
+            if verbose:
+                print("{}: windsave2table and wind_save versions are different: be careful!".format(n))
     except IOError:
-        print("{}: unable to determine wind_save version: be careful!".format(n))
+        if verbose:
+            print("{}: unable to determine wind_save version: be careful!".format(n))
 
     in_path = which("windsave2table")
     if not in_path:
@@ -178,8 +181,8 @@ def windsave2table(root: str, path: str, ion_density: bool = False, no_ep_comple
 
     command = "cd {}; Setup_Py_Dir; windsave2table".format(path)
     if ion_density:
-        command += " -d "
-    command += "{}".format(root)
+        command += " -d"
+    command += " {}".format(root)
 
     cmd = Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
     stdout, stderr = cmd.communicate()
