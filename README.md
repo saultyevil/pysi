@@ -13,3 +13,9 @@ the following command in the root directory,
 ```bash
 $ pip install -e .
 ```
+
+## Examples
+
+Provided in the `examples` directory are example scripts created to show how one
+might choose to use PyPython. The name of the scripts are hopefully 
+self-explanatory in what they create.
