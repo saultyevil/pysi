@@ -153,7 +153,8 @@ def parse_input() -> tuple:
             projection,
             axes_scales,
             cell_indices,
-            file_ext
+            file_ext,
+            display
         )
     """
 
@@ -165,6 +166,7 @@ def parse_input() -> tuple:
     p.add_argument("-s", "--scales", action="store", help="The axes scaling to use: logx, logy, loglog, linlin.")
     p.add_argument("-c", "--cells", action="store_true", help="Plot using cell indices rather than spatial scales.")
     p.add_argument("-e", "--ext", action="store", help="The file extension for the output figure.")
+    p.add_argument("--display", action="store_true", help="Display the plot before exiting the script.")
     args = p.parse_args()
 
     wd = "./"
@@ -173,6 +175,7 @@ def parse_input() -> tuple:
     cell_indices = False
     file_ext = "png"
     axes_scales = "loglog"
+    display = False
 
     if args.wd:
         wd = args.wd
@@ -191,6 +194,8 @@ def parse_input() -> tuple:
             print("Allowed values are: logx, logy, loglog, linlin.")
             exit(EXIT_FAIL)
         axes_scales = args.scales
+    if args.display:
+        display = True
 
     setup = (
         args.root,
@@ -199,7 +204,8 @@ def parse_input() -> tuple:
         ion_density,
         axes_scales,
         cell_indices,
-        file_ext
+        file_ext,
+        display
     )
 
     return setup
@@ -209,10 +215,17 @@ def main() -> Tuple[plt.Figure, plt.Axes]:
     """
     The main function of the script. First, the important wind quantaties are
     plotted. This is then followed by the important ions.
+
+    Returns
+    -------
+    fig: plt.Figure
+        The matplotlib Figure object for the created plot.
+    ax: plt.Axes
+        The matplotlib Axes objects for the plot panels.
     """
 
     div_len = 80
-    root, wd, projection, use_ion_density, axes_scales, use_cell_indices, file_ext = parse_input()
+    root, wd, projection, use_ion_density, axes_scales, use_cell_indices, file_ext, display = parse_input()
 
     root = root.replace("/", "")
     wdd = wd
@@ -228,7 +241,7 @@ def main() -> Tuple[plt.Figure, plt.Axes]:
 
     # Plot the wind quantities first
 
-    wind = ["t_e", "n_e", "t_r", "rho", "c4", "ip", "converge", "ntot"]
+    wind = ["t_e", "t_r", "ne", "rho", "c4", "ip", "converge", "ntot"]
     wind_types = ["wind"] * len(wind)
     
     print("\nCreating a figure containing:\n\t", end="")
@@ -263,6 +276,9 @@ def main() -> Tuple[plt.Figure, plt.Axes]:
         fig, ax = plot_wind(root, ions[i], ["ion"] * len(ions[i]), extra_name, wd, projection, axes_scales=axes_scales,
                             use_cell_indices=use_cell_indices, panel_dims=dims[i], figure_size=size[i],
                             file_ext=file_ext)
+
+    if display:
+        plt.show()
 
     print("\n")
     print("-" * div_len)
