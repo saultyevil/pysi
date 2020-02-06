@@ -10,7 +10,7 @@ from finding these spectrum files.
 
 from .Error import DimensionError
 from .Constants import C, ANGSTROM, PARSEC
-from .Utils import split_root_directory
+from .PythonUtils import split_root_directory
 
 from pathlib import Path
 import pandas as pd

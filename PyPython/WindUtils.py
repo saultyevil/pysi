@@ -17,8 +17,8 @@ import numpy as np
 import pandas as pd
 
 
-def extract_wind_var(root: str, var_name: str, var_type: str, path: str = "./", coord: str = "rectilinear",
-                     input_file: str = None, return_indices: bool = False) -> Tuple[np.array, np.array, np.array]:
+def get_wind_variable(root: str, var_name: str, var_type: str, path: str = "./", coord: str = "rectilinear",
+                      input_file: str = None, return_indices: bool = False) -> Tuple[np.array, np.array, np.array]:
     """
     Read in variables contained within a root.ep.complete or ion file generated
     by windsave2table.
@@ -59,7 +59,7 @@ def extract_wind_var(root: str, var_name: str, var_type: str, path: str = "./", 
         A numpy masked array for the quantity defined in var
     """
 
-    n = extract_wind_var.__name__
+    n = get_wind_variable.__name__
     err_return = np.zeros(1)
 
     assert(type(root) == str), "{}: root must be a string".format(n)
@@ -123,19 +123,19 @@ def extract_wind_var(root: str, var_name: str, var_type: str, path: str = "./", 
         print("{}: could not find var {} or another key".format(n, var_name))
         return err_return, err_return, err_return
 
-    # Construct mask for variable
+    # Reshape the variable and remove 0's or NaNs
     var = data[key].values.reshape(nx_cells, nz_cells)
-    var[var == 0] = np.nan
-
-    inwind = data["inwind"].values.reshape(nx_cells, nz_cells)
-    mask = (inwind < 0)
-    var_mask = np.ma.masked_where(mask, var)
+    if var_name != "converge":
+        var[var == 0] = np.nan
+    else:
+        inwind = data["inwind"].values.reshape(nx_cells, nz_cells)
+        var = np.ma.masked_where(inwind < 0, var)
 
     if return_indices:
-        xi = np.reshape(xi, (nx_cells, nz_cells))
-        zj = np.reshape(zj, (nx_cells, nz_cells))
-        return xi, zj, var
-    return x, z, var_mask
+        x = xi.values.reshape(nx_cells, nz_cells)
+        z = zj.values.reshape(nx_cells, nz_cells)
+
+    return x, z, var
 
 
 def get_wind_elem_number(nx: int, nz: int, i: int, j: int) -> int:

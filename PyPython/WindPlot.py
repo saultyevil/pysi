@@ -36,10 +36,9 @@ def sightline_coords(x: np.ndarray, theta: float):
     return x * np.tan(np.pi / 2 - theta)
 
 
-def create_rectilinear_wind_plot(x: np.ndarray, z: np.ndarray, w: np.ndarray, w_type: str, w_name: str,
-                                 fig: plt.Figure = None, ax: plt.Axes = None, i: int = None, j: int = None,
-                                 scale: str = "loglog", obs_los: List[float] = None,
-                                 figsize: Tuple[int, int] = (5, 5)) -> Tuple[plt.Figure, plt.Axes]:
+def rectilinear_wind(x: np.ndarray, z: np.ndarray, w: np.ndarray, w_name: str, w_type: str, fig: plt.Figure = None,
+                     ax: plt.Axes = None, i: int = None, j: int = None, scale: str = "loglog",
+                     obs_los: List[float] = None, figsize: Tuple[int, int] = (5, 5)) -> Tuple[plt.Figure, plt.Axes]:
     """
     Creates a wind plot in rectilinear coordinates. If fig or ax is supplied,
     then fig, ax, i and j must also be supplied. Note that ax should also be a
@@ -81,7 +80,7 @@ def create_rectilinear_wind_plot(x: np.ndarray, z: np.ndarray, w: np.ndarray, w_
         The plt.Axes object.
     """
 
-    n = create_rectilinear_wind_plot.__name__
+    n = rectilinear_wind.__name__
 
     if fig is None and ax is None:
         i = 0
@@ -134,9 +133,8 @@ def create_rectilinear_wind_plot(x: np.ndarray, z: np.ndarray, w: np.ndarray, w_
     return fig, ax
 
 
-def create_polar_wind_plot(r: np.ndarray, theta: np.ndarray, w: np.ndarray, w_type: str, w_name: str,
-                           ax: plt.Axes = None, index: int = None, obs_los: List[float] = None,
-                           scale: str = "log", figsize: Tuple[int, int] = (5, 5)) -> plt.Axes:
+def polar_wind(r: np.ndarray, theta: np.ndarray, w: np.ndarray, w_name: str, w_type: str, ax: plt.Axes = None,
+               index: int = None, obs_los: List[float] = None, scale: str = "log", figsize: Tuple[int, int] = (5, 5)) -> plt.Axes:
     """
     Creates a wind plot in polar coordinates. If ax is supplied then index must
     also be supplied. Note that ax should also be single plt.Axes object.
@@ -171,7 +169,7 @@ def create_polar_wind_plot(r: np.ndarray, theta: np.ndarray, w: np.ndarray, w_ty
         The plt.Axes object.
     """
 
-    n = create_polar_wind_plot.__name__
+    n = polar_wind.__name__
 
     if ax:
         if index is None:

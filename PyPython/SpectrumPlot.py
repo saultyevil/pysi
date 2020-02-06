@@ -10,7 +10,7 @@ being saved to disk or displayed.
 
 from .Constants import PARSEC
 from .SpectrumUtils import absorption_edges, plot_line_ids, smooth, read_spec, spec_inclinations
-from .Utils import subplot_dims
+from .PythonUtils import subplot_dims
 
 import pandas as pd
 import numpy as np
@@ -78,12 +78,12 @@ def plot(x: np.ndarray, y: np.ndarray, xmin: float = None, xmax: float = None, x
     if ylabel:
         ax.set_ylabel(ylabel, **kwargs)
 
-    lims = ax.get_xlims()
+    lims = list(ax.get_xlim())
     if xmin:
         lims[0] = xmin
     if xmax:
         lims[1] = xmax
-    ax.set_xlims(lims[0], lims[1])
+    ax.set_xlim(lims[0], lims[1])
 
     if display:
         plt.show()
