@@ -119,17 +119,14 @@ def get_wind_variable(root: str, var_name: str, var_type: str, path: str = "./",
                 z = np.deg2rad(data["theta"].values.reshape(nx_cells, nz_cells))
         else:
             raise CoordError("{}: unknown projection {}: use rectilinear or polar".format(n, coord))
-    except KeyError:
-        print("{}: could not find var {} or another key".format(n, var_name))
+    except KeyError as e:
+        print("{}: could not find key {} for var {}".format(n, e, var_name))
         return err_return, err_return, err_return
 
     # Reshape the variable and remove 0's or NaNs
     var = data[key].values.reshape(nx_cells, nz_cells)
-    if var_name not in ["converge", "converging"]:
-        var[var == 0] = np.nan
-    else:
-        inwind = data["inwind"].values.reshape(nx_cells, nz_cells)
-        var = np.ma.masked_where(inwind < 0, var)
+    inwind = data["inwind"].values.reshape(nx_cells, nz_cells)
+    var = np.ma.masked_where(inwind < 0, var)
 
     if return_indices:
         x = xi.values.reshape(nx_cells, nz_cells)
@@ -153,7 +150,6 @@ def get_wind_elem_number(nx: int, nz: int, i: int, j: int) -> int:
         The i (x) index for the grid cell in question
     j: int
         The j (z) index for the grid cell in question
-
 
     Returns
     -------
