@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env pythonfrom sys import exit
 # -*- coding: utf-8 -*-
 
 """
@@ -11,6 +11,7 @@ angles.
 import argparse as ap
 from typing import Tuple
 from matplotlib import pyplot as plt
+from sys import exit
 
 from PyPython import SpectrumPlot
 from PyPython.Error import EXIT_FAIL

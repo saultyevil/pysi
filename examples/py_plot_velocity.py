@@ -15,6 +15,7 @@ NOTE: THIS ONLY WORKS WITH RECTILINEAR PLOTS FOR NOW - NO POLAR STUFF!!!
 import numpy as np
 import argparse as ap
 from typing import Tuple, Union, List
+from sys import exit
 from matplotlib import pyplot as plt
 
 from PyPython import WindPlot
