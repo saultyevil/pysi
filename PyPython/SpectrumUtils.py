@@ -84,15 +84,16 @@ def read_spec(fname: str, delim: str = None, numpy: bool = False) -> Union[int, 
             line = line.split(delim)
         else:
             line = line.split()
-        if len(line) > 0:
-            if line[0] == "#":
-                continue
-            if line[0] == "Freq." or line[0] == "Lambda":
-                for j in range(len(line)):
-                    if line[j][0] == "A":
-                        index = line[j].find("P")
-                        line[j] = line[j][1:index]
-            lines.append(line)
+        if len(line) == 0:
+            continue
+        if line[0] == "#":
+            continue
+        if line[0] == "Freq." or line[0] == "Lambda":
+            for j in range(len(line)):
+                if line[j][0] == "A":
+                    index = line[j].find("P")
+                    line[j] = line[j][1:index]
+        lines.append(line)
 
     if numpy:
         try:
@@ -198,13 +199,13 @@ def check_inclination(inclination: str, spec: Union[pd.DataFrame, np.ndarray]) -
     return allowed
 
 
-def smooth(flux: np.ndarray, smooth_amount: Union[int, float]) -> np.ndarray:
+def smooth(input: np.ndarray, smooth_amount: Union[int, float]) -> np.ndarray:
     """
     Smooth a 1D array of data using a boxcar filter of width smooth pixels.
 
     Parameters
     ----------
-    flux: np.array[float]
+    input: np.array[float]
         The data to smooth using the boxcar filter
     smooth_amount: int
         The size of the window for the boxcar filter
@@ -217,24 +218,24 @@ def smooth(flux: np.ndarray, smooth_amount: Union[int, float]) -> np.ndarray:
 
     n = smooth.__name__
 
-    if type(flux) != list and type(flux) != np.ndarray:
+    if type(input) != list and type(input) != np.ndarray:
         raise TypeError("{}: expecting list or np.ndarray".format(n))
 
-    if type(flux) == list:
-        flux = np.array(flux, dtype=float)
+    if type(input) == list:
+        input = np.array(input, dtype=float)
 
-    if len(flux.shape) > 2:
-        raise DimensionError("{}: data is not 1 dimensional but has shape {}".format(n, flux.shape))
+    if len(input.shape) > 2:
+        raise DimensionError("{}: data is not 1 dimensional but has shape {}".format(n, input.shape))
 
     if type(smooth_amount) != int:
         try:
             smooth_amount = int(smooth_amount)
         except ValueError:
             print("{}: could not convert smooth = {} into an integer. Returning original array.".format(n, smooth_amount))
-            return flux
+            return input
 
-    flux = np.reshape(flux, (len(flux),))
-    smoothed = convolve(flux, boxcar(smooth_amount) / float(smooth_amount), mode="same")
+    input = np.reshape(input, (len(input),))
+    smoothed = convolve(input, boxcar(smooth_amount) / float(smooth_amount), mode="same")
 
     return smoothed
 
