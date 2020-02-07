@@ -9,7 +9,7 @@ being saved to disk or displayed.
 """
 
 from .Constants import PARSEC
-from .SpectrumUtils import absorption_edges, plot_line_ids, smooth, read_spec, spec_inclinations
+from .SpectrumUtils import absorption_edges, common_lines, plot_line_ids, smooth, read_spec, spec_inclinations
 from .PythonUtils import subplot_dims
 
 import pandas as pd
@@ -217,8 +217,8 @@ def optical_depth_spectrum(root: str, wd: str, inclinations: List[str] = "all", 
 
 
 def __plotting_sub_function(ax: plt.Axes, x: np.ndarray, spec: pd.DataFrame, dname: Union[List[str], str],
-                            xlims: Tuple[float, float], smooth_amount: int, logy: bool, frequency_space: bool,
-                            axes_label_fontsize: float, skip_sparse: bool, n: str) \
+                            xlims: Tuple[float, float], smooth_amount: int, scale: str, frequency_space: bool,
+                            skip_sparse: bool, n: str) \
         -> plt.Axes:
     """
     Create a subplot panel for a figure given the spectrum components names
@@ -238,12 +238,10 @@ def __plotting_sub_function(ax: plt.Axes, x: np.ndarray, spec: pd.DataFrame, dna
         The lower and upper x-axis boundaries (xlower, xupper)
     smooth: int
         The size of the boxcar filter to smooth the spectrum components
-    logy: bool
-        Use a log scale for the y axis of the figure
+    scale: bool
+        Set the scale for the plot axes
     frequency_space: bool
         Create the figure in frequency space instead of wavelength space
-    axes_label_fontsize: float
-        The fontsize for labels on the plot
     skip_sparse: bool
         If True, then sparse spectra will not be plotted
     n: str
@@ -258,6 +256,9 @@ def __plotting_sub_function(ax: plt.Axes, x: np.ndarray, spec: pd.DataFrame, dna
     if type(dname) == str:
         dname = [dname]
 
+    if frequency_space:
+        scale = "loglog"
+
     for i in range(len(dname)):
 
         try:
@@ -271,20 +272,20 @@ def __plotting_sub_function(ax: plt.Axes, x: np.ndarray, spec: pd.DataFrame, dna
             continue
 
         ax.plot(x, fl, label=dname[i])
-        if frequency_space:
+
+        if scale == "logx" or scale == "loglog":
             ax.set_xscale("log")
-            ax.set_yscale("log")
-        elif logy:
+        if scale == "logy" or scale == "loglog":
             ax.set_yscale("log")
 
     ax.set_xlim(xlims[0], xlims[1])
 
     if frequency_space:
-        ax.set_xlabel(r"Frequency [Hz]", fontsize=axes_label_fontsize)
-        ax.set_ylabel(r"$F_{\nu}$ (erg s$^{-1}$ cm$^{-2}$ $\nu^{-1}$)", fontsize=axes_label_fontsize)
+        ax.set_xlabel(r"Frequency [Hz]")
+        ax.set_ylabel(r"$F_{\nu}$ (erg s$^{-1}$ cm$^{-2}$ $\nu^{-1}$)")
     else:
-        ax.set_xlabel(r"Wavelength [$\AA$]", fontsize=axes_label_fontsize)
-        ax.set_ylabel(r"$F_{\lambda}$ (erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)", fontsize=axes_label_fontsize)
+        ax.set_xlabel(r"Wavelength [$\AA$]")
+        ax.set_ylabel(r"$F_{\lambda}$ (erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)")
 
     ax.legend()
 
@@ -292,8 +293,7 @@ def __plotting_sub_function(ax: plt.Axes, x: np.ndarray, spec: pd.DataFrame, dna
 
 
 def spectrum_components(root: str, wd: str, spec_tot: bool = False, xmin: float = None, xmax: float = None,
-                        smooth_amount: int = 5, logy: bool = True, frequency_space: bool = False,
-                        axes_label_fontsize: float = 15) \
+                        smooth_amount: int = 5, logy: bool = True, frequency_space: bool = False) \
         -> Tuple[plt.Figure, plt.Axes]:
     """
     Create a figure of the different spectrum components of a Python spectrum
@@ -318,8 +318,6 @@ def spectrum_components(root: str, wd: str, spec_tot: bool = False, xmin: float 
         Use a log scale for the y axis of the figure
     frequency_space: bool [optional]
         Create the figure in frequency space instead of wavelength space
-    axes_label_fontsize: float [optional]
-        The fontsize for labels on the plot
 
     Returns
     -------
@@ -358,17 +356,18 @@ def spectrum_components(root: str, wd: str, spec_tot: bool = False, xmin: float 
     xlims = (xlims[0], xlims[1])
 
     ax[0] = __plotting_sub_function(ax[0], x, s, ["Created", "Emitted"], xlims, smooth_amount, logy, frequency_space,
-                                    axes_label_fontsize, True, n)
+                                    True, n)
     ax[1] = __plotting_sub_function(ax[1], x, s, ["CenSrc", "Disk", "Wind", "HitSurf", "Scattered"], xlims,
-                                    smooth_amount, logy, frequency_space, axes_label_fontsize, True, n)
+                                    smooth_amount, logy, frequency_space, True, n)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 
     return fig, ax
 
 
-def spectra(root: str, wd: str, xmin: float = None, xmax: float = None, smooth_amount: int = 5, logy: bool = True,
-            frequency_space: bool = False, axes_label_fontsize: float = 15, figsize: Tuple[float, float] = None) \
+def spectra(root: str, wd: str, xmin: float = None, xmax: float = None, smooth_amount: int = 5,
+            add_line_ids: bool = True, frequency_space: bool = False, scale: str = "logy",
+            figsize: Tuple[float, float] = None) \
         -> Tuple[plt.Figure, plt.Axes]:
     """
     Creates a figure which plots all of the different inclination angles in
@@ -385,11 +384,13 @@ def spectra(root: str, wd: str, xmin: float = None, xmax: float = None, smooth_a
     xmax: float [optional]
         The upper x boundary for the figure
     smooth_amount: int [optional]
-        The size of the boxcar filter to smooth the spectrum components
-    logy: bool [optional]
-        Use a log scale for the y axis of the figure
+        The size of the boxcar filter to smooth the spectrum components.
+    add_line_ids: bool [optional]
+        Plot labels for common line transitions.
     frequency_space: bool [optional]
         Create the figure in frequency space instead of wavelength space
+    scale: bool [optional]
+        Set the scales for the axes in the plot
     axes_label_fontsize: float [optional]
         The fontsize for labels on the plot
     figsize: Tuple[float, float] [optional]
@@ -401,6 +402,7 @@ def spectra(root: str, wd: str, xmin: float = None, xmax: float = None, smooth_a
         The pyplot.Figure object for the created figure
     ax: pyplot.Axes
         The pyplot.Axes object for the created figure
+        :param add_line_ids:
     """
 
     n = spectra.__name__
@@ -438,8 +440,10 @@ def spectra(root: str, wd: str, xmin: float = None, xmax: float = None, smooth_a
             if ii > len(inclinations) - 1:
                 break
             name = str(inclinations[ii])
-            ax[i, j] = __plotting_sub_function(ax[i, j], x, s, name, xlims, smooth_amount, logy, frequency_space,
-                                               axes_label_fontsize, False, n)
+            ax[i, j] = __plotting_sub_function(ax[i, j], x, s, name, xlims, smooth_amount, scale, frequency_space,
+                                               False, n)
+            if add_line_ids:
+                ax[i, j] = plot_line_ids(ax[i, j], common_lines(frequency_space))
             ii += 1
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
