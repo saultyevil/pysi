@@ -92,7 +92,7 @@ def plot(x: np.ndarray, y: np.ndarray, xmin: float = None, xmax: float = None, x
 
 
 def optical_depth_spectrum(root: str, wd: str, inclinations: List[str] = "all", xmin: float = None, xmax: float = None,
-                           logy: bool = False, loglog: bool = True, show_absorption_edge_labels: bool = True,
+                           scale: str = "loglog", show_absorption_edge_labels: bool = True,
                            frequency_space: bool = True, axes_label_fontsize: float = 15)\
         -> Tuple[plt.Figure, plt.Axes]:
     """
@@ -163,6 +163,7 @@ def optical_depth_spectrum(root: str, wd: str, inclinations: List[str] = "all", 
 
     # Determine the number of inclinations requested in a convoluted way :^)
     nplots = len(inclinations)
+
     # Ignore all if other inclinations are passed - assume it was a mistake to pass all
     if inclinations[0] == "all" and len(inclinations) > 1:
         inclinations = inclinations[1:]
@@ -179,26 +180,30 @@ def optical_depth_spectrum(root: str, wd: str, inclinations: List[str] = "all", 
 
         label = r"$i$ = " + ii + r"$^{\circ}$"
         n_non_zero = np.count_nonzero(s[ii])
-        if n_non_zero == 0:  # Skip inclinations which look through vacuum
+        # Skip inclinations which look through vacuum
+        if n_non_zero == 0:
             continue
 
         ax.plot(x, s[ii], linewidth=2, label=label)
 
-        if loglog:
+        if scale == "logx" or scale == "loglog":
             ax.set_xscale("log")
-            ax.set_yscale("log")
-        if logy:
+        if scale == "logy" or scale == "loglog":
             ax.set_yscale("log")
 
     ax.set_ylabel(r"Optical Depth, $\tau$", fontsize=axes_label_fontsize)
     if frequency_space:
-        if loglog:
+        if scale == "logx" or scale == "loglog":
             ax.set_xlabel(r"Log(Frequency), [Hz]", fontsize=axes_label_fontsize)
+        if scale == "logy" or scale == "loglog":
             ax.set_ylabel(r"Log(Optical Depth), $\tau$", fontsize=axes_label_fontsize)
         else:
             ax.set_xlabel(r"Frequency, [Hz]", fontsize=axes_label_fontsize)
     else:
-        ax.set_xlabel(r"Wavelength, [$\AA$]", fontsize=axes_label_fontsize)
+        if scale == "logx" or scale == "loglog":
+            ax.set_xlabel(r"Log(Wavelength), [$\AA$]", fontsize=axes_label_fontsize)
+        else:
+            ax.set_xlabel(r"Wavelength, [$\AA$]", fontsize=axes_label_fontsize)
 
     ax.set_xlim(xmin, xmax)
     ax.legend()
