@@ -271,6 +271,10 @@ def __plotting_sub_function(ax: plt.Axes, x: np.ndarray, spec: pd.DataFrame, dna
         if skip_sparse and len(fl[fl < MIN_SPEC_COMP_FLUX]) > 0.7 * len(fl):
             continue
 
+        # Convert into lambda F_lambda which is (I hope) the same as nu F_nu
+        if frequency_space:
+            fl *= spec["Lambda"].values
+
         ax.plot(x, fl, label=dname[i])
 
         if scale == "logx" or scale == "loglog":
@@ -282,7 +286,7 @@ def __plotting_sub_function(ax: plt.Axes, x: np.ndarray, spec: pd.DataFrame, dna
 
     if frequency_space:
         ax.set_xlabel(r"Frequency [Hz]")
-        ax.set_ylabel(r"$F_{\nu}$ (erg s$^{-1}$ cm$^{-2}$ $\nu^{-1}$)")
+        ax.set_ylabel(r"$\nu F_{\nu}$ (erg s$^{-1}$ cm$^{-2}$")
     else:
         ax.set_xlabel(r"Wavelength [$\AA$]")
         ax.set_ylabel(r"$F_{\lambda}$ (erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)")
@@ -516,7 +520,9 @@ def spectrum(root: str, wd: str, inclination: Union[str, float, int], xmin: floa
 
     if frequency_space:
         xax = r"Frequency [Hz]"
-        yax = r"$F_{\nu}$ (erg s$^{-1}$ cm$^{-2}$ $\nu^{-1}$)"
+        yax = r"$\nu F_{\nu}$ (erg s$^{-1}$ cm$^{-2}$)"
+        # Convert into lambda F_lambda which is (I hope) the same as nu F_nu
+        y *= s["Lambda"].values
     else:
         xax = r"Wavelength [$\AA$]"
         yax = r"$F_{\lambda}$ (erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)"
