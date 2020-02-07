@@ -2,13 +2,18 @@
 # -*- coding: utf-8 -*-
 
 
+"""
+This script is a convenient wrapper to plot the components of a Python
+model as well as the components stored in the log_spec_tot file.
+"""
+
+
 import argparse as ap
 from typing import Tuple
 from sys import exit
 from matplotlib import pyplot as plt
 
 from PyPython import SpectrumPlot
-from PyPython import SpectrumUtils
 from PyPython.Error import EXIT_FAIL
 
 
@@ -144,7 +149,8 @@ def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
     if setup:
         root, wd, xmin, xmax, smooth_amount, frequency_space, common_lines, axes_scales, file_ext, display = setup
     else:
-        root, wd, xmin, xmax, smooth_amount, frequency_space, common_lines, axes_scales, file_ext, display = parse_input()
+        root, wd, xmin, xmax, smooth_amount, frequency_space, common_lines, axes_scales, file_ext, display = \
+            parse_input()
 
     root = root.replace("/", "")
     wdd = wd
@@ -173,4 +179,3 @@ def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
 
 if __name__ == "__main__":
     fig, ax = main()
-
