@@ -211,10 +211,27 @@ def parse_input() -> tuple:
     return setup
 
 
-def main() -> Tuple[plt.Figure, plt.Axes]:
+def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
     """
     The main function of the script. First, the important wind quantaties are
     plotted. This is then followed by the important ions.
+`
+Parameters
+    ----------
+    setup: tuple
+        A tuple containing the setup parameters to run the script. If this
+        isn't provided, then the script will parse them from the command line.
+
+        setup = (
+            args.root,
+            wd,
+            projection,
+            axes_scales,
+            cell_indices,
+            file_ext,
+            display
+        )
+
 
     Returns
     -------
@@ -225,7 +242,11 @@ def main() -> Tuple[plt.Figure, plt.Axes]:
     """
 
     div_len = 80
-    root, wd, projection, use_ion_density, axes_scales, use_cell_indices, file_ext, display = parse_input()
+
+    if setup:
+        root, wd, projection, use_ion_density, axes_scales, use_cell_indices, file_ext, display = setup
+    else:
+        root, wd, projection, use_ion_density, axes_scales, use_cell_indices, file_ext, display = parse_input()
 
     root = root.replace("/", "")
     wdd = wd
