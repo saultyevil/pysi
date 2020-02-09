@@ -24,11 +24,13 @@ from PyPython import PythonUtils
 from PyPython.Constants import CMS_TO_KMS
 from PyPython.Error import EXIT_FAIL
 
+
 plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15
 
 
-def renorm_vector(a: np.ndarray, scalar: Union[float, int]):
+def renorm_vector(a: np.ndarray, scalar: Union[float, int]) \
+        -> np.ndarray:
     """
     This function is used to renormalise a 3-vector quantity.
 
@@ -45,15 +47,15 @@ def renorm_vector(a: np.ndarray, scalar: Union[float, int]):
         The renormalised 3-vector quantity.
     """
 
-    EPS = 1e-10
+    eps = 1e-10
     n = renorm_vector.__name__
 
     x = np.dot(a, a)
 
-    if x < EPS:
+    if x < eps:
         # print("{}: Cannot renormalise a vector of length 0".format(n))
         # print("{}: a = {}".format(n, a))
-        return -1
+        return EXIT_FAIL
 
     x = scalar / np.sqrt(x)
     a[0] *= x
@@ -63,7 +65,8 @@ def renorm_vector(a: np.ndarray, scalar: Union[float, int]):
     return a
 
 
-def project_cart_to_cyl_coords(a: Union[np.ndarray, List[float]], b: Union[np.ndarray, List[float]]):
+def project_cart_to_cyl_coords(a: Union[np.ndarray, List[float]], b: Union[np.ndarray, List[float]]) \
+        -> np.ndarray:
     """
     Attempt to a vector from cartesian into cylindrical coordinates.
 
@@ -209,7 +212,8 @@ def velocity_plot(root: str, wd: str = "./", axes_scales: str = "loglog", use_ce
     return fig, ax
 
 
-def parse_input() -> tuple:
+def setup_script() \
+        -> tuple:
     """
     Parse the different modes this script can be run from the command line.
 
@@ -229,26 +233,29 @@ def parse_input() -> tuple:
     """
 
     p = ap.ArgumentParser(description=__doc__)
+
     p.add_argument("root", help="The root name of the simulation.")
     p.add_argument("-wd", action="store", help="The directory containing the simulation.")
     p.add_argument("-s", "--scales", action="store", help="The axes scaling to use: logx, logy, loglog, linlin.")
     p.add_argument("-c", "--cells", action="store_true", help="Plot using cell indices rather than spatial scales.")
     p.add_argument("-e", "--ext", action="store", help="The file extension for the output figure.")
     p.add_argument("--display", action="store_true", help="Display the plot before exiting the script.")
+
     args = p.parse_args()
 
     wd = "./"
-    cell_indices = False
-    file_ext = "png"
-    axes_scales = "loglog"
-    display = False
-
     if args.wd:
         wd = args.wd
+
+    cell_indices = False
     if args.cells:
         cell_indices = True
+
+    file_ext = "png"
     if args.ext:
         file_ext = args.ext
+
+    axes_scales = "loglog"
     if args.scales:
         allowed = ["logx", "logy", "loglog", "linlin"]
         if args.scales not in allowed:
@@ -256,6 +263,8 @@ def parse_input() -> tuple:
             print("Allowed values are: logx, logy, loglog, linlin.")
             exit(EXIT_FAIL)
         axes_scales = args.scales
+
+    display = False
     if args.display:
         display = True
 
@@ -271,7 +280,8 @@ def parse_input() -> tuple:
     return setup
 
 
-def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
+def main(setup: tuple = None) \
+        -> Tuple[plt.Figure, plt.Axes]:
     """
     The main function of the script. First, the important wind quantaties are
     plotted. This is then followed by the important ions.
@@ -304,7 +314,7 @@ def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
     if setup:
         root, wd, axes_scales, cell_indices, file_ext, display = setup
     else:
-        root, wd, axes_scales, cell_indices, file_ext, display = parse_input()
+        root, wd, axes_scales, cell_indices, file_ext, display = setup_script()
 
     root = root.replace("/", "")
     wdd = wd

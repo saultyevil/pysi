@@ -138,7 +138,8 @@ def plot_wind(root: str, wind_variables: List[str], wind_variable_types: List[st
     return fig, ax
 
 
-def parse_input() -> tuple:
+def setup_script() \
+        -> tuple:
     """
     Parse the different modes this script can be run from the command line.
 
@@ -159,41 +160,48 @@ def parse_input() -> tuple:
     """
 
     p = ap.ArgumentParser(description=__doc__)
+
     p.add_argument("root", help="The root name of the simulation.")
     p.add_argument("-wd", action="store", help="The directory containing the simulation.")
     p.add_argument("-d", "--ion_density", action="store_true", help="Use ion densities instead of ion fractions.")
     p.add_argument("-p", "--polar", action="store_true", help="Plot using polar projection.")
-    p.add_argument("-s", "--scales", action="store", help="The axes scaling to use: logx, logy, loglog, linlin.")
+    p.add_argument("-s", "--scale", action="store", help="The axes scaling to use: logx, logy, loglog, linlin.")
     p.add_argument("-c", "--cells", action="store_true", help="Plot using cell indices rather than spatial scales.")
     p.add_argument("-e", "--ext", action="store", help="The file extension for the output figure.")
     p.add_argument("--display", action="store_true", help="Display the plot before exiting the script.")
+
     args = p.parse_args()
 
     wd = "./"
-    projection = "rectilinear"
-    ion_density = False
-    cell_indices = False
-    file_ext = "png"
-    axes_scales = "loglog"
-    display = False
-
     if args.wd:
         wd = args.wd
+
+    projection = "rectilinear"
     if args.polar:
         projection = "polar"
+
+    ion_density = False
     if args.ion_density:
         ion_density = True
+
+    cell_indices = False
     if args.cells:
         cell_indices = True
+
+    file_ext = "png"
     if args.ext:
         file_ext = args.ext
-    if args.scales:
+
+    axes_scales = "loglog"
+    if args.scale:
         allowed = ["logx", "logy", "loglog", "linlin"]
-        if args.scales not in allowed:
-            print("The axes scaling {} is unknown.".format(args.scales))
+        if args.scale not in allowed:
+            print("The axes scaling {} is unknown.".format(args.scale))
             print("Allowed values are: logx, logy, loglog, linlin.")
             exit(EXIT_FAIL)
-        axes_scales = args.scales
+        axes_scales = args.scale
+
+    display = False
     if args.display:
         display = True
 
@@ -211,7 +219,8 @@ def parse_input() -> tuple:
     return setup
 
 
-def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
+def main(setup: tuple = None) \
+        -> Tuple[plt.Figure, plt.Axes]:
     """
     The main function of the script. First, the important wind quantaties are
     plotted. This is then followed by the important ions.
@@ -246,7 +255,7 @@ Parameters
     if setup:
         root, wd, projection, use_ion_density, axes_scales, use_cell_indices, file_ext, display = setup
     else:
-        root, wd, projection, use_ion_density, axes_scales, use_cell_indices, file_ext, display = parse_input()
+        root, wd, projection, use_ion_density, axes_scales, use_cell_indices, file_ext, display = setup_script()
 
     root = root.replace("/", "")
     wdd = wd

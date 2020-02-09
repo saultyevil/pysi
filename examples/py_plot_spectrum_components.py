@@ -17,7 +17,8 @@ from PyPython import SpectrumPlot
 from PyPython.Error import EXIT_FAIL
 
 
-def parse_input() -> tuple:
+def setup_script() \
+        -> tuple:
     """
     Parse the different modes this script can be run from the command line.
 
@@ -41,6 +42,7 @@ def parse_input() -> tuple:
     """
 
     p = ap.ArgumentParser(description=__doc__)
+
     p.add_argument("root", help="The root name of the simulation.")
     p.add_argument("-wd", action="store", help="The directory containing the simulation.")
     p.add_argument("-xl", "--xmin", action="store", help="The lower x-axis boundary to display.")
@@ -51,6 +53,7 @@ def parse_input() -> tuple:
     p.add_argument("-sm", "--smooth_amount", action="store", help="The size of the boxcar smoothing filter.")
     p.add_argument("-e", "--ext", action="store", help="The file extension for the output figure.")
     p.add_argument("--display", action="store_true", help="Display the plot before exiting the script.")
+
     args = p.parse_args()
 
     wd = "./"
@@ -78,13 +81,13 @@ def parse_input() -> tuple:
         file_ext = args.ext
 
     axes_scales = "logy"
-    if args.scales:
+    if args.scale:
         allowed = ["logx", "logy", "loglog", "linlin"]
-        if args.scales not in allowed:
-            print("The axes scaling {} is unknown.".format(args.scales))
+        if args.scale not in allowed:
+            print("The axes scaling {} is unknown.".format(args.scale))
             print("Allowed values are: logx, logy, loglog, linlin.")
             exit(EXIT_FAIL)
-        axes_scales = args.scales
+        axes_scales = args.scale
 
     smooth_amount = 5
     if args.smooth_amount:
@@ -113,7 +116,8 @@ def parse_input() -> tuple:
     return setup
 
 
-def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
+def main(setup: tuple = None) \
+        -> Tuple[plt.Figure, plt.Axes]:
     """
     The main function of the script. First, the important wind quantaties are
     plotted. This is then followed by the important ions.
@@ -151,7 +155,7 @@ def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
         root, wd, xmin, xmax, smooth_amount, frequency_space, common_lines, axes_scales, file_ext, display = setup
     else:
         root, wd, xmin, xmax, smooth_amount, frequency_space, common_lines, axes_scales, file_ext, display = \
-            parse_input()
+            setup_script()
 
     root = root.replace("/", "")
     wdd = wd

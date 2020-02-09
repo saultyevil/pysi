@@ -56,6 +56,7 @@ def parse_input() -> tuple:
     """
 
     p = ap.ArgumentParser(description=__doc__)
+
     p.add_argument("root", help="The root name of the simulation.")
     p.add_argument("-wd", action="store", help="The directory containing the simulation.")
     p.add_argument("-xl", "--xmin", action="store", help="The lower x-axis boundary to display.")
@@ -65,6 +66,7 @@ def parse_input() -> tuple:
     p.add_argument("-f", "--frequency_space", action="store_true", help="Create the figure in frequency space.")
     p.add_argument("-e", "--ext", action="store", help="The file extension for the output figure.")
     p.add_argument("--display", action="store_true", help="Display the plot before exiting the script.")
+
     args = p.parse_args()
 
 
@@ -93,13 +95,13 @@ def parse_input() -> tuple:
         file_ext = args.ext
 
     axes_scales = "loglog"
-    if args.scales:
+    if args.scale:
         allowed = ["logx", "logy", "loglog", "linlin"]
-        if args.scales not in allowed:
-            print("The axes scaling {} is unknown.".format(args.scales))
+        if args.scale not in allowed:
+            print("The axes scaling {} is unknown.".format(args.scale))
             print("Allowed values are: logx, logy, loglog, linlin.")
             exit(EXIT_FAIL)
-        axes_scales = args.scales
+        axes_scales = args.scale
 
     display = False
     if args.display:
