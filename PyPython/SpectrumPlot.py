@@ -27,7 +27,8 @@ DEFAULT_PYTHON_DISTANCE = 100 * PARSEC
 
 
 def plot(x: np.ndarray, y: np.ndarray, xmin: float = None, xmax: float = None, xlabel: str = None, ylabel: str = None,
-         scale: str = "logy", display: bool = False, **kwargs) \
+         scale: str = "logy", fig: plt.Figure = None, ax: plt.Axes = None, display: bool = False, label: str = None,
+         **kwargs) \
         -> Tuple[plt.Figure, plt.Axes]:
     """
     This is a simple plotting function designed to give you the bare minimum.
@@ -50,6 +51,12 @@ def plot(x: np.ndarray, y: np.ndarray, xmin: float = None, xmax: float = None, x
         The data label for the y-axis.
     scale: str [optional]
         The scale of the axes for the plot.
+    fig: plt.Figure [optional]
+        A matplotlib Figure object of which to use to create the plot.
+    ax: plt.Axes [optional]
+        A matplotlib Axes object of which to use to create the plot.
+    label: str [optional]
+        A label for the data being plotted.
     display: bool [optional]
         If set to True, then the plot will be displayed.
 
@@ -61,13 +68,28 @@ def plot(x: np.ndarray, y: np.ndarray, xmin: float = None, xmax: float = None, x
         The axes object containing the plot.
     """
 
-    figsize = (12, 5)
-    if "figsize" in kwargs:
-        figsize = kwargs["figsize"]
+    n = plot.__name__
 
     nrows = ncols = 1
-    fig, ax = plt.subplots(nrows, ncols, figsize=figsize, **kwargs)
-    ax.plot(x, y, **kwargs)
+
+    if fig and not ax:
+        print("{}: fig has been provided, but ax has not. Both are required.".format(n))
+        return
+
+    if not fig and ax:
+        print("{}: fig has not been provided, but ax has. Both are required.".format(n))
+        return
+
+    if not fig and not ax:
+        figsize = (12, 5)
+        if "figsize" in kwargs:
+            figsize = kwargs["figsize"]
+        fig, ax = plt.subplots(nrows, ncols, figsize=figsize, **kwargs)
+
+    if label is None:
+        label = ""
+
+    ax.plot(x, y, label=label, **kwargs)
     if scale == "loglog" or scale == "logx":
         ax.set_xscale("log")
     if scale == "loglog" or scale == "logy":
@@ -115,10 +137,8 @@ def optical_depth_spectrum(root: str, wd: str, inclinations: List[str] = "all", 
         The lower x boundary for the figure
     xmax: float [optional]
         The upper x boundary for the figure
-    logy: bool [optional]
-        Use a log scale for the y axis of the figure
-    loglog: bool [optional]
-        Use a log scale for both the x and y axes of the figure
+    scale: str [optional]
+        The scale of the axes for the plot.
     show_absorption_edge_labels: bool [optional]
         Label common absorption edges of interest onto the figure
     frequency_space: bool [optional]
