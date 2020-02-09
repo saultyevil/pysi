@@ -48,7 +48,7 @@ def parse_input() -> tuple:
     p.add_argument("-s", "--scales", action="store", help="The axes scaling to use: logx, logy, loglog, linlin.")
     p.add_argument("-l", "--common_lines", action="store_true", help="Plot labels for important absorption edges.")
     p.add_argument("-f", "--frequency_space", action="store_true", help="Create the figure in frequency space.")
-    p.add_argument("-sm", "--smooth_amount", action="store_true", help="The size of the boxcar smoothing filter.")
+    p.add_argument("-sm", "--smooth_amount", action="store", help="The size of the boxcar smoothing filter.")
     p.add_argument("-e", "--ext", action="store", help="The file extension for the output figure.")
     p.add_argument("--display", action="store_true", help="Display the plot before exiting the script.")
     args = p.parse_args()
@@ -88,7 +88,8 @@ def parse_input() -> tuple:
 
     smooth_amount = 5
     if args.smooth_amount:
-        if args.smooth_amount < 1:
+        smooth_amount = int(args.smooth_amount)
+        if smooth_amount < 1:
             print("The size of the smoothing filter must at least be 1")
             exit(EXIT_FAIL)
 
