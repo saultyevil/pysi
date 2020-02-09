@@ -7,6 +7,7 @@ more detailed error messages.
 """
 
 
+EXIT_SUCCESS = 0
 EXIT_FAIL = 1
 
 
