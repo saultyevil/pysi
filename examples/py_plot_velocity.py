@@ -166,9 +166,9 @@ def velocity_plot(root: str, wd: str = "./", axes_scales: str = "loglog", use_ce
             r = [vx_x[i, j], 0, vx_z[i, j]]
             # This is some horrible hack to make sure there are no NaNs :^)
             if type(vx[i, j]) != np.float64 or type(vy[i, j]) != np.float64 or type(vz[i, j]) != np.float64:
-                vl[i, j] = np.nan
-                vrot[i, j] = np.nan
-                vr[i, j] = np.nan
+                vl[i, j] = 0
+                vrot[i, j] = 0
+                vr[i, j] = 0
             else:
                 v = [vx[i, j], vy[i, j], vz[i, j]]
                 v_cyl = project_cart_to_cyl_coords(r, v)
