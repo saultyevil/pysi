@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-Run a batch of Python simulations. Currently, the script will search recursively
-for Python pfs (disregarding anything which is py_wind.pf or .out.pf files) and
-execute a number of commands depending on what is requested by the user.
+Run a batch of Python models. This script searches recursively for Python pfs
+(disregarding anything which is py_wind.pf or .out.pf files) and executes a
+number of commands depending on what is requested by the user using command
+line flags.
 
 The script can also be run in a directory containing only one Python pf.
 """
@@ -16,7 +17,7 @@ import datetime
 from copy import copy
 from sys import exit
 from shutil import copyfile
-from typing import Union, List
+from typing import List
 from subprocess import Popen, PIPE
 
 from PyPython import Grid
@@ -24,7 +25,7 @@ from PyPython import Simulation
 from PyPython import PythonUtils
 from PyPython.Log import log, init_logfile, close_logfile
 from PyPython import Quotes
-from PyPython.Error import EXIT_FAIL, EXIT_SUCCESS
+from PyPython.Error import EXIT_FAIL
 
 
 CONVERGED = \
@@ -77,7 +78,7 @@ PYTHON_BINARY = "py"
 RUNTIME_FLAGS = None
 RESUME_RUN = False
 CONV_LIMIT = 0.85
-SPLIT_CYCLES = False
+SPLIT_CYCLES = True
 DRY_RUN = False
 
 
@@ -129,14 +130,14 @@ def print_python_output(line: str, n_cores, verbosity: int = VERBOSE_EXTRA_INFOR
         current_cycle = line[3]
         total_cycles = line[5]
         current_time = time.strftime("%H:%M")
-        log("{}  Ionisation Cycle ....... {}/{}".format(current_time, current_cycle, total_cycles))
+        log("{}  Starting Ionisation Cycle ....... {}/{}".format(current_time, current_cycle, total_cycles))
 
     # PRINT CURRENT SPECTRUM CYCLE
     elif oline.find("to calculate a detailed spectrum") != -1 and verbosity >= VERBOSE_PROGRESS_REPORT:
         current_cycle = line[1]
         total_cycles = line[3]
         current_time = time.strftime("%H:%M")
-        log("{}  Spectrum Cycle ......... {}/{}".format(current_time, current_cycle, total_cycles))
+        log("{}  Starting Spectrum Cycle ......... {}/{}".format(current_time, current_cycle, total_cycles))
 
     # PRINT COMPLETE RUN TIME
     elif oline.find("Completed entire program.") != -1 and verbosity >= VERBOSE_PROGRESS_REPORT:
@@ -296,8 +297,8 @@ def print_errors(error: dict, root: str) \
     return
 
 
-def run_python(root: str, wd: str, use_mpi: bool, ncores: int, restart_model: bool = False,
-               restart_from_spec_cycles: bool = False, split_cycles: bool = False) \
+def run_model(root: str, wd: str, use_mpi: bool, ncores: int, restart_model: bool = False,
+              restart_from_spec_cycles: bool = False, split_cycles: bool = False) \
         -> int:
     """
     The purpose of this function is to use the Subprocess library to call
@@ -455,12 +456,12 @@ def go(roots: List[str], use_mpi: bool, n_cores: int) -> None:
         log("------------------------\n")
         log("        Model {}/{}".format(i + 1, nmodels))
         log("\n------------------------\n")
-        log("Root ...................... {}\n".format(root))
-        log("Directory ................. {}".format(wd))
+        log("Root ...................... {}".format(root))
+        log("Directory ................. {}\n".format(wd))
 
         # Run Python
 
-        rc = run_python(root, wd, use_mpi, n_cores, RESUME_RUN, SPLIT_CYCLES)
+        rc = run_model(root, wd, use_mpi, n_cores, RESUME_RUN, SPLIT_CYCLES)
         if rc:
             continue
 
@@ -475,7 +476,7 @@ def go(roots: List[str], use_mpi: bool, n_cores: int) -> None:
         errors = Simulation.error_summary(root, wd, N_CORES)
         print_errors(errors, root)
 
-        # If we have modified the pf, restore the original
+        log("")
 
     return
 
@@ -552,13 +553,16 @@ def main() \
     Main control function of the script.
     """
 
+    log("------------------------\n")
+
     # Setup the script run mode and initialise the log file
 
     setup_script()
     init_logfile("Log{}{:02d}{:02d}.log.txt".format(str(DATE.year)[-2:], int(DATE.month), int(DATE.day)))
 
-    log("------------------------\n")
+    log("")
     Quotes.random_quote()
+    log("------------------------\n")
 
     # Find models to run by searching recursively from the calling directory
     # for .pf files
