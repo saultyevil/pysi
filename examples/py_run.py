@@ -122,10 +122,12 @@ def print_python_output(line: str, n_cores, verbosity: int = VERBOSE_EXTRA_INFOR
     line = line.split()
 
     # PRINT EVERYTHING
+
     if verbosity >= VERBOSE_ALL:
         log("{}".format(oline))
 
     # PRINT CURRENT IONISATION CYCLE
+
     elif oline.find("for defining wind") != -1 and verbosity >= VERBOSE_PROGRESS_REPORT:
         current_cycle = line[3]
         total_cycles = line[5]
@@ -133,6 +135,7 @@ def print_python_output(line: str, n_cores, verbosity: int = VERBOSE_EXTRA_INFOR
         log("{}  Starting Ionisation Cycle ....... {}/{}".format(current_time, current_cycle, total_cycles))
 
     # PRINT CURRENT SPECTRUM CYCLE
+
     elif oline.find("to calculate a detailed spectrum") != -1 and verbosity >= VERBOSE_PROGRESS_REPORT:
         current_cycle = line[1]
         total_cycles = line[3]
@@ -140,12 +143,14 @@ def print_python_output(line: str, n_cores, verbosity: int = VERBOSE_EXTRA_INFOR
         log("{}  Starting Spectrum Cycle ......... {}/{}".format(current_time, current_cycle, total_cycles))
 
     # PRINT COMPLETE RUN TIME
+
     elif oline.find("Completed entire program.") != -1 and verbosity >= VERBOSE_PROGRESS_REPORT:
         tot_run_time_seconds = float(line[-1])
         tot_run_time = datetime.timedelta(seconds=tot_run_time_seconds // 1)
         log("\nSimulation completed in: {} hrs:mins:secs".format(tot_run_time))
 
     # PRINT TOTAL RUN TIME ELAPSED FOR A CYCLE
+
     elif (oline.find("Completed ionization cycle") != -1 or oline.find("Completed spectrum cycle") != -1) and \
             verbosity >= VERBOSE_EXTRA_INFORMATION:
         elapsed_time_seconds = float(line[-1])
@@ -153,6 +158,7 @@ def print_python_output(line: str, n_cores, verbosity: int = VERBOSE_EXTRA_INFOR
         log("         Elapsed run time: {} hrs:mins:secs".format(elapsed_time))
 
     # PRINT CONVERGENCE
+
     elif (oline.find("converged") != -1 and oline.find("converging") != -1) \
             and verbosity >= VERBOSE_EXTRA_INFORMATION:
         try:
@@ -163,6 +169,7 @@ def print_python_output(line: str, n_cores, verbosity: int = VERBOSE_EXTRA_INFOR
             log("          unable to parse convergence :-(")
 
     # PRINT PHOTON TRANSPORT REPORT
+
     elif oline.find("per cent") != -1 and oline.find("Photon") != -1 \
             and verbosity >= VERBOSE_EXTRA_INFORMATION_TRANSPORT:
         try:
@@ -215,7 +222,7 @@ def convergence_check(root: str, wd: str, nmodels: int) \
     converged = False
 
     model_convergence = Simulation.check_convergence(root, wd)
-    log("Model convergence ........... {}\n".format(model_convergence))
+    log("Model convergence ........... {}".format(model_convergence))
 
     # An unknown convergence has been returned
     if 0 > model_convergence > 1:
@@ -245,10 +252,12 @@ def convergence_check(root: str, wd: str, nmodels: int) \
         output = "converged.txt"
 
     # Write the model name and convergence to the appropriate output file
+
     with open(output, "a") as f:
         f.write("{}\t{}.pf\t{}\n".format(wd, root, model_convergence))
 
     # Write the model name and convergence to the master convergence file
+
     with open("convergence_report.txt", "a") as f:
         f.write("{}\t{}.pf\t{}\n".format(wd, root, model_convergence))
 
@@ -297,7 +306,7 @@ def print_errors(error: dict, root: str) \
     return
 
 
-def run_model(root: str, wd: str, use_mpi: bool, ncores: int, restart_model: bool = False,
+def run_model(root: str, wd: str, use_mpi: bool, ncores: int, resume_model: bool = False,
               restart_from_spec_cycles: bool = False, split_cycles: bool = False) \
         -> int:
     """
@@ -317,7 +326,7 @@ def run_model(root: str, wd: str, use_mpi: bool, ncores: int, restart_model: boo
     ncores: int
         If use_mpi is True, then Python will be run using the number of cores
         provided.
-    restart_model: bool, optional
+    resume_model: bool, optional
         If True, the -r flag will be passed to Python to restart a run from the
         previous cycle
     split_cycles: bool, optional
@@ -351,11 +360,14 @@ def run_model(root: str, wd: str, use_mpi: bool, ncores: int, restart_model: boo
     # low signal/noise spectrum. Note we make a backup of the original pf.
 
     try:
+
         if split_cycles and not restart_from_spec_cycles:
             Grid.change_parameter(wd + pf, "Spectrum_cycles", "0", backup=True, verbose=verbose)
+
         if split_cycles and restart_from_spec_cycles:
             Grid.change_parameter(wd + pf, "Spectrum_cycles", "5", backup=False, verbose=verbose)
             Grid.change_parameter(wd + pf, "Photons_per_cycle", "1e6", backup=False, verbose=verbose)
+
     except IOError:
         print("Unable to open parameter file {} to change any parameters".format(wd + pf))
         return EXIT_FAIL
@@ -369,18 +381,22 @@ def run_model(root: str, wd: str, use_mpi: bool, ncores: int, restart_model: boo
 
     command += " {} ".format(PYTHON_BINARY)
 
-    if restart_model:
+    if resume_model:
         command += " -r "
 
     # Add the run-time flags the user provided
+
     if RUNTIME_FLAGS:
         command += " {} ".format(RUNTIME_FLAGS)
 
     # Add the root name at the end of the call to Python
+
     command += " {} ".format(pf)
     log("{}\n".format(command))
 
-    # Use Popen to create a new Python process
+    # Use Popen to create a new Python process - I do this manually for some
+    # reason?
+
     cmd = Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
 
     # This next bit provides real time output of Python's output...
@@ -461,20 +477,41 @@ def go(roots: List[str], use_mpi: bool, n_cores: int) -> None:
 
         # Run Python
 
-        rc = run_model(root, wd, use_mpi, n_cores, RESUME_RUN, SPLIT_CYCLES)
+        model_convergence = 0
+        rc = run_model(root, wd, use_mpi, n_cores, resume_model=RESUME_RUN, restart_from_spec_cycles=False,
+                       split_cycles=SPLIT_CYCLES)
         if rc:
+            log("Python exited with error code {}.".format(rc))
+            log("Skipping to the next model.")
             continue
-
-        # Check the convergence of the model
-
-        if not rc:
-            log("Checking the convergence of the simulation:\n")
-            convergence_check(root, wd, nmodels)
 
         # Check for the error report and print to the screen
 
         errors = Simulation.error_summary(root, wd, N_CORES)
         print_errors(errors, root)
+
+        # Check the convergence of the model
+
+        if not rc:
+            log("Checking the convergence of the simulation:\n")
+            model_convergence = convergence_check(root, wd, nmodels)
+
+        # If the cycles are being split, handle the logic here to do so
+
+        if SPLIT_CYCLES and model_convergence > CONV_LIMIT:
+            rc = run_model(root, wd, use_mpi, n_cores, resume_model=True, restart_from_spec_cycles=True,
+                           split_cycles=True)
+            # Check for the error report and print to the screen
+            errors = Simulation.error_summary(root, wd, N_CORES)
+            print_errors(errors, root)
+        elif SPLIT_CYCLES and model_convergence < CONV_LIMIT:
+            log("Model convergence ({}) is below the convergence limit ({}).".format(model_convergence, CONV_LIMIT))
+            log("Skipping spectral cycles.")
+
+        if rc:
+            log("Python exited for error code {} after spectral cycles.".format(rc))
+            log("Skipping to the next model.\n")
+            continue
 
         log("")
 
