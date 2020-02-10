@@ -347,8 +347,6 @@ def run_model(root: str, wd: str, use_mpi: bool, ncores: int, resume_model: bool
     else:
         verbose = False
 
-    model_log = "{}/{}_{}{:02d}{:02d}.log.txt".format(wd, root, DATE.year, int(DATE.month), int(DATE.day))
-    model_logfile = open(model_log, "a")
     pf = root + ".pf"
 
     # The purpose of this is to manage the situation where we "split" the
@@ -400,6 +398,9 @@ def run_model(root: str, wd: str, use_mpi: bool, ncores: int, resume_model: bool
     cmd = Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
 
     # This next bit provides real time output of Python's output...
+
+    model_log = "{}/{}_{}{:02d}{:02d}.log.txt".format(wd, root, DATE.year, int(DATE.month), int(DATE.day))
+    model_logfile = open(model_log, "a")
 
     for stdout_line in iter(cmd.stdout.readline, ""):
         if not stdout_line:
