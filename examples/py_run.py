@@ -477,7 +477,7 @@ def go(roots: List[str], use_mpi: bool, n_cores: int) -> None:
 
         # Run Python
 
-        model_convergence = 0
+        model_converged = False
         rc = run_model(root, wd, use_mpi, n_cores, resume_model=RESUME_RUN, restart_from_spec_cycles=False,
                        split_cycles=SPLIT_CYCLES)
         if rc:
@@ -494,18 +494,18 @@ def go(roots: List[str], use_mpi: bool, n_cores: int) -> None:
 
         if not rc:
             log("Checking the convergence of the simulation:\n")
-            model_convergence = convergence_check(root, wd, nmodels)
+            model_converged = convergence_check(root, wd, nmodels)
 
         # If the cycles are being split, handle the logic here to do so
 
-        if SPLIT_CYCLES and model_convergence > CONV_LIMIT:
+        if SPLIT_CYCLES and model_converged > CONV_LIMIT:
             rc = run_model(root, wd, use_mpi, n_cores, resume_model=True, restart_from_spec_cycles=True,
                            split_cycles=True)
             # Check for the error report and print to the screen
             errors = Simulation.error_summary(root, wd, N_CORES)
             print_errors(errors, root)
-        elif SPLIT_CYCLES and model_convergence < CONV_LIMIT:
-            log("Model convergence ({}) is below the convergence limit ({}).".format(model_convergence, CONV_LIMIT))
+        elif SPLIT_CYCLES and model_converged < CONV_LIMIT:
+            log("The model has not converged to the set convergence limit of {}.".format(CONV_LIMIT))
             log("Skipping spectral cycles.")
 
         if rc:
