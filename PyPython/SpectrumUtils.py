@@ -261,10 +261,10 @@ def ylims(wavelength: np.array, flux: np.array, wmin: Union[float, None], wmax: 
 
     Returns
     -------
-    yupper: float
-        The upper y limit to use with the wavelength range
     ylower: float
         The lower y limit to use with the wavelength range
+    yupper: float
+        The upper y limit to use with the wavelength range
     """
 
     n = ylims.__name__
@@ -286,7 +286,7 @@ def ylims(wavelength: np.array, flux: np.array, wmin: Union[float, None], wmax: 
         yupper = np.max(flux[flux_lim_wav]) * scale
         ylower = np.min(flux[flux_lim_wav]) / scale
 
-    return yupper, ylower
+    return ylower, yupper
 
 
 def common_lines(freq: bool = False) -> list:
@@ -325,6 +325,10 @@ def common_lines(freq: bool = False) -> list:
         ["C III]", 1908],
         ["Mg II", 2798],
         ["Balmer Edge", 3646],
+        [r"H$_{\xi}$", 3889],
+        [r"H$_{\eta}$", 3970],
+        [r"H$_{\delta}$", 4101],
+        [r"H$_{\gamma}$", 4340],
         ["He II", 4686],
         [r"H$_{\beta}$", 4861],
         [r"H$_{\alpha}$", 6564],
