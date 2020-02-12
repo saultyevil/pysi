@@ -546,7 +546,7 @@ def setup_script() \
 
     global SPLIT_CYCLES
     if args.split_cycles:
-        SPLIT_CYCLES = True
+        SPLIT_CYCLES = False
 
     global PYTHON_BINARY
     if args.python:
