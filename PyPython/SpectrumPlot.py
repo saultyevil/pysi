@@ -9,8 +9,9 @@ being saved to disk or displayed.
 """
 
 from .Constants import PARSEC
-from .SpectrumUtils import absorption_edges, common_lines, plot_line_ids, smooth, read_spec, spec_inclinations
+from .SpectrumUtils import absorption_edges, common_lines, plot_line_ids, smooth, read_spec, spec_inclinations, ylims
 from .PythonUtils import subplot_dims
+from .Error import InvalidParameter
 
 import pandas as pd
 import numpy as np
@@ -27,8 +28,7 @@ DEFAULT_PYTHON_DISTANCE = 100 * PARSEC
 
 
 def plot(x: np.ndarray, y: np.ndarray, xmin: float = None, xmax: float = None, xlabel: str = None, ylabel: str = None,
-         scale: str = "logy", fig: plt.Figure = None, ax: plt.Axes = None, display: bool = False, label: str = None,
-         **kwargs) \
+         scale: str = "logy", fig: plt.Figure = None, ax: plt.Axes = None, display: bool = False, label: str = None) \
         -> Tuple[plt.Figure, plt.Axes]:
     """
     This is a simple plotting function designed to give you the bare minimum.
@@ -72,33 +72,42 @@ def plot(x: np.ndarray, y: np.ndarray, xmin: float = None, xmax: float = None, x
 
     nrows = ncols = 1
 
+    # It doesn't make sense to provide only fig and not ax, or ax and not fig
+    # so at this point we will throw an error message and return
+
     if fig and not ax:
         print("{}: fig has been provided, but ax has not. Both are required.".format(n))
-        return
+        raise InvalidParameter()
 
     if not fig and ax:
         print("{}: fig has not been provided, but ax has. Both are required.".format(n))
-        return
+        raise InvalidParameter()
 
     if not fig and not ax:
-        figsize = (12, 5)
-        if "figsize" in kwargs:
-            figsize = kwargs["figsize"]
-        fig, ax = plt.subplots(nrows, ncols, figsize=figsize, **kwargs)
+        fig, ax = plt.subplots(nrows, ncols, figsize=(12, 5))
 
     if label is None:
         label = ""
 
-    ax.plot(x, y, label=label, **kwargs)
+    ax.plot(x, y, label=label)
+
+    # Set the scales of the aes
+
     if scale == "loglog" or scale == "logx":
         ax.set_xscale("log")
     if scale == "loglog" or scale == "logy":
         ax.set_yscale("log")
 
+    # If axis labels are provided, then set them
+
     if xlabel:
-        ax.set_xlabel(xlabel, **kwargs)
+        ax.set_xlabel(xlabel)
     if ylabel:
-        ax.set_ylabel(ylabel, **kwargs)
+        ax.set_ylabel(ylabel)
+
+    # Set the x and y axis limits. For the y axis, we use a function to try and
+    # figure out appropriate values for the axis limits to display the data
+    # sensibly
 
     lims = list(ax.get_xlim())
     if xmin:
@@ -106,6 +115,9 @@ def plot(x: np.ndarray, y: np.ndarray, xmin: float = None, xmax: float = None, x
     if xmax:
         lims[1] = xmax
     ax.set_xlim(lims[0], lims[1])
+
+    ymin, ymax = ylims(x, y, xmin, xmax)
+    ax.set_ylim(ymin, ymax)
 
     if display:
         plt.show()
