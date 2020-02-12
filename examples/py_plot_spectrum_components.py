@@ -47,7 +47,7 @@ def setup_script() \
     p.add_argument("-wd", action="store", help="The directory containing the simulation.")
     p.add_argument("-xl", "--xmin", action="store", help="The lower x-axis boundary to display.")
     p.add_argument("-xu", "--xmax", action="store", help="The upper x-axis boundary to display.")
-    p.add_argument("-s", "--scales", action="store", help="The axes scaling to use: logx, logy, loglog, linlin.")
+    p.add_argument("-s", "--scale", action="store", help="The axes scaling to use: logx, logy, loglog, linlin.")
     p.add_argument("-l", "--common_lines", action="store_true", help="Plot labels for important absorption edges.")
     p.add_argument("-f", "--frequency_space", action="store_true", help="Create the figure in frequency space.")
     p.add_argument("-sm", "--smooth_amount", action="store", help="The size of the boxcar smoothing filter.")

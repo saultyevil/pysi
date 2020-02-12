@@ -1,4 +1,4 @@
-#!/usr/bin/env pythonfrom sys import exit
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """
@@ -61,7 +61,7 @@ def parse_input() -> tuple:
     p.add_argument("-wd", action="store", help="The directory containing the simulation.")
     p.add_argument("-xl", "--xmin", action="store", help="The lower x-axis boundary to display.")
     p.add_argument("-xu", "--xmax", action="store", help="The upper x-axis boundary to display.")
-    p.add_argument("-s", "--scales", action="store", help="The axes scaling to use: logx, logy, loglog, linlin.")
+    p.add_argument("-s", "--scale", action="store", help="The axes scaling to use: logx, logy, loglog, linlin.")
     p.add_argument("-a", "--absorption_edges", action="store_true", help="Plot labels for important absorption edges.")
     p.add_argument("-f", "--frequency_space", action="store_true", help="Create the figure in frequency space.")
     p.add_argument("-e", "--ext", action="store", help="The file extension for the output figure.")
@@ -86,7 +86,7 @@ def parse_input() -> tuple:
     if args.absorption_edges:
         absorption_edges = args.absorption_edges
 
-    frequency_space = True
+    frequency_space = False
     if args.frequency_space:
         frequency_space = args.frequency_space
 
@@ -94,7 +94,7 @@ def parse_input() -> tuple:
     if args.ext:
         file_ext = args.ext
 
-    axes_scales = "loglog"
+    axes_scales = "logy"
     if args.scale:
         allowed = ["logx", "logy", "loglog", "linlin"]
         if args.scale not in allowed:

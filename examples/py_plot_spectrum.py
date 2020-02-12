@@ -29,9 +29,37 @@ def spectra_on_same_panel(root: str, wd: str = "./", xmin: float = None, xmax: f
                           file_ext: str = "png") \
         -> Tuple[plt.Figure, plt.Axes]:
     """
-    Plot all of the spectra of a model on the same panel.
+    Plot all of the spectra for a model on the same panel, for some comparison
+    reasons. This is best done with small wavelength ranges.
 
-    :return:
+    Parameters
+    ----------
+    root: str
+        The root name of the model.
+    wd: str [optional]
+        The directory where the simulation is stored, by default this assumes
+        that it is in the calling directory.
+    xmin: float [optional]
+        The lower x boundary for the figure.
+    xmax: float [optional]
+        The upper x boundary for the figure.
+    smooth_amount: int [optional]
+        The size of the boxcar filter to smooth the spectra.
+    frequency_space: bool [optional]
+        Create the figure in frequency space instead of wavelength space.
+    axes_scales: bool [optional]
+        Set the scales for the axes in the plot.
+    common_lines: bool [optional]
+        Plot labels for common line transitions.
+    file_ext: str [optional]
+        The extension of the final output file.
+
+    Returns
+    -------
+    fig: plt.Figure
+        The matplotlib Figure object for the created plot.
+    ax: plt.Axes
+        The matplotlib Axes objects for the plot panels.
     """
 
     spectrum_filename = "{}/{}.spec".format(wd, root)
@@ -45,10 +73,11 @@ def spectra_on_same_panel(root: str, wd: str = "./", xmin: float = None, xmax: f
     ia = SpectrumUtils.spec_inclinations(s)
     fig, ax = plt.subplots(1, 1, figsize=(12, 8))
 
-    xlabel = "Lambda"
     if frequency_space:
         xlabel = "Freq."
         axes_scales = "loglog"
+    else:
+        xlabel = "Lambda"
     x = s[xlabel].values
 
     if frequency_space:
@@ -74,34 +103,130 @@ def spectra_on_same_panel(root: str, wd: str = "./", xmin: float = None, xmax: f
         ax = SpectrumUtils.plot_line_ids(ax, SpectrumUtils.common_lines())
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
-    fig.savefig("{}/{}_spectra_panel.{}".format(wd, root, file_ext))
+    fig.savefig("{}/{}_spectra_single.{}".format(wd, root, file_ext))
 
     return fig, ax
 
 
-def spectra_on_multiple_panels() \
+def spectra_on_multiple_panels(root: str, wd: str = "./", xmin: float = None, xmax: float = None,
+                               smooth_amount: int = 5, frequency_space: bool = False, axes_scales: str = "logy",
+                               common_lines: bool = True, file_ext: str = "png") \
         -> Tuple[plt.Figure, plt.Axes]:
     """
-    Plot each separate spectrum in individual panels.
+    Plot each separate spectrum in an individual panel, on one figure.
 
-    :return:
+    Parameters
+    ----------
+    root: str
+        The root name of the model.
+    wd: str [optional]
+        The directory where the simulation is stored, by default this assumes
+        that it is in the calling directory.
+    xmin: float [optional]
+        The lower x boundary for the figure.
+    xmax: float [optional]
+        The upper x boundary for the figure.
+    smooth_amount: int [optional]
+        The size of the boxcar filter to smooth the spectra.
+    frequency_space: bool [optional]
+        Create the figure in frequency space instead of wavelength space.
+    axes_scales: bool [optional]
+        Set the scales for the axes in the plot.
+    common_lines: bool [optional]
+        Plot labels for common line transitions.
+    file_ext: str [optional]
+        The extension of the final output file.
+
+    Returns
+    -------
+    fig: plt.Figure
+        The matplotlib Figure object for the created plot.
+    ax: plt.Axes
+        The matplotlib Axes objects for the plot panels.
     """
 
-    return
+    fig, ax = SpectrumPlot.spectra(root, wd, xmin, xmax, smooth_amount, common_lines, frequency_space, axes_scales)
+    fig.savefig("{}/{}_spectra.{}".format(wd, root, file_ext))
+
+    return fig, ax
 
 
-def individual_spectra() \
+def individual_spectra(root: str, wd: str = "./", xmin: float = None, xmax: float = None, smooth_amount: int = 5,
+                       frequency_space: bool = False, axes_scales: str = "logy", file_ext: str = "png") \
         -> None:
     """
-    Plot each separate spectrum as its own file.
+    Plot each separate spectrum as its own figure.
 
-    :return:
+    Parameters
+    ----------
+    root: str
+        The root name of the model.
+    wd: str [optional]
+        The directory where the simulation is stored, by default this assumes
+        that it is in the calling directory.
+    xmin: float [optional]
+        The lower x boundary for the figure.
+    xmax: float [optional]
+        The upper x boundary for the figure.
+    smooth_amount: int [optional]
+        The size of the boxcar filter to smooth the spectra.
+    frequency_space: bool [optional]
+        Create the figure in frequency space instead of wavelength space.
+    axes_scales: bool [optional]
+        Set the scales for the axes in the plot.
+    file_ext: str [optional]
+        The extension of the final output file.
+
+    Returns
+    -------
+    fig: plt.Figure
+        The matplotlib Figure object for the created plot.
+    ax: plt.Axes
+        The matplotlib Axes objects for the plot panels.
     """
+
+    spectrum_filename = "{}/{}.spec".format(wd, root)
+
+    try:
+        s = SpectrumUtils.read_spec(spectrum_filename)
+    except IOError:
+        print("Unable to open the spectrum file with name {}".format(spectrum_filename))
+        return
+
+    ia = SpectrumUtils.spec_inclinations(s)
+
+    if frequency_space:
+        xlabel = "Freq."
+        axes_scales = "loglog"
+    else:
+        xlabel = "Lambda"
+    x = s[xlabel].values
+
+    if frequency_space:
+        xlabel = r"Frequency [Hz]"
+        ylabel = r"$\nu F_{\nu}$ (erg s$^{-1}$ cm$^{-2}$"
+    else:
+        xlabel = r"Wavelength [$\AA$]"
+        ylabel = r"$F_{\lambda}$ (erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)"
+
+    # Plot each inclination a in ia on different fig and ax objects
+
+    for a in ia:
+        y = SpectrumUtils.smooth(s[a].values, smooth_amount)
+        # Convert into lambda F_lambda which is (I hope) the same as nu F_nu
+        if frequency_space:
+            y *= s["Lambda"].values
+        fig, ax = SpectrumPlot.plot(x, y, xmin, xmax, xlabel, ylabel, axes_scales)
+        ax = SpectrumUtils.plot_line_ids(ax, SpectrumUtils.common_lines())
+        ax.set_title("Inclination i = {}".format(str(a)) + r"$^{\circ}$")
+        fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+        fig.savefig("{}/{}_i{}_spectrum.{}".format(wd, root, str(a), file_ext))
 
     return
 
 
-def parse_input() -> tuple:
+def setup_script() \
+        -> tuple:
     """
     Parse the different modes this script can be run from the command line.
 
@@ -124,16 +249,18 @@ def parse_input() -> tuple:
     """
 
     p = ap.ArgumentParser(description=__doc__)
+
     p.add_argument("root", help="The root name of the simulation.")
     p.add_argument("-wd", action="store", help="The directory containing the simulation.")
-    p.add_argument("-xl", "--xmin", action="store", help="The lower x-axis boundary to display.")
-    p.add_argument("-xu", "--xmax", action="store", help="The upper x-axis boundary to display.")
+    p.add_argument("-xl", "--xmin", action="store", type=float, help="The lower x-axis boundary to display.")
+    p.add_argument("-xu", "--xmax", action="store", type=float, help="The upper x-axis boundary to display.")
     p.add_argument("-s", "--scales", action="store", help="The axes scaling to use: logx, logy, loglog, linlin.")
     p.add_argument("-l", "--common_lines", action="store_true", help="Plot labels for important absorption edges.")
     p.add_argument("-f", "--frequency_space", action="store_true", help="Create the figure in frequency space.")
     p.add_argument("-sm", "--smooth_amount", action="store", help="The size of the boxcar smoothing filter.")
     p.add_argument("-e", "--ext", action="store", help="The file extension for the output figure.")
     p.add_argument("--display", action="store_true", help="Display the plot before exiting the script.")
+
     args = p.parse_args()
 
     wd = "./"
@@ -196,7 +323,8 @@ def parse_input() -> tuple:
     return setup
 
 
-def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
+def main(setup: tuple = None) \
+        -> Tuple[plt.Figure, plt.Axes]:
     """
     The main function of the script. First, the important wind quantaties are
     plotted. This is then followed by the important ions.
@@ -234,7 +362,7 @@ def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
         root, wd, xmin, xmax, frequency_space, common_lines, axes_scales, smooth_amount, file_ext, display = setup
     else:
         root, wd, xmin, xmax, frequency_space, common_lines, axes_scales, smooth_amount, file_ext, display = \
-            parse_input()
+            setup_script()
 
     root = root.replace("/", "")
     wdd = wd
@@ -246,6 +374,15 @@ def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
 
     fig, ax = spectra_on_same_panel(root, wd, xmin, xmax, smooth_amount, frequency_space, axes_scales, common_lines,
                                     file_ext)
+
+    print("\nCreating figure with spectra in individual panels for {}{}.pf".format(wdd, root))
+
+    fig, ax = spectra_on_multiple_panels(root, wd, xmin, xmax, smooth_amount, frequency_space, axes_scales,
+                                         False, file_ext)
+
+    print("\nCreating multiple figures for each inclination angle for {}{}.pf".format(wdd, root))
+
+    individual_spectra(root, wd, xmin, xmax, smooth_amount, frequency_space, axes_scales, file_ext)
 
     if display:
         plt.show()
