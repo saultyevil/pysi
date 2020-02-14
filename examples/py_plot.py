@@ -81,7 +81,7 @@ def setup_script() \
     if args.polar:
         projection = "polar"
 
-    smooth_amount = 15
+    smooth_amount = 5
     if args.smooth_amount:
         smooth_amount = int(args.smooth_amount)
         if smooth_amount < 1:
@@ -141,8 +141,8 @@ def plot() \
 
     # Create plots for the different spectra
 
-    fig, ax = py_plot_optical_depths.main((root, wd, xmin, xmax, frequency_space, True, "loglog", file_ext, display))
-    fig, ax = py_plot_spectrum_components.main((root, wd, xmin, xmax, smooth_amount, frequency_space, False, "logy",
+    fig, ax = py_plot_optical_depths.main((root, wd, None, None, True, True, "loglog", file_ext, display))
+    fig, ax = py_plot_spectrum_components.main((root, wd, None, None, smooth_amount, True, False, "loglog",
                                                 file_ext, display))
     fig, ax = py_plot_spectrum.main((root, wd, xmin, xmax, frequency_space, True, "logy", smooth_amount, file_ext,
                                      display))

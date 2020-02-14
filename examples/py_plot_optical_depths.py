@@ -17,6 +17,11 @@ from PyPython import SpectrumPlot
 from PyPython.Error import EXIT_FAIL
 
 
+plt.rcParams['xtick.labelsize'] = 15
+plt.rcParams['ytick.labelsize'] = 15
+plt.rcParams['axes.labelsize'] = 15
+
+
 def plot_optical_depth_spectrum(root: str, wd: str = "./", xmin: float = None, xmax: float = None,
                                 scale: str = "loglog", show_absorption_edges: bool = False,
                                 frequency_space: bool = False, file_ext: str = "png") \

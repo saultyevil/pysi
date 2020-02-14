@@ -27,6 +27,7 @@ from PyPython.Error import EXIT_FAIL
 
 plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15
+plt.rcParams['axes.labelsize'] = 15
 
 
 def renorm_vector(a: np.ndarray, scalar: Union[float, int]) \

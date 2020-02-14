@@ -22,6 +22,7 @@ from PyPython.Error import EXIT_FAIL
 
 plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15
+plt.rcParams['axes.labelsize'] = 15
 
 
 def spectra_on_same_panel(root: str, wd: str = "./", xmin: float = None, xmax: float = None, smooth_amount: int = 5,

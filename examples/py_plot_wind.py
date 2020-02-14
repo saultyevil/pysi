@@ -23,11 +23,13 @@ from PyPython.Error import EXIT_FAIL
 
 plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15
+plt.rcParams['axes.labelsize'] = 15
 
 
 def plot_wind(root: str, wind_variables: List[str], wind_variable_types: List[str], output_name: str, wd: str = "./",
               projection: str = "rectilinear", axes_scales: str = "loglog", use_cell_indices: bool = False,
-              panel_dims: Tuple[int, int] = (4, 2), figure_size: Tuple[int, int] = (10, 15), file_ext: str = "png") \
+              panel_dims: Tuple[int, int] = (4, 2), figure_size: Tuple[int, int] = (10, 15), title: str = None,
+              file_ext: str = "png") \
         -> Tuple[plt.Figure, plt.Axes]:
     """
     The purpose of this function is to oversee the creation of the different
@@ -60,6 +62,8 @@ def plot_wind(root: str, wind_variables: List[str], wind_variable_types: List[st
         The number of rows and columns of subplot panels to create.
     figure_size: Tuple[int, int] [optional]
         The width and height of the figure in inches (thanks matplotlib).
+    title: str [optional]
+        The title of the figure.
     file_ext: str [optional]
         The extension of the final output file.
 
@@ -132,6 +136,8 @@ def plot_wind(root: str, wind_variables: List[str], wind_variable_types: List[st
 
             index += 1
 
+    if title:
+        fig.suptitle(title, fontsize=15)
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
     fig.savefig("{}/{}_{}.{}".format(wd, root, output_name, file_ext))
 
@@ -283,6 +289,11 @@ Parameters
 
     # Plot the ions
 
+    if use_ion_density:
+        title = "Ion Density"
+    else:
+        title = "Ion Fractions"
+
     dims = [(4, 2), (1, 2), (2, 2), (3, 2), (4, 2), (4, 2), (5, 3)]
     size = [(15, 20), (15, 5), (15, 10), (15, 15), (15, 20), (15, 20), (22.5, 25)]
     elements = ["KeyIons", "H", "He", "C", "N", "O", "Si"]
@@ -305,7 +316,7 @@ Parameters
         extra_name = elements[i] + "_ions"
         fig, ax = plot_wind(root, ions[i], ["ion"] * len(ions[i]), extra_name, wd, projection, axes_scales=axes_scales,
                             use_cell_indices=use_cell_indices, panel_dims=dims[i], figure_size=size[i],
-                            file_ext=file_ext)
+                            title=title, file_ext=file_ext)
 
     if display:
         plt.show()
