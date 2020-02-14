@@ -15,6 +15,11 @@ import matplotlib.colors as colors
 from typing import List, Tuple
 
 
+plt.rcParams['xtick.labelsize'] = 15
+plt.rcParams['ytick.labelsize'] = 15
+plt.rcParams['axes.labelsize'] = 15
+
+
 def sightline_coords(x: np.ndarray, theta: float):
     """
     Return the vertical coordinates for a sightline given the x coordinates

@@ -21,6 +21,7 @@ from matplotlib import pyplot as plt
 
 plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15
+plt.rcParams['axes.labelsize'] = 15
 
 
 MIN_SPEC_COMP_FLUX = 1e-17
@@ -241,7 +242,11 @@ def optical_depth_spectrum(root: str, wd: str, inclinations: List[str] = "all", 
     ax.legend()
 
     if show_absorption_edge_labels:
-        plot_line_ids(ax, absorption_edges(freq=frequency_space))
+        if scale == "loglog" or scale == "logx":
+            logx = True
+        else:
+            logx = False
+        plot_line_ids(ax, absorption_edges(freq=frequency_space), logx, fontsize=15)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 
@@ -478,6 +483,8 @@ def spectra(root: str, wd: str, xmin: float = None, xmax: float = None, smooth_a
             name = str(inclinations[ii])
             ax[i, j] = __plotting_sub_function(ax[i, j], x, s, name, xlims, smooth_amount, scale, frequency_space,
                                                False, n)
+            ymin, ymax = ylims(x, s[name].values, xmin, xmax)
+            ax[i, j].set_ylim(ymin, ymax)
             if add_line_ids:
                 ax[i, j] = plot_line_ids(ax[i, j], common_lines(frequency_space))
             ii += 1
