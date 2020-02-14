@@ -325,8 +325,6 @@ def common_lines(freq: bool = False) -> list:
         ["C III]", 1908],
         ["Mg II", 2798],
         ["Balmer Edge", 3646],
-        [r"H$_{\xi}$", 3889],
-        [r"H$_{\eta}$", 3970],
         [r"H$_{\delta}$", 4101],
         [r"H$_{\gamma}$", 4340],
         ["He II", 4686],
@@ -376,13 +374,12 @@ def absorption_edges(freq: bool = False) -> list:
     return edges
 
 
-def plot_line_ids(ax: plt.Axes, lines: list, offset: float = 25, rotation: str = "vertical", fontsize: int = 10) \
+def plot_line_ids(ax: plt.Axes, lines: list, logx: bool = False, offset: float = 25, rotation: str = "vertical",
+                  fontsize: int = 10) \
         -> plt.Axes:
     """
     Plot line IDs onto a figure. This should probably be used after the x-limits
     have been set on the figure which these labels are being plotted onto.
-
-    # TODO: offset doesn't work for frequency space - setting default value to 0 for now
 
     Parameters
     ----------
@@ -391,6 +388,9 @@ def plot_line_ids(ax: plt.Axes, lines: list, offset: float = 25, rotation: str =
     lines: list
         A list containing the line name and wavelength in Angstroms
         (ordered by wavelength)
+    logx: bool [optional]
+        If the x-axis is logarithmic, then we need to calculate the xnorm
+        value slightly differently
     offset: float [optional]
         The amount to offset line labels along the x-axis
     rotation: str [optional]
@@ -402,6 +402,7 @@ def plot_line_ids(ax: plt.Axes, lines: list, offset: float = 25, rotation: str =
     -------
     ax: plt.Axes
         The plot object now with lines IDs :-)
+        :param logx:
     """
 
     nlines = len(lines)
@@ -416,7 +417,14 @@ def plot_line_ids(ax: plt.Axes, lines: list, offset: float = 25, rotation: str =
         label = lines[i][0]
         ax.axvline(x, linestyle="--", linewidth=0.5, color="k", zorder=1)
         x = x - offset
-        xnorm = (x - xlims[0]) / (xlims[1] - xlims[0])
+
+        # Calculate the x location of the label in axes coordinates
+
+        if logx:
+            xnorm = (np.log10(x) - np.log10(xlims[0])) / (np.log10(xlims[1]) - np.log10(xlims[0]))
+        else:
+            xnorm = (x - xlims[0]) / (xlims[1] - xlims[0])
+
         ax.text(xnorm, 0.90, label, ha="center", va="center", rotation=rotation, fontsize=fontsize,
                 transform=ax.transAxes)
 
