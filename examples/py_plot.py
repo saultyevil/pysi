@@ -111,7 +111,7 @@ def setup_script() \
     return setup
 
 
-def plot() \
+def plot(setup: tuple) \
         -> Tuple[plt.Figure, plt.Axes]:
     """
     Creates a bunch of plots using some parameters which can be controlled at
@@ -121,6 +121,12 @@ def plot() \
     This function basically just runs the main() functions from a bunch of the
     other plotting scripts located in the same directory.
 
+    Parameters
+    ----------
+    setup: tuple
+        A tuple containing the setup parameters to run the script. If this
+        isn't provided, then the script will parse them from the command line.
+
     Returns
     -------
     fig: plt.Figure
@@ -129,7 +135,10 @@ def plot() \
         The matplotlib Axes objects for the plot panels.
     """
 
-    root, wd, xmin, xmax, frequency_space, projection, smooth_amount, file_ext, display = setup_script()
+    if setup:
+        root, wd, xmin, xmax, frequency_space, projection, smooth_amount, file_ext, display = setup
+    else:
+        root, wd, xmin, xmax, frequency_space, projection, smooth_amount, file_ext, display = setup_script()
 
     # Create plots for the wind - only create velocity plots for rectilinear
     # at the moment - and remove the data folder afterwards
