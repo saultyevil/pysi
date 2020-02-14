@@ -94,7 +94,7 @@ VERBOSE_ALL = 4
 VERBOSITY = VERBOSE_PROGRESS_REPORT
 
 
-def print_python_output(line: str, n_cores, verbosity: int = VERBOSE_EXTRA_INFORMATION_TRANSPORT) \
+def print_python_output(line: str, n_cores, verbosity: int = VERBOSITY) \
         -> None:
     """
     Process the output from a Python simulation and print something to screen.
