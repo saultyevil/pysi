@@ -23,5 +23,5 @@ if len(argv) > 1:
         exit(0)
     remove_data_sym_links(argv[1], True)
 else:
-    remove_data_sym_links(verbose=True)
+    remove_data_sym_links("~/PySims", verbose=True)
 print("\n--------------------------------------------------------------------------------")
