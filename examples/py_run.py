@@ -11,6 +11,7 @@ The script can also be run in a directory containing only one Python pf.
 """
 
 
+from os import path
 import argparse as ap
 import time
 import datetime
@@ -377,14 +378,12 @@ def run_model(root: str, wd: str, use_mpi: bool, ncores: int, resume_model: bool
     # low signal/noise spectrum. Note we make a backup of the original pf.
 
     try:
-
         if split_cycles and not restart_from_spec_cycles:
             Grid.change_parameter(wd + pf, "Spectrum_cycles", "0", backup=True, verbose=verbose)
 
         if split_cycles and restart_from_spec_cycles:
             Grid.change_parameter(wd + pf, "Spectrum_cycles", "5", backup=False, verbose=verbose)
             Grid.change_parameter(wd + pf, "Photons_per_cycle", "1e6", backup=False, verbose=verbose)
-
     except IOError:
         print("Unable to open parameter file {} to change any parameters".format(wd + pf))
         return EXIT_FAIL
@@ -397,6 +396,9 @@ def run_model(root: str, wd: str, use_mpi: bool, ncores: int, resume_model: bool
         command += "mpirun -n {} ".format(ncores)
 
     command += " {} ".format(PYTHON_BINARY)
+
+    if path.exists("{}.wind_save".format(root)):
+        resume_model = True
 
     if resume_model:
         command += " -r "
