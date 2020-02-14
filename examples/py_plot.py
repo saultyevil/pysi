@@ -111,7 +111,7 @@ def setup_script() \
     return setup
 
 
-def plot(setup: tuple) \
+def plot(setup: tuple = None) \
         -> Tuple[plt.Figure, plt.Axes]:
     """
     Creates a bunch of plots using some parameters which can be controlled at
