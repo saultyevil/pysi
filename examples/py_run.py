@@ -79,7 +79,7 @@ PYTHON_BINARY = "py"
 RUNTIME_FLAGS = None
 RESUME_RUN = False
 CONV_LIMIT = 0.85
-SPLIT_CYCLES = True
+SPLIT_CYCLES = False
 DRY_RUN = False
 
 
@@ -549,7 +549,7 @@ def setup_script() \
     p = ap.ArgumentParser(description=__doc__)
 
     p.add_argument("-sc", "--split_cycles", action="store_true",
-                   help="Do not split the ionization and spectrum cycles.")
+                   help="Split the ionization and spectrum cycles into two separate Python runs.")
     p.add_argument("-r", "--restart", action="store_true", help="Restart a Python model from a previous wind_save.")
     p.add_argument("-py", "--python", type=str, action="store", help="The name of the of the Python binary to use.")
     p.add_argument("-f", "--python_flags", type=str, action="store", help="Any run-time flags to pass to Python.")
@@ -567,7 +567,7 @@ def setup_script() \
 
     global SPLIT_CYCLES
     if args.split_cycles:
-        SPLIT_CYCLES = False
+        SPLIT_CYCLES = True
 
     global PYTHON_BINARY
     if args.python:
