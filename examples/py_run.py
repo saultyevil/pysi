@@ -19,6 +19,7 @@ from sys import exit
 from shutil import copyfile
 from typing import List
 from subprocess import Popen, PIPE
+from py_plot import plot
 
 from PyPython import Grid
 from PyPython import Simulation
@@ -193,6 +194,23 @@ def print_python_output(line: str, n_cores, verbosity: int = VERBOSE_EXTRA_INFOR
         transport_time_seconds = float(line[5])
         transport_time = datetime.timedelta(seconds=transport_time_seconds // 1)
         log("         Photons transported in {} hrs:mins:secs".format(transport_time))
+
+    return
+
+
+def plot_model(root: str, wd: str):
+    """
+    Run py_plot.py.plot() to create a bunch of default plots for the model.
+
+    Parameters
+    ----------
+    root: str
+        The root name of the Python simulation
+    wd: str
+        The working directory containing the Python simulation
+    """
+
+    plot((root, wd, None, None, False, "rectilinear", 5, "png", False))
 
     return
 
@@ -494,7 +512,7 @@ def go(roots: List[str], use_mpi: bool, n_cores: int) -> None:
         # Check the convergence of the model
 
         if not rc:
-            log("Checking the convergence of the simulation:\n")
+            log("\nChecking the convergence of the simulation:\n")
             model_converged = convergence_check(root, wd, nmodels)
 
         # If the cycles are being split, handle the logic here to do so
@@ -513,6 +531,9 @@ def go(roots: List[str], use_mpi: bool, n_cores: int) -> None:
             log("Python exited for error code {} after spectral cycles.".format(rc))
             log("Skipping to the next model.\n")
             continue
+
+        print("Plotting the output of the model:\n")
+        plot_model(root, wd)
 
         log("")
 
