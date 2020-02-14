@@ -81,6 +81,7 @@ RESUME_RUN = False
 CONV_LIMIT = 0.85
 SPLIT_CYCLES = False
 DRY_RUN = False
+PLOT = False
 
 
 # Verbosity levels of Python output
@@ -532,8 +533,9 @@ def go(roots: List[str], use_mpi: bool, n_cores: int) -> None:
             log("Skipping to the next model.\n")
             continue
 
-        print("Plotting the output of the model:\n")
-        plot_model(root, wd)
+        if PLOT:
+            print("Plotting the output of the model:\n")
+            plot_model(root, wd)
 
         log("")
 
@@ -558,6 +560,7 @@ def setup_script() \
     p.add_argument("-v", "--verbose", action="store", help="The level of verbosity for Python's output.")
     p.add_argument("-n", "--n_cores", action="store", help="The number of processor cores to run Python with.")
     p.add_argument("-d", "--dry_run", action="store_true", help="Print the models found to screen and then exit.")
+    p.add_argument("-p", "--plot", action="store_true", help="Create plots for the models after running Python.")
 
     args = p.parse_args()
 
@@ -593,12 +596,17 @@ def setup_script() \
     if args.n_cores:
         N_CORES = int(args.n_cores)
 
+    global PLOT
+    if args.plot:
+        PLOT = True
+
     log("Python  .......................... {}".format(PYTHON_BINARY))
     log("Split cycles ..................... {}".format(SPLIT_CYCLES))
     log("Resume run ....................... {}".format(RESUME_RUN))
     log("Number of cores .................. {}".format(N_CORES))
     log("Convergence limit ................ {}".format(CONV_LIMIT))
     log("Verbosity level .................. {}".format(VERBOSITY))
+    log("Plot model ....................... {}".format(PLOT))
 
     if RUNTIME_FLAGS:
         log("\nUsing these extra python flags:\n\t{}".format(RUNTIME_FLAGS))
