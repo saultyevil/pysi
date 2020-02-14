@@ -311,7 +311,8 @@ Parameters
         plt.show()
 
     print("\n")
-    print("-" * div_len)
+    if __name__ == "__main__":
+        print("-" * div_len)
 
     return fig, ax
 

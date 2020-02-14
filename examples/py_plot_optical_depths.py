@@ -174,7 +174,8 @@ def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
         plt.show()
 
     print("")
-    print("-" * div_len)
+    if __name__ == "__main__":
+        print("-" * div_len)
 
     return fig, ax
 
