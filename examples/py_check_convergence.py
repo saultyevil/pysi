@@ -6,6 +6,7 @@ The purpose of this script is to determine if a simulation has converged or not,
 and to create any plots which are related to the convergence of a simulation.
 """
 
+
 import numpy as np
 from matplotlib import pyplot as plt
 from PyPython import Simulation
@@ -14,7 +15,7 @@ from PyPython import Quotes
 from typing import List
 
 
-COL_WIDTH = 100
+COL_WIDTH = 80
 
 
 def plot_convergence(root: str, convergence: List[float], converging: List[float] = None, tr: List[float] = None,
@@ -51,6 +52,10 @@ def plot_convergence(root: str, convergence: List[float], converging: List[float
     ax.set_xticks(cycles[::2])
 
     ax.plot(cycles, convergence, label="Convergence")
+
+    # As the bare minimum, we need the convergence per cycle but if the other
+    # convergence stats are passed as well, plot those too
+
     if converging:
         ax.plot(cycles, converging, label="Converging")
     if tr:
@@ -96,7 +101,11 @@ def get_convergence(root: str, wd: str = "./") -> None:
               .format(i + 1, ncycles, convergence[i] * 100, converging[i] * 100))
     print("")
 
-    plot_convergence(root, convergence, converging, tr, te, te_max, hc, wd)
+    try:
+        plot_convergence(root, convergence, converging, tr, te, te_max, hc, wd)
+    except Exception as e:
+        print(e)
+        print("Unable to create convergence plot. Do you have a valid X session?")
 
     return
 
