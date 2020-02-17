@@ -75,7 +75,7 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ __ _ _ _ _ _ _ _ _
 
 # Global variables
 DATE = datetime.datetime.now()
-N_CORES = 1
+N_CORES = 0
 PYTHON_BINARY = "py"
 RUNTIME_FLAGS = None
 RESUME_RUN = False
@@ -212,7 +212,11 @@ def plot_model(root: str, wd: str):
         The working directory containing the Python simulation
     """
 
-    plot((root, wd, None, None, False, "rectilinear", 5, "png", False))
+    try:
+        plot((root, wd, None, None, False, "rectilinear", 5, "png", False))
+    except Exception as e:
+        print(e)
+        print("Unable to create plots of model. Do you have a valid X session?")
 
     return
 
@@ -397,6 +401,10 @@ def run_model(root: str, wd: str, use_mpi: bool, ncores: int, resume_model: bool
 
     command += " {} ".format(PYTHON_BINARY)
 
+    # If a root.save file exists, then we assume that we want to restart the
+    # run
+    # TODO: switch to turn this off
+
     if path.exists("{}.wind_save".format(root)):
         resume_model = True
 
@@ -535,6 +543,10 @@ def go(roots: List[str], use_mpi: bool, n_cores: int) -> None:
             log("Skipping to the next model.\n")
             continue
 
+        # Plot the model if the script has been given the ability to do so -
+        # this is an extra flag for use on HPC clusters where there is no X
+        # session or similar
+
         if PLOT:
             print("Plotting the output of the model:\n")
             plot_model(root, wd)
@@ -577,6 +589,10 @@ def setup_script() \
     global PYTHON_BINARY
     if args.python:
         PYTHON_BINARY = args.python_version
+
+    global RESUME_RUN
+    if args.restart:
+        RESUME_RUN = True
 
     global RUNTIME_FLAGS
     if args.python_flags:
