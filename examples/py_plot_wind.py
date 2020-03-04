@@ -97,7 +97,7 @@ def plot_wind(root: str, wind_variables: List[str], wind_variable_types: List[st
         fig, ax = plt.subplots(panel_dims[0], panel_dims[1], figsize=figure_size, squeeze=False)
     else:
         ax = []
-        fig = plt.Figure(figsize=figure_size)
+        fig = plt.figure(figsize=figure_size)
 
     # Set the scale to linear-linear when plotting with cell indices
 
@@ -119,7 +119,10 @@ def plot_wind(root: str, wind_variables: List[str], wind_variable_types: List[st
             quantity_type = wind_variable_types[index]
 
             try:
-                x, z, w = WindUtils.get_wind_variable(root, quantity, quantity_type, wd, projection, 
+                the_type = quantity_type
+                if quantity_type == "ion_density":
+                    the_type = "ion"
+                x, z, w = WindUtils.get_wind_variable(root, quantity, the_type, wd, projection,
                                                       return_indices=use_cell_indices)
             except Exception as e:
                 print("\nAn exception '{}' occurred for some reason.".format(e))
@@ -130,7 +133,7 @@ def plot_wind(root: str, wind_variables: List[str], wind_variable_types: List[st
             if projection == "rectilinear":
                 fig, ax = WindPlot.rectilinear_wind(x, z, w, quantity, quantity_type, fig, ax, i, j, scale=axes_scales)
             else:
-                polar_ax = plt.subplot(panel_dims[0], panel_dims[1], index +1, projection="polar")
+                polar_ax = plt.subplot(panel_dims[0], panel_dims[1], index + 1, projection="polar")
                 axx = WindPlot.polar_wind(x, z, w, quantity, quantity_type, polar_ax, index + 1, scale=axes_scales)
                 ax.append(axx)
 
@@ -283,9 +286,9 @@ Parameters
     print("\nCreating a figure containing:\n\t", end="")
     for w in wind:
         print("{} ".format(w), end="")
+    print("")
 
-    fig, ax = plot_wind(root, wind, wind_types, "wind", wd, projection, axes_scales=axes_scales,
-                        use_cell_indices=use_cell_indices, file_ext=file_ext)
+    fig, ax = plot_wind(root, wind, wind_types, "wind", wd, projection, axes_scales, use_cell_indices)
 
     # Plot the ions
 
@@ -308,20 +311,25 @@ Parameters
          "Si_i11", "Si_i12", "Si_i13", "Si_i14", "Si_i15"]
     ]
 
-    print("\n\nCreating figures containing ions for the elements:\n\t", end="")
+    print("\nCreating figures containing ions for the elements:\n\t", end="")
     for el in elements:
         print("{} ".format(el), end="")
+    print("\n")
 
     for i in range(len(elements)):
         extra_name = elements[i] + "_ions"
-        fig, ax = plot_wind(root, ions[i], ["ion"] * len(ions[i]), extra_name, wd, projection, axes_scales=axes_scales,
+        if use_ion_density:
+            ion_type = ["ion_density"] * len(ions[i])
+        else:
+            ion_type = ["ion"] * len(ions[i])
+        fig, ax = plot_wind(root, ions[i], ion_type, extra_name, wd, projection, axes_scales=axes_scales,
                             use_cell_indices=use_cell_indices, panel_dims=dims[i], figure_size=size[i],
                             title=title, file_ext=file_ext)
 
     if display:
         plt.show()
 
-    print("\n")
+    # print("\n")
     if __name__ == "__main__":
         print("-" * div_len)
 
