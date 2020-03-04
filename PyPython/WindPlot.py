@@ -103,11 +103,13 @@ def rectilinear_wind(x: np.ndarray, z: np.ndarray, w: np.ndarray, w_name: str, w
 
     with np.errstate(divide="ignore"):
         if w_name == "converge" or w_name == "convergence" or w_name == "converging":
-            im = ax[i, j].pcolor(x, z, w, vmin=0, vmax=3)
+            im = ax[i, j].pcolormesh(x, z, w, vmin=0, vmax=3)
         elif w_type == "ion":
-            im = ax[i, j].pcolor(x, z, np.log10(w), norm=colors.Normalize(vmin=-10, vmax=0))
+            im = ax[i, j].pcolormesh(x, z, np.log10(w), norm=colors.Normalize(vmin=-10, vmax=0))
+        elif w_type == "ion_density":
+            im = ax[i, j].pcolormesh(x, z, np.log10(w))
         elif w_type == "wind":
-            im = ax[i, j].pcolor(x, z, np.log10(w))
+            im = ax[i, j].pcolormesh(x, z, np.log10(w))
         else:
             raise InvalidParameter("{}: unknown wind variable type {}".format(n, w_type))
 
@@ -190,11 +192,11 @@ def polar_wind(r: np.ndarray, theta: np.ndarray, w: np.ndarray, w_name: str, w_t
 
     with np.errstate(divide="ignore"):
         if w_name == "converge" or w_name == "convergence" or w_name == "converging":
-            im = ax.pcolor(theta, r, w, vmin=0, vmax=3)
+            im = ax.pcolormesh(theta, r, w, vmin=0, vmax=3)
         elif w_type == "wind":
-            im = ax.pcolor(theta, r, np.log10(w))
+            im = ax.pcolormesh(theta, r, np.log10(w))
         elif w_type == "ion":
-            im = ax.pcolor(theta, r, np.log10(w), norm=colors.Normalize(vmin=-10, vmax=0))
+            im = ax.pcolormesh(theta, r, np.log10(w), norm=colors.Normalize(vmin=-10, vmax=0))
         else:
             raise InvalidParameter("{}: unknown wind variable type {}".format(n, w_type))
 
