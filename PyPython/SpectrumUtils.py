@@ -199,7 +199,7 @@ def check_inclination(inclination: str, spec: Union[pd.DataFrame, np.ndarray]) -
     return allowed
 
 
-def smooth(input: np.ndarray, smooth_amount: Union[int, float]) -> np.ndarray:
+def smooth(input: Union[np.ndarray, List[Union[float, int]]], smooth_amount: Union[int, float]) -> np.ndarray:
     """
     Smooth a 1D array of data using a boxcar filter of width smooth pixels.
 
