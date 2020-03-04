@@ -246,7 +246,7 @@ def optical_depth_spectrum(root: str, wd: str, inclinations: List[str] = "all", 
             logx = True
         else:
             logx = False
-        plot_line_ids(ax, absorption_edges(freq=frequency_space), logx, fontsize=15)
+        plot_line_ids(ax, absorption_edges(frequency_space), logx, fontsize=15)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 
@@ -460,12 +460,12 @@ def spectra(root: str, wd: str, xmin: float = None, xmax: float = None, smooth_a
     size = (12, 10)
     if figsize:
         size = figsize
-    fig, ax = plt.subplots(panel_dims[0], panel_dims[1], figsize=size)
+    fig, ax = plt.subplots(panel_dims[0], panel_dims[1], figsize=size, squeeze=False)
 
     # Use either frequency or wavelength and set the plot limits respectively
     xlabel = "Lambda"
     if frequency_space:
-        xlabel = "Freq"
+        xlabel = "Freq."
     x = s[xlabel].values
 
     xlims = [x.min(), x.max()]
@@ -486,7 +486,11 @@ def spectra(root: str, wd: str, xmin: float = None, xmax: float = None, smooth_a
             ymin, ymax = ylims(x, s[name].values, xmin, xmax)
             ax[i, j].set_ylim(ymin, ymax)
             if add_line_ids:
-                ax[i, j] = plot_line_ids(ax[i, j], common_lines(frequency_space))
+                if scale == "loglog" or scale == "logx":
+                    logx = True
+                else:
+                    logx = False
+                ax[i, j] = plot_line_ids(ax[i, j], common_lines(frequency_space), logx)
             ii += 1
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
