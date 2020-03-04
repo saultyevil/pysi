@@ -101,7 +101,11 @@ def spectra_on_same_panel(root: str, wd: str = "./", xmin: float = None, xmax: f
     ax.legend()
 
     if common_lines:
-        ax = SpectrumUtils.plot_line_ids(ax, SpectrumUtils.common_lines())
+        if axes_scales == "loglog" or axes_scales == "logx":
+            logx = True
+        else:
+            logx = False
+        ax = SpectrumUtils.plot_line_ids(ax, SpectrumUtils.common_lines(), logx)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
     fig.savefig("{}/{}_spectra_single.{}".format(wd, root, file_ext))
@@ -217,8 +221,14 @@ def individual_spectra(root: str, wd: str = "./", xmin: float = None, xmax: floa
         # Convert into lambda F_lambda which is (I hope) the same as nu F_nu
         if frequency_space:
             y *= s["Lambda"].values
+
+
         fig, ax = SpectrumPlot.plot(x, y, xmin, xmax, xlabel, ylabel, axes_scales)
-        ax = SpectrumUtils.plot_line_ids(ax, SpectrumUtils.common_lines())
+        if axes_scales == "loglog" or axes_scales == "logx":
+            logx = True
+        else:
+            logx = False
+        ax = SpectrumUtils.plot_line_ids(ax, SpectrumUtils.common_lines(), logx)
         ax.set_title("Inclination i = {}".format(str(a)) + r"$^{\circ}$")
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
         fig.savefig("{}/{}_i{}_spectrum.{}".format(wd, root, str(a), file_ext))
