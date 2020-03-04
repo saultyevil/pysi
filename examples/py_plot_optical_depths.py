@@ -99,7 +99,7 @@ def parse_input() -> tuple:
     if args.ext:
         file_ext = args.ext
 
-    axes_scales = "logy"
+    axes_scales = "loglog"
     if args.scale:
         allowed = ["logx", "logy", "loglog", "linlin"]
         if args.scale not in allowed:
