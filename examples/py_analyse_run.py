@@ -15,3 +15,19 @@ The script will output:
     - The luminosity balance of the created and escaping photons
     - Where luminosity is lost within the simulation
 """
+
+
+
+def setup_script():
+
+    return
+
+
+
+def main():
+
+    return
+
+
+if __name__ == "__main__":
+    main()
