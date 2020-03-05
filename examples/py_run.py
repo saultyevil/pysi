@@ -512,7 +512,7 @@ def go(roots: List[str], use_mpi: bool, n_cores: int) -> None:
                        split_cycles=SPLIT_CYCLES)
         if rc:
             log("Python exited with error code {}.".format(rc))
-            log("Skipping to the next model.")
+            log("Skipping to the next model.\n")
             continue
 
         # Check for the error report and print to the screen
