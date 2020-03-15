@@ -106,9 +106,7 @@ def rectilinear_wind(x: np.ndarray, z: np.ndarray, w: np.ndarray, w_name: str, w
             im = ax[i, j].pcolormesh(x, z, w, vmin=0, vmax=3)
         elif w_type == "ion":
             im = ax[i, j].pcolormesh(x, z, np.log10(w), norm=colors.Normalize(vmin=-10, vmax=0))
-        elif w_type == "ion_density":
-            im = ax[i, j].pcolormesh(x, z, np.log10(w))
-        elif w_type == "wind":
+        elif w_type == "wind" or w_type == "ion_density":
             im = ax[i, j].pcolormesh(x, z, np.log10(w))
         else:
             raise InvalidParameter("{}: unknown wind variable type {}".format(n, w_type))
