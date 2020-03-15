@@ -167,7 +167,7 @@ def print_python_output(line: str, n_cores, verbosity: int = VERBOSITY) \
         try:
             cells_converged = line[1]
             fraction_converged = line[2]
-            log("         {} cells converged ({})".format(cells_converged, fraction_converged))
+            log("         {} cells converged {}".format(cells_converged, fraction_converged))
         except IndexError:
             log("          unable to parse convergence :-(")
 
