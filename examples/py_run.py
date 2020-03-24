@@ -405,7 +405,7 @@ def run_model(root: str, wd: str, use_mpi: bool, ncores: int, resume_model: bool
     # run
     # TODO: switch to turn this off
 
-    if path.exists("{}.wind_save".format(root)):
+    if path.exists("{}/{}.wind_save".format(wd, root)):
         resume_model = True
 
     if resume_model:
