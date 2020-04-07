@@ -472,7 +472,8 @@ def run_model(root: str, wd: str, use_mpi: bool, ncores: int, resume_model: bool
     return rc
 
 
-def go(roots: List[str], use_mpi: bool, n_cores: int) -> None:
+def go(roots: List[str], use_mpi: bool, n_cores: int) \
+        -> List[int]:
     """
     Run the parts of the scripts requested to by run by the user.
 
@@ -484,6 +485,11 @@ def go(roots: List[str], use_mpi: bool, n_cores: int) -> None:
         If True, MPI will be used to run Python.
     n_cores: int
         If use_mpi is True, this will be the number of cores to run Python with.
+
+    Returns
+    -------
+    the_rc: List[int]
+        The return codes of the Python models
     """
 
     nmodels = len(roots)
@@ -496,7 +502,7 @@ def go(roots: List[str], use_mpi: bool, n_cores: int) -> None:
         open("converged.txt", "w").close()
         open("convergence_report.txt", "w").close()
 
-    rc = 0
+    the_rc = []
 
     for i, path in enumerate(roots):
 
@@ -512,6 +518,8 @@ def go(roots: List[str], use_mpi: bool, n_cores: int) -> None:
         model_converged = False
         rc = run_model(root, wd, use_mpi, n_cores, resume_model=RESUME_RUN, restart_from_spec_cycles=False,
                        split_cycles=SPLIT_CYCLES)
+        the_rc.append(rc)
+
         if rc:
             log("Python exited with error code {}.".format(rc))
             log("Skipping to the next model.\n")
@@ -533,6 +541,7 @@ def go(roots: List[str], use_mpi: bool, n_cores: int) -> None:
         if SPLIT_CYCLES and model_converged > CONV_LIMIT:
             rc = run_model(root, wd, use_mpi, n_cores, resume_model=True, restart_from_spec_cycles=True,
                            split_cycles=True)
+            the_rc[i] = rc
             # Check for the error report and print to the screen
             errors = Simulation.error_summary(root, wd, N_CORES)
             print_errors(errors, root)
@@ -555,14 +564,7 @@ def go(roots: List[str], use_mpi: bool, n_cores: int) -> None:
 
         log("")
 
-    # If the last model exits with a non-zero return code, then we will also
-    # exit with non-zero return. This is for Iridis so the slurm scheduler
-    # can email that the program has exited due to failure
-
-    if rc:
-        exit(rc)
-
-    return
+    return the_rc
 
 
 def setup_script() \
@@ -695,10 +697,19 @@ def main() \
 
     # Now run Python...
 
-    go(the_pfs, mpirun, ncores_to_use)
+    the_rc = go(the_pfs, mpirun, ncores_to_use)
+
+    ncrash = 0
+    for i, rc in enumerate(the_rc):
+        if rc > 0:
+            log("Model {} failed with rc {}".format(the_pfs[i], rc))
+            ncrash += 1
 
     log("------------------------")
     close_logfile()
+
+    if ncrash:
+        exit(ncrash)
 
     return
 
