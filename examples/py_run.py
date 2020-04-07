@@ -496,6 +496,8 @@ def go(roots: List[str], use_mpi: bool, n_cores: int) -> None:
         open("converged.txt", "w").close()
         open("convergence_report.txt", "w").close()
 
+    rc = 0
+
     for i, path in enumerate(roots):
 
         root, wd = PythonUtils.split_root_directory(path)
@@ -552,6 +554,13 @@ def go(roots: List[str], use_mpi: bool, n_cores: int) -> None:
             plot_model(root, wd)
 
         log("")
+
+    # If the last model exits with a non-zero return code, then we will also
+    # exit with non-zero return. This is for Iridis so the slurm scheduler
+    # can email that the program has exited due to failure
+
+    if rc:
+        exit(rc)
 
     return
 
