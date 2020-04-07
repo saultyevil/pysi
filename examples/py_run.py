@@ -79,6 +79,7 @@ N_CORES = 0
 PYTHON_BINARY = "py"
 RUNTIME_FLAGS = None
 RESUME_RUN = False
+RESTART_OVERRIDE = False
 CONV_LIMIT = 0.85
 SPLIT_CYCLES = False
 DRY_RUN = False
@@ -405,7 +406,7 @@ def run_model(root: str, wd: str, use_mpi: bool, ncores: int, resume_model: bool
     # run
     # TODO: switch to turn this off
 
-    if path.exists("{}/{}.wind_save".format(wd, root)):
+    if path.exists("{}/{}.wind_save".format(wd, root)) and not RESTART_OVERRIDE:
         resume_model = True
 
     if resume_model:
@@ -578,6 +579,8 @@ def setup_script() \
     p.add_argument("-sc", "--split_cycles", action="store_true",
                    help="Split the ionization and spectrum cycles into two separate Python runs.")
     p.add_argument("-r", "--restart", action="store_true", help="Restart a Python model from a previous wind_save.")
+    p.add_argument("-ro", "--restart_override", action="store_true",
+                   help="Disable the automatic restarting run function.")
     p.add_argument("-py", "--python", type=str, action="store", help="The name of the of the Python binary to use.")
     p.add_argument("-f", "--python_flags", type=str, action="store", help="Any run-time flags to pass to Python.")
     p.add_argument("-c", "--convergence_limit", type=float, action="store",
@@ -604,6 +607,10 @@ def setup_script() \
     global RESUME_RUN
     if args.restart:
         RESUME_RUN = True
+
+    global RESTART_OVERRIDE
+    if args.restart_override:
+        RESTART_OVERRIDE = True
 
     global RUNTIME_FLAGS
     if args.python_flags:
@@ -632,6 +639,7 @@ def setup_script() \
     log("Python  .......................... {}".format(PYTHON_BINARY))
     log("Split cycles ..................... {}".format(SPLIT_CYCLES))
     log("Resume run ....................... {}".format(RESUME_RUN))
+    log("Automatic restart override ....... {}".format(RESTART_OVERRIDE))
     log("Number of cores .................. {}".format(N_CORES))
     log("Convergence limit ................ {}".format(CONV_LIMIT))
     log("Verbosity level .................. {}".format(VERBOSITY))
