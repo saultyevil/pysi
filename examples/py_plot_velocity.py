@@ -144,7 +144,7 @@ def velocity_plot(root: str, wd: str = "./", axes_scales: str = "loglog", use_ce
     nrows = 2
     ncols = 2
 
-    fig, ax = plt.subplots(nrows, ncols, figsize=(15, 15), squeeze=False)
+    fig, ax = plt.subplots(nrows, ncols, figsize=(15, 10), squeeze=False)
 
     # Set the scale to linear-linear when plotting with cell indices
 

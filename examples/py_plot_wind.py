@@ -276,7 +276,7 @@ Parameters
     
     # First, we probably need to run windsave2table
 
-    PythonUtils.windsave2table(root, wd, ion_density=use_ion_density)
+    # PythonUtils.windsave2table(root, wd, ion_density=use_ion_density)
 
     # Plot the wind quantities first
 
@@ -297,11 +297,12 @@ Parameters
     else:
         title = "Ion Fractions"
 
-    dims = [(4, 2), (1, 2), (2, 2), (3, 2), (4, 2), (4, 2), (5, 3)]
-    size = [(15, 20), (15, 5), (15, 10), (15, 15), (15, 20), (15, 20), (22.5, 25)]
+    dims = [(2, 2), (1, 2), (2, 2), (3, 2), (4, 2), (4, 2), (5, 3)]
+    size = [(15, 10), (15, 5), (15, 10), (15, 15), (15, 20), (15, 20), (22.5, 25)]
     elements = ["KeyIons", "H", "He", "C", "N", "O", "Si"]
     ions = [
-        ["O_i05", "Si_i04", "Si_i05", "N_i04", "N_i05", "N_i06", "C_i04", "C_i05"],
+        ["H_i01", "Si_i04", "N_i05", "C_i04"],
+        # ["O_i05", "Si_i04", "Si_i05", "N_i04", "N_i05", "N_i06", "C_i04", "C_i05"],
         ["H_i01", "H_i02"],
         ["He_i01", "He_i02", "He_i03"],
         ["C_i01", "C_i02", "C_i03", "C_i04", "C_i05", "C_i06"],
@@ -329,7 +330,6 @@ Parameters
     if display:
         plt.show()
 
-    # print("\n")
     if __name__ == "__main__":
         print("-" * div_len)
 

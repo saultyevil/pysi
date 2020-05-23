@@ -69,7 +69,7 @@ def get_continuum(root):
     return t
 
 
-def create_plot(spectrum, optical_depth_spectrum, continuum_spectrum):
+def create_plot(root, spectrum, optical_depth_spectrum, continuum_spectrum):
     """Create the reprocessing plot."""
 
     fig, ax = plt.subplots(1, 1, figsize=(13, 7))
@@ -95,13 +95,16 @@ def create_plot(spectrum, optical_depth_spectrum, continuum_spectrum):
     ax2.loglog(continuum_frequency, SpectrumUtils.smooth(continuum_flux, SMOOTH_AMOUNT), "k--", zorder=0, alpha=0.5)
     ax2.loglog(emergent_frequency, SpectrumUtils.smooth(emergent_flux, SMOOTH_AMOUNT), "k-", zorder=1, alpha=0.5)
     ax2.set_ylabel(r"$\nu L_{\nu}$ [ergs s$^{-1}$]")
-    ax2.set_ylim(1e40, 1e45)
+    ax2.set_ylim(1e41, 1e43)
 
     # Plot the optical depths
+
+    sightlines=["60"]
 
     for sl in sightlines:
         t = optical_depth_spectrum[sl].values
         if np.count_nonzero(t) != len(t):
+            print("!!")
             continue
         ax.loglog(tau_freq, t, label="i = {}".format(sl) + r"$^{\circ}$")
 
@@ -118,6 +121,7 @@ def create_plot(spectrum, optical_depth_spectrum, continuum_spectrum):
     SpectrumUtils.plot_line_ids(ax, SpectrumUtils.absorption_edges(True), logx=True)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+    plt.savefig("{}_reprocess.png".format(root))
     plt.show()
 
     return fig, ax, ax2
@@ -132,7 +136,7 @@ def main():
     spectrum = SpectrumUtils.read_spec("{}.spec".format(root))
     optical_depth = SpectrumUtils.read_spec("diag_{}/{}.tau_spec.diag".format(root, root))
 
-    fig, ax, ax2 = create_plot(spectrum, optical_depth, cont)
+    fig, ax, ax2 = create_plot(root, spectrum, optical_depth, cont)
 
     return fig, ax, ax2
 

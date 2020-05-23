@@ -95,7 +95,12 @@ def get_convergence(root: str, wd: str = "./") -> None:
     converging = Simulation.check_convergence(root, wd, return_per_cycle=True, return_converging=True)
     tr, te, te_max, hc = Simulation.check_convergence_criteria(root, wd)
 
-    ncycles = len(convergence)
+    try:
+        ncycles = len(convergence)
+    except:
+        print("Something doesn't work, skipping {}{}".format(wd, root))
+        return
+
     for i in range(ncycles):
         print("Cycle {:2d} / {:2d}: {:5.2f}% of cells converged and {:5.2f}% of cells are still converging"
               .format(i + 1, ncycles, convergence[i] * 100, converging[i] * 100))

@@ -9,7 +9,8 @@ being saved to disk or displayed.
 """
 
 from .Constants import PARSEC
-from .SpectrumUtils import absorption_edges, common_lines, plot_line_ids, smooth, read_spec, spec_inclinations, ylims
+from .SpectrumUtils import absorption_edges, common_lines, plot_line_ids, smooth
+from .SpectrumUtils import read_spec, spec_inclinations, ylims
 from .PythonUtils import subplot_dims
 from .Error import InvalidParameter
 

@@ -395,7 +395,8 @@ def run_model(root: str, wd: str, use_mpi: bool, ncores: int, resume_model: bool
 
     # Construct shell command to run Python and use subprocess to run
 
-    command = "cd {}; Setup_Py_Dir; ".format(wd)
+    # command = "cd {}; Setup_Py_Dir; ".format(wd)
+    command = "cd {}; ".format(wd)
 
     if use_mpi:
         command += "mpirun -n {} ".format(ncores)

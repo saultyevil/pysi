@@ -20,7 +20,7 @@ from scipy.signal import convolve, boxcar
 from matplotlib import pyplot as plt
 
 
-def find_specs(root: str = None, path: str = "./") -> List[str]:
+def find_specs(root: str = None, path: str = ".") -> List[str]:
     """
     Find root.spec files recursively in provided directory path.
 
@@ -218,6 +218,8 @@ def smooth(input: Union[np.ndarray, List[Union[float, int]]], smooth_amount: Uni
 
     n = smooth.__name__
 
+    input = np.array(input)
+
     if type(input) != list and type(input) != np.ndarray:
         raise TypeError("{}: expecting list or np.ndarray".format(n))
 
@@ -310,6 +312,7 @@ def common_lines(freq: bool = False) -> list:
 
     lines = [
         ["He II Edge", 229],
+        ["N III/O III", 305],
         ["He I Edge", 504],
         ["Lyman Edge", 912],
         ["P V", 1118],
@@ -318,17 +321,22 @@ def common_lines(freq: bool = False) -> list:
         ["O V/Si IV", 1371],
         ["", 1400],
         ["N IV", 1489],
-        ["C IV", 1549],
+        ["C IV", 1548],
+        ["", 1550],
         ["He II", 1640],
         ["N III]", 1750],
         ["Al III", 1854],
         ["C III]", 1908],
         ["Mg II", 2798],
         ["Balmer Edge", 3646],
+        ["Ca II", 3934],
+        ["", 3969],
         [r"H$_{\delta}$", 4101],
         [r"H$_{\gamma}$", 4340],
         ["He II", 4686],
         [r"H$_{\beta}$", 4861],
+        ["Na I", 5891],
+        ["", 5897],
         [r"H$_{\alpha}$", 6564],
         ["Paschen Edge", 8204]
     ]

@@ -7,6 +7,7 @@ The design of the function is to return the figure and axes objects so the
 user can then add axes labels and etc themselves.
 """
 
+from .WindUtils import sightline_coords
 from .Error import InvalidParameter
 
 import numpy as np
@@ -20,30 +21,54 @@ plt.rcParams['ytick.labelsize'] = 15
 plt.rcParams['axes.labelsize'] = 15
 
 
-def sightline_coords(x: np.ndarray, theta: float):
-    """
-    Return the vertical coordinates for a sightline given the x coordinates
-    and the inclination of the sightline.
+def spherical_wind(r: np.ndarray, w: np.ndarray, w_name: str, w_type:str, fig: plt.Figure = None, ax: plt.Axes = None,
+                   i: int = None, j: int = None, scale: str = "loglog", figsize: Tuple[int, int] = (5, 5)) \
+        -> Tuple[plt.Figure, plt.Axes]:
+    """Creates wind plots for 1D spherically symmetric winds."""
 
-    Parameters
-    ----------
-    x: np.ndarray[float]
-        The x-coordinates of the sightline
-    theta: float
-        The opening angle of the sightline
+    n = spherical_wind.__name__
 
-    Returns
-    -------
-    z: np.ndarray[float]
-        The z-coordinates of the sightline
-    """
+    if fig is None and ax is None:
+        i = 0
+        j = 0
+        fig, ax = plt.subplots(1, 1, figsize=figsize, squeeze=False)
+    else:
+        if fig is None:
+            raise InvalidParameter("{}: fig was not provided when it was expected".format(n))
+        if ax is None:
+            raise InvalidParameter("{}: ax was not provided when it was expected".format(n))
+        if i is None:
+            raise InvalidParameter("{}: fig was not provided when it was expected".format(n))
+        if j is None:
+            raise InvalidParameter("{}: fig was not provided when it was expected".format(n))
 
-    return x * np.tan(np.pi / 2 - theta)
+    with np.errstate(divide="ignore"):
+        if w_name == "converge" or w_name == "convergence" or w_name == "converging":
+            ax[i, j].plot(r, w)
+        elif w_type == "ion" or w_type == "wind" or w_type == "ion_density":
+            ax[i, j].pcolormesh(r, np.log10(w))
+        else:
+            raise InvalidParameter("{}: unknown wind variable type {}".format(n, w_type))
+
+    if w_name == "converge" or w_name == "convergence" or w_name == "converging":
+        ax[i, j].set_title(w_name)
+    else:
+        ax[i, j].set_title(r"$\log_{10}$(" + w_name + ")")
+    ax[i, j].set_xlabel("r [cm]")
+    ax[i, j].set_xlim(np.min(r[r != 0]), np.max(r))
+    ax[i, j].set_ylim(np.min(w[w != 0]), np.max(w))
+    if scale == "loglog" or scale == "logx":
+        ax[i, j].set_xscale("log")
+    if scale == "loglog" or scale == "logy":
+        ax[i, j].set_yscale("log")
+
+    return fig, ax
 
 
 def rectilinear_wind(x: np.ndarray, z: np.ndarray, w: np.ndarray, w_name: str, w_type: str, fig: plt.Figure = None,
                      ax: plt.Axes = None, i: int = None, j: int = None, scale: str = "loglog",
-                     obs_los: List[float] = None, figsize: Tuple[int, int] = (5, 5)) -> Tuple[plt.Figure, plt.Axes]:
+                     obs_los: List[float] = None, figsize: Tuple[int, int] = (5, 5)) \
+        -> Tuple[plt.Figure, plt.Axes]:
     """
     Creates a wind plot in rectilinear coordinates. If fig or ax is supplied,
     then fig, ax, i and j must also be supplied. Note that ax should also be a
@@ -139,7 +164,8 @@ def rectilinear_wind(x: np.ndarray, z: np.ndarray, w: np.ndarray, w_name: str, w
 
 
 def polar_wind(r: np.ndarray, theta: np.ndarray, w: np.ndarray, w_name: str, w_type: str, ax: plt.Axes = None,
-               index: int = None, obs_los: List[float] = None, scale: str = "log") -> plt.Axes:
+               index: int = None, obs_los: List[float] = None, scale: str = "log") \
+        -> plt.Axes:
     """
     Creates a wind plot in polar coordinates. If ax is supplied then index must
     also be supplied. Note that ax should also be single plt.Axes object.
@@ -191,6 +217,8 @@ def polar_wind(r: np.ndarray, theta: np.ndarray, w: np.ndarray, w_name: str, w_t
     with np.errstate(divide="ignore"):
         if w_name == "converge" or w_name == "convergence" or w_name == "converging":
             im = ax.pcolormesh(theta, r, w, vmin=0, vmax=3)
+        elif w_name == "inwind":
+            im = ax.pcolormesh(theta, r, w)
         elif w_type == "wind":
             im = ax.pcolormesh(theta, r, np.log10(w))
         elif w_type == "ion":

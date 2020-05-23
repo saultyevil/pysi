@@ -12,12 +12,14 @@ wind.
 from .Error import CoordError, InvalidParameter
 
 import os
-from typing import Tuple
+from typing import Tuple, Union
 import numpy as np
 import pandas as pd
+from astropy.io import ascii
+from astropy.table import Table
 
 
-def get_wind_variable(root: str, var_name: str, var_type: str, path: str = "./", coord: str = "rectilinear",
+def get_wind_variable(root: str, var_name: str, var_type: str, path: str = ".", coord: str = "rectilinear",
                       input_file: str = None, return_indices: bool = False) -> Tuple[np.array, np.array, np.array]:
     """
     Read in variables contained within a root.ep.complete or ion file generated
@@ -76,7 +78,7 @@ def get_wind_variable(root: str, var_name: str, var_type: str, path: str = "./",
         ele_idx = var_name.find("_")
         element = var_name[:ele_idx]
         key = var_name[ele_idx + 1:]
-        file = "{}/{}.0.{}.txt".format(path, root, element)
+        file = "{}/{}.{}.frac.txt".format(path, root, element)
     elif var_type.lower() == "wind":
         file = "{}/{}.ep.complete".format(path, root)
     else:
@@ -178,4 +180,100 @@ def sightline_coords(x: np.ndarray, theta: float):
         The z-coordinates of the sightline
     """
 
-    return x * np.tan(np.pi / 2 - theta)
+    return x * np.tan(np.pi / 2 - np.deg2rad(theta))
+
+
+def extract_variable_along_sightline(inclination: float, variable: str, root: str = None, wd: str = ".",
+                                     grid: Table = None, legacy: bool = False) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]]:
+    """
+    Extract a wind variable along a given sightline.
+
+    Parameters
+    ----------
+    inclination: float
+
+    variable: str
+
+    root: [optional] str
+
+    wd: [optional] str
+
+    grid: [optional] astropy.table.Table
+
+    legacy: [optional] bool
+
+    Returns
+    -------
+    xcoords: np.ndarray
+
+    zcoords: np.ndarray
+
+    extracted: np.ndarray
+
+    """
+
+    n = extract_variable_along_sightline.__name__
+
+    if grid is None:
+        if root is None:
+            print("{}: neither a root name or grid have been provided".format(n))
+            return
+        try:
+            t = ascii.read("{}/{}.master.txt".format(wd, root), format="basic", data_start=1)
+        except IOError:
+            print("{}: unable to open {}/{}.master.txt".format(n, wd, root))
+            return
+    else:
+        t = grid
+
+    columns = list(t.columns)
+    if variable not in columns:
+        print("{}: {} is not a variable in the grid".format(n, variable))
+        return
+
+    if type(inclination) is not float:
+        try:
+            inclination = float(inclination)
+        except ValueError:
+            print("{}: could not convert inclination to a number".format(n))
+            return
+
+    stride = np.max(t["j"]) + 1
+    x_coords = np.array(t["x"][::stride])
+    z_coords = sightline_coords(x_coords, inclination)
+    extracted = np.zeros_like(x_coords)
+
+    assert (len(x_coords) == len(z_coords))
+
+    index = 0
+
+    for i in range(len(x_coords)):
+        j = 0
+        while t["x"][j] < x_coords[i]:
+            j += 1
+            if j > len(t["x"]):
+                j = -1
+                break
+        if j == -1:
+            continue  # We haven't found the coordinate :-(
+        k = 0
+        tt = t[j:j + stride]
+        while tt["z"][k] < z_coords[i]:
+            k += 1
+            if k > stride - 1:
+                k = -1
+                break
+        if k == -1:
+            continue  # We haven't found the coordinate :-(
+        index = j + k
+        extracted[i] = t[variable][index]
+
+    output = np.zeros((len(x_coords), 3))
+    output[:, 0] = x_coords
+    output[:, 1] = z_coords
+    output[:, 2] = extracted
+
+    if legacy:
+        return x_coords, z_coords, extracted
+    else:
+        return output

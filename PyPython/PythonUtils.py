@@ -6,8 +6,9 @@ This file contains various utility functions which can be used to ease the
 trials and tribulations of using Python and the Unix command line.
 """
 
+from .Constants import LOG_BASE_10_OF_TWO
 
-from os import remove
+from os import remove, getenv
 from pathlib import Path
 import pandas as pd
 from subprocess import Popen, PIPE
@@ -15,6 +16,7 @@ from platform import system
 from shutil import which
 from typing import Tuple, List
 from psutil import cpu_count
+import numpy as np
 
 
 def remove_data_sym_links(search_dir: str = "./", verbose: bool = False):
@@ -199,14 +201,15 @@ def windsave2table(root: str, path: str, ion_density: bool = False,
         return
 
     # Now create a "complete" file which is the master and heat put together into one csv
-    heat_file = "{}/{}.0.heat.txt".format(path, root)
-    master_file = "{}/{}.0.master.txt".format(path, root)
+    heat_file = "{}/{}.heat.txt".format(path, root)
+    master_file = "{}/{}.master.txt".format(path, root)
 
     try:
         heat = pd.read_csv(heat_file, delim_whitespace=True)
         master = pd.read_csv(master_file, delim_whitespace=True)
-    except IOError:
+    except IOError as e:
         print("{}: could not open master or heat file for root {}".format(n, root))
+        print(e)
         return
 
     # This merges the heat and master table together :-)
@@ -352,6 +355,83 @@ def find_parameter_files(path: str = "./") -> List[str]:
     return pfs
 
 
+def remove_photoion_transition_from_data(data: str, atomic: int, istate: int, new_value: float = 9e99):
+    """
+    Remove a transition or element from some atomic data. Creates a new atomic
+    data file which is placed in the current working or given directory.
+
+    TODO: include Topbase
+    TODO: include lines
+
+    Parameters
+    ----------
+    data: str
+
+    atomic: int
+
+    istate: int
+
+    new_value: [optional] float
+
+    """
+
+    n = remove_photoion_transition_from_data.__name__
+
+    data = data.lower()
+
+    allowed_data = [
+        "outershell",
+        "innershell",
+    ]
+
+    if data not in allowed_data:
+        print("{}: atomic data {} is unknown, known types are {}".format(n, allowed_data))
+        return
+
+    filename = getenv("PYTHON") + "/xdata/atomic/"
+
+    if data == "outershell":
+        stop = "PhotVfkyS"
+        data_name = "vfky_outershell_tab.dat"
+    elif data == "innershell":
+        stop = "InnerVYS"
+        data_name = "vy_innershell_tab.dat"
+
+    filename += data_name
+
+    atomic = str(atomic)
+    istate = str(istate)
+    new_value = str(new_value)
+
+    new = []
+
+    with open(filename, "r") as f:
+        lines = f.readlines()
+
+    i = 0
+    while i < (len(lines)):
+        line = lines[i].split() + ["\n"]
+
+        if line[0] == stop and line[1] == atomic and line[2] == istate:
+            line[5] = new_value
+            new.append(" ".join(line))
+
+            npoints = int(line[6])
+            for j in range(npoints):
+                edit_line = lines[i + j + 1].split() + ["\n"]
+                edit_line[1] = new_value
+                new.append(" ".join(edit_line))
+            i += npoints + 1
+        else:
+            i += 1
+            new.append(" ".join(line))
+
+    with open(data_name, "w") as f:
+        f.writelines(new)
+
+    return
+
+
 def get_cpu_count(hyperthreads: bool = False):
     """
     Return the number of CPU cores which can be used when running a Python
@@ -375,3 +455,84 @@ def get_cpu_count(hyperthreads: bool = False):
         print("{}: unable to determine number of CPU cores, psutil.cpu_count not implemented".format(n))
 
     return ncores
+
+
+def file_len(fname: str) -> int:
+    """
+    Count the number of lines in a file.
+
+    Parameters
+    ----------
+    fname: str
+
+    Returns
+    -------
+    The number of lines in the file.
+    """
+
+    with open(fname, "r") as f:
+        for i, l in enumerate(f):
+            pass
+
+    return i + 1
+
+
+def array_index(x: np.ndarray, target: float) -> int:
+    """
+    Return the index for an array for a given value.
+
+    Parameters
+    ----------
+    x: np.ndarray
+
+    target: float
+
+    Returns
+    -------
+    The index for the target value in the array x.
+    """
+
+    if target < np.min(x):
+        return -1
+    if target > np.max(x):
+        return -1
+
+    index = np.abs(x - target).argmin()
+
+    return index
+
+
+def round_to_sig_figs(x: np.ndarray, sigfigs: int):
+    """
+    Truncate values in a numpy array to the given level of significant figures.
+
+    Written by some maniac on Stack Overflow.
+    https://stackoverflow.com/questions/18915378/rounding-to-significant-figures-in-numpy
+
+    Parameters
+    ----------
+    x: np.ndarray
+        The array to preform the operation on.
+    sigfigs: int
+        The number of significant figures.
+
+    Returns
+    -------
+    x: np.ndarray
+        The array rounded to the provided number of significant figures.
+    """
+
+    xsgn = np.sign(x)
+    absx = xsgn * x
+    mantissa, binaryExponent = np.frexp(absx)
+
+    decimalExponent = LOG_BASE_10_OF_TWO * binaryExponent
+    omag = np.floor(decimalExponent)
+
+    mantissa *= 10.0 ** (decimalExponent - omag)
+
+    if mantissa.any() < 1.0:
+        mantissa *= 10.0
+        omag -= 1.0
+
+    return xsgn * np.around(mantissa, decimals=sigfigs - 1) * 10.0 ** omag
