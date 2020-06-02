@@ -2,26 +2,14 @@
 # -*- coding: utf-8 -*-
 
 """
-Update an already existing parameter to a parameter file.
-
+Update an existing parameter for some parameter file(s).
 The script will search recursively from the calling directory for parameter
 files. If a root name is provided, however, then the script will only operate
  on pf files which have the same root name.
-
-The script expects 2 arguments and 1 optional argument, as documented below:
-
-Usage
-   $ python py_change_multiple_pf.py parameter value [root] [-h] [-checkpf]
-
-        - parameter       The name of the parameter to update
-        - value           The updated parameter value
-        - root            Optional: the name of the parameter files to edit
-        - h               Print this error message and exit
-        - checkpf         Prints to the screen the pfs which will be updated
 """
 
 
-from sys import argv, exit
+import argparse as ap
 from PyPython import Grid
 from PyPython import PythonUtils as Utils
 from typing import List
@@ -49,56 +37,29 @@ def change_pfs(wdpf: List[str], parameter: str, value: str) -> None:
     return
 
 
-def get_pfs(root: str = None) -> List[str]:
+def main():
     """
-    Search recursively from the calling directory for Python pfs. If root is
-    specified, then only pfs with the same root name as root will be returned.
-
-    Parameters
-    -------
-    root: str, optional
-        If this is set, then any pf which is not named with this root will be
-        removed from the return pfs
-
-    Returns
-    -------
-    pfs: List[str]
-        A list containing the relative paths of the pfs to be updated.
+    Main function of the script.
     """
 
-    pfs = []
-    ppfs = Utils.find_parameter_files("./")
+    p = ap.ArgumentParser(desc=__doc__)
 
-    for i in range(len(ppfs)):
-        pf, wd = Utils.split_root_directory(ppfs[i])
-        if root:
-            if root == pf:
-                pfs.append(ppfs[i])
-        else:
-            pfs.append(ppfs[i])
+    p.add_argument("parameter",
+                   help="Name of the parameter to add.")
 
-    return pfs
+    p.add_argument("value",
+                   help="The value for the new parameter.")
+
+    p.add_argument("--root",
+                   default=None,
+                   help="Add the parameter to parameter files with this specific root name.")
+
+    args = p.parse_args()
+
+    change_pfs(Utils.get_pfs(args.root), args.parameter, args.value)
+
+    return
 
 
 if __name__ == "__main__":
-    root = None
-    argc = len(argv)
-    if argc == 2 and argv[1] == "-h":
-        print(__doc__)
-        exit(0)
-    elif argc == 2 and argv[1] == "-checkpf":
-        pfs = get_pfs()
-        print("Will operate on the following pfs:\n", pfs)
-        exit(0)
-    elif argc == 3:
-        parameter = argv[1]
-        value = argv[2]
-    elif argc == 4:
-        parameter = argv[1]
-        value = argv[2]
-        root = argv[3]
-    else:
-        print("Unknown arguments provided: ", argv[1:])
-        print(__doc__)
-        exit(1)
-    change_pfs(get_pfs(root), parameter, value)
+    main()

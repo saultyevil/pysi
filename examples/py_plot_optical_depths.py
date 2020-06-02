@@ -11,10 +11,8 @@ angles.
 import argparse as ap
 from typing import Tuple
 from matplotlib import pyplot as plt
-from sys import exit
 
 from PyPython import SpectrumPlot
-from PyPython.Error import EXIT_FAIL
 
 
 plt.rcParams['xtick.labelsize'] = 15
@@ -62,66 +60,69 @@ def parse_input() -> tuple:
 
     p = ap.ArgumentParser(description=__doc__)
 
-    p.add_argument("root", help="The root name of the simulation.")
-    p.add_argument("-wd", action="store", help="The directory containing the simulation.")
-    p.add_argument("-xl", "--xmin", action="store", help="The lower x-axis boundary to display.")
-    p.add_argument("-xu", "--xmax", action="store", help="The upper x-axis boundary to display.")
-    p.add_argument("-s", "--scale", action="store", help="The axes scaling to use: logx, logy, loglog, linlin.")
-    p.add_argument("-a", "--absorption_edges", action="store_true", help="Plot labels for important absorption edges.")
-    p.add_argument("-f", "--frequency_space", action="store_true", help="Create the figure in frequency space.")
-    p.add_argument("-e", "--ext", action="store", help="The file extension for the output figure.")
-    p.add_argument("--display", action="store_true", help="Display the plot before exiting the script.")
+    # Required arguments
+    p.add_argument("root",
+                   type=str,
+                   help="The root name of the simulation.")
+
+    # Supplementary arguments
+    p.add_argument("-wd",
+                   "--working_directory",
+                   default=".",
+                   help="The directory containing the simulation.")
+
+    p.add_argument("-xl",
+                   "--xmin",
+                   type=float,
+                   default=None,
+                   help="The lower x-axis boundary to display.")
+
+    p.add_argument("-xu",
+                   "--xmax",
+                   type=float,
+                   default=None,
+                   help="The upper x-axis boundary to display.")
+
+    p.add_argument("-s",
+                   "--scales",
+                   default="logy",
+                   choices=["logx", "logy", "loglog", "linlin"],
+                   help="The axes scaling to use: logx, logy, loglog, linlin.")
+
+    p.add_argument("-a",
+                   "--absorption_edges",
+                   action="store_true",
+                   default=False,
+                   help="Plot labels for important absorption edges.")
+
+    p.add_argument("-f",
+                   "--frequency_space",
+                   action="store_true",
+                   default=False,
+                   help="Create the figure in frequency space.")
+
+    p.add_argument("-e",
+                   "--ext",
+                   default="png",
+                   help="The file extension for the output figure.")
+
+    p.add_argument("--display",
+                   action="store_true",
+                   default=False,
+                   help="Display the plot before exiting the script.")
 
     args = p.parse_args()
 
-
-    wd = "./"
-    if args.wd:
-        wd = args.wd
-
-    xmin = None
-    if args.xmin:
-        xmin = args.xmin
-
-    xmax = None
-    if args.xmax:
-        xmax = args.xmax
-
-    absorption_edges = True
-    if args.absorption_edges:
-        absorption_edges = args.absorption_edges
-
-    frequency_space = False
-    if args.frequency_space:
-        frequency_space = args.frequency_space
-
-    file_ext = "png"
-    if args.ext:
-        file_ext = args.ext
-
-    axes_scales = "loglog"
-    if args.scale:
-        allowed = ["logx", "logy", "loglog", "linlin"]
-        if args.scale not in allowed:
-            print("The axes scaling {} is unknown.".format(args.scale))
-            print("Allowed values are: logx, logy, loglog, linlin.")
-            exit(EXIT_FAIL)
-        axes_scales = args.scale
-
-    display = False
-    if args.display:
-        display = True
-
     setup = (
         args.root,
-        wd,
-        xmin,
-        xmax,
-        frequency_space,
-        absorption_edges,
-        axes_scales,
-        file_ext,
-        display
+        args.working_directory,
+        args.xmin,
+        args.xmax,
+        args.frequency_space,
+        args.absorption_edges,
+        args.scales,
+        args.ext,
+        args.display
     )
 
     return setup
@@ -129,7 +130,7 @@ def parse_input() -> tuple:
 
 def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
     """
-    The main function of the script. First, the important wind quantaties are
+    The main function of the script. First, the important wind quantities are
     plotted. This is then followed by the important ions.
 
 `   Parameters
@@ -173,7 +174,9 @@ def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
     print("-" * div_len)
     print("\nCreating optical depth spectrum for {}{}.pf".format(wdd, root))
 
-    fig, ax = plot_optical_depth_spectrum(root, wd, xmin, xmax, axes_scales, absorption_edges, frequency_space, file_ext)
+    fig, ax = plot_optical_depth_spectrum(
+        root, wd, xmin, xmax, axes_scales, absorption_edges, frequency_space, file_ext
+    )
 
     if display:
         plt.show()

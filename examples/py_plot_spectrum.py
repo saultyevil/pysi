@@ -13,16 +13,102 @@ It creates the following figures:
 import argparse as ap
 from typing import Tuple
 from matplotlib import pyplot as plt
-from sys import exit
 
 from PyPython import SpectrumUtils
 from PyPython import SpectrumPlot
-from PyPython.Error import EXIT_FAIL
 
 
 plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15
 plt.rcParams['axes.labelsize'] = 15
+
+
+def setup_script() \
+        -> tuple:
+    """
+    Parse the different modes this script can be run from the command line.
+
+    Returns
+    -------
+    setup: tuple
+        A list containing all of the different setup of parameters for plotting.
+    """
+
+    p = ap.ArgumentParser(description=__doc__)
+
+    # Required arguments
+    p.add_argument("root",
+                   type=str,
+                   help="The root name of the simulation.")
+
+    # Supplementary arguments
+    p.add_argument("-wd",
+                   "--working_directory",
+                   default=".",
+                   help="The directory containing the simulation.")
+
+    p.add_argument("-xl",
+                   "--xmin",
+                   type=float,
+                   default=None,
+                   help="The lower x-axis boundary to display.")
+
+    p.add_argument("-xu",
+                   "--xmax",
+                   type=float,
+                   default=None,
+                   help="The upper x-axis boundary to display.")
+
+    p.add_argument("-s",
+                   "--scales",
+                   default="logy",
+                   choices=["logx", "logy", "loglog", "linlin"],
+                   help="The axes scaling to use: logx, logy, loglog, linlin.")
+
+    p.add_argument("-l",
+                   "--common_lines",
+                   action="store_true",
+                   default=False,
+                   help="Plot labels for important absorption edges.")
+
+    p.add_argument("-f",
+                   "--frequency_space",
+                   action="store_true",
+                   default=False,
+                   help="Create the figure in frequency space.")
+
+    p.add_argument("-sm",
+                   "--smooth_amount",
+                   type=int,
+                   default=5,
+                   help="The size of the boxcar smoothing filter.")
+
+    p.add_argument("-e",
+                   "--ext",
+                   default="png",
+                   help="The file extension for the output figure.")
+
+    p.add_argument("--display",
+                   action="store_true",
+                   default=False,
+                   help="Display the plot before exiting the script.")
+
+    args = p.parse_args()
+
+    setup = (
+        args.root,
+        args.working_directory,
+        args.xmin,
+        args.xmax,
+        args.frequency_space,
+        args.common_lines,
+        args.scales,
+        args.smooth_amount,
+        args.ext,
+        args.display
+    )
+
+    return setup
 
 
 def spectra_on_same_panel(root: str, wd: str = "./", xmin: float = None, xmax: float = None, smooth_amount: int = 5,
@@ -222,7 +308,6 @@ def individual_spectra(root: str, wd: str = "./", xmin: float = None, xmax: floa
         if frequency_space:
             y *= s["Lambda"].values
 
-
         fig, ax = SpectrumPlot.plot(x, y, xmin, xmax, xlabel, ylabel, axes_scales)
         if axes_scales == "loglog" or axes_scales == "logx":
             logx = True
@@ -234,104 +319,6 @@ def individual_spectra(root: str, wd: str = "./", xmin: float = None, xmax: floa
         fig.savefig("{}/{}_i{}_spectrum.{}".format(wd, root, str(a), file_ext))
 
     return
-
-
-def setup_script() \
-        -> tuple:
-    """
-    Parse the different modes this script can be run from the command line.
-
-    Returns
-    -------
-    setup: tuple
-        A list containing all of the different setup of parameters for plotting.
-
-        setup = (
-            args.root,
-            wd,
-            xmin,
-            xmax,
-            frequency_space,
-            absorption_edges,
-            axes_scales,
-            file_ext,
-            display
-        )
-    """
-
-    p = ap.ArgumentParser(description=__doc__)
-
-    p.add_argument("root", help="The root name of the simulation.")
-    p.add_argument("-wd", action="store", help="The directory containing the simulation.")
-    p.add_argument("-xl", "--xmin", action="store", type=float, help="The lower x-axis boundary to display.")
-    p.add_argument("-xu", "--xmax", action="store", type=float, help="The upper x-axis boundary to display.")
-    p.add_argument("-s", "--scales", action="store", help="The axes scaling to use: logx, logy, loglog, linlin.")
-    p.add_argument("-l", "--common_lines", action="store_true", help="Plot labels for important absorption edges.")
-    p.add_argument("-f", "--frequency_space", action="store_true", help="Create the figure in frequency space.")
-    p.add_argument("-sm", "--smooth_amount", action="store", help="The size of the boxcar smoothing filter.")
-    p.add_argument("-e", "--ext", action="store", help="The file extension for the output figure.")
-    p.add_argument("--display", action="store_true", help="Display the plot before exiting the script.")
-
-    args = p.parse_args()
-
-    wd = "./"
-    if args.wd:
-        wd = args.wd
-
-    xmin = None
-    if args.xmin:
-        xmin = args.xmin
-
-    xmax = None
-    if args.xmax:
-        xmax = args.xmax
-
-    common_lines = True
-    if args.common_lines:
-        common_lines = args.common_lines
-
-    frequency_space = False
-    if args.frequency_space:
-        frequency_space = args.frequency_space
-
-    file_ext = "png"
-    if args.ext:
-        file_ext = args.ext
-
-    axes_scales = "logy"
-    if args.scales:
-        allowed = ["logx", "logy", "loglog", "linlin"]
-        if args.scales not in allowed:
-            print("The axes scaling {} is unknown.".format(args.scales))
-            print("Allowed values are: logx, logy, loglog, linlin.")
-            exit(EXIT_FAIL)
-        axes_scales = args.scales
-
-    smooth_amount = 5
-    if args.smooth_amount:
-        smooth_amount = int(args.smooth_amount)
-        if smooth_amount < 1:
-            print("The size of the smoothing filter must at least be 1")
-            exit(EXIT_FAIL)
-
-    display = False
-    if args.display:
-        display = True
-
-    setup = (
-        args.root,
-        wd,
-        xmin,
-        xmax,
-        frequency_space,
-        common_lines,
-        axes_scales,
-        smooth_amount,
-        file_ext,
-        display
-    )
-
-    return setup
 
 
 def main(setup: tuple = None) \

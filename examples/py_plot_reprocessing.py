@@ -99,8 +99,6 @@ def create_plot(root, spectrum, optical_depth_spectrum, continuum_spectrum):
 
     # Plot the optical depths
 
-    sightlines=["60"]
-
     for sl in sightlines:
         t = optical_depth_spectrum[sl].values
         if np.count_nonzero(t) != len(t):
@@ -129,6 +127,8 @@ def create_plot(root, spectrum, optical_depth_spectrum, continuum_spectrum):
 
 def main():
     """Main function of the script."""
+
+    # TODO improve argument parsing and flexibility of the script
 
     root = argv[1]
 

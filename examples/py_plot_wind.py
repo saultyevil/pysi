@@ -4,7 +4,7 @@
 """
 The purpose of this script is to provide quick plotting of the wind for a Python
 simulation. As such, it is not very flexible with input to modify the output.
-The script will create a figure of the "important" wind quantities, such as 
+The script will create a figure of the "important" wind quantities, such as
 the electron temperature and density, as well figures for the ion fractions
 for H, He, C, N, O and Si.
 """
@@ -26,11 +26,12 @@ plt.rcParams['ytick.labelsize'] = 15
 plt.rcParams['axes.labelsize'] = 15
 
 
-def plot_wind(root: str, wind_variables: List[str], wind_variable_types: List[str], output_name: str, wd: str = "./",
-              projection: str = "rectilinear", axes_scales: str = "loglog", use_cell_indices: bool = False,
-              panel_dims: Tuple[int, int] = (4, 2), figure_size: Tuple[int, int] = (10, 15), title: str = None,
-              file_ext: str = "png") \
-        -> Tuple[plt.Figure, plt.Axes]:
+def plot_wind(
+    root: str, wind_variables: List[str], wind_variable_types: List[str], output_name: str, wd: str = "./",
+    projection: str = "rectilinear", axes_scales: str = "loglog", use_cell_indices: bool = False,
+    panel_dims: Tuple[int, int] = (4, 2), figure_size: Tuple[int, int] = (10, 15), title: str = None,
+    file_ext: str = "png"
+) -> Tuple[plt.Figure, plt.Axes]:
     """
     The purpose of this function is to oversee the creation of the different
     possible wind plots.
@@ -81,7 +82,7 @@ def plot_wind(root: str, wind_variables: List[str], wind_variable_types: List[st
         print("The size of the wind_variables and the correspond types lists are unequal in length.")
         exit(EXIT_FAIL)
 
-    # Check the projection requested and set up fig and ax depending on the 
+    # Check the projection requested and set up fig and ax depending on the
     # projection
 
     allowed_projections = ["rectilinear", "polar"]
@@ -92,7 +93,7 @@ def plot_wind(root: str, wind_variables: List[str], wind_variable_types: List[st
             print("{} ".format(p), end="")
         print(".")
         exit(EXIT_FAIL)
-    
+
     if projection == "rectilinear":
         fig, ax = plt.subplots(panel_dims[0], panel_dims[1], figsize=figure_size, squeeze=False)
     else:
@@ -105,7 +106,7 @@ def plot_wind(root: str, wind_variables: List[str], wind_variable_types: List[st
         axes_scales = "linlin"
 
     # Now construct the plot
-    
+
     index = 0
     nsize = len(wind_variables) - 1
 
@@ -156,7 +157,7 @@ def setup_script() \
     -------
     setup: tuple
         A list containing all of the different setup of parameters for plotting.
-    
+
         setup = (
             args.root,
             wd,
@@ -231,7 +232,7 @@ def setup_script() \
 def main(setup: tuple = None) \
         -> Tuple[plt.Figure, plt.Axes]:
     """
-    The main function of the script. First, the important wind quantaties are
+    The main function of the script. First, the important wind quantities are
     plotted. This is then followed by the important ions.
 `
 Parameters
@@ -268,12 +269,12 @@ Parameters
 
     root = root.replace("/", "")
     wdd = wd
-    if wd == "./":
+    if wd == ".":
         wdd = ""
 
     print("-" * div_len)
     print("\nCreating wind and ion plots for {}{}.pf".format(wdd, root))
-    
+
     # First, we probably need to run windsave2table
 
     # PythonUtils.windsave2table(root, wd, ion_density=use_ion_density)
@@ -282,7 +283,7 @@ Parameters
 
     wind = ["t_e", "t_r", "ne", "rho", "c4", "ip", "converge", "ntot"]
     wind_types = ["wind"] * len(wind)
-    
+
     print("\nCreating a figure containing:\n\t", end="")
     for w in wind:
         print("{} ".format(w), end="")

@@ -18,11 +18,13 @@ from typing import List
 COL_WIDTH = 80
 
 
-def plot_convergence(root: str, convergence: List[float], converging: List[float] = None, tr: List[float] = None,
-                    te: List[float] = None, te_max: List[float] = None, hc: List[float] = None,  wd: str = "./"):
+def plot_convergence(
+    root: str, convergence: List[float], converging: List[float] = None, tr: List[float] = None, te: List[float] = None,
+    te_max: List[float] = None, hc: List[float] = None, wd: str = "."
+):
     """
     Create a detailed plot of the convergence of a Python simulation, including,
-    if provided, a breakdown of the different convergence criteria. 
+    if provided, a breakdown of the different convergence criteria.
 
     Parameters
     ----------
@@ -97,7 +99,7 @@ def get_convergence(root: str, wd: str = "./") -> None:
 
     try:
         ncycles = len(convergence)
-    except:
+    except:  # TODO fix from bare except
         print("Something doesn't work, skipping {}{}".format(wd, root))
         return
 

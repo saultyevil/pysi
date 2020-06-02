@@ -19,11 +19,11 @@ def delete_windsaves(wdpf: List[str], root) -> None:
     for i in range(len(wdpf)):
         pf, wd = Utils.split_root_directory(wdpf[i])
         cmd = "cd {}; rm {}*.wind_save".format(wd, root)
-        sh = Popen(cmd, stdout=True, stderr=True, shell=True)
+        sh = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         stdout, stderr = sh.communicate()
         if stderr:
             print(stderr.decode("utf-8"))
-    
+
     return
 
 
@@ -56,6 +56,7 @@ def get_pfs(root: str = None) -> List[str]:
             pfs.append(ppfs[i])
 
     return pfs
+
 
 if __name__ == "__main__":
     delete_windsaves(get_pfs(), argv[1])

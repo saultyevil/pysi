@@ -18,10 +18,7 @@ import py_plot_spectrum_components
 
 
 import argparse as ap
-from PyPython.Error import EXIT_FAIL
 from PyPython.PythonUtils import remove_data_sym_links
-from typing import Tuple
-from matplotlib import pyplot as plt
 
 
 def setup_script() \
@@ -49,70 +46,75 @@ def setup_script() \
 
     p = ap.ArgumentParser(description=__doc__)
 
-    p.add_argument("root", help="The root name of the simulation.")
-    p.add_argument("-wd", action="store", help="The directory containing the simulation.")
-    p.add_argument("-xl", "--xmin", action="store", type=float, help="The lower x-axis boundary to display.")
-    p.add_argument("-xu", "--xmax", action="store", type=float, help="The upper x-axis boundary to display.")
-    p.add_argument("-f", "--frequency_space", action="store_true", help="Create the figure in frequency space.")
-    p.add_argument("-p", "--polar", action="store_true", help="Plot using polar projection.")
-    p.add_argument("-sm", "--smooth_amount", action="store", type=int, help="The size of the boxcar smoothing filter.")
-    p.add_argument("-e", "--ext", action="store", help="The file extension for the output figure.")
-    p.add_argument("--display", action="store_true", help="Display the plot before exiting the script.")
+    # Required arguments
+    p.add_argument("root",
+                   type=str,
+                   help="The root name of the simulation.")
+
+    # Supplementary arguments
+    p.add_argument("-wd",
+                   "--working_directory",
+                   default=".",
+                   help="The directory containing the simulation.")
+
+    p.add_argument("-xl",
+                   "--xmin",
+                   type=float,
+                   default=None,
+                   help="The lower x-axis boundary to display.")
+
+    p.add_argument("-xu",
+                   "--xmax",
+                   type=float,
+                   default=None,
+                   help="The upper x-axis boundary to display.")
+
+    p.add_argument("-f",
+                   "--frequency_space",
+                   action="store_true",
+                   default=False,
+                   help="Create the figure in frequency space.")
+
+    p.add_argument("-p",
+                   "--polar",
+                   action="store_true",
+                   default=True,
+                   help="Plot using polar projection.")
+
+    p.add_argument("-sm",
+                   "--smooth_amount",
+                   type=int,
+                   default=5,
+                   help="The size of the boxcar smoothing filter.")
+
+    p.add_argument("-e",
+                   "--ext",
+                   default="png",
+                   help="The file extension for the output figure.")
+
+    p.add_argument("--display",
+                   action="store_true",
+                   default=False,
+                   help="Display the plot before exiting the script.")
 
     args = p.parse_args()
 
-    wd = "./"
-    if args.wd:
-        wd = args.wd
-
-    xmin = None
-    if args.xmin:
-        xmin = args.xmin
-
-    xmax = None
-    if args.xmax:
-        xmax = args.xmax
-
-    frequency_space = False
-    if args.frequency_space:
-        frequency_space = args.frequency_space
-
-    projection = "rectilinear"
-    if args.polar:
-        projection = "polar"
-
-    smooth_amount = 5
-    if args.smooth_amount:
-        smooth_amount = int(args.smooth_amount)
-        if smooth_amount < 1:
-            print("The size of the smoothing filter must at least be 1")
-            exit(EXIT_FAIL)
-
-    file_ext = "png"
-    if args.ext:
-        file_ext = args.ext
-
-    display = False
-    if args.display:
-        display = True
-
     setup = (
         args.root,
-        wd,
-        xmin,
-        xmax,
-        frequency_space,
-        projection,
-        smooth_amount,
-        file_ext,
-        display
+        args.working_directory,
+        args.xmin,
+        args.xmax,
+        args.frequency_space,
+        args.polar,
+        args.smooth_amount,
+        args.ext,
+        args.display
     )
 
     return setup
 
 
-def plot(setup: tuple = None) \
-        -> Tuple[plt.Figure, plt.Axes]:
+def plot(setup: tuple = None):
     """
     Creates a bunch of plots using some parameters which can be controlled at
     run time, but also assumes a few default parameters. Refer to the
@@ -143,23 +145,29 @@ def plot(setup: tuple = None) \
     # Create plots for the wind - only create velocity plots for rectilinear
     # at the moment - and remove the data folder afterwards
 
-    if projection == "rectilinear":
-        fig, ax = py_plot_velocity.main((root, wd, "loglog", False, file_ext, display))
-    fig, ax = py_plot_wind.main((root, wd, projection, False, "loglog", False, file_ext, display))
+    # TODO this is some dumb spaghetti code
+    if projection:
+        projection = "polar"
+    else:
+        projection = "rectilinear"
+
+    if projection == "rectilinear":  # Because it doesn't work for polar grids yet
+        py_plot_velocity.main((root, wd, "loglog", False, file_ext, display))
+    py_plot_wind.main((root, wd, projection, False, "loglog", False, file_ext, display))
     remove_data_sym_links(wd)
 
     # Create plots for the different spectra
 
-    fig, ax = py_plot_optical_depths.main((root, wd, None, None, True, True, "loglog", file_ext, display))
-    fig, ax = py_plot_spectrum_components.main((root, wd, None, None, smooth_amount, True, False, "loglog",
-                                                file_ext, display))
-    fig, ax = py_plot_spectrum.main((root, wd, xmin, xmax, frequency_space, True, "logy", smooth_amount, file_ext,
-                                     display))
+    py_plot_optical_depths.main((root, wd, None, None, True, True, "loglog", file_ext, display))
+    py_plot_spectrum_components.main((root, wd, None, None, smooth_amount, True, False, "loglog",
+                                      file_ext, display))
+    py_plot_spectrum.main((root, wd, xmin, xmax, frequency_space, True, "logy", smooth_amount, file_ext,
+                           display))
 
     div_len = 80
     print("-" * div_len)
 
-    return fig, ax
+    return
 
 
 if __name__ == "__main__":

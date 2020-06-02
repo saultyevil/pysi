@@ -21,7 +21,7 @@ if len(argv) > 1:
     if argv[1] == "-h" or argv[1] == "--help":
         print(__doc__)
         exit(0)
-    remove_data_sym_links(argv[1], True)
+    remove_data_sym_links(argv[1], verbose=True)
 else:
     remove_data_sym_links("~/PySims", verbose=True)
 print("\n--------------------------------------------------------------------------------")

@@ -48,7 +48,7 @@ def check_multiple(wdpf: List[str]) -> None:
         print("The following simulations have convergence:\n"
               "-------------------------------------------")
         for i in range(len(some_convergence)):
-                print(some_convergence[i][0], some_convergence[i][1])
+            print(some_convergence[i][0], some_convergence[i][1])
 
     if no_convergence:
         print("\nThe following simulations have no convergence:\n"
@@ -59,36 +59,5 @@ def check_multiple(wdpf: List[str]) -> None:
     return
 
 
-def get_pfs(root: str = None) -> List[str]:
-    """
-    Search recursively from the calling directory for Python pfs. If root is
-    specified, then only pfs with the same root name as root will be returned.
-
-    Parameters
-    -------
-    root: str, optional
-        If this is set, then any pf which is not named with this root will be
-        removed from the return pfs
-
-    Returns
-    -------
-    pfs: List[str]
-        A list containing the relative paths of the pfs to be updated.
-    """
-
-    pfs = []
-    ppfs = Utils.find_parameter_files("./")
-
-    for i in range(len(ppfs)):
-        pf, wd = Utils.split_root_directory(ppfs[i])
-        if root:
-            if root == pf:
-                pfs.append(ppfs[i])
-        else:
-            pfs.append(ppfs[i])
-
-    return pfs
-
-
 if __name__ == "__main__":
-    check_multiple(get_pfs())
+    check_multiple(Utils.get_pfs())

@@ -85,7 +85,6 @@ SPLIT_CYCLES = False
 DRY_RUN = False
 PLOT = False
 
-
 # Verbosity levels of Python output
 VERBOSE_SILENT = 0
 VERBOSE_PROGRESS_REPORT = 1
@@ -93,6 +92,109 @@ VERBOSE_EXTRA_INFORMATION = 2
 VERBOSE_EXTRA_INFORMATION_TRANSPORT = 3
 VERBOSE_ALL = 4
 VERBOSITY = VERBOSE_EXTRA_INFORMATION
+
+
+def setup_script() \
+        -> None:
+    """
+    Setup the global variables which control the logic of the script.
+    """
+
+    global VERBOSITY
+    global SPLIT_CYCLES
+    global PYTHON_BINARY
+    global RESUME_RUN
+    global RESTART_OVERRIDE
+    global RUNTIME_FLAGS
+    global CONV_LIMIT
+    global DRY_RUN
+    global N_CORES
+    global PLOT
+
+    p = ap.ArgumentParser(description=__doc__)
+
+    p.add_argument("-sc",
+                   "--split_cycles",
+                   action="store_true",
+                   default=SPLIT_CYCLES,
+                   help="Split the ionization and spectrum cycles into two separate Python runs.")
+
+    p.add_argument("-r",
+                   "--restart",
+                   action="store_true",
+                   default=RESUME_RUN,
+                   help="Restart a Python model from a previous wind_save.")
+
+    p.add_argument("-ro",
+                   "--restart_override",
+                   action="store_true",
+                   default=RESTART_OVERRIDE,
+                   help="Disable the automatic restarting run function.")
+
+    p.add_argument("-py",
+                   "--python",
+                   default=PYTHON_BINARY,
+                   help="The name of the of the Python binary to use.")
+
+    p.add_argument("-f",
+                   "--python_flags",
+                   default=RUNTIME_FLAGS,
+                   help="Any run-time flags to pass to Python.")
+
+    p.add_argument("-c",
+                   "--convergence_limit",
+                   type=float,
+                   default=CONV_LIMIT,
+                   help="The 'limit' for considering a model converged. This value is 0 < c_value < 1.")
+
+    p.add_argument("-v",
+                   "--verbose",
+                   type=int,
+                   default=VERBOSE_EXTRA_INFORMATION,
+                   help="The level of verbosity for Python's output.")
+
+    p.add_argument("-n",
+                   "--n_cores",
+                   type=int,
+                   default=N_CORES,
+                   help="The number of processor cores to run Python with.")
+
+    p.add_argument("-d",
+                   "--dry_run",
+                   action="store_true",
+                   default=DRY_RUN,
+                   help="Print the models found to screen and then exit.")
+
+    p.add_argument("-p",
+                   "--plot",
+                   action="store_true",
+                   default=PLOT,
+                   help="Create plots for the models after running Python.")
+
+    args = p.parse_args()
+
+    VERBOSITY = args.verbosity
+    SPLIT_CYCLES = args.split_cycles
+    PYTHON_BINARY = args.py
+    RESUME_RUN = args.restart
+    RUNTIME_FLAGS = args.python_flags
+    CONV_LIMIT = args.convergence_limit
+    DRY_RUN = args.dry_run
+    PLOT = args.plot
+
+    log("Python  .......................... {}".format(PYTHON_BINARY))
+    log("Split cycles ..................... {}".format(SPLIT_CYCLES))
+    log("Resume run ....................... {}".format(RESUME_RUN))
+    log("Automatic restart override ....... {}".format(RESTART_OVERRIDE))
+    log("Number of cores .................. {}".format(N_CORES))
+    log("Convergence limit ................ {}".format(CONV_LIMIT))
+    log("Verbosity level .................. {}".format(VERBOSITY))
+    log("Plot model ....................... {}".format(PLOT))
+
+    if RUNTIME_FLAGS:
+        log("\nUsing these extra python flags:\n\t{}".format(RUNTIME_FLAGS))
+
+    return
 
 
 def print_python_output(line: str, n_cores, verbosity: int = VERBOSITY) \
@@ -395,9 +497,9 @@ def run_model(root: str, wd: str, use_mpi: bool, ncores: int, resume_model: bool
 
     # Construct shell command to run Python and use subprocess to run
 
-    # command = "cd {}; Setup_Py_Dir; ".format(wd)
     command = "cd {}; ".format(wd)
-
+    if not path.exists("{}/data".format(wd)):
+        command += "Setup_Py_Dir; "
     if use_mpi:
         command += "mpirun -n {} ".format(ncores)
 
@@ -405,7 +507,6 @@ def run_model(root: str, wd: str, use_mpi: bool, ncores: int, resume_model: bool
 
     # If a root.save file exists, then we assume that we want to restart the
     # run
-    # TODO: switch to turn this off
 
     if path.exists("{}/{}.wind_save".format(wd, root)) and not RESTART_OVERRIDE:
         resume_model = True
@@ -474,7 +575,7 @@ def run_model(root: str, wd: str, use_mpi: bool, ncores: int, resume_model: bool
     return rc
 
 
-def go(roots: List[str], use_mpi: bool, n_cores: int) \
+def control(roots: List[str], use_mpi: bool, n_cores: int) \
         -> List[int]:
     """
     Run the parts of the scripts requested to by run by the user.
@@ -506,9 +607,9 @@ def go(roots: List[str], use_mpi: bool, n_cores: int) \
 
     the_rc = []
 
-    for i, path in enumerate(roots):
+    for i, sim in enumerate(roots):
 
-        root, wd = PythonUtils.split_root_directory(path)
+        root, wd = PythonUtils.split_root_directory(sim)
         log("------------------------\n")
         log("        Model {}/{}".format(i + 1, nmodels))
         log("\n------------------------\n")
@@ -569,89 +670,6 @@ def go(roots: List[str], use_mpi: bool, n_cores: int) \
     return the_rc
 
 
-def setup_script() \
-        -> None:
-    """
-    Setup the global variables which control the logic of the script.
-    """
-
-    p = ap.ArgumentParser(description=__doc__)
-
-    p.add_argument("-sc", "--split_cycles", action="store_true",
-                   help="Split the ionization and spectrum cycles into two separate Python runs.")
-    p.add_argument("-r", "--restart", action="store_true", help="Restart a Python model from a previous wind_save.")
-    p.add_argument("-ro", "--restart_override", action="store_true",
-                   help="Disable the automatic restarting run function.")
-    p.add_argument("-py", "--python", type=str, action="store", help="The name of the of the Python binary to use.")
-    p.add_argument("-f", "--python_flags", type=str, action="store", help="Any run-time flags to pass to Python.")
-    p.add_argument("-c", "--convergence_limit", type=float, action="store",
-                   help="The 'limit' for considering a model converged. This value is 0 < c_value < 1.")
-    p.add_argument("-v", "--verbose", action="store", help="The level of verbosity for Python's output.")
-    p.add_argument("-n", "--n_cores", action="store", help="The number of processor cores to run Python with.")
-    p.add_argument("-d", "--dry_run", action="store_true", help="Print the models found to screen and then exit.")
-    p.add_argument("-p", "--plot", action="store_true", help="Create plots for the models after running Python.")
-
-    args = p.parse_args()
-
-    global VERBOSITY
-    if args.verbose:
-        VERBOSITY = int(args.verbose)
-
-    global SPLIT_CYCLES
-    if args.split_cycles:
-        SPLIT_CYCLES = True
-
-    global PYTHON_BINARY
-    if args.python:
-        PYTHON_BINARY = args.python_version
-
-    global RESUME_RUN
-    if args.restart:
-        RESUME_RUN = True
-
-    global RESTART_OVERRIDE
-    if args.restart_override:
-        RESTART_OVERRIDE = True
-
-    global RUNTIME_FLAGS
-    if args.python_flags:
-        RUNTIME_FLAGS = args.python_flags
-
-    global CONV_LIMIT
-    if args.convergence_limit:
-        if 0 < args.convergence_limit < 1:
-            CONV_LIMIT = args.convergence_limit
-        else:
-            log("Invalid value for convergence limit {}".format(args.clim))
-            exit(EXIT_FAIL)
-
-    global DRY_RUN
-    if args.dry_run:
-        DRY_RUN = True
-
-    global N_CORES
-    if args.n_cores:
-        N_CORES = int(args.n_cores)
-
-    global PLOT
-    if args.plot:
-        PLOT = True
-
-    log("Python  .......................... {}".format(PYTHON_BINARY))
-    log("Split cycles ..................... {}".format(SPLIT_CYCLES))
-    log("Resume run ....................... {}".format(RESUME_RUN))
-    log("Automatic restart override ....... {}".format(RESTART_OVERRIDE))
-    log("Number of cores .................. {}".format(N_CORES))
-    log("Convergence limit ................ {}".format(CONV_LIMIT))
-    log("Verbosity level .................. {}".format(VERBOSITY))
-    log("Plot model ....................... {}".format(PLOT))
-
-    if RUNTIME_FLAGS:
-        log("\nUsing these extra python flags:\n\t{}".format(RUNTIME_FLAGS))
-
-    return
-
-
 def main() \
         -> None:
     """
@@ -706,7 +724,7 @@ def main() \
 
     # Now run Python...
 
-    the_rc = go(the_pfs, mpirun, ncores_to_use)
+    the_rc = control(the_pfs, mpirun, ncores_to_use)
 
     ncrash = 0
     for i, rc in enumerate(the_rc):

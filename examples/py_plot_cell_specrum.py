@@ -19,6 +19,11 @@ from typing import List
 from astropy import constants as consts
 
 
+plt.rcParams['xtick.labelsize'] = 15
+plt.rcParams['ytick.labelsize'] = 15
+plt.rcParams['axes.labelsize'] = 15
+
+
 def get_spec_model(root: str, nx: int, nz: int, i: int, j: int, nbands: int = 4) -> List[str]:
     """
     Get the spectral model for a specific cell from py_wind
@@ -186,11 +191,26 @@ def main() -> None:
     """
 
     p = ap.ArgumentParser(description=__doc__)
-    p.add_argument("root", help="The root name of the Python simulation")
-    p.add_argument("nx", type=int, help="The number of cells in the i-direction")
-    p.add_argument("nz", type=int, help="The number of cells in the j-direction")
-    p.add_argument("i", type=int, help="The i index of the cell")
-    p.add_argument("j", type=int, help="The j index of the cell")
+
+    p.add_argument("root",
+                   help="The root name of the Python simulation")
+
+    p.add_argument("nx",
+                   type=int,
+                   help="The number of cells in the i-direction")
+
+    p.add_argument("nz",
+                   type=int,
+                   help="The number of cells in the j-direction")
+
+    p.add_argument("i",
+                   type=int,
+                   help="The i index of the cell")
+
+    p.add_argument("j",
+                   type=int,
+                   help="The j index of the cell")
+
     args = p.parse_args()
 
     model = get_spec_model(args.root, args.nx, args.nz, args.i, args.j)
