@@ -188,6 +188,8 @@ def extract_variable_along_sightline(inclination: float, variable: str, root: st
     """
     Extract a wind variable along a given sightline.
 
+    TODO this needs to be properly documented and return correctly on error
+
     Parameters
     ----------
     inclination: float

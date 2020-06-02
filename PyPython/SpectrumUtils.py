@@ -105,7 +105,7 @@ def read_spec(fname: str, delim: str = None, numpy: bool = False) -> Union[int, 
     return pd.DataFrame(lines[1:], columns=lines[0]).astype(float)
 
 
-def spec_inclinations(spec: Union[pd.DataFrame, np.ndarray, List[str], str]) -> np.array:
+def spec_inclinations(spec: Union[pd.DataFrame, np.ndarray, List[str], str]) -> list:
     """
     Find the unique inclination angles for a set of Python .spec files given
     the path for multiple .spec files.
@@ -273,7 +273,7 @@ def ylims(wavelength: np.array, flux: np.array, wmin: Union[float, None], wmax: 
 
     if wavelength.shape[0] != flux.shape[0]:
         raise DimensionError("{}: wavelength and flux are of different dimensions wavelength {} flux {}"
-                                   .format(n, wavelength.shape, flux.shape))
+                             .format(n, wavelength.shape, flux.shape))
 
     if type(wavelength) != np.ndarray or type(flux) != np.ndarray:
         raise TypeError("{}: wavelength or flux array not a numpy arrays wavelength {} flux {}"

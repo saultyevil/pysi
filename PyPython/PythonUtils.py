@@ -355,6 +355,37 @@ def find_parameter_files(path: str = "./") -> List[str]:
     return pfs
 
 
+def get_pfs(root: str = None) -> List[str]:
+    """
+    Search recursively from the calling directory for Python pfs. If root is
+    specified, then only pfs with the same root name as root will be returned.
+
+    Parameters
+    -------
+    root: str, optional
+        If this is set, then any pf which is not named with this root will be
+        removed from the return pfs
+
+    Returns
+    -------
+    pfs: List[str]
+        A list containing the relative paths of the pfs to be updated.
+    """
+
+    pfs = []
+    ppfs = find_parameter_files(".")
+
+    for i in range(len(ppfs)):
+        pf, wd = split_root_directory(ppfs[i])
+        if root:
+            if root == pf:
+                pfs.append(ppfs[i])
+        else:
+            pfs.append(ppfs[i])
+
+    return pfs
+
+
 def remove_photoion_transition_from_data(data: str, atomic: int, istate: int, new_value: float = 9e99):
     """
     Remove a transition or element from some atomic data. Creates a new atomic

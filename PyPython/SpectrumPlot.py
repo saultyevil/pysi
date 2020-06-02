@@ -227,17 +227,9 @@ def optical_depth_spectrum(root: str, wd: str, inclinations: List[str] = "all", 
 
     ax.set_ylabel(r"Optical Depth, $\tau$", fontsize=axes_label_fontsize)
     if frequency_space:
-        if scale == "logx" or scale == "loglog":
-            ax.set_xlabel(r"Log(Frequency), [Hz]", fontsize=axes_label_fontsize)
-        if scale == "logy" or scale == "loglog":
-            ax.set_ylabel(r"Log(Optical Depth), $\tau$", fontsize=axes_label_fontsize)
-        else:
-            ax.set_xlabel(r"Frequency, [Hz]", fontsize=axes_label_fontsize)
+        ax.set_xlabel(r"Frequency, [Hz]", fontsize=axes_label_fontsize)
     else:
-        if scale == "logx" or scale == "loglog":
-            ax.set_xlabel(r"Log(Wavelength), [$\AA$]", fontsize=axes_label_fontsize)
-        else:
-            ax.set_xlabel(r"Wavelength, [$\AA$]", fontsize=axes_label_fontsize)
+        ax.set_xlabel(r"Wavelength, [$\AA$]", fontsize=axes_label_fontsize)
 
     ax.set_xlim(xmin, xmax)
     ax.legend()
@@ -462,6 +454,7 @@ def spectra(root: str, wd: str, xmin: float = None, xmax: float = None, smooth_a
     if figsize:
         size = figsize
     fig, ax = plt.subplots(panel_dims[0], panel_dims[1], figsize=size, squeeze=False)
+    # ax = ax.flatten()
 
     # Use either frequency or wavelength and set the plot limits respectively
     xlabel = "Lambda"
@@ -476,6 +469,7 @@ def spectra(root: str, wd: str, xmin: float = None, xmax: float = None, smooth_a
         xlims[1] = xmax
     xlims = (xlims[0], xlims[1])
 
+    # TODO loop over flattened array instead
     ii = 0
     for i in range(panel_dims[0]):
         for j in range(panel_dims[1]):
