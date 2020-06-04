@@ -25,9 +25,6 @@ def setup_script():
         A list containing all of the different setup of parameters for plotting.
     """
 
-    # inclination_choices = ["all"]
-    # inclination_choices += map(str, range(91))
-
     p = ap.ArgumentParser(description=__doc__)
 
     # Required arguments
@@ -44,8 +41,6 @@ def setup_script():
     p.add_argument("-i",
                    "--inclination",
                    default="all",
-                   # choices=inclination_choices,
-                   # metavar="All or 0-90"
                    help="The inclination angles")
 
     p.add_argument("-xl",
@@ -170,16 +165,19 @@ def plot(
     # Format the subplots
     for i in range(ninc):
         ax[i].set_title(r"$i$ " + "= {}".format(inclinations[i]) + r"$^{\circ}$")
+
         if axes_scales == "loglog" or axes_scales == "logx":
             ax[i].set_xscale("log")
         if axes_scales == "loglog" or axes_scales == "logy":
             ax[i].set_yscale("log")
+
         if frequency_space:
             ax[i].set_xlabel(r"Frequency [Hz]")
             ax[i].set_ylabel(r"$\nu F_{\nu}$ (erg s$^{-1}$ cm$^{-2}$")
         else:
             ax[i].set_xlabel(r"Wavelength [$\AA$]")
             ax[i].set_ylabel(r"$F_{\lambda}$ (erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)")
+
         lims = list(ax[i].get_xlim())
         if xmin:
             lims[0] = xmin
@@ -188,6 +186,14 @@ def plot(
         ax[i].set_xlim(lims[0], lims[1])
         ymin, ymax = SpectrumUtils.ylims(x, y, xmin, xmax)
         ax[i].set_ylim(ymin, ymax)
+
+        if plot_common_lines:
+            if axes_scales == "logx" or axes_scales == "loglog":
+                logx = True
+            else:
+                logx = False
+            ax[i] = SpectrumUtils.plot_line_ids(ax[i], SpectrumUtils.common_lines(), logx)
+
     ax[0].legend()
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
@@ -205,7 +211,7 @@ def plot(
     return fig, ax
 
 
-def main(setup: tuple = None) -> Tuple[plt.Fig, plt.Axes]:
+def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
     """
     The main function of the script.
 
@@ -227,8 +233,10 @@ def main(setup: tuple = None) -> Tuple[plt.Fig, plt.Axes]:
         print("Unable to find any spectrum files")
         return
 
-    fig, ax = plot(spectra, root, inclination, wd, xmin, xmax, frequency_space, axes_scales, smooth_amount, common_lines,
-                   file_ext, display)
+    fig, ax = plot(
+        spectra, root, inclination, wd, xmin, xmax, frequency_space, axes_scales, smooth_amount, common_lines,
+        file_ext, display
+    )
 
     return fig, ax
 

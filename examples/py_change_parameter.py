@@ -42,7 +42,7 @@ def main():
     Main function of the script.
     """
 
-    p = ap.ArgumentParser(desc=__doc__)
+    p = ap.ArgumentParser(description=__doc__)
 
     p.add_argument("parameter",
                    help="Name of the parameter to add.")
