@@ -78,7 +78,7 @@ def setup_script() \
     p.add_argument("-p",
                    "--polar",
                    action="store_true",
-                   default=True,
+                   default=False,
                    help="Plot using polar projection.")
 
     p.add_argument("-sm",
@@ -151,14 +151,14 @@ def plot(setup: tuple = None):
     else:
         projection = "rectilinear"
 
+    py_plot_wind.main((root, wd, projection, False, "loglog", False, file_ext, display))
     if projection == "rectilinear":  # Because it doesn't work for polar grids yet
         py_plot_velocity.main((root, wd, "loglog", False, file_ext, display))
-    py_plot_wind.main((root, wd, projection, False, "loglog", False, file_ext, display))
     remove_data_sym_links(wd)
 
     # Create plots for the different spectra
 
-    py_plot_optical_depths.main((root, wd, None, None, True, True, "loglog", file_ext, display))
+    py_plot_optical_depths.main((root, wd, xmin, xmax, False, True, "loglog", file_ext, display))
     py_plot_spectrum_components.main((root, wd, None, None, smooth_amount, True, False, "loglog",
                                       file_ext, display))
     py_plot_spectrum.main((root, wd, xmin, xmax, frequency_space, True, "logy", smooth_amount, file_ext,

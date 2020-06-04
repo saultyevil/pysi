@@ -148,7 +148,7 @@ def setup_script() \
                    help="The 'limit' for considering a model converged. This value is 0 < c_value < 1.")
 
     p.add_argument("-v",
-                   "--verbose",
+                   "--verbosity",
                    type=int,
                    default=VERBOSE_EXTRA_INFORMATION,
                    help="The level of verbosity for Python's output.")
@@ -177,9 +177,11 @@ def setup_script() \
     SPLIT_CYCLES = args.split_cycles
     PYTHON_BINARY = args.py
     RESUME_RUN = args.restart
+    RESTART_OVERRIDE = args.restart_override
     RUNTIME_FLAGS = args.python_flags
     CONV_LIMIT = args.convergence_limit
     DRY_RUN = args.dry_run
+    N_CORES = args.n_cores
     PLOT = args.plot
 
     log("Python  .......................... {}".format(PYTHON_BINARY))

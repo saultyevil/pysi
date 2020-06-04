@@ -19,8 +19,10 @@ from astropy.io import ascii
 from astropy.table import Table
 
 
-def get_wind_variable(root: str, var_name: str, var_type: str, path: str = ".", coord: str = "rectilinear",
-                      input_file: str = None, return_indices: bool = False) -> Tuple[np.array, np.array, np.array]:
+def get_wind_variable(
+    root: str, var_name: str, var_type: str, path: str = ".", coord: str = "rectilinear", input_file: str = None,
+    return_indices: bool = False
+) -> Tuple[np.array, np.array, np.array]:
     """
     Read in variables contained within a root.ep.complete or ion file generated
     by windsave2table.
@@ -137,7 +139,9 @@ def get_wind_variable(root: str, var_name: str, var_type: str, path: str = ".", 
     return x, z, var
 
 
-def get_wind_elem_number(nx: int, nz: int, i: int, j: int) -> int:
+def get_wind_elem_number(
+    nx: int, nz: int, i: int, j: int
+) -> int:
     """
     Return the wind element number for the given grid indices (i, j) for a grid
     of size (nx, nz).
@@ -162,7 +166,9 @@ def get_wind_elem_number(nx: int, nz: int, i: int, j: int) -> int:
     return nz * i + j
 
 
-def sightline_coords(x: np.ndarray, theta: float):
+def sightline_coords(
+    x: np.ndarray, theta: float
+):
     """
     Return the vertical coordinates for a sightline given the x coordinates
     and the inclination of the sightline.
@@ -183,8 +189,9 @@ def sightline_coords(x: np.ndarray, theta: float):
     return x * np.tan(np.pi / 2 - np.deg2rad(theta))
 
 
-def extract_variable_along_sightline(inclination: float, variable: str, root: str = None, wd: str = ".",
-                                     grid: Table = None, legacy: bool = False) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]]:
+def extract_variable_along_sightline(
+    inclination: float, variable: str, root: str = None, wd: str = ".", grid: Table = None, legacy: bool = False
+) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]]:
     """
     Extract a wind variable along a given sightline.
 

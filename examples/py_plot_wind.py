@@ -26,6 +26,77 @@ plt.rcParams['ytick.labelsize'] = 15
 plt.rcParams['axes.labelsize'] = 15
 
 
+def setup_script() \
+        -> tuple:
+    """
+    Parse the different modes this script can be run from the command line.
+
+    Returns
+    -------
+    setup: tuple
+        A list containing all of the different setup of parameters for plotting.
+    """
+
+    p = ap.ArgumentParser(description=__doc__)
+
+    p.add_argument("root",
+                   help="The root name of the simulation.")
+
+    p.add_argument("-wd",
+                   "--working_directory",
+                   default=".",
+                   help="The directory containing the simulation.")
+
+    p.add_argument("-d",
+                   "--ion_density",
+                   action="store_true",
+                   default=False,
+                   help="Use ion densities instead of ion fractions.")
+
+    p.add_argument("-p",
+                   "--polar",
+                   action="store_true",
+                   default=False,
+                   help="Plot using polar projection.")
+
+    p.add_argument("-s",
+                   "--scale",
+                   default="loglog",
+                   choices=["logx", "logy", "loglog", "linlin"],
+                   help="The axes scaling to use.")
+
+    p.add_argument("-c",
+                   "--cells",
+                   action="store_true",
+                   default=False,
+                   help="Plot using cell indices rather than spatial scales.")
+
+    p.add_argument("-e",
+                   "--ext",
+                   default="png",
+                   help="The file extension for the output figure.")
+
+    p.add_argument("--display",
+                   action="store_true",
+                   default=False,
+                   help="Display the plot before exiting the script.")
+
+    args = p.parse_args()
+
+    setup = (
+        args.root,
+        args.working_directory,
+        args.projection,
+        args.ion_density,
+        args.scale,
+        args.cell_indices,
+        args.ext,
+        args.display
+    )
+
+    return setup
+
+
 def plot_wind(
     root: str, wind_variables: List[str], wind_variable_types: List[str], output_name: str, wd: str = "./",
     projection: str = "rectilinear", axes_scales: str = "loglog", use_cell_indices: bool = False,
@@ -143,90 +214,9 @@ def plot_wind(
     if title:
         fig.suptitle(title, fontsize=15)
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
-    fig.savefig("{}/{}_{}.{}".format(wd, root, output_name, file_ext))
+    fig.savefig("{}/{}_{}.{}".format(wd, root, output_name, file_ext), dpi=300)
 
     return fig, ax
-
-
-def setup_script() \
-        -> tuple:
-    """
-    Parse the different modes this script can be run from the command line.
-
-    Returns
-    -------
-    setup: tuple
-        A list containing all of the different setup of parameters for plotting.
-
-        setup = (
-            args.root,
-            wd,
-            projection,
-            axes_scales,
-            cell_indices,
-            file_ext,
-            display
-        )
-    """
-
-    p = ap.ArgumentParser(description=__doc__)
-
-    p.add_argument("root", help="The root name of the simulation.")
-    p.add_argument("-wd", action="store", help="The directory containing the simulation.")
-    p.add_argument("-d", "--ion_density", action="store_true", help="Use ion densities instead of ion fractions.")
-    p.add_argument("-p", "--polar", action="store_true", help="Plot using polar projection.")
-    p.add_argument("-s", "--scale", action="store", help="The axes scaling to use: logx, logy, loglog, linlin.")
-    p.add_argument("-c", "--cells", action="store_true", help="Plot using cell indices rather than spatial scales.")
-    p.add_argument("-e", "--ext", action="store", help="The file extension for the output figure.")
-    p.add_argument("--display", action="store_true", help="Display the plot before exiting the script.")
-
-    args = p.parse_args()
-
-    wd = "./"
-    if args.wd:
-        wd = args.wd
-
-    projection = "rectilinear"
-    if args.polar:
-        projection = "polar"
-
-    ion_density = False
-    if args.ion_density:
-        ion_density = True
-
-    cell_indices = False
-    if args.cells:
-        cell_indices = True
-
-    file_ext = "png"
-    if args.ext:
-        file_ext = args.ext
-
-    axes_scales = "loglog"
-    if args.scale:
-        allowed = ["logx", "logy", "loglog", "linlin"]
-        if args.scale not in allowed:
-            print("The axes scaling {} is unknown.".format(args.scale))
-            print("Allowed values are: logx, logy, loglog, linlin.")
-            exit(EXIT_FAIL)
-        axes_scales = args.scale
-
-    display = False
-    if args.display:
-        display = True
-
-    setup = (
-        args.root,
-        wd,
-        projection,
-        ion_density,
-        axes_scales,
-        cell_indices,
-        file_ext,
-        display
-    )
-
-    return setup
 
 
 def main(setup: tuple = None) \
@@ -277,7 +267,7 @@ Parameters
 
     # First, we probably need to run windsave2table
 
-    # PythonUtils.windsave2table(root, wd, ion_density=use_ion_density)
+    PythonUtils.windsave2table(root, wd, ion_density=use_ion_density)
 
     # Plot the wind quantities first
 
