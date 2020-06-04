@@ -175,7 +175,7 @@ def setup_script() \
 
     VERBOSITY = args.verbosity
     SPLIT_CYCLES = args.split_cycles
-    PYTHON_BINARY = args.py
+    PYTHON_BINARY = args.python
     RESUME_RUN = args.restart
     RESTART_OVERRIDE = args.restart_override
     RUNTIME_FLAGS = args.python_flags

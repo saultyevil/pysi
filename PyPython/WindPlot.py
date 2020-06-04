@@ -21,9 +21,11 @@ plt.rcParams['ytick.labelsize'] = 15
 plt.rcParams['axes.labelsize'] = 15
 
 
-def spherical_wind(r: np.ndarray, w: np.ndarray, w_name: str, w_type:str, fig: plt.Figure = None, ax: plt.Axes = None,
-                   i: int = None, j: int = None, scale: str = "loglog", figsize: Tuple[int, int] = (5, 5)) \
-        -> Tuple[plt.Figure, plt.Axes]:
+# TODO rename to wind_1d or something
+def spherical_wind(
+    r: np.ndarray, w: np.ndarray, w_name: str, w_type: str, fig: plt.Figure = None, ax: plt.Axes = None, i: int = None,
+    j: int = None, scale: str = "loglog", figsize: Tuple[int, int] = (5, 5)
+) -> Tuple[plt.Figure, plt.Axes]:
     """Creates wind plots for 1D spherically symmetric winds."""
 
     n = spherical_wind.__name__
@@ -65,10 +67,10 @@ def spherical_wind(r: np.ndarray, w: np.ndarray, w_name: str, w_type:str, fig: p
     return fig, ax
 
 
-def rectilinear_wind(x: np.ndarray, z: np.ndarray, w: np.ndarray, w_name: str, w_type: str, fig: plt.Figure = None,
-                     ax: plt.Axes = None, i: int = None, j: int = None, scale: str = "loglog",
-                     obs_los: List[float] = None, figsize: Tuple[int, int] = (5, 5)) \
-        -> Tuple[plt.Figure, plt.Axes]:
+def rectilinear_wind(
+    x: np.ndarray, z: np.ndarray, w: np.ndarray, w_name: str, w_type: str, fig: plt.Figure = None, ax: plt.Axes = None,
+    i: int = None, j: int = None, scale: str = "loglog", obs_los: List[float] = None, figsize: Tuple[int, int] = (5, 5)
+) -> Tuple[plt.Figure, plt.Axes]:
     """
     Creates a wind plot in rectilinear coordinates. If fig or ax is supplied,
     then fig, ax, i and j must also be supplied. Note that ax should also be a
@@ -163,9 +165,10 @@ def rectilinear_wind(x: np.ndarray, z: np.ndarray, w: np.ndarray, w_name: str, w
     return fig, ax
 
 
-def polar_wind(r: np.ndarray, theta: np.ndarray, w: np.ndarray, w_name: str, w_type: str, ax: plt.Axes = None,
-               index: int = None, obs_los: List[float] = None, scale: str = "log") \
-        -> plt.Axes:
+def polar_wind(
+    r: np.ndarray, theta: np.ndarray, w: np.ndarray, w_name: str, w_type: str, ax: plt.Axes = None, index: int = None,
+    obs_los: List[float] = None, scale: str = "log"
+) -> plt.Axes:
     """
     Creates a wind plot in polar coordinates. If ax is supplied then index must
     also be supplied. Note that ax should also be single plt.Axes object.
