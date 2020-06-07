@@ -60,7 +60,7 @@ def jit_bin_loop(
             print(" - JIT: Binning photons by frequency: ", np.round(p / nphotons * 100.0), "% photons binned")
         if freqs[p] < freq_min or freqs[p] > freq_max:
             continue
-        if extract_line > -1 and nres[p] != extract_line:  # or line_res[p] != extract_line):
+        if extract_line > -1 and line_res[p] != extract_line:  # or line_res[p] != extract_line):
             continue
         freq_index = np.abs(spectrum[:, 0] - freqs[p]).argmin()  # Assumes all values are unique in spectrum[:, 0] -> this could probably be done much more efficiently
         spectrum[freq_index, specs[p]] += weights[p]
