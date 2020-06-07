@@ -41,6 +41,9 @@ def find_specs(root: str = None, path: str = ".") -> List[str]:
     spec_files = []
     for filename in Path(path).glob("**/*.spec"):
         fname = str(filename)
+        # todo this is bad, need cleaner way to omit these files
+        if fname.find(".delay_dump.spec") != -1:
+            continue
         if root:
             froot, wd = split_root_directory(fname)
             if froot == root:
