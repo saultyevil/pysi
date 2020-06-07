@@ -15,17 +15,21 @@ def command_line():
 
     p = ap.ArgumentParser(description=__doc__)
 
-    p.add_argument("data", type=str)
-    p.add_argument("atomic_number", type=int)
-    p.add_argument("ionisation_state", type=int)
+    p.add_argument("data",
+                   choices=["outershell", "innershell", "topbase"],
+                   help="The name of the atomic data to modify.")
+
+    p.add_argument("atomic_number",
+                   type=int,
+                   help="The atomic number of the ion to remove.")
+
+    p.add_argument("ionisation_state",
+                   type=int,
+                   help="The ionization state of the ion to remove.")
 
     args = p.parse_args()
 
-    data = args.data
-    atomic_number = args.atomic_number
-    ionisation_state = args.ionisation_state
-
-    return data, atomic_number, ionisation_state
+    return args.data, args.atomic_number, args.ionisation_state
 
 
 def main():

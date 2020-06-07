@@ -92,7 +92,7 @@ def setup_script() -> tuple:
 
     p.add_argument("-s",
                    "--scales",
-                   default="logy",
+                   default="loglog",
                    choices=["logx", "logy", "loglog", "linlin"],
                    help="The axes scaling to use: logx, logy, loglog, linlin.")
 
@@ -111,7 +111,7 @@ def setup_script() -> tuple:
     p.add_argument("-sm",
                    "--smooth_amount",
                    type=int,
-                   default=1,
+                   default=5,
                    help="The size of the boxcar smoothing filter.")
 
     p.add_argument("-e",
@@ -150,8 +150,9 @@ def setup_script() -> tuple:
 
 
 def plot(
-    root: str, wd: str, filtered_spectrum: np.ndarray, sm: int = 1, dnorm: float = 100, scale: str = "loglog",
-    frequency_space: bool = False, plot_lines: bool = False, file_ext: str = ".png", display: bool = False
+    root: str, wd: str, filtered_spectrum: np.ndarray, extract_line: int, sm: int = 1, dnorm: float = 100,
+    scale: str = "loglog", frequency_space: bool = False, plot_lines: bool = False, file_ext: str = ".png",
+    display: bool = False
 ):
     """
     Plotting function
@@ -193,9 +194,13 @@ def plot(
             ax.set_yscale("log")
 
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
-        fig.savefig("{}/{}_i{}.delay_dump_spectrum.{}".format(wd, root, inc, file_ext), dpi=300)
+        if extract_line > -1:
+            name = "{}/{}_i{}_line{}.delay_dump_spectrum".format(wd, root, inc, extract_line)
+        else:
+            name = "{}/{}_i{}.delay_dump_spectrum".format(wd, root, inc)
+        fig.savefig("{}.{}".format(name, file_ext), dpi=300)
         if file_ext == "pdf":  # Save both pdf and png versions
-            fig.savefig("{}/{}_i{}.delay_dump_spectrum.png".format(wd, root, inc), dpi=300)
+            fig.savefig("{}.png".format(name), dpi=300)
 
     if display:
         plt.show()
@@ -246,7 +251,7 @@ def main(setup: tuple = None):
             root, wd, extract_line, xmin, xmax, nbins, distance_norm, spec_norm, ncores_norm, True, jit
         )
         plot(
-            root, wd, filtered_spectrum, smooth_amount, distance_norm, axes_scales, frequency_space, common_lines,
+            root, wd, filtered_spectrum, extract_line, smooth_amount, distance_norm, axes_scales, frequency_space, common_lines,
             file_ext, display
         )
         return
@@ -262,7 +267,7 @@ def main(setup: tuple = None):
             print("Unable to load filtered spectrum")
             return
         plot(
-            root, wd, filtered_spectrum, smooth_amount, distance_norm, axes_scales, frequency_space, common_lines,
+            root, wd, filtered_spectrum, extract_line, smooth_amount, distance_norm, axes_scales, frequency_space, common_lines,
             file_ext, display
         )
 

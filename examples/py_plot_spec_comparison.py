@@ -57,7 +57,7 @@ def setup_script():
 
     p.add_argument("-s",
                    "--scales",
-                   default="logy",
+                   default="loglog",
                    choices=["logx", "logy", "loglog", "linlin"],
                    help="The axes scaling to use: logx, logy, loglog, linlin.")
 
