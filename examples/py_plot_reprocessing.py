@@ -24,6 +24,64 @@ from PyPython.Grid import change_parameter
 from PyPython.PythonUtils import remove_data_sym_links, get_cpu_count
 
 
+def setup_script() -> tuple:
+    """
+    Setup the script.
+
+    Returns
+    -------
+    setup: tuple
+        The various setup parameters for the script
+
+            setup = (
+                args.root,
+                args.working_directory,
+                args.ncores,
+                args.smooth_amount,
+                args.display
+            )
+    """
+
+    p = ap.ArgumentParser(description=__doc__)
+
+    p.add_argument("root",
+                   help="The root name of simulation.")
+
+    p.add_argument("-wd",
+                   "--working_directory",
+                   default=".",
+                   help="The directory containing the simulation.")
+
+    p.add_argument("-n",
+                   "--ncores",
+                   type=int,
+                   default=0,
+                   help="The number of cores to use to create the continuum spectrum if required.")
+
+    p.add_argument("-sm",
+                   "--smooth_amount",
+                   type=int,
+                   default=50,
+                   help="The amount of smoothing to use on the spectra.")
+
+    p.add_argument("--display",
+                   action="store_true",
+                   default=False,
+                   help="Display the figure.")
+
+    args = p.parse_args()
+
+    setup = (
+        args.root,
+        args.working_directory,
+        args.ncores if args.ncores > 0 else get_cpu_count(),
+        args.smooth_amount,
+        args.display
+    )
+
+    return setup
+
+
 def get_continuum(
     root: str, wd: str = ".", ncores: int = 1
 ) -> pd.DataFrame:
@@ -151,63 +209,6 @@ def create_plot(
         plt.close()
 
     return fig, ax, ax2
-
-
-def setup_script() -> tuple:
-    """
-    Setup the script.
-
-    Returns
-    -------
-    setup: tuple
-        The various setup parameters for the script
-
-            setup = (
-                args.root,
-                args.working_directory,
-                args.ncores,
-                args.smooth_amount,
-                args.display
-            )
-    """
-
-    p = ap.ArgumentParser(description=__doc__)
-
-    p.add_argument("root",
-                   help="The root name of simulation.")
-
-    p.add_argument("-wd",
-                   "--working_directory",
-                   help="The directory containing the simulation.")
-
-    p.add_argument("-n",
-                   "--ncores",
-                   type=int,
-                   default=0,
-                   help="The number of cores to use to create the continuum spectrum if required.")
-
-    p.add_argument("-sm",
-                   "--smooth_amount",
-                   type=int,
-                   default=50,
-                   help="The amount of smoothing to use on the spectra.")
-
-    p.add_argument("--display",
-                   action="store_true",
-                   default=False,
-                   help="Display the figure.")
-
-    args = p.parse_args()
-
-    setup = (
-        args.root,
-        args.working_directory,
-        args.ncores if args.ncores > 0 else get_cpu_count(),
-        args.smooth_amount,
-        args.display
-    )
-
-    return setup
 
 
 def main(setup: tuple = None):
