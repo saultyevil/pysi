@@ -123,12 +123,14 @@ def get_continuum(
     except FileExistsError:  # I don't think this is the intended method, but oh well
         pass
 
-    copy("{}/{}.pf".format(wd, root), "{}/continuum/{}_cont.pf".format(wd, root))
-    change_parameter("{}/continuum/{}_cont.pf".format(wd, root), "Ionization_cycles", "0", backup=False)
-    change_parameter("{}/continuum/{}_cont.pf".format(wd, root), "Spectrum_cycles", "10", backup=False)
-    change_parameter("{}/continuum/{}_cont.pf".format(wd, root), "Photons_per_cycle", "1e6", backup=False)
-    change_parameter("{}/continuum/{}_cont.pf".format(wd, root), "Wind.mdot(msol/yr)", "1e-20", backup=False)
-    change_parameter("{}/continuum/{}_cont.pf".format(wd, root), "Wind.t.init", "1e8", backup=False)
+    name = "{}/continuum/{}_cont.pf".format(wd, root)
+    copy("{}/{}.pf".format(wd, root), name)
+    change_parameter(name, "Ionization_cycles", "0", backup=False)
+    change_parameter(name, "Spectrum_cycles", "10", backup=False)
+    change_parameter(name, "Photons_per_cycle", "1e6", backup=False)
+    change_parameter(name, "Wind.mdot(msol/yr)", "1e-20", backup=False)
+    change_parameter(name, "Wind.t.init", "1e8", backup=False)
+    change_parameter(name, "Reverb.type(none,photon,wind,matom)", "none", backup=False)
 
     command = "cd {}; cd continuum; Setup_Py_Dir; mpirun -n {} py {}_cont.pf".format(wd, ncores, root)
     print(command)
