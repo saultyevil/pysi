@@ -12,15 +12,15 @@ from matplotlib import pyplot as plt
 from PyPython import Simulation
 from PyPython import PythonUtils as Utils
 from PyPython import Quotes
-from typing import List
+from typing import List, Union
 
 
 COL_WIDTH = 80
 
 
 def plot_convergence(
-    root: str, convergence: List[float], converging: List[float] = None, tr: List[float] = None, te: List[float] = None,
-    te_max: List[float] = None, hc: List[float] = None, wd: str = "."
+    root: str, convergence: List[float], converging: List[float] = None, tr: List[float] = None,
+    te: List[float] = None, te_max: List[float] = None, hc: List[float] = None, wd: str = "."
 ):
     """
     Create a detailed plot of the convergence of a Python simulation, including,
@@ -80,7 +80,9 @@ def plot_convergence(
     return
 
 
-def get_convergence(root: str, wd: str = "./") -> None:
+def get_convergence(
+        root: str, wd: str = "./"
+) -> None:
     """
     Print out the convergence of a Python simulation and then create a detailed
     plot of the convergence and convergence break down of the simulation.
@@ -95,12 +97,11 @@ def get_convergence(root: str, wd: str = "./") -> None:
 
     convergence = Simulation.check_convergence(root, wd, return_per_cycle=True)
     converging = Simulation.check_convergence(root, wd, return_per_cycle=True, return_converging=True)
-    tr, te, te_max, hc = Simulation.check_convergence_criteria(root, wd)
+    tr, te, te_max, hc = Simulation.check_convergence_breakdown(root, wd)
 
-    try:
-        ncycles = len(convergence)
-    except:  # TODO fix from bare except
-        print("Something doesn't work, skipping {}{}".format(wd, root))
+    ncycles = len(convergence)
+    if ncycles == 0:
+        print("Unable to find any convergence information for this model :-(\n")
         return
 
     for i in range(ncycles):
@@ -111,8 +112,8 @@ def get_convergence(root: str, wd: str = "./") -> None:
     try:
         plot_convergence(root, convergence, converging, tr, te, te_max, hc, wd)
     except Exception as e:
+        print("Unable to create convergence plot.")
         print(e)
-        print("Unable to create convergence plot. Do you have a valid X session?")
 
     return
 
