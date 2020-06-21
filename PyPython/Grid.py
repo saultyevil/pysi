@@ -7,12 +7,13 @@ or to edit a grid of parameter files.
 """
 
 
-from os import mkdir
 from typing import List
 from shutil import copyfile
 
 
-def change_parameter(pf_path: str, parameter_name: str, new_value: str, backup: bool = True, verbose: bool = False):
+def change_parameter(
+    pf_path: str, parameter_name: str, new_value: str, backup: bool = True, verbose: bool = False
+):
     """
     Change the value of a parameter in a Python parameter file. If the old and
     new parameter value are the same, the script will still update the parameter
@@ -75,7 +76,9 @@ def change_parameter(pf_path: str, parameter_name: str, new_value: str, backup: 
     return
 
 
-def add_parameter(pf_path: str, parameter_name: str, new_value: str, backup: bool = True, verbose: bool = False):
+def add_parameter(
+    pf_path: str, parameter_name: str, new_value: str, backup: bool = True, verbose: bool = False
+):
     """
     Add a parameter which doesn't already exist to the end of an already
     existing Python parameter file. The parameter will be appended to the
@@ -124,8 +127,10 @@ def add_parameter(pf_path: str, parameter_name: str, new_value: str, backup: boo
     return
 
 
-def create_grid(pf_path: str, parameter_name: str, grid_values: List[str], extra_name: str = None, backup: bool = True,
-                verbose: bool = False) -> List[str]:
+def create_grid(
+    pf_path: str, parameter_name: str, grid_values: List[str], extra_name: str = None, backup: bool = True,
+    verbose: bool = False
+) -> List[str]:
     """
     Creates a bunch of new parameter files with the choice of values for a
     given parameter. This will only work for one parameter at a time and one

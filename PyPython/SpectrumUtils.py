@@ -9,7 +9,7 @@ from finding these spectrum files.
 
 
 from .Error import DimensionError
-from .Constants import C, ANGSTROM, PARSEC
+from .Constants import C, ANGSTROM
 from .PythonUtils import split_root_directory
 
 from pathlib import Path
@@ -20,7 +20,14 @@ from scipy.signal import convolve, boxcar
 from matplotlib import pyplot as plt
 
 
-def find_specs(root: str = None, path: str = ".") -> List[str]:
+UNITS_FLAMBDA = "erg/s/cm^-2/A"
+UNITS_FNU = "erg/s/cm^-2/Hz"
+UNITS_LNU = "erg/s/Hz"
+
+
+def find_spec_files(
+        root: str = None, path: str = ".", ingore_delay_dump: bool = True
+) -> List[str]:
     """
     Find root.spec files recursively in provided directory path.
 
@@ -31,6 +38,8 @@ def find_specs(root: str = None, path: str = ".") -> List[str]:
         returned
     path: str [optional]
         The path to recursively search from
+    ingore_delay_dump: [optional] bool
+        When True, root.delay_dump.spec files will be ignored
 
     Returns
     -------
@@ -41,20 +50,24 @@ def find_specs(root: str = None, path: str = ".") -> List[str]:
     spec_files = []
     for filename in Path(path).glob("**/*.spec"):
         fname = str(filename)
-        # todo this is bad, need cleaner way to omit these files
-        if fname.find(".delay_dump.spec") != -1:
+
+        if ingore_delay_dump and fname.find(".delay_dump.spec") != -1:
             continue
+
         if root:
             froot, wd = split_root_directory(fname)
             if froot == root:
                 spec_files.append(fname)
             continue
+
         spec_files.append(fname)
 
     return spec_files
 
 
-def read_spec(fname: str, delim: str = None, numpy: bool = False) -> Union[int, np.ndarray, pd.DataFrame]:
+def read_spec_file(
+    fname: str, delim: str = None, numpy: bool = False
+) -> Union[int, np.ndarray, pd.DataFrame]:
     """
     Read in data from an external file, line by line whilst ignoring comments.
         - Comments begin with #
@@ -75,7 +88,7 @@ def read_spec(fname: str, delim: str = None, numpy: bool = False) -> Union[int, 
         The .spec file as a Numpy array or a Pandas DataFrame
     """
 
-    n = read_spec.__name__
+    n = read_spec_file.__name__
 
     with open(fname, "r") as f:
         flines = f.readlines()
@@ -108,7 +121,40 @@ def read_spec(fname: str, delim: str = None, numpy: bool = False) -> Union[int, 
     return pd.DataFrame(lines[1:], columns=lines[0]).astype(float)
 
 
-def spec_inclinations(spec: Union[pd.DataFrame, np.ndarray, List[str], str]) -> list:
+def get_spec_units(
+    fname: str
+):
+    """
+    Get the units of the provided spectrum.
+
+    Parameters
+    ----------
+    fname: str
+        The directory path to the spectrum file.
+
+    Returns
+    -------
+    units: str
+        The units of the spectrum.
+    """
+
+    with open(fname, "r") as f:
+        lines = f.readlines()
+
+    units = "unknown"
+
+    for i in range(len(lines)):
+        line = lines[i]
+        if line.find("# Units:") != -1:
+            units = line.split()[4][1:-1]
+            break
+
+    return units
+
+
+def get_spec_inclinations(
+    spec: Union[pd.DataFrame, np.ndarray, List[str], str]
+) -> list:
     """
     Find the unique inclination angles for a set of Python .spec files given
     the path for multiple .spec files.
@@ -125,7 +171,7 @@ def spec_inclinations(spec: Union[pd.DataFrame, np.ndarray, List[str], str]) -> 
         All of the unique inclination angles found in the Python .spec files
     """
 
-    n = spec_inclinations.__name__
+    n = get_spec_inclinations.__name__
     inclinations = []
 
     nspec = 1
@@ -143,7 +189,7 @@ def spec_inclinations(spec: Union[pd.DataFrame, np.ndarray, List[str], str]) -> 
     # Find the viewing angles in each .spec file
     for i in range(nspec):
         if readin:
-            spec = read_spec(spec[i])
+            spec = read_spec_file(spec[i])
 
         if type(spec) == pd.core.frame.DataFrame:
             col_names = spec.columns.values
@@ -161,7 +207,9 @@ def spec_inclinations(spec: Union[pd.DataFrame, np.ndarray, List[str], str]) -> 
     return inclinations
 
 
-def check_inclination(inclination: str, spec: Union[pd.DataFrame, np.ndarray]) -> bool:
+def check_inclination(
+    inclination: str, spec: Union[pd.DataFrame, np.ndarray]
+) -> bool:
     """
     Check that an inclination angle is in a spectrum.
 
@@ -202,7 +250,9 @@ def check_inclination(inclination: str, spec: Union[pd.DataFrame, np.ndarray]) -
     return allowed
 
 
-def smooth(input: Union[np.ndarray, List[Union[float, int]]], smooth_amount: Union[int, float]) -> np.ndarray:
+def smooth(
+    input: Union[np.ndarray, List[Union[float, int]]], smooth_amount: Union[int, float]
+) -> np.ndarray:
     """
     Smooth a 1D array of data using a boxcar filter of width smooth pixels.
 
@@ -245,8 +295,9 @@ def smooth(input: Union[np.ndarray, List[Union[float, int]]], smooth_amount: Uni
     return smoothed
 
 
-def ylims(wavelength: np.array, flux: np.array, wmin: Union[float, None], wmax: Union[float, None],
-          scale: float = 10,) -> Union[Tuple[float, float], Tuple[bool, bool]]:
+def get_ylims(
+    wavelength: np.array, flux: np.array, xmin: float, xmax: float, scale: float = 10
+) -> Tuple[float, float]:
     """
     Determine the lower and upper limit for the flux given a restricted
     wavelength range (wmin, wmax).
@@ -257,10 +308,10 @@ def ylims(wavelength: np.array, flux: np.array, wmin: Union[float, None], wmax: 
         An array containing all wavelengths in a spectrum
     flux: np.array[float]
         An array containing the flux at each wavelength point
-    wmin: float
-        The shortest wavelength which is being plotted
-    wmax: float
-        The longest wavelength which is being plotted
+    xmin: float
+
+    xmax: float
+
     scale: float [optional]
         The scaling factor for white space around the data
 
@@ -272,7 +323,7 @@ def ylims(wavelength: np.array, flux: np.array, wmin: Union[float, None], wmax: 
         The upper y limit to use with the wavelength range
     """
 
-    n = ylims.__name__
+    n = get_ylims.__name__
 
     if wavelength.shape[0] != flux.shape[0]:
         raise DimensionError("{}: wavelength and flux are of different dimensions wavelength {} flux {}"
@@ -282,19 +333,81 @@ def ylims(wavelength: np.array, flux: np.array, wmin: Union[float, None], wmax: 
         raise TypeError("{}: wavelength or flux array not a numpy arrays wavelength {} flux {}"
                         .format(n, type(wavelength), type(flux)))
 
-    yupper = ylower = None
+    # Determine indices which are within the wavelength range
+    idx_wmin = wavelength < xmin
+    idx_wmax = wavelength > xmax
 
-    if wmin and wmax:
-        idx_wmin = wavelength < wmin
-        idx_wmax = wavelength > wmax
-        flux_lim_wav = np.where(idx_wmin == idx_wmax)[0]
-        yupper = np.max(flux[flux_lim_wav]) * scale
-        ylower = np.min(flux[flux_lim_wav]) / scale
+    # Extract flux which is in the wavelength range, remove 0 values and then
+    # find min and max value and scale
+    flux_lim_wav = np.where(idx_wmin == idx_wmax)[0]
+    flux = flux[flux_lim_wav]
+    flux = flux[flux != 0]
+    yupper = np.max(flux) * scale
+    ylower = np.min(flux) / scale
 
     return ylower, yupper
 
 
-def common_lines(freq: bool = False) -> list:
+def plot_line_ids(
+    ax: plt.Axes, lines: list, logx: bool = False, offset: float = 25, rotation: str = "vertical", fontsize: int = 10
+)-> plt.Axes:
+    """
+    Plot line IDs onto a figure. This should probably be used after the x-limits
+    have been set on the figure which these labels are being plotted onto.
+
+    Parameters
+    ----------
+    ax: plt.Axes
+        The plot object to add line IDs to
+    lines: list
+        A list containing the line name and wavelength in Angstroms
+        (ordered by wavelength)
+    logx: bool [optional]
+        If the x-axis is logarithmic, then we need to calculate the xnorm
+        value slightly differently
+    offset: float [optional]
+        The amount to offset line labels along the x-axis
+    rotation: str [optional]
+        Vertical or horizontal rotation for text ids
+    fontsize: int [optional]
+        The fontsize of the labels
+
+    Returns
+    -------
+    ax: plt.Axes
+        The plot object now with lines IDs :-)
+        :param logx:
+    """
+
+    nlines = len(lines)
+    xlims = ax.get_xlim()
+
+    for i in range(nlines):
+        x = lines[i][1]
+        if x < xlims[0]:
+            continue
+        if x > xlims[1]:
+            continue
+        label = lines[i][0]
+        ax.axvline(x, linestyle="--", linewidth=0.5, color="k", zorder=1)
+        x = x - offset
+
+        # Calculate the x location of the label in axes coordinates
+
+        if logx:
+            xnorm = (np.log10(x) - np.log10(xlims[0])) / (np.log10(xlims[1]) - np.log10(xlims[0]))
+        else:
+            xnorm = (x - xlims[0]) / (xlims[1] - xlims[0])
+
+        ax.text(xnorm, 0.90, label, ha="center", va="center", rotation=rotation, fontsize=fontsize,
+                transform=ax.transAxes)
+
+    return ax
+
+
+def common_lines_list(
+    freq: bool = False
+) -> list:
     """
     Return a list containing the names of line transitions and the
     wavelength of the transition in Angstroms. Instead of returning the
@@ -351,7 +464,9 @@ def common_lines(freq: bool = False) -> list:
     return lines
 
 
-def absorption_edges(freq: bool = False) -> list:
+def photo_edges_list(
+    freq: bool = False
+) -> list:
     """
     Return a list containing the names of line transitions and the
     wavelength of the transition in Angstroms. Instead of returning the
@@ -383,83 +498,3 @@ def absorption_edges(freq: bool = False) -> list:
             edges[i][1] = C / (edges[i][1] * ANGSTROM)
 
     return edges
-
-
-def plot_line_ids(ax: plt.Axes, lines: list, logx: bool = False, offset: float = 25, rotation: str = "vertical",
-                  fontsize: int = 10) \
-        -> plt.Axes:
-    """
-    Plot line IDs onto a figure. This should probably be used after the x-limits
-    have been set on the figure which these labels are being plotted onto.
-
-    Parameters
-    ----------
-    ax: plt.Axes
-        The plot object to add line IDs to
-    lines: list
-        A list containing the line name and wavelength in Angstroms
-        (ordered by wavelength)
-    logx: bool [optional]
-        If the x-axis is logarithmic, then we need to calculate the xnorm
-        value slightly differently
-    offset: float [optional]
-        The amount to offset line labels along the x-axis
-    rotation: str [optional]
-        Vertical or horizontal rotation for text ids
-    fontsize: int [optional]
-        The fontsize of the labels
-
-    Returns
-    -------
-    ax: plt.Axes
-        The plot object now with lines IDs :-)
-        :param logx:
-    """
-
-    nlines = len(lines)
-    xlims = ax.get_xlim()
-
-    for i in range(nlines):
-        x = lines[i][1]
-        if x < xlims[0]:
-            continue
-        if x > xlims[1]:
-            continue
-        label = lines[i][0]
-        ax.axvline(x, linestyle="--", linewidth=0.5, color="k", zorder=1)
-        x = x - offset
-
-        # Calculate the x location of the label in axes coordinates
-
-        if logx:
-            xnorm = (np.log10(x) - np.log10(xlims[0])) / (np.log10(xlims[1]) - np.log10(xlims[0]))
-        else:
-            xnorm = (x - xlims[0]) / (xlims[1] - xlims[0])
-
-        ax.text(xnorm, 0.90, label, ha="center", va="center", rotation=rotation, fontsize=fontsize,
-                transform=ax.transAxes)
-
-    return ax
-
-
-def get_wavelength_index(wl: float, target_wl: float) -> int:
-    """
-    Return the index for an array, generally this is used to find the index
-    for a certain wavelength value.
-
-    Parameters
-    ----------
-    wl: float
-        The array containing the wavelength values.
-    target_wl: float
-        The target wavelength or value.
-
-    Returns
-    -------
-    index: int
-        The index for where the target is in the provided array.
-    """
-
-    index = np.abs(wl - target_wl).argmin()
-
-    return index

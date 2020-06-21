@@ -19,7 +19,9 @@ from psutil import cpu_count
 import numpy as np
 
 
-def remove_data_sym_links(search_dir: str = "./", verbose: bool = False):
+def remove_data_sym_links(
+    search_dir: str = "./", verbose: bool = False
+):
     """
     Search recursively from the specified directory search_dir for all symbolic
     links named data. The purpose of this script is to clean up the symbolic
@@ -84,7 +86,9 @@ def remove_data_sym_links(search_dir: str = "./", verbose: bool = False):
     return ndel
 
 
-def get_python_version(py: str = "py", verbose: bool = False) -> Tuple[str, str]:
+def get_python_version(
+    py: str = "py", verbose: bool = False
+) -> Tuple[str, str]:
     """
     Get the Python version and commit hash for the provided Python binary.
     This should also work with windsave2table.
@@ -141,8 +145,9 @@ def get_python_version(py: str = "py", verbose: bool = False) -> Tuple[str, str]
     return version, commit_hash
 
 
-def windsave2table(root: str, path: str, ion_density: bool = False,
-                   no_ep_complete: bool = False, verbose: bool = False) -> None:
+def windsave2table(
+    root: str, path: str, ion_density: bool = False, no_ep_complete: bool = False, verbose: bool = False
+) -> None:
     """
     Runs windsave2table in the directory path to create a bunch of data tables
     from the Python wind_save file. This function also created a
@@ -221,7 +226,9 @@ def windsave2table(root: str, path: str, ion_density: bool = False,
     return
 
 
-def py_wind(root: str, commands: List[str], wd: str = "./") -> List[str]:
+def py_wind(
+    root: str, commands: List[str], wd: str = "./"
+) -> List[str]:
     """
     Run py_wind using the provided commands.
     """
@@ -244,7 +251,9 @@ def py_wind(root: str, commands: List[str], wd: str = "./") -> List[str]:
     return stdout.decode("utf-8").split("\n")
 
 
-def subplot_dims(nplots: int) -> Tuple[int, int]:
+def subplot_dims(
+    nplots: int
+) -> Tuple[int, int]:
     """
     Determine the dimensions for a plot with multiple subplot panels. A design
     of two columns of subplot panels will always be used.
@@ -280,7 +289,9 @@ def subplot_dims(nplots: int) -> Tuple[int, int]:
     return nrows, ncols
 
 
-def split_root_directory(path: str) -> Tuple[str, str]:
+def split_root_directory(
+    path: str
+) -> Tuple[str, str]:
     """
     Split a path name into a directory path and root name for a Python
     simulation.
@@ -322,7 +333,9 @@ def split_root_directory(path: str) -> Tuple[str, str]:
     return root, wd
 
 
-def find_parameter_files(path: str = "./") -> List[str]:
+def find_parameter_files(
+    path: str = "./"
+) -> List[str]:
     """
     Find Python .pf parameter files recursively from the directory path.
 
@@ -355,7 +368,9 @@ def find_parameter_files(path: str = "./") -> List[str]:
     return pfs
 
 
-def get_pfs(root: str = None) -> List[str]:
+def get_pfs(
+    root: str = None
+) -> List[str]:
     """
     Search recursively from the calling directory for Python pfs. If root is
     specified, then only pfs with the same root name as root will be returned.
@@ -386,7 +401,9 @@ def get_pfs(root: str = None) -> List[str]:
     return pfs
 
 
-def remove_photoion_transition_from_data(data: str, atomic: int, istate: int, new_value: float = 9e99):
+def remove_photoion_transition_from_data(
+    data: str, atomic: int, istate: int, new_value: float = 9e99
+):
     """
     Remove a transition or element from some atomic data. Creates a new atomic
     data file which is placed in the current working or given directory.
@@ -416,7 +433,7 @@ def remove_photoion_transition_from_data(data: str, atomic: int, istate: int, ne
     ]
 
     if data not in allowed_data:
-        print("{}: atomic data {} is unknown, known types are {}".format(n, allowed_data))
+        print("{}: atomic data {} is unknown, known types are {}".format(n, data, allowed_data))
         return
 
     filename = getenv("PYTHON") + "/xdata/atomic/"
@@ -463,7 +480,47 @@ def remove_photoion_transition_from_data(data: str, atomic: int, istate: int, ne
     return
 
 
-def get_cpu_count(hyperthreads: bool = False):
+def remove_bound_lines_for_ion(
+    z: int, istate: int
+):
+    """
+    Remove all bound-bound transitions for a single ion from the atomic data.
+    This is achieved by setting the oscillator strengths of the transition, f,
+    to f = 0, effectively removing the transition.
+
+    Parameters
+    ----------
+    z: int
+        The atomic number for the ion.
+    istate: int
+        The ionization state of the ion.
+    """
+
+    n = remove_bound_lines_for_ion.__name__
+
+    filename = getenv("PYTHON") + "/xdata/atomic/lines_linked_ver_2.dat"
+
+    z = str(z)
+    istate = str(istate)
+
+    with open(filename, "r") as f:
+        lines = f.readlines()
+
+    for i in range(len(lines)):
+        line = lines[i].split() + ["\n"]
+        if line[1] == z and line[2] == istate:
+            line[4] = "0.000000"
+        lines[i] = " ".join(line)
+
+    with open("lines_linked_ver_2.dat", "w") as f:
+        f.writelines(lines)
+
+    return
+
+
+def get_cpu_count(
+    hyperthreads: bool = False
+):
     """
     Return the number of CPU cores which can be used when running a Python
     simulation.
@@ -488,7 +545,9 @@ def get_cpu_count(hyperthreads: bool = False):
     return ncores
 
 
-def file_len(fname: str) -> int:
+def file_len(
+    fname: str
+) -> int:
     """
     Count the number of lines in a file.
 
@@ -508,7 +567,9 @@ def file_len(fname: str) -> int:
     return i + 1
 
 
-def array_index(x: np.ndarray, target: float) -> int:
+def array_index(
+    x: np.ndarray, target: float
+) -> int:
     """
     Return the index for an array for a given value.
 
@@ -533,7 +594,9 @@ def array_index(x: np.ndarray, target: float) -> int:
     return index
 
 
-def round_to_sig_figs(x: np.ndarray, sigfigs: int):
+def round_to_sig_figs(
+    x: np.ndarray, sigfigs: int
+):
     """
     Truncate values in a numpy array to the given level of significant figures.
 

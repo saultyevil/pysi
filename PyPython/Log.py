@@ -9,7 +9,9 @@ the screen.
 LOGFILE = None
 
 
-def init_logfile(logfile_name: str, use_global_log: bool = True):
+def init_logfile(
+    logfile_name: str, use_global_log: bool = True
+):
     """
     Initialise a logfile global variable
 
@@ -36,7 +38,9 @@ def init_logfile(logfile_name: str, use_global_log: bool = True):
     return
 
 
-def close_logfile(logfile=None) -> None:
+def close_logfile(
+    logfile=None
+) -> None:
     """
     Close a log file for writing - this will either use the log file provided
     or will attempt to close the global log file.
@@ -60,7 +64,9 @@ def close_logfile(logfile=None) -> None:
     return
 
 
-def log(message: str, logfile=None) -> None:
+def log(
+    message: str, logfile=None
+) -> None:
     """
     Log a message to screen and to the log file provided or the global log file.
 

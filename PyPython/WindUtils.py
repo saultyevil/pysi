@@ -32,7 +32,9 @@ def get_wind_variable(
     contains both the heat and master data.
 
     This function will also only work for 2d models :^^^).
-    TODO: handle 1d data
+
+    TODO handle 1d data
+    TODO raise an error if an ion file doesn't exist so we can handle better
 
     Parameters
     ----------
@@ -51,7 +53,7 @@ def get_wind_variable(
         If this is provided, then the wind quantity will be searched from in
         the file provided
     return_indices: bool [optional]
-        Return the cell i, j indicies instead of the x, z coordinates
+        Return the cell i, j indices instead of the x, z coordinates
 
     Returns
     -------
@@ -95,7 +97,7 @@ def get_wind_variable(
         if coord == "polar" and var_type != "ion":
             data = data[~(data["theta"] > 90)]
     except IOError:
-        print("{}: could not open file {} for some reason".format(n, file))
+        print("{}: could not open file {}".format(n, file))
         return err_return, err_return, err_return
 
     # Now try and read the data from the wind file
@@ -122,7 +124,7 @@ def get_wind_variable(
                 x = data["r"].values.reshape(nx_cells, nz_cells)
                 z = np.deg2rad(data["theta"].values.reshape(nx_cells, nz_cells))
         else:
-            raise CoordError("{}: unknown projection {}: use rectilinear or polar".format(n, coord))
+            raise CoordError("{}: unknown projection '{}' known projections -- rectilinear or polar".format(n, coord))
     except KeyError as e:
         print("{}: could not find key {} for var {}".format(n, e, var_name))
         return err_return, err_return, err_return
@@ -253,8 +255,6 @@ def extract_variable_along_sightline(
     extracted = np.zeros_like(x_coords)
 
     assert (len(x_coords) == len(z_coords))
-
-    index = 0
 
     for i in range(len(x_coords)):
         j = 0

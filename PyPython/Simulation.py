@@ -6,13 +6,14 @@ This file contains various functions used monitor, check and run Python
 simulations as well as run a grid of simulations.
 """
 
-
+from copy import copy
 from typing import Union, List, Tuple
 from glob import glob
 
 
-def check_convergence(root: str, wd: str = "./", return_per_cycle: bool = False,
-                      return_converging: bool = False) -> Union[float, int, List[float]]:
+def check_convergence(
+    root: str, wd: str = "./", return_per_cycle: bool = False, return_converging: bool = False
+) -> Union[float, int, List[float]]:
     """
     Check the convergence of a Python simulation by parsing the
     !!Check_convergence line in the Python diag file.
@@ -53,10 +54,16 @@ def check_convergence(root: str, wd: str = "./", return_per_cycle: bool = False,
             print("{}: unable to find {}_0.diag file".format(n, root))
             return convergence
 
+    prev = ""
     convergence_per_cycle = []
     converging_per_cycle = []
     for line in diag:
         if line.find("converged") != -1 and line.find("converging") != -1:
+            # Skip if the convergence statistic is from the brief run summary
+            # todo skip 12 lines instead
+            if prev.find("Convergence statistics for the wind after the ionization calculation:") != -1:
+                prev = line
+                continue
             line = line.split()
             try:
                 tstr = line[2].replace("(", "").replace(")", "")
@@ -72,6 +79,7 @@ def check_convergence(root: str, wd: str = "./", return_per_cycle: bool = False,
             except ValueError:
                 converging_per_cycle.append(-1)
                 continue
+        prev = copy(line)
 
     if convergence == -1:
         print("{}: unable to parse convergence from diag file {}".format(n, diag_path))
@@ -88,7 +96,9 @@ def check_convergence(root: str, wd: str = "./", return_per_cycle: bool = False,
     return convergence
 
 
-def check_convergence_criteria(root: str, wd: str = "./") -> Tuple[List[float], List[float], List[float], List[float]]:
+def check_convergence_criteria(
+    root: str, wd: str = "./"
+) -> Tuple[List[float], List[float], List[float], List[float]]:
     """
     Returns a break down in terms of the number of cells which have passed
     the convergence checks on radiation temperature, electron temperature and
@@ -107,30 +117,42 @@ def check_convergence_criteria(root: str, wd: str = "./") -> Tuple[List[float], 
     n_te = []
     n_hc = []
     n_te_max = []
+    file_found = False
 
+    # use glob to find the first diag file
     diag_path = "{}/diag_{}/{}_0.diag".format(wd, root, root)
     try:
         with open(diag_path, "r") as f:
             diag = f.readlines()
+        file_found = True
     except IOError:
+        pass
+
+    if not file_found:
         print("{}: unable to find {}_0.diag file".format(n, root))
         return n_tr, n_te, n_hc, n_te_max
 
     ncells = 1
-    for line in diag:
+    # todo skip 12 lines instead
+    for il, line in enumerate(diag):
         if line.find("converged") != -1 and line.find("converging") != -1:
             ncells = int(line.split()[9])
-        if line.find("t_r") != -1 and line.find("t_e(real)") != -1 and line.find("hc(real") != -1:
-            line = line.split()
-            n_tr.append(int(line[2]) / ncells)
-            n_te.append(int(line[4]) / ncells)
-            n_te_max.append(int(line[6]) / ncells)
-            n_hc.append(int(line[8]) / ncells)
+        if line.find("t_r") != -1 and line.find("t_e(real)") != -1 and line.find("hc(real)") != -1:
+             if diag[il + 1].find(
+                    "Information about luminosities and apparent fluxes due to various portions of the system:") != -1:
+                continue
+             line = line.split()
+             n_tr.append(int(line[2]) / ncells)
+             n_te.append(int(line[4]) / ncells)
+             n_te_max.append(int(line[6]) / ncells)
+             n_hc.append(int(line[8]) / ncells)
 
     return n_tr, n_te, n_te_max, n_hc
 
 
-def error_summary(root: str, wd: str = "./", ncores: int = -1, print_errors: bool = False) -> dict:
+def error_summary(
+    root: str, wd: str = "./", ncores: int = -1, print_errors: bool = False
+) -> dict:
     """
     Return a dictionary containing each error found in the error summary for
     each processor for a Python simulation.

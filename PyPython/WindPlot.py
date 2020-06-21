@@ -46,7 +46,7 @@ def spherical_wind(
 
     with np.errstate(divide="ignore"):
         if w_name == "converge" or w_name == "convergence" or w_name == "converging":
-            ax[i, j].plot(r, w)
+            ax[i, j].plot_simple(r, w)
         elif w_type == "ion" or w_type == "wind" or w_type == "ion_density":
             ax[i, j].pcolormesh(r, np.log10(w))
         else:
@@ -142,7 +142,7 @@ def rectilinear_wind(
         xsight = np.linspace(0, np.max(x), int(1e5))
         for inc in obs_los:
             zsight = sightline_coords(xsight, np.deg2rad(float(inc)))
-            ax[i, j].plot(xsight, zsight, label="i = {}".format(inc) + r"$^{\circ}$ sightline")
+            ax[i, j].plot_simple(xsight, zsight, label="i = {}".format(inc) + r"$^{\circ}$ sightline")
 
     fig.colorbar(im, ax=ax[i, j])
 

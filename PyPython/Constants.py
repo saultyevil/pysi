@@ -39,7 +39,6 @@ PARSEC = 3.086E18             # Definition of 1 parsec
 A21_CONSTANT = 7.429297e-22   #
 YEAR = 3.15569e7              # Number of seconds in a year
 CMS_TO_KMS = 1e-5             # Conversion between cm/s to km/s
-
 LOG_BASE_10_OF_TWO = 3.010299956639811952137388947244930267681898814621085413104274611e-1
 
 if __name__ == "__main__":
