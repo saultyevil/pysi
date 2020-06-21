@@ -126,7 +126,7 @@ def plot(
     if inclination == "all":
         inclinations = []
         for s in spectra:
-            inclinations += SpectrumUtils.spec_inclinations(s)
+            inclinations += SpectrumUtils.get_spec_inclinations(s)
         inclinations = sorted(list(dict.fromkeys(inclinations)))  # Removes duplicate values
         figure_size = (12, 12)
     else:
@@ -144,15 +144,22 @@ def plot(
         for i in range(ninc, nrows * ncols):
             fig.delaxes(ax[i])
 
-    # Plot each spectrum for each subplot
-    for f in spectra:
-        s = SpectrumUtils.read_spec(f)
-        if frequency_space:
-            x = s["Freq."].values
-        else:
-            x = s["Lambda"].values
-        # Loop over each inclination in the spectrum
-        for i, inc in enumerate(inclinations):
+    ymin = +1e99
+    ymax = -1e99
+
+    # Loop over each inclination in the spectrum
+    for i, inc in enumerate(inclinations):
+
+        # Plot each spectrum for each subplot
+        for f in spectra:
+            if f.find("continuum") != -1:
+                continue
+            s = SpectrumUtils.read_spec_file(f)
+            if frequency_space:
+                x = s["Freq."].values
+            else:
+                x = s["Lambda"].values
+
             try:
                 if frequency_space:
                     y = s["Lambda"].values * s[inc].values
@@ -161,6 +168,29 @@ def plot(
             except KeyError:
                 continue
             ax[i].plot(x, SpectrumUtils.smooth(y, smooth_amount), label=f, alpha=alpha)
+
+            # An attempt to try to keep the y-scale correct when the x range is
+            # limited
+            if not xmin:
+                txmin = x.min()
+            else:
+                txmin = xmin
+            if not xmax:
+                txmax = x.max()
+            else:
+                txmax = xmax
+            tymin, tymax = SpectrumUtils.get_ylims(x, y, txmin, txmax)
+            if tymin < ymin:
+                ymin = tymin
+            if tymax > ymax:
+                ymax = tymax
+
+        if ymin == +1e99:
+            ymin = None
+        if ymax == -1e99:
+            ymax = None
+
+        ax[i].set_ylim(ymin, ymax)
 
     # Format the subplots
     for i in range(ninc):
@@ -184,15 +214,13 @@ def plot(
         if xmax:
             lims[1] = xmax
         ax[i].set_xlim(lims[0], lims[1])
-        ymin, ymax = SpectrumUtils.ylims(x, y, xmin, xmax)
-        ax[i].set_ylim(ymin, ymax)
 
         if plot_common_lines:
             if axes_scales == "logx" or axes_scales == "loglog":
                 logx = True
             else:
                 logx = False
-            ax[i] = SpectrumUtils.plot_line_ids(ax[i], SpectrumUtils.common_lines(), logx)
+            ax[i] = SpectrumUtils.plot_line_ids(ax[i], SpectrumUtils.common_lines_list(), logx)
 
     ax[0].legend()
 
@@ -228,7 +256,7 @@ def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
         root, wd, inclination, xmin, xmax, frequency_space, common_lines, axes_scales, smooth_amount, file_ext, display = \
             setup_script()
 
-    spectra = SpectrumUtils.find_specs()
+    spectra = SpectrumUtils.find_spec_files()
     if len(spectra) == 0:
         print("Unable to find any spectrum files")
         return

@@ -23,8 +23,8 @@ plt.rcParams['ytick.labelsize'] = 15
 plt.rcParams['axes.labelsize'] = 15
 
 
-def setup_script() \
-        -> tuple:
+def setup_script(
+) -> tuple:
     """
     Parse the different modes this script can be run from the command line.
 
@@ -111,10 +111,10 @@ def setup_script() \
     return setup
 
 
-def spectra_on_same_panel(root: str, wd: str = "./", xmin: float = None, xmax: float = None, smooth_amount: int = 5,
-                          frequency_space: bool = False, axes_scales: str = "logy", common_lines: bool = True,
-                          file_ext: str = "png") \
-        -> Tuple[plt.Figure, plt.Axes]:
+def spectra_on_same_panel(
+    root: str, wd: str = "./", xmin: float = None, xmax: float = None, smooth_amount: int = 5,
+    frequency_space: bool = False, axes_scales: str = "logy", common_lines: bool = True, file_ext: str = "png"
+) -> Tuple[plt.Figure, plt.Axes]:
     """
     Plot all of the spectra for a model on the same panel, for some comparison
     reasons. This is best done with small wavelength ranges.
@@ -152,12 +152,12 @@ def spectra_on_same_panel(root: str, wd: str = "./", xmin: float = None, xmax: f
     spectrum_filename = "{}/{}.spec".format(wd, root)
 
     try:
-        s = SpectrumUtils.read_spec(spectrum_filename)
+        s = SpectrumUtils.read_spec_file(spectrum_filename)
     except IOError:
         print("Unable to open the spectrum file with name {}".format(spectrum_filename))
         return
 
-    ia = SpectrumUtils.spec_inclinations(s)
+    ia = SpectrumUtils.get_spec_inclinations(s)
     fig, ax = plt.subplots(1, 1, figsize=(12, 8))
 
     if frequency_space:
@@ -176,14 +176,29 @@ def spectra_on_same_panel(root: str, wd: str = "./", xmin: float = None, xmax: f
 
     # Plot each inclination a in ia on the same ax object
 
+    ymin = +1e99
+    ymax = -1e99
+
+    xlims = [x.min(), x.max()]
+    if not xmin:
+        xmin = xlims[0]
+    if not xmax:
+        xmax = xlims[1]
+
     for a in ia:
         y = SpectrumUtils.smooth(s[a].values, smooth_amount)
+        tmin, tmax = SpectrumUtils.get_ylims(x, y, xmin, xmax)
+        if tmin < ymin:
+            ymin = tmin
+        if tmax > ymax:
+            ymax = tmax
         # Convert into lambda F_lambda which is (I hope) the same as nu F_nu
         if frequency_space:
             y *= s["Lambda"].values
-        fig, ax = SpectrumPlot.plot(x, y, xmin, xmax, xlabel, ylabel, axes_scales, fig, ax,
-                                    label=str(a) + r"$^{\circ}$")
+        fig, ax = SpectrumPlot.plot_simple(
+            x, y, xmin, xmax, xlabel, ylabel, axes_scales, fig, ax, label=str(a) + r"$^{\circ}$")
 
+    ax.set_ylim(ymin, ymax)
     ax.legend()
 
     if common_lines:
@@ -191,7 +206,7 @@ def spectra_on_same_panel(root: str, wd: str = "./", xmin: float = None, xmax: f
             logx = True
         else:
             logx = False
-        ax = SpectrumUtils.plot_line_ids(ax, SpectrumUtils.common_lines(), logx)
+        ax = SpectrumUtils.plot_line_ids(ax, SpectrumUtils.common_lines_list(), logx)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
     fig.savefig("{}/{}_spectra_single.{}".format(wd, root, file_ext))
@@ -199,10 +214,10 @@ def spectra_on_same_panel(root: str, wd: str = "./", xmin: float = None, xmax: f
     return fig, ax
 
 
-def spectra_on_multiple_panels(root: str, wd: str = "./", xmin: float = None, xmax: float = None,
-                               smooth_amount: int = 5, frequency_space: bool = False, axes_scales: str = "logy",
-                               common_lines: bool = True, file_ext: str = "png") \
-        -> Tuple[plt.Figure, plt.Axes]:
+def spectra_on_multiple_panels(
+    root: str, wd: str = "./", xmin: float = None, xmax: float = None, smooth_amount: int = 5,
+    frequency_space: bool = False, axes_scales: str = "logy", common_lines: bool = True, file_ext: str = "png"
+) -> Tuple[plt.Figure, plt.Axes]:
     """
     Plot each separate spectrum in an individual panel, on one figure.
 
@@ -236,15 +251,16 @@ def spectra_on_multiple_panels(root: str, wd: str = "./", xmin: float = None, xm
         The matplotlib Axes objects for the plot panels.
     """
 
-    fig, ax = SpectrumPlot.spectra(root, wd, xmin, xmax, smooth_amount, common_lines, frequency_space, axes_scales)
+    fig, ax = SpectrumPlot.plot_all_spectra(root, wd, xmin, xmax, smooth_amount, common_lines, frequency_space, axes_scales)
     fig.savefig("{}/{}_spectra.{}".format(wd, root, file_ext))
 
     return fig, ax
 
 
-def individual_spectra(root: str, wd: str = "./", xmin: float = None, xmax: float = None, smooth_amount: int = 5,
-                       frequency_space: bool = False, axes_scales: str = "logy", file_ext: str = "png") \
-        -> None:
+def individual_spectra(
+    root: str, wd: str = "./", xmin: float = None, xmax: float = None, smooth_amount: int = 5,
+    frequency_space: bool = False, axes_scales: str = "logy", file_ext: str = "png"
+) -> None:
     """
     Plot each separate spectrum as its own figure.
 
@@ -279,12 +295,12 @@ def individual_spectra(root: str, wd: str = "./", xmin: float = None, xmax: floa
     spectrum_filename = "{}/{}.spec".format(wd, root)
 
     try:
-        s = SpectrumUtils.read_spec(spectrum_filename)
+        s = SpectrumUtils.read_spec_file(spectrum_filename)
     except IOError:
         print("Unable to open the spectrum file with name {}".format(spectrum_filename))
         return
 
-    ia = SpectrumUtils.spec_inclinations(s)
+    ia = SpectrumUtils.get_spec_inclinations(s)
 
     if frequency_space:
         xlabel = "Freq."
@@ -308,12 +324,12 @@ def individual_spectra(root: str, wd: str = "./", xmin: float = None, xmax: floa
         if frequency_space:
             y *= s["Lambda"].values
 
-        fig, ax = SpectrumPlot.plot(x, y, xmin, xmax, xlabel, ylabel, axes_scales)
+        fig, ax = SpectrumPlot.plot_simple(x, y, xmin, xmax, xlabel, ylabel, axes_scales)
         if axes_scales == "loglog" or axes_scales == "logx":
             logx = True
         else:
             logx = False
-        ax = SpectrumUtils.plot_line_ids(ax, SpectrumUtils.common_lines(), logx)
+        ax = SpectrumUtils.plot_line_ids(ax, SpectrumUtils.common_lines_list(), logx)
         ax.set_title("Inclination i = {}".format(str(a)) + r"$^{\circ}$")
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
         fig.savefig("{}/{}_i{}_spectrum.{}".format(wd, root, str(a), file_ext))
@@ -321,8 +337,9 @@ def individual_spectra(root: str, wd: str = "./", xmin: float = None, xmax: floa
     return
 
 
-def main(setup: tuple = None) \
-        -> Tuple[plt.Figure, plt.Axes]:
+def main(
+    setup: tuple = None
+) -> Tuple[plt.Figure, plt.Axes]:
     """
     The main function of the script. First, the important wind quantaties are
     plotted. This is then followed by the important ions.

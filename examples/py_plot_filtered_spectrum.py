@@ -160,8 +160,8 @@ def plot(
 
     try:
         plot_full = True
-        full_spectrum = SpectrumUtils.read_spec("{}/{}.log_spec".format(wd, root))
-        inclinations = SpectrumUtils.spec_inclinations(full_spectrum)
+        full_spectrum = SpectrumUtils.read_spec_file("{}/{}.log_spec".format(wd, root))
+        inclinations = SpectrumUtils.get_spec_inclinations(full_spectrum)
     except IOError:
         plot_full = False
         inclinations = np.linspace(1, filtered_spectrum.shape[1] - 1, filtered_spectrum.shape[1] - 1).tolist()
@@ -172,10 +172,10 @@ def plot(
 
         if plot_full:
             ax.plot(full_spectrum["Lambda"], SpectrumUtils.smooth(full_spectrum[inc], sm), linewidth=1.4, alpha=0.75,
-                    label="Full Spectrum")
+                           label="Full Spectrum")
 
         ax.plot(C * 1e8 / filtered_spectrum[:-1, 0], SpectrumUtils.smooth(filtered_spectrum[:-1, e + 1], sm),
-                linewidth=1.4, alpha=0.75, label="Filtered Spectrum")
+                       linewidth=1.4, alpha=0.75, label="Filtered Spectrum")
 
         ax.legend(fontsize=15)
         ax.set_xlabel(r"Wavelength [$\AA$]", fontsize=15)
@@ -186,7 +186,7 @@ def plot(
                 logx = True
             else:
                 logx = False
-            ax = SpectrumUtils.plot_line_ids(ax, SpectrumUtils.common_lines(), logx)
+            ax = SpectrumUtils.plot_line_ids(ax, SpectrumUtils.common_lines_list(), logx)
 
         if scale == "loglog" or scale == "logx":
             ax.set_xscale("log")

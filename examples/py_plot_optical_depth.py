@@ -20,23 +20,8 @@ plt.rcParams['ytick.labelsize'] = 15
 plt.rcParams['axes.labelsize'] = 15
 
 
-def plot_optical_depth_spectrum(root: str, wd: str = "./", xmin: float = None, xmax: float = None,
-                                scale: str = "loglog", show_absorption_edges: bool = False,
-                                frequency_space: bool = False, file_ext: str = "png") \
-        -> Tuple[plt.Figure, plt.Axes]:
-    """
-
-    :return:
-    """
-
-    fig, ax = SpectrumPlot.optical_depth_spectrum(root, wd, ["all"], xmin, xmax, scale, show_absorption_edges,
-                                                  frequency_space)
-    fig.savefig("{}/{}_optical_depth.{}".format(wd, root, file_ext))
-
-    return fig, ax
-
-
-def parse_input() -> tuple:
+def setup_script(
+) -> tuple:
     """
     Parse the different modes this script can be run from the command line.
 
@@ -128,7 +113,25 @@ def parse_input() -> tuple:
     return setup
 
 
-def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
+def plot_optical_depth_spectrum(
+    root: str, wd: str = "./", xmin: float = None, xmax: float = None, scale: str = "loglog",
+    show_absorption_edges: bool = False, frequency_space: bool = False, file_ext: str = "png", display: bool = False
+) -> Tuple[plt.Figure, plt.Axes]:
+    """
+
+    """
+
+    fig, ax = SpectrumPlot.plot_optical_depth(
+        root, wd, ["all"], xmin, xmax, scale, show_absorption_edges, frequency_space, display=display
+    )
+    fig.savefig("{}/{}_optical_depth.{}".format(wd, root, file_ext))
+
+    return fig, ax
+
+
+def main(
+    setup: tuple = None
+) -> Tuple[plt.Figure, plt.Axes]:
     """
     The main function of the script. First, the important wind quantities are
     plotted. This is then followed by the important ions.
@@ -164,7 +167,7 @@ def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
     if setup:
         root, wd, xmin, xmax, frequency_space, absorption_edges, axes_scales, file_ext, display = setup
     else:
-        root, wd, xmin, xmax, frequency_space, absorption_edges, axes_scales, file_ext, display = parse_input()
+        root, wd, xmin, xmax, frequency_space, absorption_edges, axes_scales, file_ext, display = setup_script()
 
     root = root.replace("/", "")
     wdd = wd
@@ -175,11 +178,8 @@ def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
     print("\nCreating optical depth spectrum for {}{}.pf".format(wdd, root))
 
     fig, ax = plot_optical_depth_spectrum(
-        root, wd, xmin, xmax, axes_scales, absorption_edges, frequency_space, file_ext
+        root, wd, xmin, xmax, axes_scales, absorption_edges, frequency_space, file_ext, display
     )
-
-    if display:
-        plt.show()
 
     print("")
     if __name__ == "__main__":

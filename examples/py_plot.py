@@ -145,7 +145,7 @@ def plot(setup: tuple = None):
     # Create plots for the wind - only create velocity plots for rectilinear
     # at the moment - and remove the data folder afterwards
 
-    # TODO this is some dumb spaghetti code
+    # TODO this is some dumb spaghetti code and is very confusing, to even me :-(
     if projection:
         projection = "polar"
     else:

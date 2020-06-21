@@ -163,23 +163,32 @@ def main(setup: tuple = None) \
             setup_script()
 
     root = root.replace("/", "")
-    wdd = wd
-    if wd == "./":
-        wdd = ""
+    wd_display = wd
+    if wd == ".":
+        wd_display = ""
 
     print("-" * div_len)
-    print("\nPlotting spectrum components for {}{}.pf".format(wdd, root))
+    print("\nPlotting spectrum components for {}{}.pf".format(wd_display, root))
 
-    fig, ax = SpectrumPlot.spectrum_components(root, wd, False, xmin, xmax, smooth_amount, axes_scales, frequency_space)
+    # Spectrum Components - extracted spectrum
+    fig, ax = SpectrumPlot.plot_spectrum_components(
+        root, wd, False, False, xmin, xmax, smooth_amount, axes_scales, frequency_space, display
+    )
     fig.savefig("{}/{}_spectrum_components.{}".format(wd, root, file_ext))
 
-    print("\nPlotting diagnostic spectrum components for {}{}.pf".format(wdd, root))
+    print("\nPlotting diagnostic spectrum components for {}{}.pf".format(wd_display, root))
 
-    fig, ax = SpectrumPlot.spectrum_components(root, wd, True, xmin, xmax, smooth_amount, axes_scales, frequency_space)
-    fig.savefig("{}/{}_wind_tot.{}".format(wd, root, file_ext))
+    # log_spec_tot - all photons
+    fig, ax = SpectrumPlot.plot_spectrum_components(
+        root, wd, True, False, xmin, xmax, smooth_amount, axes_scales, frequency_space, display
+    )
+    fig.savefig("{}/{}_spec_tot.{}".format(wd, root, file_ext))
 
-    if display:
-        plt.show()
+    # log_spec_tot_wind - anything which is "inwind"
+    fig, ax = SpectrumPlot.plot_spectrum_components(
+        root, wd, False, True, xmin, xmax, smooth_amount, axes_scales, frequency_space, display
+    )
+    fig.savefig("{}/{}_spec_tot_wind.{}".format(wd, root, file_ext))
 
     print("")
     if __name__ == "__main__":

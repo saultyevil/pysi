@@ -107,7 +107,7 @@ def get_continuum(
 
     name = "{}/continuum/{}_cont.spec".format(wd, root)
     if Path(name).is_file():
-        t = SpectrumUtils.read_spec(name)
+        t = SpectrumUtils.read_spec_file(name)
         return t
 
     print("Unable to find {}\nRunning Python to create continuum spectrum".format(name))
@@ -126,7 +126,7 @@ def get_continuum(
     name = "{}/continuum/{}_cont.pf".format(wd, root)
     copy("{}/{}.pf".format(wd, root), name)
     change_parameter(name, "Ionization_cycles", "0", backup=False)
-    change_parameter(name, "Spectrum_cycles", "10", backup=False)
+    change_parameter(name, "Spectrum_cycles", "5", backup=False)
     change_parameter(name, "Photons_per_cycle", "1e6", backup=False)
     change_parameter(name, "Wind.mdot(msol/yr)", "1e-20", backup=False)
     change_parameter(name, "Wind.t.init", "1e8", backup=False)
@@ -143,7 +143,7 @@ def get_continuum(
         print(stderr.decode("utf-8"))
         exit(1)
 
-    t = SpectrumUtils.read_spec("continuum/{}_cont.spec".format(root))
+    t = SpectrumUtils.read_spec_file("continuum/{}_cont.spec".format(root))
 
     return t
 
@@ -159,7 +159,7 @@ def create_plot(
     """
 
     # Find the various sightlines of the optical depth spectra
-    sightlines = SpectrumUtils.spec_inclinations(optical_depth_spectrum)
+    sightlines = SpectrumUtils.get_spec_inclinations(optical_depth_spectrum)
     optical_depth_freq = optical_depth_spectrum["Freq."].values
 
     # Extract the two spectrum components of interest from the spectra files and
@@ -200,7 +200,7 @@ def create_plot(
     ax.set_xlim(np.min(optical_depth_freq), np.max(optical_depth_freq))
     ax.set_zorder(ax2.get_zorder() + 1)
     ax.patch.set_visible(False)
-    ax = SpectrumUtils.plot_line_ids(ax, SpectrumUtils.absorption_edges(True), logx=True)
+    ax = SpectrumUtils.plot_line_ids(ax, SpectrumUtils.photo_edges_list(True), logx=True)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
     fig.savefig("{}_reprocess.png".format(root), dpi=300)
@@ -237,8 +237,8 @@ def main(setup: tuple = None):
         root, wd, ncores, sm, display = setup_script()
 
     continuum_spectrum = get_continuum(root, wd, ncores)
-    full_spectrum = SpectrumUtils.read_spec("{}.spec".format(root))
-    optical_depth = SpectrumUtils.read_spec("diag_{}/{}.tau_spec.diag".format(root, root))
+    full_spectrum = SpectrumUtils.read_spec_file("{}.spec".format(root))
+    optical_depth = SpectrumUtils.read_spec_file("diag_{}/{}.tau_spec.diag".format(root, root))
     create_plot(root, full_spectrum, optical_depth, continuum_spectrum, sm=sm, display=display)
 
     return
