@@ -13,7 +13,7 @@ use (or edit) the other plotting scripts to fit your needs appropriately.
 import py_plot_wind
 import py_plot_spectrum
 import py_plot_velocity
-import py_plot_optical_depths
+import py_plot_optical_depth
 import py_plot_spectrum_components
 
 
@@ -158,7 +158,7 @@ def plot(setup: tuple = None):
 
     # Create plots for the different spectra
 
-    py_plot_optical_depths.main((root, wd, xmin, xmax, False, True, "loglog", file_ext, display))
+    py_plot_optical_depth.main((root, wd, xmin, xmax, False, True, "loglog", file_ext, display))
     py_plot_spectrum_components.main((root, wd, None, None, smooth_amount, True, False, "loglog",
                                       file_ext, display))
     py_plot_spectrum.main((root, wd, xmin, xmax, frequency_space, True, "logy", smooth_amount, file_ext,
