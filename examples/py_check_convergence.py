@@ -114,6 +114,7 @@ def get_convergence(
     except Exception as e:
         print("Unable to create convergence plot.")
         print(e)
+        print("")
 
     return
 

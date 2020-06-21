@@ -13,7 +13,7 @@ from glob import glob
 
 def check_convergence(
     root: str, wd: str = "./", return_per_cycle: bool = False, return_converging: bool = False
-) -> Union[float, int, List[float]]:
+) -> List[float]:
     """
     Check the convergence of a Python simulation by parsing the
     !!Check_convergence line in the Python diag file.
@@ -38,9 +38,11 @@ def check_convergence(
     """
 
     n = check_convergence.__name__
-    convergence = -1
-    converging = -1
+    brief_summary_len = 9
+    convergence = [-1]
+    converging = [-1]
 
+    # use glob to find the first diag file
     diag_path = "{}/diag_{}/{}_0.diag".format(wd, root, root)
     try:
         with open(diag_path, "r") as f:
@@ -57,34 +59,32 @@ def check_convergence(
     prev = ""
     convergence_per_cycle = []
     converging_per_cycle = []
-    for line in diag:
+
+    for i in range(len(diag)):
+        line = diag[i]
         if line.find("converged") != -1 and line.find("converging") != -1:
             # Skip if the convergence statistic is from the brief run summary
-            # todo skip 12 lines instead
             if prev.find("Convergence statistics for the wind after the ionization calculation:") != -1:
-                prev = line
+                i += brief_summary_len
                 continue
+
             line = line.split()
+
             try:
-                tstr = line[2].replace("(", "").replace(")", "")
-                convergence = float(tstr)
+                convergence = float(line[2].replace("(", "").replace(")", ""))
                 convergence_per_cycle.append(convergence)
             except ValueError:
                 convergence_per_cycle.append(-1)
                 continue
+
             try:
-                tstr = line[6].replace("(", "").replace(")", "")
-                converging = float(tstr)
+                converging = float(line[6].replace("(", "").replace(")", ""))
                 converging_per_cycle.append(converging)
             except ValueError:
                 converging_per_cycle.append(-1)
                 continue
-        prev = copy(line)
 
-    if convergence == -1:
-        print("{}: unable to parse convergence from diag file {}".format(n, diag_path))
-    if 0 > convergence > 1:
-        print("{}: convergence {} is not sane".format(n, convergence))
+        prev = copy(line)
 
     if return_converging:
         if return_per_cycle:
@@ -96,9 +96,9 @@ def check_convergence(
     return convergence
 
 
-def check_convergence_criteria(
+def check_convergence_breakdown(
     root: str, wd: str = "./"
-) -> Tuple[List[float], List[float], List[float], List[float]]:
+) -> Tuple[List[Union[float, int]], List[Union[float, int]], List[Union[float, int]], List[Union[float, int]]]:
     """
     Returns a break down in terms of the number of cells which have passed
     the convergence checks on radiation temperature, electron temperature and
@@ -112,7 +112,8 @@ def check_convergence_criteria(
         The working directory of the Python simulation
     """
 
-    n = check_convergence_criteria.__name__
+    n = check_convergence_breakdown.__name__
+    brief_summary_len = 7
     n_tr = []
     n_te = []
     n_hc = []
@@ -132,20 +133,26 @@ def check_convergence_criteria(
         print("{}: unable to find {}_0.diag file".format(n, root))
         return n_tr, n_te, n_hc, n_te_max
 
-    ncells = 1
-    # todo skip 12 lines instead
-    for il, line in enumerate(diag):
-        if line.find("converged") != -1 and line.find("converging") != -1:
-            ncells = int(line.split()[9])
+    for i in range(len(diag)):
+        line = diag[i]
         if line.find("t_r") != -1 and line.find("t_e(real)") != -1 and line.find("hc(real)") != -1:
-             if diag[il + 1].find(
-                    "Information about luminosities and apparent fluxes due to various portions of the system:") != -1:
+            if diag[i - 2].find("Convergence statistics for the wind after the ionization calculation:") != -1:
+                i += brief_summary_len
                 continue
-             line = line.split()
-             n_tr.append(int(line[2]) / ncells)
-             n_te.append(int(line[4]) / ncells)
-             n_te_max.append(int(line[6]) / ncells)
-             n_hc.append(int(line[8]) / ncells)
+
+            line = line.split()
+
+            try:
+                ncells = int(diag[i - 1].split()[9])
+                n_tr.append(int(line[2]) / ncells)
+                n_te.append(int(line[4]) / ncells)
+                n_te_max.append(int(line[6]) / ncells)
+                n_hc.append(int(line[8]) / ncells)
+            except ValueError:
+                n_tr.append(-1)
+                n_te.append(-1)
+                n_te_max.append(-1)
+                n_hc.append(-1)
 
     return n_tr, n_te, n_te_max, n_hc
 
