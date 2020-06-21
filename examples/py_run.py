@@ -267,7 +267,7 @@ def print_python_output(input_line: str, n_cores, verbosity: int = VERBOSITY) \
 
     # PRINT CONVERGENCE
 
-    elif (line.find("converged") != -1 and oline.find("converging") != -1) \
+    elif (line.find("converged") != -1 and line.find("converging") != -1) \
             and verbosity >= VERBOSE_EXTRA_INFORMATION:
         try:
             cells_converged = split_line[1]
@@ -278,7 +278,7 @@ def print_python_output(input_line: str, n_cores, verbosity: int = VERBOSITY) \
 
     # PRINT PHOTON TRANSPORT REPORT
 
-    elif line.find("per cent") != -1 and oline.find("Photon") != -1 \
+    elif line.find("per cent") != -1 and line.find("Photon") != -1 \
             and verbosity >= VERBOSE_EXTRA_INFORMATION_TRANSPORT:
         try:
             if int(split_line[6]) == 0:
