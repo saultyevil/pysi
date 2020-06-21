@@ -564,9 +564,9 @@ def run_model(root: str, wd: str, use_mpi: bool, ncores: int, resume_model: bool
 
     # For the ease of future me, write out the version used run the model
 
-    version, hash = PythonUtils.get_python_version(PYTHON_BINARY, verbose)
+    version, commit = PythonUtils.get_python_version(PYTHON_BINARY, verbose)
     with open("version", "w") as f:
-        f.write("{}\n{}".format(version, hash))
+        f.write("{}\n{}".format(version, commit))
 
     # If we have modified the parameter file because we are splitting the
     # model into two runs, then restore the original backup
