@@ -33,24 +33,24 @@ from PyPython.Error import EXIT_FAIL
 CONVERGED = \
     r"""
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-                                             _
+    It is...                                 _
   ___ ___  _ ____   _____ _ __ __ _  ___  __| |
  / __/ _ \| '_ \ \ / / _ \ '__/ _` |/ _ \/ _` |
 | (_| (_) | | | \ V /  __/ | | (_| |  __/ (_| |
  \___\___/|_| |_|\_/ \___|_|  \__, |\___|\__,_|
-                              |___/
+                              |___/    :-)
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 """
 
 NOT_CONVERGED = \
     r"""
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-             _                                                 _
+    It is... _                                                 _
  _ __   ___ | |_    ___ ___  _ ____   _____ _ __ __ _  ___  __| |
 | '_ \ / _ \| __|  / __/ _ \| '_ \ \ / / _ \ '__/ _` |/ _ \/ _` |
 | | | | (_) | |_  | (_| (_) | | | \ V /  __/ | | (_| |  __/ (_| |
 |_| |_|\___/ \__|  \___\___/|_| |_|\_/ \___|_|  \__, |\___|\__,_|
-                                                |___/
+                                                |___/    :-(
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 """
 
@@ -78,9 +78,9 @@ DATE = datetime.datetime.now()
 N_CORES = 0
 PYTHON_BINARY = "py"
 RUNTIME_FLAGS = None
-RESUME_RUN = False
-RESTART_OVERRIDE = False
-CONV_LIMIT = 0.85
+RESTART_MODEL = False
+AUTOMATIC_RESTART_OVERRIDE = False
+CONVERGENCE_LOWER_LIMIT = 0.85
 SPLIT_CYCLES = False
 DRY_RUN = False
 PLOT = False
@@ -103,10 +103,10 @@ def setup_script() \
     global VERBOSITY
     global SPLIT_CYCLES
     global PYTHON_BINARY
-    global RESUME_RUN
-    global RESTART_OVERRIDE
+    global RESTART_MODEL
+    global AUTOMATIC_RESTART_OVERRIDE
     global RUNTIME_FLAGS
-    global CONV_LIMIT
+    global CONVERGENCE_LOWER_LIMIT
     global DRY_RUN
     global N_CORES
     global PLOT
@@ -122,13 +122,13 @@ def setup_script() \
     p.add_argument("-r",
                    "--restart",
                    action="store_true",
-                   default=RESUME_RUN,
+                   default=RESTART_MODEL,
                    help="Restart a Python model from a previous wind_save.")
 
     p.add_argument("-ro",
                    "--restart_override",
                    action="store_true",
-                   default=RESTART_OVERRIDE,
+                   default=AUTOMATIC_RESTART_OVERRIDE,
                    help="Disable the automatic restarting run function.")
 
     p.add_argument("-py",
@@ -144,7 +144,7 @@ def setup_script() \
     p.add_argument("-c",
                    "--convergence_limit",
                    type=float,
-                   default=CONV_LIMIT,
+                   default=CONVERGENCE_LOWER_LIMIT,
                    help="The 'limit' for considering a model converged. This value is 0 < c_value < 1.")
 
     p.add_argument("-v",
@@ -176,20 +176,20 @@ def setup_script() \
     VERBOSITY = args.verbosity
     SPLIT_CYCLES = args.split_cycles
     PYTHON_BINARY = args.python
-    RESUME_RUN = args.restart
-    RESTART_OVERRIDE = args.restart_override
+    RESTART_MODEL = args.restart
+    AUTOMATIC_RESTART_OVERRIDE = args.restart_override
     RUNTIME_FLAGS = args.python_flags
-    CONV_LIMIT = args.convergence_limit
+    CONVERGENCE_LOWER_LIMIT = args.convergence_limit
     DRY_RUN = args.dry_run
     N_CORES = args.n_cores
     PLOT = args.plot
 
     log("Python  .......................... {}".format(PYTHON_BINARY))
     log("Split cycles ..................... {}".format(SPLIT_CYCLES))
-    log("Resume run ....................... {}".format(RESUME_RUN))
-    log("Automatic restart override ....... {}".format(RESTART_OVERRIDE))
+    log("Resume run ....................... {}".format(RESTART_MODEL))
+    log("Automatic restart override ....... {}".format(AUTOMATIC_RESTART_OVERRIDE))
     log("Number of cores .................. {}".format(N_CORES))
-    log("Convergence limit ................ {}".format(CONV_LIMIT))
+    log("Convergence limit ................ {}".format(CONVERGENCE_LOWER_LIMIT))
     log("Verbosity level .................. {}".format(VERBOSITY))
     log("Plot model ....................... {}".format(PLOT))
 
@@ -199,7 +199,7 @@ def setup_script() \
     return
 
 
-def print_python_output(line: str, n_cores, verbosity: int = VERBOSITY) \
+def print_python_output(input_line: str, n_cores, verbosity: int = VERBOSITY) \
         -> None:
     """
     Process the output from a Python simulation and print something to screen.
@@ -217,7 +217,7 @@ def print_python_output(line: str, n_cores, verbosity: int = VERBOSITY) \
 
     Parameters
     ----------
-    line: str
+    input_line: str
         The line to process
     n_cores: int
         The number of cores the simulation is being run with. This is required
@@ -226,81 +226,85 @@ def print_python_output(line: str, n_cores, verbosity: int = VERBOSITY) \
         If this is True, then every line will be printed to screen
     """
 
-    oline = copy(line)
-    line = line.split()
+    line = copy(input_line)
+    split_line = line.split()
 
     # PRINT EVERYTHING
 
     if verbosity >= VERBOSE_ALL:
-        log("{}".format(oline))
+        log("{}".format(line))
 
     # PRINT CURRENT IONISATION CYCLE
 
-    elif oline.find("for defining wind") != -1 and verbosity >= VERBOSE_PROGRESS_REPORT:
-        current_cycle = line[3]
-        total_cycles = line[5]
+    elif line.find("for defining wind") != -1 and verbosity >= VERBOSE_PROGRESS_REPORT:
+        current_cycle = split_line[3]
+        total_cycles = split_line[5]
         current_time = time.strftime("%H:%M")
         log("{}  Starting Ionisation Cycle ....... {}/{}".format(current_time, current_cycle, total_cycles))
 
     # PRINT CURRENT SPECTRUM CYCLE
 
-    elif oline.find("to calculate a detailed spectrum") != -1 and verbosity >= VERBOSE_PROGRESS_REPORT:
-        current_cycle = line[1]
-        total_cycles = line[3]
+    elif line.find("to calculate a detailed spectrum") != -1 and verbosity >= VERBOSE_PROGRESS_REPORT:
+        current_cycle = split_line[1]
+        total_cycles = split_line[3]
         current_time = time.strftime("%H:%M")
         log("{}  Starting Spectrum Cycle ......... {}/{}".format(current_time, current_cycle, total_cycles))
 
     # PRINT COMPLETE RUN TIME
 
-    elif oline.find("Completed entire program.") != -1 and verbosity >= VERBOSE_PROGRESS_REPORT:
-        tot_run_time_seconds = float(line[-1])
+    elif line.find("Completed entire program.") != -1 and verbosity >= VERBOSE_PROGRESS_REPORT:
+        tot_run_time_seconds = float(split_line[-1])
         tot_run_time = datetime.timedelta(seconds=tot_run_time_seconds // 1)
         log("\nSimulation completed in: {} hrs:mins:secs".format(tot_run_time))
 
     # PRINT TOTAL RUN TIME ELAPSED FOR A CYCLE
 
-    elif (oline.find("Completed ionization cycle") != -1 or oline.find("Completed spectrum cycle") != -1) and \
+    elif (line.find("Completed ionization cycle") != -1 or line.find("Completed spectrum cycle") != -1) and \
             verbosity >= VERBOSE_EXTRA_INFORMATION:
-        elapsed_time_seconds = float(line[-1])
+        elapsed_time_seconds = float(split_line[-1])
         elapsed_time = datetime.timedelta(seconds=elapsed_time_seconds // 1)
         log("         Elapsed run time: {} hrs:mins:secs".format(elapsed_time))
 
     # PRINT CONVERGENCE
 
-    elif (oline.find("converged") != -1 and oline.find("converging") != -1) \
+    elif (line.find("converged") != -1 and oline.find("converging") != -1) \
             and verbosity >= VERBOSE_EXTRA_INFORMATION:
         try:
-            cells_converged = line[1]
-            fraction_converged = line[2]
+            cells_converged = split_line[1]
+            fraction_converged = split_line[2]
             log("         {} cells converged {}".format(cells_converged, fraction_converged))
         except IndexError:
             log("          unable to parse convergence :-(")
 
     # PRINT PHOTON TRANSPORT REPORT
 
-    elif oline.find("per cent") != -1 and oline.find("Photon") != -1 \
+    elif line.find("per cent") != -1 and oline.find("Photon") != -1 \
             and verbosity >= VERBOSE_EXTRA_INFORMATION_TRANSPORT:
         try:
-            if int(line[6]) == 0:
+            if int(split_line[6]) == 0:
                 log("         Beginning photon transport")
         except ValueError:
             pass
         try:
-            percent = round(float(line[-3]), 0)
+            percent = round(float(split_line[-3]), 0)
         except ValueError:
-            percent = line[-3]
+            percent = split_line[-3]
         try:
-            nphots = round(int(line[-5]) * n_cores, 0)
+            nphots = round(int(split_line[-5]) * n_cores, 0)
             nphots = "{:1.2e}".format(nphots)
         except ValueError:
-            nphots = line[-5]
+            nphots = split_line[-5]
         log("           - {}% of {} photons transported".format(percent, nphots))
 
     # PRINT PHOTON TRANSPORT RUN TIME
-    elif oline.find("photon transport completed in") != -1 and verbosity >= VERBOSE_EXTRA_INFORMATION_TRANSPORT:
-        transport_time_seconds = float(line[5])
+    elif line.find("photon transport completed in") != -1 and verbosity >= VERBOSE_EXTRA_INFORMATION_TRANSPORT:
+        transport_time_seconds = float(split_line[5])
         transport_time = datetime.timedelta(seconds=transport_time_seconds // 1)
         log("         Photons transported in {} hrs:mins:secs".format(transport_time))
+
+    # PRINT ERROR MESSAGES
+    elif line.find("Error: ") != -1 and verbosity >= VERBOSE_EXTRA_INFORMATION:
+        log("         {}".format(line))
 
     return
 
@@ -357,10 +361,10 @@ def convergence_check(root: str, wd: str, nmodels: int) \
     if 0 > model_convergence > 1:
         log(ITS_A_MYSTERY)
     # The model has not converged
-    elif model_convergence < CONV_LIMIT:
+    elif model_convergence < CONVERGENCE_LOWER_LIMIT:
         log(NOT_CONVERGED)
     # The model has converged
-    elif model_convergence >= CONV_LIMIT:
+    elif model_convergence >= CONVERGENCE_LOWER_LIMIT:
         converged = True
         log(CONVERGED)
 
@@ -510,7 +514,7 @@ def run_model(root: str, wd: str, use_mpi: bool, ncores: int, resume_model: bool
     # If a root.save file exists, then we assume that we want to restart the
     # run
 
-    if path.exists("{}/{}.wind_save".format(wd, root)) and not RESTART_OVERRIDE:
+    if path.exists("{}/{}.wind_save".format(wd, root)) and not AUTOMATIC_RESTART_OVERRIDE:
         resume_model = True
 
     if resume_model:
@@ -621,7 +625,7 @@ def control(roots: List[str], use_mpi: bool, n_cores: int) \
         # Run Python
 
         model_converged = False
-        rc = run_model(root, wd, use_mpi, n_cores, resume_model=RESUME_RUN, restart_from_spec_cycles=False,
+        rc = run_model(root, wd, use_mpi, n_cores, resume_model=RESTART_MODEL, restart_from_spec_cycles=False,
                        split_cycles=SPLIT_CYCLES)
         the_rc.append(rc)
 
@@ -643,15 +647,15 @@ def control(roots: List[str], use_mpi: bool, n_cores: int) \
 
         # If the cycles are being split, handle the logic here to do so
 
-        if SPLIT_CYCLES and model_converged > CONV_LIMIT:
+        if SPLIT_CYCLES and model_converged > CONVERGENCE_LOWER_LIMIT:
             rc = run_model(root, wd, use_mpi, n_cores, resume_model=True, restart_from_spec_cycles=True,
                            split_cycles=True)
             the_rc[i] = rc
             # Check for the error report and print to the screen
             errors = Simulation.error_summary(root, wd, N_CORES)
             print_errors(errors, root)
-        elif SPLIT_CYCLES and model_converged < CONV_LIMIT:
-            log("The model has not converged to the set convergence limit of {}.".format(CONV_LIMIT))
+        elif SPLIT_CYCLES and model_converged < CONVERGENCE_LOWER_LIMIT:
+            log("The model has not converged to the set convergence limit of {}.".format(CONVERGENCE_LOWER_LIMIT))
             log("Skipping spectral cycles.")
 
         if rc:
