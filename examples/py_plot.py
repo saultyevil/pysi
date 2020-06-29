@@ -153,7 +153,7 @@ def plot(setup: tuple = None):
 
     py_plot_wind.main((root, wd, projection, False, "loglog", False, file_ext, display))
     if projection == "rectilinear":  # Because it doesn't work for polar grids yet
-        py_plot_velocity.main((root, wd, "loglog", False, file_ext, display))
+        py_plot_velocity.main((root, wd, "c", "loglog", False, file_ext, display))
     remove_data_sym_links(wd)
 
     # Create plots for the different spectra

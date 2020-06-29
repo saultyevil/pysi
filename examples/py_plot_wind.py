@@ -86,10 +86,10 @@ def setup_script() \
     setup = (
         args.root,
         args.working_directory,
-        args.projection,
+        args.polar,
         args.ion_density,
         args.scale,
-        args.cell_indices,
+        args.cells,
         args.ext,
         args.display
     )
@@ -153,18 +153,6 @@ def plot_wind(
         print("The size of the wind_variables and the correspond types lists are unequal in length.")
         exit(EXIT_FAIL)
 
-    # Check the projection requested and set up fig and ax depending on the
-    # projection
-
-    allowed_projections = ["rectilinear", "polar"]
-    if projection not in allowed_projections:
-        print("The provided projection {} is not an allowed projection.")
-        print("Allowed projections are: ", end="")
-        for p in allowed_projections:
-            print("{} ".format(p), end="")
-        print(".")
-        exit(EXIT_FAIL)
-
     if projection == "rectilinear":
         fig, ax = plt.subplots(panel_dims[0], panel_dims[1], figsize=figure_size, squeeze=False)
     else:
@@ -191,14 +179,12 @@ def plot_wind(
             quantity_type = wind_variable_types[index]
 
             try:
-                the_type = quantity_type
-                if quantity_type == "ion_density":
-                    the_type = "ion"
-                x, z, w = WindUtils.get_wind_variable(root, quantity, the_type, wd, projection,
-                                                      return_indices=use_cell_indices)
+                x, z, w = WindUtils.get_wind_variable(
+                    root, quantity, quantity_type, wd, projection, return_indices=use_cell_indices
+                )
             except Exception as e:
-                print("\nAn exception '{}' occurred for some reason.".format(e))
-                print("Unable to plot quantity {} with type {}.".format(quantity, quantity_type))
+                print("\nAn exception occurred")
+                print(e)
                 index += 1
                 continue
 
@@ -257,10 +243,18 @@ Parameters
     else:
         root, wd, projection, use_ion_density, axes_scales, use_cell_indices, file_ext, display = setup_script()
 
+    # TODO: need some better way to check if a root file exists, otherwise there's lot of unhelpful output
+
     root = root.replace("/", "")
     wdd = wd
     if wd == ".":
         wdd = ""
+
+    # TODO this is some dumb spaghetti code and is very confusing, to even me :-(
+    if projection:
+        projection = "polar"
+    else:
+        projection = "rectilinear"
 
     print("-" * div_len)
     print("\nCreating wind and ion plots for {}{}.pf".format(wdd, root))
@@ -284,7 +278,7 @@ Parameters
     # Plot the ions
 
     if use_ion_density:
-        title = "Ion Density"
+        title = "Ion Densities"
     else:
         title = "Ion Fractions"
 
@@ -303,6 +297,19 @@ Parameters
          "Si_i11", "Si_i12", "Si_i13", "Si_i14", "Si_i15"]
     ]
 
+    # dims = [(2, 3), (1, 2), (5, 3), (5, 5)]
+    # size = [(20, 10), (5, 5), (25, 25), (35, 35)]
+    # elements = ["H_Al_Ca", "H", "Al", "Ca"]
+    # ions = [
+    #     ["H_i01", "Al_i01", "Ca_i01", "H_i02", "Al_i02", "Ca_i02"],
+    #     ["H_i01", "H_i02"],
+    #     ["Al_i01", "Al_i02", "Al_i03", "Al_i04", "Al_i05", "Al_i06", "Al_i07", "Al_i08", "Al_i09", "Al_i10",
+    #      "Al_i11", "Al_i12", "Al_i13", "Al_i14"],
+    #     ["Ca_i01", "Ca_i02", "Ca_i03", "Ca_i04", "Ca_i05", "Ca_i06", "Ca_i07", "Ca_i08", "Ca_i09", "Ca_i10",
+    #      "Ca_i11", "Ca_i12", "Ca_i13", "Ca_i14", "Ca_i15", "Ca_i16", "Ca_i17", "Ca_i18", "Ca_i19", "Ca_i20",
+    #      "Ca_i21"],
+    # ]
+
     print("\nCreating figures containing ions for the elements:\n\t", end="")
     for el in elements:
         print("{} ".format(el), end="")
@@ -314,9 +321,10 @@ Parameters
             ion_type = ["ion_density"] * len(ions[i])
         else:
             ion_type = ["ion"] * len(ions[i])
-        fig, ax = plot_wind(root, ions[i], ion_type, extra_name, wd, projection, axes_scales=axes_scales,
-                            use_cell_indices=use_cell_indices, panel_dims=dims[i], figure_size=size[i],
-                            title=title, file_ext=file_ext)
+        fig, ax = plot_wind(
+            root, ions[i], ion_type, extra_name, wd, projection, axes_scales=axes_scales,
+            use_cell_indices=use_cell_indices, panel_dims=dims[i], figure_size=size[i], title=title, file_ext=file_ext
+        )
 
     if display:
         plt.show()

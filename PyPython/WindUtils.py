@@ -78,11 +78,14 @@ def get_wind_variable(
         if type(input_file) is not str:
             print("{}: input_file should be provided as a string".format(n))
         file = input_file
-    elif var_type.lower() == "ion":
+    elif var_type.lower() == "ion" or var_type.lower() == "ion_density":
         ele_idx = var_name.find("_")
         element = var_name[:ele_idx]
         key = var_name[ele_idx + 1:]
-        file = "{}/{}.{}.frac.txt".format(path, root, element)
+        if var_type.lower() == "ion":
+            file = "{}/{}.{}.frac.txt".format(path, root, element)
+        else:
+            file = "{}/{}.{}.den.txt".format(path, root, element)
     elif var_type.lower() == "wind":
         file = "{}/{}.ep.complete".format(path, root)
     else:

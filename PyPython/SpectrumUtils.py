@@ -489,6 +489,8 @@ def photo_edges_list(
         ["He II Edge", 229],
         ["He I Edge", 504],
         ["Lyman Edge", 912],
+        ["Ca I", 2028],
+        ["Al I", 2071],
         ["Balmer Edge", 3646],
         ["Paschen Edge", 8204],
     ]

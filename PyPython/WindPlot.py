@@ -46,9 +46,9 @@ def spherical_wind(
 
     with np.errstate(divide="ignore"):
         if w_name == "converge" or w_name == "convergence" or w_name == "converging":
-            ax[i, j].plot_simple(r, w)
+            ax[i, j].plot(r, w)
         elif w_type == "ion" or w_type == "wind" or w_type == "ion_density":
-            ax[i, j].pcolormesh(r, np.log10(w))
+            ax[i, j].plot(r, np.log10(w))
         else:
             raise InvalidParameter("{}: unknown wind variable type {}".format(n, w_type))
 
@@ -133,7 +133,9 @@ def rectilinear_wind(
             im = ax[i, j].pcolormesh(x, z, w, vmin=0, vmax=3)
         elif w_type == "ion":
             im = ax[i, j].pcolormesh(x, z, np.log10(w), norm=colors.Normalize(vmin=-10, vmax=0))
-        elif w_type == "wind" or w_type == "ion_density":
+        elif w_type == "ion_density":
+            im = ax[i, j].pcolormesh(x, z, np.log10(w))
+        elif w_type == "wind":
             im = ax[i, j].pcolormesh(x, z, np.log10(w))
         else:
             raise InvalidParameter("{}: unknown wind variable type {}".format(n, w_type))

@@ -444,6 +444,8 @@ def remove_photoion_transition_from_data(
     elif data == "innershell":
         stop = "InnerVYS"
         data_name = "vy_innershell_tab.dat"
+    else:
+        return
 
     filename += data_name
 
@@ -519,7 +521,7 @@ def remove_bound_lines_for_ion(
 
 
 def get_cpu_count(
-    hyperthreads: bool = False
+    enable_smt: bool = False
 ):
     """
     Return the number of CPU cores which can be used when running a Python
@@ -527,6 +529,12 @@ def get_cpu_count(
 
     By default, this will only return the number of physics cores and will
     exclude hyperthreads.
+
+    Parameters
+    ----------
+    enable_smt: [optional] bool
+        Return the number of logical cores, which includes both physical and
+        SMT threads (hyperthreads).
 
     Returns
     -------
@@ -538,7 +546,7 @@ def get_cpu_count(
     ncores = 0
 
     try:
-        ncores = cpu_count(logical=hyperthreads)
+        ncores = cpu_count(logical=enable_smt)
     except NotImplementedError:
         print("{}: unable to determine number of CPU cores, psutil.cpu_count not implemented".format(n))
 
