@@ -147,9 +147,10 @@ def plot(setup: tuple = None):
 
     # TODO this is some dumb spaghetti code and is very confusing, to even me :-(
     if projection:
-        projection = "polar"
+        projection = True
     else:
-        projection = "rectilinear"
+        projection = False
+
 
     py_plot_wind.main((root, wd, projection, False, "loglog", False, file_ext, display))
     if projection == "rectilinear":  # Because it doesn't work for polar grids yet

@@ -355,6 +355,8 @@ def convergence_check(root: str, wd: str, nmodels: int) \
     converged = False
 
     model_convergence = Simulation.check_convergence(root, wd)
+    if type(model_convergence) is list:
+        model_convergence = model_convergence[0]
     log("Model convergence ........... {}".format(model_convergence))
 
     # An unknown convergence has been returned
