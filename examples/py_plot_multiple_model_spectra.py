@@ -28,9 +28,9 @@ def setup_script():
     p = ap.ArgumentParser(description=__doc__)
 
     # Required arguments
-    p.add_argument("root",
+    p.add_argument("name",
                    type=str,
-                   help="The root name of the simulation.")
+                   help="The output name of the comparison plot.")
 
     # Supplementary arguments
     p.add_argument("-wd",
@@ -42,6 +42,11 @@ def setup_script():
                    "--inclination",
                    default="all",
                    help="The inclination angles")
+
+    p.add_argument("-r",
+                   "--root",
+                   default=None,
+                   help="Only plots models which have the provided root name.")
 
     p.add_argument("-xl",
                    "--xmin",
@@ -92,9 +97,10 @@ def setup_script():
     args = p.parse_args()
 
     setup = (
-        args.root,
+        args.name,
         args.working_directory,
         args.inclination,
+        args.root,
         args.xmin,
         args.xmax,
         args.frequency_space,
@@ -109,7 +115,7 @@ def setup_script():
 
 
 def plot(
-    spectra: list, root: str, inclination: str, wd: str = ".", xmin: float = None, xmax: float = None,
+    spectra: list, output_name: str, inclination: str, wd: str = ".", xmin: float = None, xmax: float = None,
     frequency_space: bool = False, axes_scales: str = "logy", smooth_amount: int = 5, plot_common_lines: bool = False,
     file_ext: str = "png", display: bool = False
 ) -> Tuple[plt.Figure, plt.Axes]:
@@ -167,7 +173,11 @@ def plot(
                     y = s[inc].values
             except KeyError:
                 continue
-            ax[i].plot(x, SpectrumUtils.smooth(y, smooth_amount), label=f, alpha=alpha)
+
+            if f.find("tde_uv_linear") != -1:
+                ax[i].plot(x, SpectrumUtils.smooth(y, smooth_amount), "--", label=f, alpha=alpha)
+            else:
+                ax[i].plot(x, SpectrumUtils.smooth(y, smooth_amount), label=f, alpha=alpha)
 
             # An attempt to try to keep the y-scale correct when the x range is
             # limited
@@ -226,9 +236,9 @@ def plot(
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
     if inclination != "all":
-        name = "{}/{}_i{}".format(wd, root, inclination)
+        name = "{}/{}_i{}".format(wd, output_name, inclination)
     else:
-        name = "{}/{}".format(wd, root)
+        name = "{}/{}".format(wd, output_name)
     fig.savefig("{}.{}".format(name, file_ext))
     if file_ext == "pdf" or file_ext == "eps":
         fig.savefig("{}.png".format(name))
@@ -251,18 +261,24 @@ def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
     """
 
     if setup:
-        root, wd, inclination, xmin, xmax, frequency_space, common_lines, axes_scales, smooth_amount, file_ext, display = setup
+        output_name, wd, inclination, root, xmin, xmax, frequency_space, common_lines, axes_scales, smooth_amount, file_ext, display = setup
     else:
-        root, wd, inclination, xmin, xmax, frequency_space, common_lines, axes_scales, smooth_amount, file_ext, display = \
+        output_name, wd, inclination, root, xmin, xmax, frequency_space, common_lines, axes_scales, smooth_amount, file_ext, display = \
             setup_script()
 
     spectra = SpectrumUtils.find_spec_files()
     if len(spectra) == 0:
         print("Unable to find any spectrum files")
         return
+    if root:
+        spectratemp = []
+        for s in spectra:
+            if s.find("{}.spec".format(root)) != -1:
+                spectratemp.append(s)
+        spectra = spectratemp
 
     fig, ax = plot(
-        spectra, root, inclination, wd, xmin, xmax, frequency_space, axes_scales, smooth_amount, common_lines,
+        spectra, output_name, inclination, wd, xmin, xmax, frequency_space, axes_scales, smooth_amount, common_lines,
         file_ext, display
     )
 

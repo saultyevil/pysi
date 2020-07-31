@@ -420,11 +420,11 @@ def plot_spectrum_components(
     xlims = (xmin, xmax)
 
     ax[0] = __panel_subplot(
-        ax[0], x, s, get_spec_units(fname), ["Created", "Emitted"], xlims, smooth_amount, scale, frequency_space, True,
-        n
+        ax[0], x, s, get_spec_units(fname), ["Created", "WCreated", "Emitted"], xlims, smooth_amount, scale,
+        frequency_space, True, n
     )
     ax[1] = __panel_subplot(
-        ax[1], x, s, get_spec_units(fname), ["CenSrc", "Disk", "Wind", "HitSurf", "Scattered"], xlims, smooth_amount,
+        ax[1], x, s, get_spec_units(fname), ["CenSrc", "Disk", "Wind", "HitSurf"], xlims, smooth_amount,
         scale, frequency_space, True, n
     )
 

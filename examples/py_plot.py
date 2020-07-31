@@ -151,7 +151,6 @@ def plot(setup: tuple = None):
     else:
         projection = False
 
-
     py_plot_wind.main((root, wd, projection, False, "loglog", False, file_ext, display))
     if projection == "rectilinear":  # Because it doesn't work for polar grids yet
         py_plot_velocity.main((root, wd, "c", "loglog", False, file_ext, display))
