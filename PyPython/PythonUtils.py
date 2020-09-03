@@ -638,3 +638,40 @@ def round_to_sig_figs(
         omag -= 1.0
 
     return xsgn * np.around(mantissa, decimals=sigfigs - 1) * 10.0 ** omag
+
+
+def create_run_script(commands: List[str]):
+    """
+    Create a shell run script given a list of commands to do. This assumes that
+    you want to use a bash interpreter.
+
+    Parameters
+    ----------
+    commands: List[str]
+        The commands which are going to be run.
+    """
+
+    # Find any python parameter file in the directory and subdirectories
+    directories = []
+    pfs = find_parameter_files()
+    for pf in pfs:
+        root, directory = split_root_directory(pf)
+        directories.append(directory)
+
+    file = "#!/bin/bash\n\ndeclare -a directories=(\n"
+    for d in directories:
+        file += "\t\"{}\"\n".format(d)
+    file += ")\n\ncwd=$(pwd)\nfor i in \"${directories[@]}\"\ndo\n\tcd $i\n\tpwd\n"
+    if len(commands) > 1:
+        for k in range(len(commands) - 1):
+            file += "\t{}\n".format(commands[k + 1])
+    else:
+        file += "\t# commands\n"
+    file += "\tcd $cwd\ndone\n"
+
+    # Print the file and write it to the current directory
+    print(file)
+    with open("commands.sh", "w") as f:
+        f.write(file)
+
+    return

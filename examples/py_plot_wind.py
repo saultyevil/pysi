@@ -183,7 +183,7 @@ def plot_wind(
                     root, quantity, quantity_type, wd, projection, return_indices=use_cell_indices
                 )
             except Exception as e:
-                print("\nAn exception occurred")
+                print("\nSomething went wrong :(")
                 print(e)
                 index += 1
                 continue
@@ -244,20 +244,13 @@ Parameters
         root, wd, projection, use_ion_density, axes_scales, use_cell_indices, file_ext, display = setup_script()
 
     # TODO: need some better way to check if a root file exists, otherwise there's lot of unhelpful output
-
     root = root.replace("/", "")
-    wdd = wd
-    if wd == ".":
-        wdd = ""
 
     # TODO this is some dumb spaghetti code and is very confusing, to even me :-(
     if projection:
         projection = "polar"
     else:
         projection = "rectilinear"
-
-    print("-" * div_len)
-    print("\nCreating wind and ion plots for {}{}.pf".format(wdd, root))
 
     # First, we probably need to run windsave2table
 
@@ -267,11 +260,6 @@ Parameters
 
     wind = ["t_e", "t_r", "ne", "rho", "c4", "ip", "converge", "ntot"]
     wind_types = ["wind"] * len(wind)
-
-    print("\nCreating a figure containing:\n\t", end="")
-    for w in wind:
-        print("{} ".format(w), end="")
-    print("")
 
     fig, ax = plot_wind(root, wind, wind_types, "wind", wd, projection, axes_scales, use_cell_indices)
 
@@ -297,24 +285,6 @@ Parameters
          "Si_i11", "Si_i12", "Si_i13", "Si_i14", "Si_i15"]
     ]
 
-    # dims = [(2, 3), (1, 2), (5, 3), (5, 5)]
-    # size = [(20, 10), (5, 5), (25, 25), (35, 35)]
-    # elements = ["H_Al_Ca", "H", "Al", "Ca"]
-    # ions = [
-    #     ["H_i01", "Al_i01", "Ca_i01", "H_i02", "Al_i02", "Ca_i02"],
-    #     ["H_i01", "H_i02"],
-    #     ["Al_i01", "Al_i02", "Al_i03", "Al_i04", "Al_i05", "Al_i06", "Al_i07", "Al_i08", "Al_i09", "Al_i10",
-    #      "Al_i11", "Al_i12", "Al_i13", "Al_i14"],
-    #     ["Ca_i01", "Ca_i02", "Ca_i03", "Ca_i04", "Ca_i05", "Ca_i06", "Ca_i07", "Ca_i08", "Ca_i09", "Ca_i10",
-    #      "Ca_i11", "Ca_i12", "Ca_i13", "Ca_i14", "Ca_i15", "Ca_i16", "Ca_i17", "Ca_i18", "Ca_i19", "Ca_i20",
-    #      "Ca_i21"],
-    # ]
-
-    print("\nCreating figures containing ions for the elements:\n\t", end="")
-    for el in elements:
-        print("{} ".format(el), end="")
-    print("\n")
-
     for i in range(len(elements)):
         extra_name = elements[i] + "_ions"
         if use_ion_density:
@@ -328,9 +298,6 @@ Parameters
 
     if display:
         plt.show()
-
-    if __name__ == "__main__":
-        print("-" * div_len)
 
     return fig, ax
 

@@ -106,6 +106,7 @@ def get_continuum(
     """
 
     name = "{}/continuum/{}_cont.spec".format(wd, root)
+    name = "{}/continuum/star.spec".format(wd)
     if Path(name).is_file():
         t = SpectrumUtils.read_spec_file(name)
         return t

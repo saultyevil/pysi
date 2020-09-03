@@ -162,28 +162,16 @@ def main(
         The matplotlib Axes objects for the plot panels.
     """
 
-    div_len = 80
-
     if setup:
         root, wd, xmin, xmax, frequency_space, absorption_edges, axes_scales, file_ext, display = setup
     else:
         root, wd, xmin, xmax, frequency_space, absorption_edges, axes_scales, file_ext, display = setup_script()
 
     root = root.replace("/", "")
-    wdd = wd
-    if wd == "./":
-        wdd = ""
-
-    print("-" * div_len)
-    print("\nCreating optical depth spectrum for {}{}.pf".format(wdd, root))
 
     fig, ax = plot_optical_depth_spectrum(
         root, wd, xmin, xmax, axes_scales, absorption_edges, frequency_space, file_ext, display
     )
-
-    print("")
-    if __name__ == "__main__":
-        print("-" * div_len)
 
     return fig, ax
 

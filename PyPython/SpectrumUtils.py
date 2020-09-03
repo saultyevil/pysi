@@ -449,6 +449,7 @@ def common_lines_list(
         ["", 3969],
         [r"H$_{\delta}$", 4101],
         [r"H$_{\gamma}$", 4340],
+        ["He II", 4389],
         ["He II", 4686],
         [r"H$_{\beta}$", 4861],
         ["Na I", 5891],

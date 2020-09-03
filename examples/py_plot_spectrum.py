@@ -380,31 +380,17 @@ def main(
             setup_script()
 
     root = root.replace("/", "")
-    wdd = wd
-    if wd == "./":
-        wdd = ""
-
-    print("-" * div_len)
-    print("\nCreating figure with spectra on the same panel for {}{}.pf".format(wdd, root))
 
     fig, ax = spectra_on_same_panel(root, wd, xmin, xmax, smooth_amount, frequency_space, axes_scales, common_lines,
                                     file_ext)
 
-    print("\nCreating figure with spectra in individual panels for {}{}.pf".format(wdd, root))
-
     fig, ax = spectra_on_multiple_panels(root, wd, xmin, xmax, smooth_amount, frequency_space, axes_scales,
                                          False, file_ext)
-
-    print("\nCreating multiple figures for each inclination angle for {}{}.pf".format(wdd, root))
 
     individual_spectra(root, wd, xmin, xmax, smooth_amount, frequency_space, axes_scales, file_ext)
 
     if display:
         plt.show()
-
-    print("")
-    if __name__ == "__main__":
-        print("-" * div_len)
 
     return fig, ax
 

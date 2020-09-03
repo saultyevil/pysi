@@ -164,9 +164,6 @@ def plot(setup: tuple = None):
     py_plot_spectrum.main((root, wd, xmin, xmax, frequency_space, True, "logy", smooth_amount, file_ext,
                            display))
 
-    div_len = 80
-    print("-" * div_len)
-
     return
 
 

@@ -154,8 +154,6 @@ def main(setup: tuple = None) \
         The matplotlib Axes objects for the plot panels.
     """
 
-    div_len = 80
-
     if setup:
         root, wd, xmin, xmax, smooth_amount, frequency_space, common_lines, axes_scales, file_ext, display = setup
     else:
@@ -163,20 +161,12 @@ def main(setup: tuple = None) \
             setup_script()
 
     root = root.replace("/", "")
-    wd_display = wd
-    if wd == ".":
-        wd_display = ""
-
-    print("-" * div_len)
-    print("\nPlotting spectrum components for {}{}.pf".format(wd_display, root))
 
     # Spectrum Components - extracted spectrum
     fig, ax = SpectrumPlot.plot_spectrum_components(
         root, wd, False, False, xmin, xmax, smooth_amount, axes_scales, frequency_space, display
     )
     fig.savefig("{}/{}_spectrum_components.{}".format(wd, root, file_ext))
-
-    print("\nPlotting diagnostic spectrum components for {}{}.pf".format(wd_display, root))
 
     # log_spec_tot - all photons
     fig, ax = SpectrumPlot.plot_spectrum_components(
@@ -189,10 +179,6 @@ def main(setup: tuple = None) \
         root, wd, False, True, xmin, xmax, smooth_amount, axes_scales, frequency_space, display
     )
     fig.savefig("{}/{}_spec_tot_wind.{}".format(wd, root, file_ext))
-
-    print("")
-    if __name__ == "__main__":
-        print("-" * div_len)
 
     return fig, ax
 
