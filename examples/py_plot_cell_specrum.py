@@ -23,6 +23,9 @@ plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15
 plt.rcParams['axes.labelsize'] = 15
 
+import warnings
+warnings.filterwarnings("ignore", module="matplotlib")
+
 
 def get_spec_model(root: str, nx: int, nz: int, i: int, j: int, nbands: int = 4) -> List[str]:
     """

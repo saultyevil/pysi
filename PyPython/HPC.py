@@ -59,4 +59,3 @@ python /home/ejp1n17/PythonScripts/py_run.py -n {} {} -f="{}"
         f.write("{}".format(slurm))
 
     return
-

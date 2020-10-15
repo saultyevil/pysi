@@ -14,6 +14,9 @@ from matplotlib import pyplot as plt
 from PyPython import SpectrumUtils
 from PyPython import PythonUtils
 
+import warnings
+warnings.filterwarnings("ignore", module="matplotlib")
+
 
 def setup_script():
     """

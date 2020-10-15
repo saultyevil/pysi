@@ -16,10 +16,11 @@ import py_plot_velocity
 import py_plot_optical_depth
 import py_plot_spectrum_components
 
-
 import argparse as ap
 from PyPython.PythonUtils import remove_data_sym_links
 
+import warnings
+warnings.filterwarnings("ignore", module="matplotlib")
 
 def setup_script() \
         -> tuple:

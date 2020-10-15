@@ -29,6 +29,9 @@ plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15
 plt.rcParams['axes.labelsize'] = 15
 
+import warnings
+warnings.filterwarnings("ignore", module="matplotlib")
+
 
 def setup_script() \
         -> tuple:

@@ -17,10 +17,12 @@ from matplotlib import pyplot as plt
 from PyPython import SpectrumUtils
 from PyPython import SpectrumPlot
 
-
 plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15
 plt.rcParams['axes.labelsize'] = 15
+
+import warnings
+warnings.filterwarnings("ignore", module="matplotlib")
 
 
 def setup_script(
@@ -153,7 +155,7 @@ def spectra_on_same_panel(
 
     try:
         s = SpectrumUtils.read_spec_file(spectrum_filename)
-    except IOError:
+    except Exception:
         print("Unable to open the spectrum file with name {}".format(spectrum_filename))
         return
 
@@ -187,16 +189,20 @@ def spectra_on_same_panel(
 
     for a in ia:
         y = SpectrumUtils.smooth(s[a].values, smooth_amount)
+
         tmin, tmax = SpectrumUtils.get_ylims(x, y, xmin, xmax)
         if tmin < ymin:
             ymin = tmin
         if tmax > ymax:
             ymax = tmax
+
         # Convert into lambda F_lambda which is (I hope) the same as nu F_nu
         if frequency_space:
             y *= s["Lambda"].values
+
         fig, ax = SpectrumPlot.plot_simple(
-            x, y, xmin, xmax, xlabel, ylabel, axes_scales, fig, ax, label=str(a) + r"$^{\circ}$")
+            x, y, xmin, xmax, xlabel, ylabel, axes_scales, fig, ax, label=str(a) + r"$^{\circ}$"
+        )
 
     ax.set_ylim(ymin, ymax)
     ax.legend()

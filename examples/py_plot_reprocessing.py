@@ -23,6 +23,9 @@ from PyPython import SpectrumUtils
 from PyPython.Grid import change_parameter
 from PyPython.PythonUtils import remove_data_sym_links, get_cpu_count
 
+import warnings
+warnings.filterwarnings("ignore", module="matplotlib")
+
 
 def setup_script() -> tuple:
     """
@@ -106,7 +109,6 @@ def get_continuum(
     """
 
     name = "{}/continuum/{}_cont.spec".format(wd, root)
-    name = "{}/continuum/star.spec".format(wd)
     if Path(name).is_file():
         t = SpectrumUtils.read_spec_file(name)
         return t
@@ -133,16 +135,19 @@ def get_continuum(
     change_parameter(name, "Wind.t.init", "1e8", backup=False)
     change_parameter(name, "Reverb.type(none,photon,wind,matom)", "none", backup=False)
 
-    command = "cd {}; cd continuum; Setup_Py_Dir; mpirun -n {} py {}_cont.pf".format(wd, ncores, root)
+    command = "cd {}; cd continuum; Setup_Py_Dir; mpirun -n {} py -gamma {}_cont.pf".format(wd, ncores, root)
     print(command)
     sh = Popen(command, shell=True, stdout=PIPE, stderr=PIPE)
     stdout, stderr = sh.communicate()
-    remove_data_sym_links()
+    ndel = remove_data_sym_links()
 
     if stderr:
         print("There was a problem running Python to generate the continuum spectrum:\n")
         print(stderr.decode("utf-8"))
         exit(1)
+
+    if ndel == 0:
+        print("There was a problem deleteing the atomic data")
 
     t = SpectrumUtils.read_spec_file("continuum/{}_cont.spec".format(root))
 
@@ -156,7 +161,22 @@ def create_plot(
     """
     Create a figure to show how the underlying continuum is being reprocessed.
 
-
+    Parameters
+    ----------
+    root: str
+        The root name of the simulation.
+    spectrum: pd.DataFrame
+        The spectrum file for the complete simulation.
+    optical_depth_spectrum: pd.DataFrame
+        The optical depth spectrum for the simulation.
+    cont_spectrum: pd.DataFrame
+        The spectrum for the continuum only model.
+    sm: int [optional]
+        The amount of smoothing to be used for the spectra.
+    bgalpha: float [optional]
+        The transparency of the spectra.
+    display: bool [optional]
+        If True, the plot will be shown to screen.
     """
 
     # Find the various sightlines of the optical depth spectra
@@ -193,7 +213,7 @@ def create_plot(
             optical_depth_freq, od, label=r"$\tau($" + "i = {}".format(sl) + r"$^{\circ} )$"
         )
 
-    ax.legend()
+    ax.legend(loc="upper left")
     ax.set_ylabel(r"Continuum Optical Depth $\tau$")
     ax.set_xlabel(r"Frequency $\nu$ [Hz]")
     ax.tick_params(axis="x")
