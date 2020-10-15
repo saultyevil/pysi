@@ -214,41 +214,50 @@ def error_summary(
             continue
 
         # Find the final error summary: look over the lines list in reverse
-        # TODO: may be possible to take into account multiple error summaries
-        j = -1
-        for k, line in reversed(list(enumerate(lines))):
-            if line.find("Error summary: End of program") != -1:
-                j = k
-                break
 
-        if j == -1:
-            print("{}: unable to find error summary, returning empty dict ".format(n))
-            return total_errors
+        error_start = error_end = -1
+        for k, start_line in enumerate(lines):
 
-        # Now parse out the separate errors and add them the total errors dict
-        # errors = lines[j:j + max_read_errors]
-        errors = lines[j:]
-        for line in errors:
-            words = line.split()
-            if len(words) == 0:
-                continue
-            try:
-                w0 = words[0]
-            except IndexError:
-                print("{}: index error when trying to process line '{}' for {}"
-                      .format(n, " ".join(words), diag_files[i]))
-                broken_diag.append(i)
-                break
-            if w0.isdigit():
-                try:
-                    error_count = int(words[0])
-                except ValueError:
-                    continue
-                error_message = " ".join(words[2:])
-                try:
-                    total_errors[error_message] += error_count
-                except KeyError:
-                    total_errors[error_message] = error_count
+            # Find error summary
+            if start_line.find("Error summary: End of program") != -1:
+                error_start = k
+
+                # Find end of error summary
+                for kk, end_line in enumerate(lines[error_start + 1:]):
+                    if end_line.find("Run py_error.py for full") != -1:
+                        error_end = error_start + kk
+                        break
+
+                if error_start == -1 or error_end == -1:
+                    print("{}: unable to find error summary, returning empty dict ".format(n))
+                    return total_errors
+
+                # Extract the errors from the diag file
+
+                errors = lines[error_start:error_end]
+
+                for error_line in errors:
+                    error_words = error_line.split()
+                    if len(error_words) == 0:
+                        continue
+                    try:
+                        error_count = error_words[0]
+                    except IndexError:
+                        print("{}: index error when trying to process line '{}' for {}"
+                              .format(n, " ".join(error_words), diag_files[i]))
+                        broken_diag.append(i)
+                        break
+
+                    if error_count.isdigit():
+                        try:
+                            error_count = int(error_words[0])
+                        except ValueError:
+                            continue
+                        error_message = " ".join(error_words[2:])
+                        try:
+                            total_errors[error_message] += error_count
+                        except KeyError:
+                            total_errors[error_message] = error_count
 
     if len(broken_diag) > 0:
         print("{}: unable to find error summaries for the following diag files".format(n))
@@ -256,9 +265,12 @@ def error_summary(
             print("  {}_{}.diag".format(root, broken_diag[k]))
 
     if print_errors:
-        print("Total errors reported from {} processors for {}:\n"
-              .format(len(diag_files) - len(broken_diag), root))
+        nreported = len(diag_files) - len(broken_diag)
+        print("Total errors reported from {} processors per process for {}:\n".format(nreported, wd + root))
         for key in total_errors.keys():
-            print("  {:6d} -- {}".format(total_errors[key], key))
+            nerror = int(total_errors[key]) // nreported
+            if nerror < 1:
+                nerror = 1
+            print("  {:6d} -- {}".format(nerror, key))
 
     return total_errors
