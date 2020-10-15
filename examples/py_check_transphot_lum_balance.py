@@ -16,6 +16,7 @@ import numpy as np
 import argparse as ap
 from matplotlib import pyplot as plt
 from PyPython.PythonUtils import find_parameter_files, split_root_directory
+from PyPython.Simulation import check_convergence
 
 
 def get_input():
@@ -67,7 +68,7 @@ def check_luminosity_balance(root: str, wd: str = "./"):
             except IndexError:
                 luminosity_after.append(-1)
             try:
-                absorbed_lost.append(float(line.split()[8][:-2]))
+                absorbed_lost.append(float(line.split()[10][:-2]))
             except IndexError:
                 absorbed_lost.append(-1)
 
@@ -75,10 +76,12 @@ def check_luminosity_balance(root: str, wd: str = "./"):
         return
 
     print("Root                  = ", root)
+    print("Convergence           = ", check_convergence(root, wd))
     print("Luminosity before     = ", luminosity_before[-1])
     print("Luminosity after      = ", luminosity_after[-1])
     print("Absorbed/lost         = ", absorbed_lost[-1])
     print("Ratio: after / before = ", luminosity_after[-1] / luminosity_before[-1])
+    print()
 
     cycles = np.arange(1, len(luminosity_after) + 1)
     # TODO assumes luminosity is always the same before, when in simple atom it probably isn't
@@ -101,6 +104,8 @@ def main():
 
     pfs = find_parameter_files()
     for pf in pfs:
+        if pf.find("continuum") != -1:
+            continue
         root, wd = split_root_directory(pf)
         print(pf, root, wd)
         check_luminosity_balance(root, wd)

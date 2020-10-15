@@ -131,6 +131,8 @@ def main():
     pfs = Utils.find_parameter_files()
     for i in range(len(pfs)):
         root, wd = Utils.split_root_directory(pfs[i])
+        if wd.find("continuum") != -1:
+            continue
         print("-" * COL_WIDTH)
         print("\nGetting the convergence for {} in directory {}\n".format(root, wd[:-1]))
         get_convergence(root, wd)
