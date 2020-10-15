@@ -15,160 +15,7 @@ from numba import jit
 from tqdm import tqdm
 
 
-@jit(nopython=True)
-def jit_bin_loop(
-    spectrum: np.ndarray, freq_min: float, freq_max: float, freqs: np.ndarray, weights: np.ndarray, specs: np.ndarray,
-    nres: np.ndarray, line_res: np.ndarray, extract_line: int
-):
-    """
-    Bin the photons into frequency bins using jit to attempt to speed everything
-    up.
-
-    Parameters
-    ----------
-    spectrum: np.ndarray
-        The spectrum array containing the frequency bins.
-    freq_min: float
-        The minimum frequency to bin.
-    freq_max: float
-        The maximum frequency to bin.
-    freqs: np.ndarray
-        The photon frequencies.
-    weights: np.ndarray
-        The photon weights.
-    specs: np.ndarray
-        The index for the spectrum the photons belong to.
-    line_res: np.ndarray
-        The LineRes values for the photons.
-    extract_line: int
-        The line number for the line to extract
-
-    Returns
-    -------
-    spectrum: np.ndarray
-        The spectrum where photon weights have been binned.
-    """
-
-    assert(len(freqs) == len(weights))
-    assert(len(freqs) == len(specs))
-
-    nphotons = freqs.shape[0]
-    output = nphotons // 10
-
-    for p in range(nphotons):
-        if p % output == 0:
-            print(" - JIT: Binning photons by frequency: ", np.round(p / nphotons * 100.0), "% photons binned")
-        if freqs[p] < freq_min or freqs[p] > freq_max:
-            continue
-        if extract_line > -1 and line_res[p] != extract_line:  # or line_res[p] != extract_line):
-            continue
-        freq_index = np.abs(spectrum[:, 0] - freqs[p]).argmin()  # Assumes all values are unique in spectrum[:, 0] -> this could probably be done much more efficiently
-        spectrum[freq_index, specs[p]] += weights[p]
-
-    return spectrum
-
-
-def construct_spectrum_from_weights(
-    photons: np.ndarray, spectrum: np.ndarray, spec_norm: float, ncores: int, column_names: dict, nphotons: int = None,
-    nspec: int = None, nbins: int = None, extract_line: int = -1, dnorm: float = 100, use_jit: bool = True
-) -> np.ndarray:
-    """
-    Construct a spectrum from the weights of the provided photons. If nphotons,
-    nspec or nbins are not provided, then the function will automatically detect
-    what these numbers are. There should be no NaN values in any of the arrays
-    which are provided.
-
-    Parameters
-    ----------
-    photons: np.ndarray (nphotons, 3)
-        An array containing the photon frequency, weight and spectrum number.
-    spectrum: np.ndarray (nbins, nspec)
-        An array containing the frequency bins and empty bins for each
-        inclination angle.
-    spec_norm: float
-        The spectrum normalization amount - usually the number of spectrum
-    ncores: [optional] int
-        The number of cores which were used to generate the delay_dump filecycles.
-    column_names: dict
-        A dict containing the name of photons columns and their respective index
-        into that array.
-    nphotons: [optional] int
-        The number of photons in the photons array.
-    nspec: [optional] int
-        The number of inclination angles to bin.
-    nbins: [optional] int
-        The number of frequency bins in the spectrum.
-    extract_line: [optional] int
-        The line number for a specific line to be extracted.
-    dnorm: [optional] float
-        The distance normalization for the flux calculation in parsecs. By
-        default this is 100 parsecs.
-    use_jit: [optional] bool
-        If True, JIT will be used to speed up the photon binning
-
-    Returns
-    -------
-    spectrum: np.ndarray (nbins, nspec)
-        The constructed spectrum in units of F_lambda erg/s/cm/cm/A.
-    """
-
-    n = construct_spectrum_from_weights.__name__
-
-    assert(photons.shape[0] != 0), "No photons"
-    assert(spectrum.shape[0] != 0), "No frequency bins provided"
-
-    if np.isnan(photons).any():
-        print("{}: There are NaN values in photon array!".format(n))
-        raise ValueError
-    if column_names["Freq."] != 0:
-        print("{}: expected frequency to column index 0 of spectrum. Cannot continue!".format(n))
-        raise ValueError
-
-    if not nphotons:
-        nphotons = photons.shape[0]
-    if not nbins:
-        nbins = spectrum.shape[0]
-    if not nspec:
-        nspec = np.max(photons[:, column_names["Spec."]]) + 1
-
-    distance_normalisation = 4 * np.pi * (dnorm * PARSEC) ** 2
-
-    # These are the vital quantities required for binning photons
-    frequencies = photons[:, column_names["Freq."]]
-    weights = photons[:, column_names["Weight"]]
-    spectrum_indices = photons[:, column_names["Spec."]].astype(int) + 1
-    nres = photons[:, column_names["Res."]].astype(int)
-    line_res = photons[:, column_names["LineRes."]].astype(int)
-
-    # Now bin the photons into the spectrum array
-    if use_jit:
-        freq_min = np.min(spectrum[:, column_names["Freq."]])
-        freq_max = np.max(spectrum[:, column_names["Freq."]])
-        spectrum = jit_bin_loop(spectrum, freq_min, freq_max, frequencies, weights, spectrum_indices, nres, line_res,
-                                extract_line)
-    else:
-        for p in tqdm(range(nphotons), desc="Binning photons by frequency", unit=" photons", smoothing=0):
-            freq_index = array_index(spectrum[:, column_names["Freq."]], frequencies[p])
-            if freq_index == -1:
-                continue
-            if extract_line > -1 and (nres[p] != extract_line or line_res[p] != extract_line):
-                continue
-            spectrum[freq_index, spectrum_indices[p]] += weights[p]
-
-    # Now convert the binned weights into a flux - not jit'd as it should be fast
-    # The flux is FLAMBDA -- ergs/s/cm/cm/A
-    spectrum[:, 1:] /= ncores
-    for i in range(nbins - 1):
-        for j in range(nspec):
-            freq = spectrum[i, column_names["Freq."]]
-            dfreq = spectrum[i + 1, column_names["Freq."]] - freq
-            spectrum[i, j + 1] *= (freq ** 2 * 1e-8) / (dfreq * distance_normalisation * C)
-        spectrum[i, 1:] *= spec_norm
-
-    return spectrum
-
-
-def read_delay_dump(
+def read_delay_dump_file(
     root: str, wd: str, extract: dict
 ) -> np.ndarray:
     """
@@ -192,10 +39,11 @@ def read_delay_dump(
         by the extract dict.
     """
 
-    n = read_delay_dump.__name__
+    n = read_delay_dump_file.__name__
 
     file = "{}/{}.delay_dump".format(wd, root)
     nlines = file_len(file)
+    print("{} has {} photons to be read".format(file, nlines))
 
     file_columns = {
         "Np": 0, "Freq.": 1, "Lambda": 2, "Weight": 3, "Last X": 4, "Last Y": 5, "Last Z": 6, "Scat.": 7, "RScat.": 8,
@@ -223,8 +71,182 @@ def read_delay_dump(
     return dumped_photons
 
 
-def create_spectra_from_delay_dump(
-    root: str, wd: str = ".", extract_line: int = -1, fmin: float = None, fmax: float = None, nbins: int = 10000,
+@jit(nopython=True)
+def jit_bin_weights(
+    spectrum: np.ndarray, spec_fmin: float, spec_fmax: float, phot_freq: np.ndarray, phot_weight: np.ndarray,
+    phot_spec: np.ndarray, phot_nres: np.ndarray, phot_line_nres: np.ndarray, extract_nres: int
+):
+    """
+    Bin the photons into frequency bins using jit to attempt to speed everything
+    up.
+
+    Parameters
+    ----------
+    spectrum: np.ndarray
+        The spectrum array containing the frequency bins.
+    spec_fmin: float
+        The minimum frequency to bin.
+    spec_fmax: float
+        The maximum frequency to bin.
+    phot_freq: np.ndarray
+        The photon frequencies.
+    phot_weight: np.ndarray
+        The photon weights.
+    phot_spec: np.ndarray
+        The index for the spectrum the photons belong to.
+    phot_nres: np.ndarry:
+        The Res. values for the photons.
+    phot_line_nres: np.ndarray
+        The LineRes values for the photons.
+    extract_nres: int
+        The line number for the line to extract
+
+    Returns
+    -------
+    spectrum: np.ndarray
+        The spectrum where photon weights have been binned.
+    """
+
+    assert(len(phot_freq) == len(phot_weight))
+    assert(len(phot_freq) == len(phot_spec))
+
+    nphotons = phot_freq.shape[0]
+    output = nphotons // 10
+
+    for p in range(nphotons):
+        if p % output == 0:
+            print(" - Photon binning in progress: ", np.round(p / nphotons * 100.0), "% done")
+
+        # Ignore photons not in frequency range
+
+        if phot_freq[p] < spec_fmin or phot_freq[p] > spec_fmax:
+            continue
+
+        # TODO clean up
+        # If a single transition is to be extracted, then we do that here. The
+        # logic is kind of a mess..
+
+        if extract_nres > -1:
+            if phot_nres[p] == extract_nres or (phot_line_nres[p] == extract_nres and phot_nres[p] < 0):
+                freq_index = np.abs(spectrum[:, 0] - phot_freq[p]).argmin()
+                spectrum[freq_index, phot_spec[p]] += phot_weight[p]
+            else:
+                continue
+        else:
+            freq_index = np.abs(spectrum[:, 0] - phot_freq[p]).argmin()
+            spectrum[freq_index, phot_spec[p]] += phot_weight[p]
+
+    return spectrum
+
+
+def create_spectrum_from_photon_weights(
+    photons: np.ndarray, spectrum: np.ndarray, spec_norm: float, ncores: int, column_names: dict, nphotons: int = None,
+    nspec: int = None, nbins: int = None, extract_nres: int = -1, dnorm: float = 100, use_jit: bool = True
+) -> np.ndarray:
+    """
+    Construct a spectrum from the weights of the provided photons. If nphotons,
+    nspec or nbins are not provided, then the function will automatically detect
+    what these numbers are. There should be no NaN values in any of the arrays
+    which are provided.
+
+    Parameters
+    ----------
+    photons: np.ndarray (nphotons, 3)
+        An array containing the photon frequency, weight and spectrum number.
+    spectrum: np.ndarray (nbins, nspec)
+        An array containing the frequency bins and empty bins for each
+        inclination angle.
+    spec_norm: float
+        The spectrum normalization amount - usually the number of spectrum
+    ncores: [optional] int
+        The number of cores which were used to generate the delay_dump filecycles.
+    column_names: dict
+        A dict containing the name of photons columns and their respective index
+        into that array.
+    nphotons: [optional] int
+        The number of photons in the photons array.
+    nspec: [optional] int
+        The number of inclination angles to bin.
+    nbins: [optional] int
+        The number of frequency bins in the spectrum.
+    extract_nres: [optional] int
+        The line number for a specific line to be extracted.
+    dnorm: [optional] float
+        The distance normalization for the flux calculation in parsecs. By
+        default this is 100 parsecs.
+    use_jit: [optional] bool
+        If True, JIT will be used to speed up the photon binning
+
+    Returns
+    -------
+    spectrum: np.ndarray (nbins, nspec)
+        The constructed spectrum in units of F_lambda erg/s/cm/cm/A.
+    """
+
+    n = create_spectrum_from_photon_weights.__name__
+
+    # Check the inputs and set default values in some cases
+
+    if np.isnan(photons).any():
+        print("{}: There are NaN values in photon array!".format(n))
+        raise ValueError
+    if column_names["Freq."] != 0:
+        print("{}: expected frequency to column index 0 of spectrum. Cannot continue!".format(n))
+        raise ValueError
+
+    if not nphotons:
+        nphotons = photons.shape[0]
+    if not nbins:
+        nbins = spectrum.shape[0]
+    if not nspec:
+        nspec = np.max(photons[:, column_names["Spec."]]) + 1
+
+    distance_normalisation = 4 * np.pi * (dnorm * PARSEC) ** 2
+
+    # These are the vital quantities which are required for binning photons
+    # depending on what the user wants
+
+    phot_freq = photons[:, column_names["Freq."]]
+    phot_weight = photons[:, column_names["Weight"]]
+    phot_spec_index = photons[:, column_names["Spec."]].astype(int) + 1
+    phot_nres = photons[:, column_names["Res."]].astype(int)
+    phot_line_nres = photons[:, column_names["LineRes."]].astype(int)
+
+    # Now bin the photons into the spectrum array - either using jit if requested
+    # or using slow Python but with a pretty progress bar
+
+    if use_jit:
+        freq_min = np.min(spectrum[:, column_names["Freq."]])
+        freq_max = np.max(spectrum[:, column_names["Freq."]])
+        spectrum = jit_bin_weights(
+            spectrum, freq_min, freq_max, phot_freq, phot_weight, phot_spec_index, phot_nres, phot_line_nres,
+            extract_nres
+        )
+    else:
+        raise NotImplemented("Please use the jit method for now.")
+
+    # Now convert the binned weights into a flux
+    # The flux is FLAMBDA -- ergs/s/cm/cm/A
+    # The spectrum is normalized by the number of cores, as each core produces
+    # NPHOTONS to contribute to the spectra, hence we take the "mean" value by
+    # dividing through by the number of cores
+
+    spectrum[:, 1:] /= ncores
+
+    # For each frequency/wavelength bin
+    for i in range(nbins - 1):
+        # For each inclination for this frequency/wavelength bin
+        for j in range(nspec):
+            freq = spectrum[i, column_names["Freq."]]
+            dfreq = spectrum[i + 1, column_names["Freq."]] - freq
+            spectrum[i, j + 1] *= (freq ** 2 * 1e-8) / (dfreq * distance_normalisation * C)
+        spectrum[i, 1:] *= spec_norm
+
+    return spectrum
+
+
+def create_filtered_spectrum(
+    root: str, wd: str = ".", extract_nres: int = -1, fmin: float = None, fmax: float = None, nbins: int = 10000,
     dnorm: float = 100, spec_norm: float = 1, ncores: int = 1, logbins: bool = True, use_jit: bool = True
 ) -> np.ndarray:
     """
@@ -240,6 +262,8 @@ def create_spectra_from_delay_dump(
         The root name of the simulation.
     wd: [optional] str
         The directory containing the simulation.
+    extract_nres: [optional] int
+        The internal line number for a line to extract.
     fmin: [optional] float
         The smallest frequency bin.
     fmax: [optional] float
@@ -264,13 +288,15 @@ def create_spectra_from_delay_dump(
         fluxes for each inclination angle in the other columns.
     """
 
-    # extract is the quantities which we want to extract, and their index in
-    # the dumped_photons array
+    # extract are the quantities which we want to extract from the delay_dump
+    # file -- i.e. it's the headings in the delay_dump file. Also included is
+    # their index in the final dumped_photons array to be created
+
     extract = {
         "Freq.": 0, "Weight": 1, "Spec.": 2, "Scat.": 3, "RScat.": 4, "Orig.": 5, "Res.": 6, "LineRes.": 7
     }
 
-    dumped_photons = read_delay_dump(root, wd, extract)
+    dumped_photons = read_delay_dump_file(root, wd, extract)
     nphotons = dumped_photons.shape[0]
     nspec = int(np.max(dumped_photons[:, 2])) + 1
 
@@ -279,7 +305,8 @@ def create_spectra_from_delay_dump(
     if not fmax:
         fmax = np.max(dumped_photons[:, 0])
 
-    # Now bin the photons to create the filtered spectrum
+    # Create the spectrum array and the frequency/wavelength bins
+
     filtered_spectrum = np.zeros((nbins, 1 + nspec))
     if logbins:
         bins = np.logspace(np.log10(fmin), np.log10(fmax), nbins, endpoint=True)
@@ -287,16 +314,22 @@ def create_spectra_from_delay_dump(
         bins = np.linspace(fmin, fmax, nbins, endpoint=True)
     filtered_spectrum[:, 0] = round_to_sig_figs(bins, 7)
 
-    filtered_spectrum = construct_spectrum_from_weights(
+    # This function now constructs a spectrum given the photon frequencies and
+    # weights as well as any other normalization constants
+
+    filtered_spectrum = create_spectrum_from_photon_weights(
         dumped_photons, filtered_spectrum, spec_norm, ncores, extract, nphotons, nspec, nbins,
-        extract_line=extract_line, use_jit=use_jit
+        extract_nres=extract_nres, use_jit=use_jit, dnorm=dnorm
     )
 
+    # Write out the spectrum to file
     # TODO: improve writing out spectrum, e.g. add headers, output lambda etc.
-    if extract_line > -1:
-        oname = "{}/{}_line{}.delay_dump.spec".format(wd, root, extract_line)
+
+    if extract_nres > -1:
+        oname = "{}/{}_el{}.delay_dump.spec".format(wd, root, extract_nres)
     else:
         oname = "{}/{}.delay_dump.spec".format(wd, root)
+
     np.savetxt(oname, filtered_spectrum)
 
     return filtered_spectrum

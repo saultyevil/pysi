@@ -19,10 +19,15 @@ plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15
 plt.rcParams['axes.labelsize'] = 15
 
+import warnings
+warnings.filterwarnings("ignore", module="matplotlib")
+
 
 def setup_script() -> tuple:
     """
     Parse the different modes this script can be run from the command line.
+
+    TODO add subparser for creating a spectrum
 
     Returns
     -------
@@ -111,7 +116,7 @@ def setup_script() -> tuple:
     p.add_argument("-sm",
                    "--smooth_amount",
                    type=int,
-                   default=5,
+                   default=1,
                    help="The size of the boxcar smoothing filter.")
 
     p.add_argument("-e",
@@ -158,24 +163,25 @@ def plot(
     Plotting function
     """
 
+    include_full_spectrum = True
+
     try:
-        plot_full = True
         full_spectrum = SpectrumUtils.read_spec_file("{}/{}.log_spec".format(wd, root))
         inclinations = SpectrumUtils.get_spec_inclinations(full_spectrum)
     except IOError:
-        plot_full = False
+        include_full_spectrum = False
         inclinations = np.linspace(1, filtered_spectrum.shape[1] - 1, filtered_spectrum.shape[1] - 1).tolist()
 
     for e, inc in enumerate(inclinations):
 
         fig, ax = plt.subplots(figsize=(12, 5))
 
-        if plot_full:
+        if include_full_spectrum:
             ax.plot(full_spectrum["Lambda"], SpectrumUtils.smooth(full_spectrum[inc], sm), linewidth=1.4, alpha=0.75,
-                           label="Full Spectrum")
+                    label="Full Spectrum")
 
         ax.plot(C * 1e8 / filtered_spectrum[:-1, 0], SpectrumUtils.smooth(filtered_spectrum[:-1, e + 1], sm),
-                       linewidth=1.4, alpha=0.75, label="Filtered Spectrum")
+                linewidth=1.4, alpha=0.75, label="Filtered Spectrum")
 
         ax.legend(fontsize=15)
         ax.set_xlabel(r"Wavelength [$\AA$]", fontsize=15)
@@ -194,10 +200,12 @@ def plot(
             ax.set_yscale("log")
 
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+
         if extract_line > -1:
-            name = "{}/{}_i{}_line{}.delay_dump_spectrum".format(wd, root, inc, extract_line)
+            name = "{}/{}_i{}_el{}.delay_dump.spec".format(wd, root, inc, extract_line)
         else:
-            name = "{}/{}_i{}.delay_dump_spectrum".format(wd, root, inc)
+            name = "{}/{}_i{}.delay_dump.spec".format(wd, root, inc)
+
         fig.savefig("{}.{}".format(name, file_ext), dpi=300)
         if file_ext == "pdf":  # Save both pdf and png versions
             fig.savefig("{}.png".format(name), dpi=300)
@@ -239,6 +247,9 @@ def main(setup: tuple = None):
 
     """
 
+    # Get the run time variables to set up the script... there are a lot of
+    # variables required and this is my fault :-)
+
     if setup:
         mode, root, spec_norm, ncores_norm, distance_norm, jit, extract_line, nbins, wd, xmin, xmax, frequency_space, \
             common_lines, axes_scales, smooth_amount, file_ext, display = setup
@@ -246,29 +257,32 @@ def main(setup: tuple = None):
         mode, root, spec_norm, ncores_norm, distance_norm, jit, extract_line, nbins, wd, xmin, xmax, frequency_space, \
             common_lines, axes_scales, smooth_amount, file_ext, display = setup_script()
 
+    # Now we either create, or plot the filtered spectrum if it has already been created
+
+    # TODO: determine the run mode first, i.e. create or plot
+    # TODO: force re-creation of spectrum
+
     if mode == "create":
-        filtered_spectrum = FilteredSpectrum.create_spectra_from_delay_dump(
+        filtered_spectrum = FilteredSpectrum.create_filtered_spectrum(
             root, wd, extract_line, xmin, xmax, nbins, distance_norm, spec_norm, ncores_norm, True, jit
         )
         plot(
-            root, wd, filtered_spectrum, extract_line, smooth_amount, distance_norm, axes_scales, frequency_space, common_lines,
-            file_ext, display
+            root, wd, filtered_spectrum, extract_line, smooth_amount, distance_norm, axes_scales, frequency_space,
+            common_lines, file_ext, display
         )
-        return
-    elif mode == "plot":
+    else:
         try:
-            # TODO can this be replaced by SpectrumUtils.read_spec?
             if extract_line > -1:
-                iname = "{}/{}_line{}.delay_dump.spec".format(wd, root, extract_line)
+                iname = "{}/{}_el{}.delay_dump.spec".format(wd, root, extract_line)
             else:
                 iname = "{}/{}.delay_dump.spec".format(wd, root)
-            filtered_spectrum = np.loadtxt(iname)
+            filtered_spectrum = np.loadtxt(iname)  # TODO: could be replaced by something in PyPython
         except IOError:
-            print("Unable to load filtered spectrum")
+            print("Unable to load filtered spectrum:", iname)
             return
         plot(
-            root, wd, filtered_spectrum, extract_line, smooth_amount, distance_norm, axes_scales, frequency_space, common_lines,
-            file_ext, display
+            root, wd, filtered_spectrum, extract_line, smooth_amount, distance_norm, axes_scales, frequency_space,
+            common_lines, file_ext, display
         )
 
     return

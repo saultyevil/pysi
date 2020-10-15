@@ -376,7 +376,6 @@ def plot_line_ids(
     -------
     ax: plt.Axes
         The plot object now with lines IDs :-)
-        :param logx:
     """
 
     nlines = len(lines)
@@ -399,7 +398,7 @@ def plot_line_ids(
         else:
             xnorm = (x - xlims[0]) / (xlims[1] - xlims[0])
 
-        ax.text(xnorm, 0.90, label, ha="center", va="center", rotation=rotation, fontsize=fontsize,
+        ax.text(xnorm, 0.93, label, ha="center", va="center", rotation=rotation, fontsize=fontsize,
                 transform=ax.transAxes)
 
     return ax
