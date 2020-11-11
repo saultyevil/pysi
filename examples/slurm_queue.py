@@ -61,16 +61,17 @@ def add_to_queue(slurmfs: List[str]) -> None:
     """
 
     nslurm = len(slurmfs)
+    codes = []
     for i in range(nslurm):
         f, wd = split_path_fname(slurmfs[i])
         cmd = "cd {}; sbatch {}; cd ..".format(wd, f)
-        print(cmd)
         sh = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         stdout, stderr = sh.communicate()
         if stderr:
             print(stderr.decode("utf-8"))
-            exit(1)
-        print(stdout.decode("utf-8"))
+        codes.append(stdout.decode("utf-8").split()[-1])
+
+    print("Submitted batch jobs " + ", ".join(codes[:-1]) + " and " + codes[-1])
 
     return
 
@@ -137,7 +138,7 @@ def main() -> None:
 
     print("The following .slurm {} files will be added to the queue:\n".format(len(slurmf)))
     for n, f in enumerate(slurmf):
-        print("{}\t{}".format(n, f))
+        print("{}\t{}".format(n + 1, f))
     print("")
 
     if add:
