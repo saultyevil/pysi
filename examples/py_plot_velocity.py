@@ -239,7 +239,7 @@ def velocity_plot(
     nrows = 2
     ncols = 2
 
-    fig, ax = plt.subplots(nrows, ncols, figsize=(15, 10), squeeze=False)
+    fig, ax = plt.subplots(nrows, ncols, figsize=(13, 10), squeeze=False)
 
     # Set the scale to linear-linear when plotting with cell indices
 
@@ -311,6 +311,10 @@ def velocity_plot(
                 break
 
             vel = vels[index]
+
+            # if velocity_units == "c":
+            #     vel = 10 ** vel
+
             name = velocities_to_plot[index] + " (units = {})".format(velocity_units)
             fig, ax = WindPlot.rectilinear_wind(
                 vx_x, vx_z, vel, name, "wind", fig, ax, i, j, scale=axes_scales

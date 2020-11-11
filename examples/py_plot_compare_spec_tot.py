@@ -25,7 +25,7 @@ for i, file in enumerate(specs):
     # ax.loglog(s["Freq."].values, s["Disk"].values, label="Disk", alpha=alpha)
     # ax.loglog(s["Freq."].values, s["Wind"].values, label="Wind", alpha=alpha)
     # ax.loglog(s["Freq."].values, s["Scattered"].values, label="Scattered", alpha=alpha)
-    ax.legend()
+    ax.legend(loc="lower left")
     ax.set_xlabel("nu")
     ax.set_ylabel("nu Lnu")
 

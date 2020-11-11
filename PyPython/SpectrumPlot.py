@@ -114,14 +114,14 @@ def __panel_subplot(
         ax.set_xlabel(r"Wavelength ($\AA$)")
         ax.set_ylabel(r"$F_{\lambda}$ (erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)")
 
-    ax.legend()
+    ax.legend(loc="lower left")
 
     return ax
 
 
 def plot_simple(
     x: np.ndarray, y: np.ndarray, xmin: float = None, xmax: float = None, xlabel: str = None, ylabel: str = None,
-    scale: str = "logy", fig: plt.Figure = None, ax: plt.Axes = None, display: bool = False, label: str = None
+    scale: str = "logy", fig: plt.Figure = None, ax: plt.Axes = None, label: str = None, display: bool = False
 ) -> Tuple[plt.Figure, plt.Axes]:
     """
     This is a simple plotting function designed to give you the bare minimum.
@@ -254,6 +254,8 @@ def plot_optical_depth(
         Create the figure in frequency space instead of wavelength space
     axes_label_fontsize: float [optional]
         The fontsize for labels on the plot
+    display: bool [optional]
+        Display the final plot if True.
 
     Returns
     -------
@@ -327,7 +329,7 @@ def plot_optical_depth(
         ax.set_xlabel(r"Wavelength, [$\AA$]", fontsize=axes_label_fontsize)
 
     ax.set_xlim(xmin, xmax)
-    ax.legend()
+    ax.legend(loc="lower left")
 
     if show_absorption_edge_labels:
         if scale == "loglog" or scale == "logx":
@@ -371,10 +373,13 @@ def plot_spectrum_components(
         The upper x boundary for the figure
     smooth_amount: int [optional]
         The size of the boxcar filter to smooth the spectrum components
-    logy: bool [optional]
-        Use a log scale for the y axis of the figure
+    scale: bool [optional]
+        The scale to use for the axes. Allowed values are linlin, logx, logy and
+        loglog.
     frequency_space: bool [optional]
         Create the figure in frequency space instead of wavelength space
+    display: bool [optional]
+        Display the final plot if True.
 
     Returns
     -------
@@ -468,6 +473,8 @@ def plot_all_spectra(
         The fontsize for labels on the plot
     figsize: Tuple[float, float] [optional]
         The size of the Figure in matplotlib units (inches?)
+    display: bool [optional]
+        Display the final plot if True.
 
     Returns
     -------
@@ -563,6 +570,8 @@ def plot_spectrum(
         The scale of the axes for the plot.
     frequency_space: bool [optional]
         Create the figure in frequency space instead of wavelength space
+    display: bool [optional]
+        Display the final plot if True.
 
     Returns
     -------

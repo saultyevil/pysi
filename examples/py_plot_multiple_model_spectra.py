@@ -14,9 +14,6 @@ from matplotlib import pyplot as plt
 from PyPython import SpectrumUtils
 from PyPython import PythonUtils
 
-import warnings
-warnings.filterwarnings("ignore", module="matplotlib")
-
 
 def setup_script():
     """
@@ -235,7 +232,7 @@ def plot(
                 logx = False
             ax[i] = SpectrumUtils.plot_line_ids(ax[i], SpectrumUtils.common_lines_list(), logx)
 
-    ax[0].legend()
+    ax[0].legend(loc="lower left")
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
     if inclination != "all":
@@ -269,7 +266,7 @@ def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
         output_name, wd, inclination, root, xmin, xmax, frequency_space, common_lines, axes_scales, smooth_amount, file_ext, display = \
             setup_script()
 
-    spectra = SpectrumUtils.find_spec_files()
+    spectra = SpectrumUtils.find_spec_files(root)
     if len(spectra) == 0:
         print("Unable to find any spectrum files")
         return

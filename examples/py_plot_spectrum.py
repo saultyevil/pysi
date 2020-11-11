@@ -205,7 +205,7 @@ def spectra_on_same_panel(
         )
 
     ax.set_ylim(ymin, ymax)
-    ax.legend()
+    ax.legend(loc="lower left")
 
     if common_lines:
         if axes_scales == "loglog" or axes_scales == "logx":

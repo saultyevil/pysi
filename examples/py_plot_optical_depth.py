@@ -19,9 +19,6 @@ plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15
 plt.rcParams['axes.labelsize'] = 15
 
-import warnings
-warnings.filterwarnings("ignore", module="matplotlib")
-
 
 def setup_script(
 ) -> tuple:
@@ -127,6 +124,7 @@ def plot_optical_depth_spectrum(
     fig, ax = SpectrumPlot.plot_optical_depth(
         root, wd, ["all"], xmin, xmax, scale, show_absorption_edges, frequency_space, display=display
     )
+
     fig.savefig("{}/{}_optical_depth.{}".format(wd, root, file_ext))
 
     return fig, ax

@@ -131,6 +131,9 @@ def rectilinear_wind(
     with np.errstate(divide="ignore"):
         if w_name == "converge" or w_name == "convergence" or w_name == "converging":
             im = ax[i, j].pcolormesh(x, z, w, vmin=0, vmax=3)
+        elif w_name.find("units = c") != -1:
+            w = np.ma.masked_where(w == 0, w)
+            im = ax[i, j].pcolormesh(x, z, w)
         elif w_type == "ion":
             im = ax[i, j].pcolormesh(x, z, np.log10(w), norm=colors.Normalize(vmin=-10, vmax=0))
         elif w_type == "ion_density":
@@ -162,7 +165,7 @@ def rectilinear_wind(
         ax[i, j].set_yscale("log")
 
     if obs_los and i == 0 and j == 0:
-        ax[i, j].legend()
+        ax[i, j].legend(loc="lower left")
 
     return fig, ax
 

@@ -23,9 +23,6 @@ from PyPython import SpectrumUtils
 from PyPython.Grid import change_parameter
 from PyPython.PythonUtils import remove_data_sym_links, get_cpu_count
 
-import warnings
-warnings.filterwarnings("ignore", module="matplotlib")
-
 
 def setup_script() -> tuple:
     """
@@ -213,7 +210,7 @@ def create_plot(
             optical_depth_freq, od, label=r"$\tau($" + "i = {}".format(sl) + r"$^{\circ} )$"
         )
 
-    ax.legend(loc="upper left")
+    ax.legend(loc="lower left")
     ax.set_ylabel(r"Continuum Optical Depth $\tau$")
     ax.set_xlabel(r"Frequency $\nu$ [Hz]")
     ax.tick_params(axis="x")

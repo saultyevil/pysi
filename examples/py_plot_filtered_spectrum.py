@@ -19,9 +19,6 @@ plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15
 plt.rcParams['axes.labelsize'] = 15
 
-import warnings
-warnings.filterwarnings("ignore", module="matplotlib")
-
 
 def setup_script() -> tuple:
     """
@@ -183,7 +180,7 @@ def plot(
         ax.plot(C * 1e8 / filtered_spectrum[:-1, 0], SpectrumUtils.smooth(filtered_spectrum[:-1, e + 1], sm),
                 linewidth=1.4, alpha=0.75, label="Filtered Spectrum")
 
-        ax.legend(fontsize=15)
+        ax.legend(loc="lower left", fontsize=15)
         ax.set_xlabel(r"Wavelength [$\AA$]", fontsize=15)
         ax.set_ylabel(r"Flux at " + str(dnorm) + r" Pc [ergs s$^{-1}$ cm$^{-2}$ $\AA^{-1}$]", fontsize=15)
 
@@ -263,7 +260,7 @@ def main(setup: tuple = None):
     # TODO: force re-creation of spectrum
 
     if mode == "create":
-        filtered_spectrum = FilteredSpectrum.create_filtered_spectrum(
+        filtered_spectrum = FilteredSpectrum.filtered_spectrum(
             root, wd, extract_line, xmin, xmax, nbins, distance_norm, spec_norm, ncores_norm, True, jit
         )
         plot(
