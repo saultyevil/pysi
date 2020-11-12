@@ -8,7 +8,9 @@ a spectrum from the delay_dump output.
 """
 
 from .Constants import PARSEC, C
+from .Conversion import hz_to_angstrom
 from .PythonUtils import file_len
+from .SpectrumUtils import read_spec_file, get_spec_inclinations
 
 import numpy as np
 from numba import jit
@@ -17,7 +19,7 @@ from numba import jit
 @jit(nopython=True)
 def jit_bin_photon_weights(
     spectrum: np.ndarray, freq_min: float, freq_max: float, photon_freqs: np.ndarray, photon_wghts: np.ndarray,
-    photon_spc_i: np.ndarray, photon_nres: np.ndarray, photon_lnres: np.ndarray, extract_nres: int
+    photon_spc_i: np.ndarray, photon_nres: np.ndarray, photon_lnres: np.ndarray, extract_nres: tuple
 ):
     """
     Bin the photons into frequency bins using jit to attempt to speed everything
@@ -50,6 +52,7 @@ def jit_bin_photon_weights(
         The spectrum where photon weights have been binned.
     """
 
+    n_extract = len(extract_nres)
     n_photons = photon_freqs.shape[0]
 
     for p in range(n_photons):
@@ -63,10 +66,12 @@ def jit_bin_photon_weights(
         # If a single transition is to be extracted, then we do that here. Note
         # that if nres < 0, then it was a continuum scattering event
 
-        if extract_nres > -1:
-            if photon_nres[p] == extract_nres or (photon_lnres[p] == extract_nres and photon_nres[p] < 0):
-                freq_index = np.abs(spectrum[:, 0] - photon_freqs[p]).argmin()
-                spectrum[freq_index, photon_spc_i[p]] += photon_wghts[p]
+        if extract_nres[0] > -1:
+            for i in range(n_extract):
+                if photon_nres[p] == extract_nres[i] or (photon_lnres[p] == extract_nres[i] and photon_nres[p] < 0):
+                    freq_index = np.abs(spectrum[:, 0] - photon_freqs[p]).argmin()
+                    spectrum[freq_index, photon_spc_i[p]] += photon_wghts[p]
+                    break
         else:
             freq_index = np.abs(spectrum[:, 0] - photon_freqs[p]).argmin()
             spectrum[freq_index, photon_spc_i[p]] += photon_wghts[p]
@@ -76,7 +81,8 @@ def jit_bin_photon_weights(
 
 def construct_spectrum_from_photons(
         delay_dump_photons: np.ndarray, spectrum: np.ndarray, spec_norm: float, ncores: int, column_index_dict: dict,
-        nspec: int = None, nbins: int = None, extract_nres: int = -1, d_norm_pc: float = 100, use_jit: bool = True
+        nspec: int = None, nbins: int = None, extract_nres: tuple = (-1,), d_norm_pc: float = 100,
+        use_jit: bool = True
 ) -> np.ndarray:
     """
     Construct a spectrum from the weights of the provided photons. If nphotons,
@@ -102,8 +108,10 @@ def construct_spectrum_from_photons(
         The number of inclination angles to bin.
     nbins: [optional] int
         The number of frequency bins in the spectrum.
+
     extract_nres: [optional] int
         The line number for a specific line to be extracted.
+
     d_norm_pc: [optional] float
         The distance normalization for the flux calculation in parsecs. By
         default this is 100 parsecs.
@@ -144,6 +152,10 @@ def construct_spectrum_from_photons(
     if use_jit:
         freq_min = np.min(spectrum[:, column_index_dict["Freq."]])
         freq_max = np.max(spectrum[:, column_index_dict["Freq."]])
+        if type(extract_nres) == list:
+            extract_nres = tuple(extract_nres)
+        elif type(extract_nres) != tuple:
+            extract_nres = (extract_nres, )
         spectrum = jit_bin_photon_weights(
             spectrum, freq_min, freq_max, photon_freqs, photon_wghts, photon_spc_i, photon_nres, photon_lnres,
             extract_nres
@@ -248,8 +260,8 @@ def read_delay_dump_file(
     return output
 
 
-def filtered_spectrum(
-    root: str, wd: str = ".", extract_nres: int = -1, freq_min: float = None, freq_max: float = None,
+def create_filtered_spectrum(
+    root: str, wd: str = ".", extract_nres: tuple = (-1,), freq_min: float = None, freq_max: float = None,
     n_bins: int = 10000, d_norm_pc: float = 100, spec_cycle_norm: float = 1, n_cores: int = 1, logbins: bool = True,
     mode_line_res: bool = True, use_jit: bool = True
 ) -> np.ndarray:
@@ -308,8 +320,12 @@ def filtered_spectrum(
             "Freq.": 0, "Weight": 1, "Spec.": 2, "Scat.": 3, "RScat.": 4, "Orig.": 5, "Res.": 6
         }
 
+    # Read the delay dump file and determine the minimum and maximum frequency
+    # of the spectrum if it hasn't been provided so we can make the frequency
+    # bins for the spectrum
+
     dumped_photons = read_delay_dump_file(root, wd, to_extract_dict, mode_line_res)
-    n_spec = int(np.max(dumped_photons[:, 2])) + 1
+    n_spec = int(np.max(dumped_photons[:, to_extract_dict["Spec."]])) + 1
 
     if not freq_min:
         freq_min = np.min(dumped_photons[:, 0])
@@ -333,13 +349,56 @@ def filtered_spectrum(
     )
 
     # Write out the spectrum to file
-    # TODO: improve writing out spectrum, e.g. add headers, output lambda etc.
 
-    if extract_nres > -1:
-        output_fname = "{}/{}_el{}.delay_dump.spec".format(wd, root, extract_nres)
+    if extract_nres[0] > -1:
+        output_fname = "{}/{}_line".format(wd, root)
+        for line in extract_nres:
+            output_fname += "_{}".format(line)
+        output_fname += ".delay_dump.spec"
     else:
         output_fname = "{}/{}.delay_dump.spec".format(wd, root)
 
-    np.savetxt(output_fname, spectrum)
+    f = open(output_fname, "w")
+
+    f.write("# Flux Flambda [erg / s / cm^2 / A at {} pc\n".format(d_norm_pc))
+
+    try:
+        full_spec = read_spec_file("{}/{}.spec".format(wd, root))
+        header = get_spec_inclinations(full_spec)
+    except:
+        header = np.arange(0, n_spec)
+
+    # Write out the header of the output file
+    # TODO should I make this a comment?
+
+    f.write("{:12s} {:12s}".format("Freq.", "Lambda"))
+    for h in header:
+        f.write(" {:12s}".format(h))
+    f.write("\n")
+
+    # Now write out the spectrum
+
+    for i in range(n_bins):
+        freq = spectrum[i, 0]
+        wl_angstrom = hz_to_angstrom(freq)
+        f.write("{:12e} {:12e}".format(freq, wl_angstrom))
+        for j in range(spectrum.shape[1] - 1):
+            f.write(" {:12e}".format(spectrum[i, j + 1]))
+        f.write("\n")
+
+    f.close()
+
+    if extract_nres[0] > -1:
+        output_fname = "{}/{}_line".format(wd, root)
+        for line in extract_nres:
+            output_fname += "_{}".format(line)
+        output_fname += ".line_luminosity.diag"
+        f = open(output_fname, "w")
+        f.write("Line luminosities -- units [erg / s]\n")
+        for i in range(spectrum.shape[1] - 2):
+            flux = np.sum(spectrum[:, i + 1])
+            lum = 4 * np.pi * (d_norm_pc * PARSEC) ** 2 * flux
+            f.write("Spectrum {} : L = {} erg / s\n".format(header[i], lum))
+        f.close()
 
     return spectrum

@@ -3,7 +3,7 @@ Useful constants which are used throughout Python and PyPython. Quantities are
 in CGS units unless otherwise stated.
 """
 
-VLIGHT = C = 29979245800.0    # Speed of light
+VLIGHT = C = 29979245800.0    # Speed of light in cm/s
 VERY_BIG = 1e50               # Generic very large number
 H = 6.6262e-27                # Planck's constant CGS
 HC = 1.98587e-16              # h * C

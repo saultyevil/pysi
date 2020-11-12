@@ -11,7 +11,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from PyPython import SpectrumUtils
-from PyPython.Constants import C
 from PyPython import FilteredSpectrum
 
 
@@ -24,8 +23,6 @@ def setup_script() -> tuple:
     """
     Parse the different modes this script can be run from the command line.
 
-    TODO add subparser for creating a spectrum
-
     Returns
     -------
     setup: tuple
@@ -33,126 +30,175 @@ def setup_script() -> tuple:
     """
 
     p = ap.ArgumentParser(description=__doc__)
+    sp = p.add_subparsers()
 
-    # Required arguments
-    p.add_argument("mode",
-                   choices=["create", "plot"],
-                   help="The mode of the script: allowed values are 'create' or 'plot'.")
+    # Sub-parser for creation of the spectrum
 
-    p.add_argument("root",
-                   help="The root name of the simulation.")
+    create_p = sp.add_parser("create",
+                             help="Create a filtered spectrum")
 
-    p.add_argument("spec_norm",
-                   type=float,
-                   help="The normalization constant, usually spec_cycles / current_spec_cycle.")
+    create_p.add_argument("root",
+                          help="Root name of the model")
 
-    p.add_argument("ncores_norm",
-                   type=int,
-                   help="The number of MPI processes used to create the root.delay_dump file.")
+    create_p.add_argument("spec_norm",
+                          type=float,
+                          help="The normalization constant, usually spec_cycles / current_spec_cycle and > 1.")
 
-    # Supplementary arguments
-    p.add_argument("-dn",
-                   "--distance_norm",
-                   type=float,
-                   default=100,
-                   help="The distance normalization in units of parsec.")
+    create_p.add_argument("ncores_norm",
+                          type=int,
+                          help="The number of MPI processed used to create the root.delay_dump file.")
 
-    p.add_argument("-nj",
-                   "--jit",
-                   action="store_false",
-                   default=True,
-                   help="Disable the use of JIT to speed up photon binning.")
+    create_p.add_argument("-dn",
+                          "--distance_norm",
+                          type=float,
+                          default=100,
+                          help="The distance normalization in units of parsec.")
 
-    p.add_argument("-el",
-                   "--extract_line",
-                   type=int,
-                   default=-1,
-                   help="The line number to only extract.")
+    create_p.add_argument("-nj",
+                          "--jit",
+                          action="store_false",
+                          default=True,
+                          help="Disable the use of JIT to speed up photon binning.")
 
-    p.add_argument("-n",
-                   "--nbins",
-                   type=int,
-                   default=10000,
-                   help="The number of frequency or wavelength bins for the spectrum.")
+    create_p.add_argument("-el",
+                          "--extract_line",
+                          nargs="+",
+                          type=int,
+                          default=[-1],
+                          help="The line number to only extract.")
 
-    p.add_argument("-wd",
-                   "--working_directory",
-                   default=".",
-                   help="The directory containing the simulation.")
+    create_p.add_argument("-n",
+                          "--nbins",
+                          type=int,
+                          default=10000,
+                          help="The number of frequency or wavelength bins for the spectrum.")
 
-    p.add_argument("-xl",
-                   "--xmin",
-                   type=float,
-                   default=None,
-                   help="The lower x-axis boundary to display.")
+    create_p.add_argument("-wd",
+                          "--working_directory",
+                          default=".",
+                          help="The directory containing the simulation.")
 
-    p.add_argument("-xu",
-                   "--xmax",
-                   type=float,
-                   default=None,
-                   help="The upper x-axis boundary to display.")
+    create_p.set_defaults(which="create")
 
-    p.add_argument("-s",
-                   "--scales",
-                   default="loglog",
-                   choices=["logx", "logy", "loglog", "linlin"],
-                   help="The axes scaling to use: logx, logy, loglog, linlin.")
+    # Sub-parser for plotting
 
-    p.add_argument("-l",
-                   "--common_lines",
-                   action="store_true",
-                   default=False,
-                   help="Plot labels for important absorption edges.")
+    plot_p = sp.add_parser("plot",
+                           help="Plot the filtered spectrum")
 
-    p.add_argument("-f",
-                   "--frequency_space",
-                   action="store_true",
-                   default=False,
-                   help="Create the figure in frequency space.")
+    plot_p.add_argument("root",
+                        help="Root name of the model")
 
-    p.add_argument("-sm",
-                   "--smooth_amount",
-                   type=int,
-                   default=1,
-                   help="The size of the boxcar smoothing filter.")
+    plot_p.add_argument("-sm",
+                        "--smooth_amount",
+                        type=float,
+                        default=5,
+                        help="The size of the smoothing window in pixels")
 
-    p.add_argument("-e",
-                   "--ext",
-                   default="png",
-                   help="The file extension for the output figure.")
+    plot_p.add_argument("-wd",
+                        "--working_directory",
+                        default=".",
+                        help="The directory containing the simulation.")
 
-    p.add_argument("--display",
-                   action="store_true",
-                   default=False,
-                   help="Display the plot before exiting the script.")
+    plot_p.add_argument("-el",
+                        "--extract_line",
+                        nargs="+",
+                        type=int,
+                        default=[-1],
+                        help="The line number to only extract.")
+
+    plot_p.add_argument("-xl",
+                        "--xmin",
+                        type=float,
+                        default=None,
+                        help="The lower x-axis boundary to display.")
+
+    plot_p.add_argument("-xu",
+                        "--xmax",
+                        type=float,
+                        default=None,
+                        help="The upper x-axis boundary to display.")
+
+    plot_p.add_argument("-s",
+                        "--scales",
+                        default="loglog",
+                        choices=["logx", "logy", "loglog", "linlin"],
+                        help="The axes scaling to use: logx, logy, loglog, linlin.")
+
+    plot_p.add_argument("-l",
+                        "--common_lines",
+                        action="store_true",
+                        default=False,
+                        help="Plot labels for important absorption edges.")
+
+    plot_p.add_argument("-f",
+                        "--frequency_space",
+                        action="store_true",
+                        default=False,
+                        help="Create the figure in frequency space.")
+
+    plot_p.add_argument("-e",
+                        "--ext",
+                        default="png",
+                        help="The file extension for the output figure.")
+
+    plot_p.add_argument("--display",
+                        action="store_true",
+                        default=False,
+                        help="Display the plot before exiting the script.")
+
+    plot_p.set_defaults(which="plot")
+
+    # Parse the arguments now
 
     args = p.parse_args()
 
-    setup = (
-        args.mode,
-        args.root,
-        args.spec_norm,
-        args.ncores_norm,
-        args.distance_norm,
-        args.jit,
-        args.extract_line,
-        args.nbins,
-        args.working_directory,
-        args.xmin,
-        args.xmax,
-        args.frequency_space,
-        args.common_lines,
-        args.scales,
-        args.smooth_amount,
-        args.ext,
-        args.display
-    )
+    mode = args.which
+    if mode == "create":
+        setup = (
+            mode,
+            args.root,
+            args.spec_norm,
+            args.ncores_norm,
+            args.distance_norm,
+            args.jit,
+            args.extract_line,
+            args.nbins,
+            args.working_directory,
+            None,
+            None,
+            True,
+            False,
+            "loglog",
+            5,
+            "png",
+            False,
+        )
+    else:
+        setup = (
+            mode,
+            args.root,
+            1,
+            1,
+            100,
+            True,
+            args.extract_line,
+            10000,
+            args.working_directory,
+            args.xmin,
+            args.xmax,
+            args.frequency_space,
+            args.common_lines,
+            args.scales,
+            args.smooth_amount,
+            args.ext,
+            args.display
+        )
 
     return setup
 
 
 def plot(
-    root: str, wd: str, filtered_spectrum: np.ndarray, extract_line: int, sm: int = 1, dnorm: float = 100,
+    root: str, wd: str, filtered_spectrum: np.ndarray, extract_line: tuple = (-1,), sm: int = 1, d_norm_pc: float = 100,
     scale: str = "loglog", frequency_space: bool = False, plot_lines: bool = False, file_ext: str = ".png",
     display: bool = False
 ):
@@ -160,13 +206,13 @@ def plot(
     Plotting function
     """
 
-    include_full_spectrum = True
-
     try:
         full_spectrum = SpectrumUtils.read_spec_file("{}/{}.log_spec".format(wd, root))
         inclinations = SpectrumUtils.get_spec_inclinations(full_spectrum)
+        include_full_spectrum = True
     except IOError:
         include_full_spectrum = False
+        full_spectrum = None
         inclinations = np.linspace(1, filtered_spectrum.shape[1] - 1, filtered_spectrum.shape[1] - 1).tolist()
 
     for e, inc in enumerate(inclinations):
@@ -177,31 +223,40 @@ def plot(
             ax.plot(full_spectrum["Lambda"], SpectrumUtils.smooth(full_spectrum[inc], sm), linewidth=1.4, alpha=0.75,
                     label="Full Spectrum")
 
-        ax.plot(C * 1e8 / filtered_spectrum[:-1, 0], SpectrumUtils.smooth(filtered_spectrum[:-1, e + 1], sm),
+        if frequency_space:
+            index = 0
+        else:
+            index = 1
+
+        ax.plot(filtered_spectrum[:-1, index], SpectrumUtils.smooth(filtered_spectrum[:-1, e + 2], sm),
                 linewidth=1.4, alpha=0.75, label="Filtered Spectrum")
 
         ax.legend(loc="lower left", fontsize=15)
         ax.set_xlabel(r"Wavelength [$\AA$]", fontsize=15)
-        ax.set_ylabel(r"Flux at " + str(dnorm) + r" Pc [ergs s$^{-1}$ cm$^{-2}$ $\AA^{-1}$]", fontsize=15)
-
-        if plot_lines:
-            if scale == "loglog" or scale == "logx":
-                logx = True
-            else:
-                logx = False
-            ax = SpectrumUtils.plot_line_ids(ax, SpectrumUtils.common_lines_list(), logx)
+        ax.set_ylabel(r"Flux at " + str(d_norm_pc) + r" Pc, F$_{\lambda}$ [ergs s$^{-1}$ cm$^{-2}$ $\AA^{-1}$]",
+                      fontsize=15)
 
         if scale == "loglog" or scale == "logx":
             ax.set_xscale("log")
         if scale == "loglog" or scale == "logy":
             ax.set_yscale("log")
 
+        if plot_lines:
+            if scale == "loglog" or scale == "logx":
+                logx = True
+            else:
+                logx = False
+            ax = SpectrumUtils.plot_line_ids(ax, SpectrumUtils.common_lines_list(freq=frequency_space), logx)
+
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 
-        if extract_line > -1:
-            name = "{}/{}_i{}_el{}.delay_dump.spec".format(wd, root, inc, extract_line)
+        if extract_line[0] > -1:
+            name = "{}/{}_line".format(wd, root)
+            for line in extract_line:
+                name += "_{}".format(line)
+            name += "_i{}_delay_dump_spec".format(inc)
         else:
-            name = "{}/{}_i{}.delay_dump.spec".format(wd, root, inc)
+            name = "{}/{}_i{}_delay_dump_spec".format(wd, root, inc)
 
         fig.savefig("{}.{}".format(name, file_ext), dpi=300)
         if file_ext == "pdf":  # Save both pdf and png versions
@@ -260,22 +315,21 @@ def main(setup: tuple = None):
     # TODO: force re-creation of spectrum
 
     if mode == "create":
-        filtered_spectrum = FilteredSpectrum.filtered_spectrum(
+        FilteredSpectrum.create_filtered_spectrum(
             root, wd, extract_line, xmin, xmax, nbins, distance_norm, spec_norm, ncores_norm, True, jit
-        )
-        plot(
-            root, wd, filtered_spectrum, extract_line, smooth_amount, distance_norm, axes_scales, frequency_space,
-            common_lines, file_ext, display
         )
     else:
         try:
-            if extract_line > -1:
-                iname = "{}/{}_el{}.delay_dump.spec".format(wd, root, extract_line)
+            if extract_line[0] > -1:
+                name = "{}/{}_line".format(wd, root)
+                for line in extract_line:
+                    name += "_{}".format(line)
+                name += ".delay_dump.spec"
             else:
-                iname = "{}/{}.delay_dump.spec".format(wd, root)
-            filtered_spectrum = np.loadtxt(iname)  # TODO: could be replaced by something in PyPython
+                name = "{}/{}.delay_dump.spec".format(wd, root)
+            filtered_spectrum = np.loadtxt(name, skiprows=2)  # TODO: could be replaced by something in PyPython?
         except IOError:
-            print("Unable to load filtered spectrum:", iname)
+            print("Unable to load filtered spectrum:", name)
             return
         plot(
             root, wd, filtered_spectrum, extract_line, smooth_amount, distance_norm, axes_scales, frequency_space,
