@@ -48,7 +48,7 @@ def create_slurm_file(
 #SBATCH --partition=batch
 module load openmpi/3.0.0/gcc
 module load conda/py3-latest
-source activate PyPython
+source activate pyPython
 python /home/ejp1n17/PythonScripts/py_run.py -n {} {} -f="{}"
 """.format(ncores, thours, tminutes, ncores, split, flags, root)
 

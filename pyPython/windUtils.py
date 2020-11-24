@@ -9,7 +9,7 @@ wind.
 """
 
 
-from .Error import CoordError, InvalidParameter
+from .error import CoordError, InvalidParameter
 
 import os
 from typing import Tuple, Union

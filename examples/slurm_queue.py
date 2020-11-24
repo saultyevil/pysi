@@ -71,12 +71,15 @@ def add_to_queue(slurmfs: List[str]) -> None:
             print(stderr.decode("utf-8"))
         codes.append(stdout.decode("utf-8").split()[-1])
 
-    print("Submitted batch jobs " + ", ".join(codes[:-1]) + " and " + codes[-1])
+    if len(codes) > 1:
+        print("Submitted batch jobs " + ", ".join(codes[:-1]) + " and " + codes[-1])
+    else:
+        print("Submitted batch job", codes[0])
 
     return
 
 
-def find_slurm_files(path: str = "./") -> List[str]:
+def find_slurm_files(path: str = ".") -> List[str]:
     """
     Searches recursively from the calling direction for files which end with
     the extension *.slurm and returns a list of the found files.

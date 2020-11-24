@@ -12,8 +12,8 @@ from typing import Union
 import numpy as np
 import pandas as pd
 
-from .Blackbody import planck_lambda, planck_nu
-from .Constants import STEFAN_BOLTZMANN, C, MPROT, THOMPSON, G, PI, MSOL, MSOL_PER_YEAR
+from .blackbody import planck_lambda, planck_nu
+from .constants import STEFAN_BOLTZMANN, C, MPROT, THOMPSON, G, PI, MSOL, MSOL_PER_YEAR
 
 
 def alpha_disc_effective_temperature(
@@ -30,7 +30,7 @@ def alpha_disc_effective_temperature(
     return teff4 ** 0.25
 
 
-def eddington_critical_disc_effective_temperature(
+def modified_eddigton_alpha_disc_effective_temperature(
     ri: Union[np.ndarray, float], mbh: float, mdot: float, ledd: float, rg: float, risco: float
 ):
     """The effective temperature profile from Strubbe and Quataert 2009."""
@@ -91,7 +91,7 @@ def eddington_luminosity_limit(
     return (4 * PI * G * mbh * C * MPROT) / THOMPSON
 
 
-def generate_simple_disc_spectrum(
+def create_disc_spectrum(
     mbh: float, mdot: float, xmin: float, xmax: float, rinner: float, router: float, freq_units: bool = False,
     npoints: int = 500
 ) -> np.array:

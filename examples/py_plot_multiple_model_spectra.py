@@ -11,8 +11,8 @@ import argparse as ap
 from typing import Tuple
 from matplotlib import pyplot as plt
 
-from PyPython import SpectrumUtils
-from PyPython import PythonUtils
+from pyPython import spectrumUtil
+from pyPython import pythonUtil
 
 
 def setup_script():
@@ -132,7 +132,7 @@ def plot(
     if inclination == "all":
         inclinations = []
         for s in spectra:
-            inclinations += SpectrumUtils.get_spec_inclinations(s)
+            inclinations += spectrumUtil.get_spectrum_inclinations(s)
         inclinations = sorted(list(dict.fromkeys(inclinations)))  # Removes duplicate values
         figure_size = (12, 12)
     else:
@@ -140,7 +140,7 @@ def plot(
         figure_size = (12, 5)
 
     ninc = len(inclinations)
-    nrows, ncols = PythonUtils.subplot_dims(ninc)
+    nrows, ncols = pythonUtil.subplot_dims(ninc)
 
     fig, ax = plt.subplots(nrows, ncols, figsize=figure_size, squeeze=False)
     ax = ax.flatten()  # Allows looping over 1 dimension of plt.Axes instead
@@ -160,7 +160,7 @@ def plot(
         for f in spectra:
             if f.find("continuum") != -1:
                 continue
-            s = SpectrumUtils.read_spec_file(f)
+            s = spectrumUtil.read_spectrum(f)
             if frequency_space:
                 x = s["Freq."].values
             else:
@@ -171,29 +171,24 @@ def plot(
                     y = s["Lambda"].values * s[inc].values
                 else:
                     y = s[inc].values
+                y = spectrumUtil.smooth(y, smooth_amount)
             except KeyError:
                 continue
 
-            if f.find("tde_uv_linear") != -1:
-                ax[i].plot(x, SpectrumUtils.smooth(y, smooth_amount), "--", label=f, alpha=alpha)
-            else:
-                ax[i].plot(x, SpectrumUtils.smooth(y, smooth_amount), label=f, alpha=alpha)
+            ax[i].plot(x, y, label=f, alpha=alpha)
 
             # An attempt to try to keep the y-scale correct when the x range is
             # limited
             if not xmin:
-                txmin = x.min()
-            else:
-                txmin = xmin
+                xmin = x.min()
             if not xmax:
-                txmax = x.max()
-            else:
-                txmax = xmax
-            tymin, tymax = SpectrumUtils.get_ylims(x, y, txmin, txmax)
-            if tymin < ymin:
-                ymin = tymin
-            if tymax > ymax:
-                ymax = tymax
+                xmax = x.max()
+
+            t_ymin, t_ymax = spectrumUtil.calculate_axis_y_limits(x, y, xmin, xmax)
+            if t_ymin < ymin:
+                ymin = t_ymin
+            if t_ymax > ymax:
+                ymax = t_ymax
 
         if ymin == +1e99:
             ymin = None
@@ -202,8 +197,8 @@ def plot(
 
         ax[i].set_ylim(ymin, ymax)
 
-    # Format the subplots
-    for i in range(ninc):
+        # Format things now
+
         ax[i].set_title(r"$i$ " + "= {}".format(inclinations[i]) + r"$^{\circ}$")
 
         if axes_scales == "loglog" or axes_scales == "logx":
@@ -219,18 +214,18 @@ def plot(
             ax[i].set_ylabel(r"$F_{\lambda}$ (erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)")
 
         lims = list(ax[i].get_xlim())
-        if xmin:
-            lims[0] = xmin
-        if xmax:
-            lims[1] = xmax
-        ax[i].set_xlim(lims[0], lims[1])
+        if not xmin:
+            xmin = lims[0]
+        if not xmax:
+            xmax = lims[1]
+        ax[i].set_xlim(xmin, xmax)
 
         if plot_common_lines:
             if axes_scales == "logx" or axes_scales == "loglog":
                 logx = True
             else:
                 logx = False
-            ax[i] = SpectrumUtils.plot_line_ids(ax[i], SpectrumUtils.common_lines_list(), logx)
+            ax[i] = spectrumUtil.plot_line_ids(ax[i], spectrumUtil.common_lines_list(), logx)
 
     ax[0].legend(loc="lower left")
 
@@ -266,7 +261,7 @@ def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
         output_name, wd, inclination, root, xmin, xmax, frequency_space, common_lines, axes_scales, smooth_amount, file_ext, display = \
             setup_script()
 
-    spectra = SpectrumUtils.find_spec_files(root)
+    spectra = spectrumUtil.find_spec_files(root)
     if len(spectra) == 0:
         print("Unable to find any spectrum files")
         return

@@ -17,7 +17,7 @@ import py_plot_optical_depth
 import py_plot_spectrum_components
 
 import argparse as ap
-from PyPython.PythonUtils import remove_data_sym_links
+from pyPython.pythonUtil import remove_data_sym_links
 
 
 def setup_script() \
@@ -144,7 +144,8 @@ def plot(setup: tuple = None):
     # Create plots for the wind - only create velocity plots for rectilinear
     # at the moment - and remove the data folder afterwards
 
-    # TODO this is some dumb spaghetti code and is very confusing, to even me :-(
+    # TODO why did I write this? :-(
+    # Oh it's because projection was a string
     if projection:
         projection = True
     else:

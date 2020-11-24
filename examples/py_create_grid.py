@@ -19,7 +19,7 @@ import os
 import shutil
 from typing import List
 
-from PyPython.Constants import *
+from pyPython.constants import *
 
 # from iridis_create_slurm_file import write_slurm_file
 

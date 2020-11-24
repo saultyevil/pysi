@@ -10,8 +10,8 @@ import argparse as ap
 import numpy as np
 from matplotlib import pyplot as plt
 
-from PyPython import SpectrumUtils
-from PyPython import FilteredSpectrum
+from pyPython import spectrumUtil
+from pyPython import filteredSpectrum
 
 
 plt.rcParams['xtick.labelsize'] = 15
@@ -64,7 +64,7 @@ def setup_script() -> tuple:
                           "--extract_line",
                           nargs="+",
                           type=int,
-                          default=[-1],
+                          default=(filteredSpectrum.UNFILTERED_SPECTRUM,),
                           help="The line number to only extract.")
 
     create_p.add_argument("-n",
@@ -103,7 +103,7 @@ def setup_script() -> tuple:
                         "--extract_line",
                         nargs="+",
                         type=int,
-                        default=[-1],
+                        default=(filteredSpectrum.UNFILTERED_SPECTRUM,),
                         help="The line number to only extract.")
 
     plot_p.add_argument("-xl",
@@ -199,7 +199,7 @@ def setup_script() -> tuple:
 
 def plot(
     root: str, wd: str, filtered_spectrum: np.ndarray, extract_line: tuple = (-1,), sm: int = 1, d_norm_pc: float = 100,
-    scale: str = "loglog", frequency_space: bool = False, plot_lines: bool = False, file_ext: str = ".png",
+    xmin: float = None, xmax: float = None, scale: str = "loglog", frequency_space: bool = False, plot_lines: bool = False, file_ext: str = ".png",
     display: bool = False
 ):
     """
@@ -207,8 +207,8 @@ def plot(
     """
 
     try:
-        full_spectrum = SpectrumUtils.read_spec_file("{}/{}.log_spec".format(wd, root))
-        inclinations = SpectrumUtils.get_spec_inclinations(full_spectrum)
+        full_spectrum = spectrumUtil.read_spectrum("{}/{}.log_spec".format(wd, root))
+        inclinations = spectrumUtil.get_spectrum_inclinations(full_spectrum)
         include_full_spectrum = True
     except IOError:
         include_full_spectrum = False
@@ -220,37 +220,47 @@ def plot(
         fig, ax = plt.subplots(figsize=(12, 5))
 
         if include_full_spectrum:
-            ax.plot(full_spectrum["Lambda"], SpectrumUtils.smooth(full_spectrum[inc], sm), linewidth=1.4, alpha=0.75,
-                    label="Full Spectrum")
+            ax.plot(
+                full_spectrum["Lambda"], spectrumUtil.smooth(full_spectrum[inc], sm), linewidth=1.4, alpha=0.75,
+                label="Full Spectrum"
+            )
 
         if frequency_space:
             index = 0
         else:
             index = 1
 
-        ax.plot(filtered_spectrum[:-1, index], SpectrumUtils.smooth(filtered_spectrum[:-1, e + 2], sm),
-                linewidth=1.4, alpha=0.75, label="Filtered Spectrum")
-
-        ax.legend(loc="lower left", fontsize=15)
-        ax.set_xlabel(r"Wavelength [$\AA$]", fontsize=15)
-        ax.set_ylabel(r"Flux at " + str(d_norm_pc) + r" Pc, F$_{\lambda}$ [ergs s$^{-1}$ cm$^{-2}$ $\AA^{-1}$]",
-                      fontsize=15)
+        ax.plot(
+            filtered_spectrum[:-1, index], spectrumUtil.smooth(filtered_spectrum[:-1, e + 2], sm), linewidth=1.4,
+            alpha=0.75, label="Filtered Spectrum"
+        )
 
         if scale == "loglog" or scale == "logx":
             ax.set_xscale("log")
         if scale == "loglog" or scale == "logy":
             ax.set_yscale("log")
+        ax.set_xlim(xmin, xmax)
+        ax.set_ylim(spectrumUtil.calculate_axis_y_limits(
+                filtered_spectrum[:-1, index], spectrumUtil.smooth(filtered_spectrum[:-1, e + 2], sm), xmin, xmax
+            )
+        )
+
+        ax.legend(loc="lower right", fontsize=15)
+        ax.set_xlabel(r"Wavelength [$\AA$]", fontsize=15)
+        ax.set_ylabel(
+            r"Flux at " + str(d_norm_pc) + r" Pc, F$_{\lambda}$ [ergs s$^{-1}$ cm$^{-2}$ $\AA^{-1}$]", fontsize=15
+        )
 
         if plot_lines:
             if scale == "loglog" or scale == "logx":
                 logx = True
             else:
                 logx = False
-            ax = SpectrumUtils.plot_line_ids(ax, SpectrumUtils.common_lines_list(freq=frequency_space), logx)
+            ax = spectrumUtil.plot_line_ids(ax, spectrumUtil.common_lines_list(freq=frequency_space), logx)
 
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 
-        if extract_line[0] > -1:
+        if extract_line[0] != filteredSpectrum.UNFILTERED_SPECTRUM:
             name = "{}/{}_line".format(wd, root)
             for line in extract_line:
                 name += "_{}".format(line)
@@ -303,10 +313,10 @@ def main(setup: tuple = None):
     # variables required and this is my fault :-)
 
     if setup:
-        mode, root, spec_norm, ncores_norm, distance_norm, jit, extract_line, nbins, wd, xmin, xmax, frequency_space, \
+        mode, root, spec_norm, ncores_norm, distance_norm, jit, extract_nres, nbins, wd, xmin, xmax, frequency_space, \
             common_lines, axes_scales, smooth_amount, file_ext, display = setup
     else:
-        mode, root, spec_norm, ncores_norm, distance_norm, jit, extract_line, nbins, wd, xmin, xmax, frequency_space, \
+        mode, root, spec_norm, ncores_norm, distance_norm, jit, extract_nres, nbins, wd, xmin, xmax, frequency_space, \
             common_lines, axes_scales, smooth_amount, file_ext, display = setup_script()
 
     # Now we either create, or plot the filtered spectrum if it has already been created
@@ -314,26 +324,30 @@ def main(setup: tuple = None):
     # TODO: determine the run mode first, i.e. create or plot
     # TODO: force re-creation of spectrum
 
+    extract_nres = tuple(extract_nres)
+
     if mode == "create":
-        FilteredSpectrum.create_filtered_spectrum(
-            root, wd, extract_line, xmin, xmax, nbins, distance_norm, spec_norm, ncores_norm, True, jit
+        filteredSpectrum.create_filtered_spectrum(
+            root, wd, extract_nres, xmin, xmax, nbins, distance_norm, spec_norm, ncores_norm, True, jit
         )
     else:
+        name = ""
         try:
-            if extract_line[0] > -1:
+            if extract_nres[0] != filteredSpectrum.UNFILTERED_SPECTRUM:
                 name = "{}/{}_line".format(wd, root)
-                for line in extract_line:
+                for line in extract_nres:
                     name += "_{}".format(line)
                 name += ".delay_dump.spec"
             else:
                 name = "{}/{}.delay_dump.spec".format(wd, root)
-            filtered_spectrum = np.loadtxt(name, skiprows=2)  # TODO: could be replaced by something in PyPython?
+            print(name)
+            filtered_spectrum = np.loadtxt(name, skiprows=2)  # TODO: could be replaced by something in pyPython?
         except IOError:
-            print("Unable to load filtered spectrum:", name)
+            print("Unable to load filtered spectrum", name, "to plot anything")
             return
         plot(
-            root, wd, filtered_spectrum, extract_line, smooth_amount, distance_norm, axes_scales, frequency_space,
-            common_lines, file_ext, display
+            root, wd, filtered_spectrum, extract_nres, smooth_amount, distance_norm, xmin, xmax, axes_scales,
+            frequency_space, common_lines, file_ext, display
         )
 
     return

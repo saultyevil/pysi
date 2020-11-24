@@ -10,8 +10,8 @@ files. If a root name is provided, however, then the script will only operate
 
 
 import argparse as ap
-from PyPython import Grid
-from PyPython import PythonUtils as Utils
+from pyPython import grid
+from pyPython import pythonUtil as Utils
 from typing import List
 
 
@@ -32,7 +32,7 @@ def change_pfs(wdpf: List[str], parameter: str, value: str) -> None:
     """
 
     for i in range(len(wdpf)):
-        Grid.change_parameter(wdpf[i], parameter, value, verbose=True)
+        grid.update_single_parameter(wdpf[i], parameter, value, verbose=True)
 
     return
 
@@ -56,7 +56,7 @@ def main():
 
     args = p.parse_args()
 
-    change_pfs(Utils.get_pfs(args.root), args.parameter, args.value)
+    change_pfs(Utils.find_parameter_files(args.root), args.parameter, args.value)
 
     return
 

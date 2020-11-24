@@ -11,7 +11,7 @@ from typing import List
 from shutil import copyfile
 
 
-def change_parameter(
+def update_single_parameter(
     pf_path: str, parameter_name: str, new_value: str, backup: bool = True, verbose: bool = False
 ):
     """
@@ -33,16 +33,11 @@ def change_parameter(
         Enable verbose output to the screen
     """
 
-    n = change_parameter.__name__
-
-    assert(type(pf_path) == str), "{}: The path to the parameter file is not a string".format(n)
-    assert(type(parameter_name) == str), "{}: The parameter value passed is not a string".format(n)
-    assert(type(new_value) == str), "{}: The new value passed is not a string".format(n)
+    n = update_single_parameter.__name__
 
     if pf_path.find(".pf") == -1:
         raise IOError("{}: provided parameter file path {} is not a .pf parameter file".format(n, pf_path))
-    if verbose:
-        print("{}: updating parameter file {}".format(n, pf_path))
+
     if backup:
         copyfile(pf_path, pf_path + ".bak")
 
@@ -55,19 +50,24 @@ def change_parameter(
     except IOError:
         print("{}: unable to open parameter file {}".format(n, pf_path))
         return
+
     for i, line in enumerate(pf):
         if line.find(parameter_name) != -1:
             old = line
             new = "{}{:20s}{}\n".format(parameter_name, " ", new_value)
             pf[i] = new
             break
+
     if old and new:
         if verbose:
-            print("{}: changed parameter {} from {} to {}".format(n, parameter_name, old.replace("\n", ""),
-                                                                  new.replace("\n", "")))
+            print("{}: changed parameter {} from {} to {}".format(
+                    n, parameter_name, old.replace("\n", ""), new.replace("\n", "")
+                )
+            )
     else:
-        print("{}: COULDN'T FIND PARAMETER {} IN PARAMETER FILE {}".format(n, parameter_name, pf_path))
-        print("  : THIS ROUTINE HAS FAILED PLEASE PAY ATTENTION TO THIS MESSAGE BEFORE YOU WASTE TIME AGAIN")
+        print("-\n" * 80)
+        print("{}: unable to update: could not find parameter {} in file {}".format(n, parameter_name, pf_path))
+        print("\n-" * 80)
         return
 
     with open(pf_path, "w") as f:
@@ -76,7 +76,7 @@ def change_parameter(
     return
 
 
-def add_parameter(
+def add_single_parameter(
     pf_path: str, parameter_name: str, new_value: str, backup: bool = True, verbose: bool = False
 ):
     """
@@ -99,16 +99,11 @@ def add_parameter(
         Enable verbose output to the screen
     """
 
-    n = add_parameter.__name__
-
-    assert(type(pf_path) == str), "{}: The path to the parameter file is not a string".format(n)
-    assert(type(parameter_name) == str), "{}: The parameter value passed is not a string".format(n)
-    assert(type(new_value) == str), "{}: The new value passed is not a string".format(n)
+    n = add_single_parameter.__name__
 
     if pf_path.find(".pf") == -1:
         raise IOError("{}: provided parameter file path {} is not a .pf parameter file".format(n, pf_path))
-    if verbose:
-        print("{}: updating parameter file {}".format(n, pf_path))
+
     if backup:
         copyfile(pf_path, pf_path + ".bak")
 
@@ -168,7 +163,7 @@ def create_grid(
 
     ext = pf_path.find(".pf")
     if ext == -1:
-        raise IOError("{}: provided parameter file path {} is not a .pf parameter file".format(n, pf_path))
+        raise IOError("{}: provided file path {} is not a .pf parameter file".format(n, pf_path))
 
     for i in range(ngrid):
         path = pf_path[:ext]
@@ -177,7 +172,7 @@ def create_grid(
         path += "_{}".format(grid_values[i]) + ".pf"
         print(path)
         copyfile(pf_path, path)
-        change_parameter(path, parameter_name, grid_values[i], backup=False, verbose=verbose)
+        update_single_parameter(path, parameter_name, grid_values[i], backup=False, verbose=verbose)
         grid_pf.append(path)
 
     return grid_pf

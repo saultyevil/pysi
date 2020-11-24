@@ -12,7 +12,7 @@ a Python simulation.
 import argparse
 from typing import Tuple
 
-from PyPython.HPC import create_slurm_file
+from pyPython.hpc import create_slurm_file
 
 
 def parse_arguments() -> Tuple[str, int, int, int, bool, str, str]:

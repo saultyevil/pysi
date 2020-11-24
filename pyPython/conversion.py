@@ -7,7 +7,7 @@ unit to another.
 """
 
 
-from .Constants import ANGSTROM, C
+from .constants import ANGSTROM, C
 
 
 def angstrom_to_hz(wl: float):

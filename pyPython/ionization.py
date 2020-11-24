@@ -8,7 +8,7 @@ Functions to calculate the ionization and level populations.
 
 import numpy as np
 
-from .Constants import PI, MELEC, BOLTZMANN, H
+from .constants import PI, MELEC, BOLTZMANN, H
 
 
 def saha_equation_population_ratio(

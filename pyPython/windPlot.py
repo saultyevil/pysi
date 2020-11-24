@@ -7,8 +7,8 @@ The design of the function is to return the figure and axes objects so the
 user can then add axes labels and etc themselves.
 """
 
-from .WindUtils import sightline_coords
-from .Error import InvalidParameter
+from .windUtils import sightline_coords
+from .error import InvalidParameter
 
 import numpy as np
 from matplotlib import pyplot as plt

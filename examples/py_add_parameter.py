@@ -11,8 +11,8 @@ on pf files which have the same root name.
 
 import argpase as ap
 from typing import List
-from PyPython import PythonUtils as Utils
-from PyPython import Grid
+from pyPython import pythonUtil as Utils
+from pyPython import grid
 
 
 def add_parameter(wdpf: List[str], parameter: str, value: str):
@@ -32,7 +32,7 @@ def add_parameter(wdpf: List[str], parameter: str, value: str):
     """
 
     for i in range(len(wdpf)):
-        Grid.add_parameter(wdpf[i], parameter, value, verbose=True)
+        grid.add_single_parameter(wdpf[i], parameter, value, verbose=True)
 
     return
 
@@ -63,7 +63,7 @@ def main():
 
     args = p.parse_args()
 
-    add_parameter(Utils.get_pfs(args.root), args.parameter, args.value)
+    add_parameter(Utils.find_parameter_files(args.root), args.parameter, args.value)
 
     return
 

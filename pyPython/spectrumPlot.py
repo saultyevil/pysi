@@ -8,12 +8,12 @@ figure and axes objects, just in case anything else wants to be changed before
 being saved to disk or displayed.
 """
 
-from .Constants import PARSEC
-from .SpectrumUtils import photo_edges_list, common_lines_list, plot_line_ids, smooth
-from .SpectrumUtils import read_spec_file, get_spec_inclinations, get_ylims, get_spec_units
-from .SpectrumUtils import UNITS_FLAMBDA, UNITS_FNU, UNITS_LNU
-from .PythonUtils import subplot_dims
-from .Error import InvalidParameter
+from .constants import PARSEC
+from .spectrumUtil import photo_edges_list, common_lines_list, plot_line_ids, smooth
+from .spectrumUtil import read_spectrum, get_spectrum_inclinations, calculate_axis_y_limits, get_spectrum_units
+from .spectrumUtil import UNITS_FLAMBDA, UNITS_FNU, UNITS_LNU
+from .pythonUtil import subplot_dims
+from .error import InvalidParameter, EXIT_FAIL
 
 import pandas as pd
 import numpy as np
@@ -210,7 +210,7 @@ def plot_simple(
     xlims = (xmin, xmax)
     ax.set_xlim(xlims[0], xlims[1])
 
-    ymin, ymax = get_ylims(x, y, xmin, xmax)
+    ymin, ymax = calculate_axis_y_limits(x, y, xmin, xmax)
     ax.set_ylim(ymin, ymax)
 
     if display:
@@ -273,10 +273,10 @@ def plot_optical_depth(
         inclinations = [inclinations]
 
     try:
-        s = read_spec_file(fname)
+        s = read_spectrum(fname)
     except IOError:
         print("{}: unable to find the optical depth spectrum {}".format(n, fname))
-        return fig, ax
+        exit(EXIT_FAIL)
 
     xlabel = "Lambda"
     if frequency_space:
@@ -289,7 +289,7 @@ def plot_optical_depth(
     if not xmax:
         xmax = np.max(s[xlabel])
 
-    spec_angles = get_spec_inclinations(s)
+    spec_angles = get_spectrum_inclinations(s)
     nangles = len(spec_angles)
 
     # Determine the number of inclinations requested in a convoluted way :^)
@@ -407,10 +407,10 @@ def plot_spectrum_components(
     fname = "{}/{}.{}".format(wd, root, extension)
 
     try:
-        s = read_spec_file(fname)
+        s = read_spectrum(fname)
     except IOError:
         print("{}: unable to open .spec file with name {}".format(n, fname))
-        return fig, ax
+        exit(EXIT_FAIL)
 
     if frequency_space:
         x = s["Freq."].values
@@ -425,11 +425,11 @@ def plot_spectrum_components(
     xlims = (xmin, xmax)
 
     ax[0] = __panel_subplot(
-        ax[0], x, s, get_spec_units(fname), ["Created", "WCreated", "Emitted"], xlims, smooth_amount, scale,
+        ax[0], x, s, get_spectrum_units(fname), ["Created", "WCreated", "Emitted"], xlims, smooth_amount, scale,
         frequency_space, True, n
     )
     ax[1] = __panel_subplot(
-        ax[1], x, s, get_spec_units(fname), ["CenSrc", "Disk", "Wind", "HitSurf"], xlims, smooth_amount,
+        ax[1], x, s, get_spectrum_units(fname), ["CenSrc", "Disk", "Wind", "HitSurf"], xlims, smooth_amount,
         scale, frequency_space, True, n
     )
 
@@ -443,7 +443,7 @@ def plot_spectrum_components(
     return fig, ax
 
 
-def plot_all_spectra(
+def plot_spectra_single_panel(
     root: str, wd: str, xmin: float = None, xmax: float = None, smooth_amount: int = 5, add_line_ids: bool = True,
     frequency_space: bool = False, scale: str = "logy", figsize: Tuple[float, float] = None, display: bool = False
 ) -> Tuple[plt.Figure, plt.Axes]:
@@ -485,17 +485,17 @@ def plot_all_spectra(
         :param add_line_ids:
     """
 
-    n = plot_all_spectra.__name__
+    n = plot_spectra_single_panel.__name__
 
     fname = "{}/{}.spec".format(wd, root)
     try:
-        s = read_spec_file(fname)
+        s = read_spectrum(fname)
     except IOError:
         print("{}: unable to open .spec file with name {}".format(n, fname))
-        return
+        exit(EXIT_FAIL)
 
-    units = get_spec_units(fname)
-    inclinations = get_spec_inclinations(s)
+    units = get_spectrum_units(fname)
+    inclinations = get_spectrum_inclinations(s)
     panel_dims = subplot_dims(len(inclinations))
     size = (12, 10)
     if figsize:
@@ -524,7 +524,7 @@ def plot_all_spectra(
             name = str(inclinations[ii])
             ax[i, j] = __panel_subplot(
                 ax[i, j], x, s, units, name, xlims, smooth_amount, scale, frequency_space, False, n)
-            ymin, ymax = get_ylims(x, s[name].values, xmin, xmax)
+            ymin, ymax = calculate_axis_y_limits(x, s[name].values, xmin, xmax)
             ax[i, j].set_ylim(ymin, ymax)
 
             if add_line_ids:
@@ -545,7 +545,7 @@ def plot_all_spectra(
     return fig, ax
 
 
-def plot_spectrum(
+def plot_single_spectrum(
     root: str, wd: str, inclination: Union[str, float, int], xmin: float = None, xmax: float = None,
     smooth_amount: int = 5, scale: str = "logy", frequency_space: bool = False, display: bool = False
 ) -> Union[None, Tuple[plt.Figure, plt.Axes]]:
@@ -581,14 +581,14 @@ def plot_spectrum(
         The pyplot.Axes object for the created figure
     """
 
-    n = plot_spectrum.__name__
+    n = plot_single_spectrum.__name__
 
     fname = "{}/{}.spec".format(wd, root)
     try:
-        s = read_spec_file(fname)
+        s = read_spectrum(fname)
     except IOError:
         print("{}: unable to open .spec file with name {}".format(n, fname))
-        return
+        exit(EXIT_FAIL)
 
     if frequency_space:
         x = s["Freq."].values

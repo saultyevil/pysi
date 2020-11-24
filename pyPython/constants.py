@@ -1,5 +1,5 @@
 """
-Useful constants which are used throughout Python and PyPython. Quantities are
+Useful constants which are used throughout Python and pyPython. Quantities are
 in CGS units unless otherwise stated.
 """
 

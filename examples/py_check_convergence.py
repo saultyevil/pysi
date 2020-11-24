@@ -9,9 +9,9 @@ and to create any plots which are related to the convergence of a simulation.
 
 import numpy as np
 from matplotlib import pyplot as plt
-from PyPython import Simulation
-from PyPython import PythonUtils as Utils
-from PyPython import Quotes
+from pyPython import simulation
+from pyPython import pythonUtil as Utils
+from pyPython import quotes
 from typing import List, Union
 
 
@@ -95,9 +95,9 @@ def get_convergence(
         The directory containing the Python simulation.
     """
 
-    convergence = Simulation.check_convergence(root, wd, return_per_cycle=True)
-    converging = Simulation.check_convergence(root, wd, return_per_cycle=True, return_converging=True)
-    tr, te, te_max, hc = Simulation.check_convergence_breakdown(root, wd)
+    convergence = simulation.check_convergence(root, wd, return_per_cycle=True)
+    converging = simulation.check_convergence(root, wd, return_per_cycle=True, return_converging=True)
+    tr, te, te_max, hc = simulation.check_convergence_breakdown(root, wd)
 
     ncycles = len(convergence)
     if ncycles == 0:
@@ -126,11 +126,11 @@ def main():
 
     print("-" * COL_WIDTH, "\n")
 
-    Quotes.random_quote()
+    quotes.random_quote()
 
     pfs = Utils.find_parameter_files()
     for i in range(len(pfs)):
-        root, wd = Utils.split_root_directory(pfs[i])
+        root, wd = Utils.root_from_file_path(pfs[i])
         if wd.find("continuum") != -1:
             continue
         print("-" * COL_WIDTH)

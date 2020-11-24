@@ -6,9 +6,9 @@ This file contains various utility functions which can be used to ease the
 trials and tribulations of using Python and the Unix command line.
 """
 
-from .Constants import LOG_BASE_10_OF_TWO
+from .constants import LOG_BASE_10_OF_TWO
 
-from os import remove, getenv
+from os import remove
 from pathlib import Path
 import pandas as pd
 from subprocess import Popen, PIPE
@@ -17,6 +17,93 @@ from shutil import which
 from typing import Tuple, List
 from psutil import cpu_count
 import numpy as np
+
+
+def get_array_index(
+    x: np.ndarray, target: float
+) -> int:
+    """
+    Return the index for an array for a given value.
+
+    Parameters
+    ----------
+    x: np.ndarray
+
+    target: float
+
+    Returns
+    -------
+    The index for the target value in the array x.
+    """
+
+    if target < np.min(x):
+        return -1
+    if target > np.max(x):
+        return -1
+
+    index = np.abs(x - target).argmin()
+
+    return index
+
+
+def round_to_sig_figs(
+    x: np.ndarray, sigfigs: int
+):
+    """
+    Truncate values in a numpy array to the given level of significant figures.
+
+    Written by some maniac on Stack Overflow.
+    https://stackoverflow.com/questions/18915378/rounding-to-significant-figures-in-numpy
+
+    Parameters
+    ----------
+    x: np.ndarray
+        The array to preform the operation on.
+    sigfigs: int
+        The number of significant figures.
+
+    Returns
+    -------
+    x: np.ndarray
+        The array rounded to the provided number of significant figures.
+    """
+
+    xsgn = np.sign(x)
+    absx = xsgn * x
+    mantissa, binaryExponent = np.frexp(absx)
+
+    decimalExponent = LOG_BASE_10_OF_TWO * binaryExponent
+    omag = np.floor(decimalExponent)
+
+    mantissa *= 10.0 ** (decimalExponent - omag)
+
+    if mantissa.any() < 1.0:
+        mantissa *= 10.0
+        omag -= 1.0
+
+    return xsgn * np.around(mantissa, decimals=sigfigs - 1) * 10.0 ** omag
+
+
+def file_len(
+    fname: str
+) -> int:
+    """
+    Count the number of lines in a file.
+
+    Parameters
+    ----------
+    fname: str
+
+    Returns
+    -------
+    The number of lines in the file.
+    """
+
+    with open(fname, "r") as f:
+        for i, l in enumerate(f):
+            pass
+
+    return i + 1
 
 
 def remove_data_sym_links(
@@ -30,6 +117,8 @@ def remove_data_sym_links(
 
     This script will only work on Unix systems where the find command is
     available.
+
+    TODO: find solution which is system agnostic -> pathlib?
 
     Parameters
     ----------
@@ -86,6 +175,128 @@ def remove_data_sym_links(
     return ndel
 
 
+def root_from_file_path(
+    path: str
+) -> Tuple[str, str]:
+    """
+    Split a path name into a directory path and root name for a Python
+    simulation.
+
+    TODO: probably better to use find() or rfind() string methods
+
+    Parameters
+    ----------
+    path: str
+        The directory path to a Python .pf file
+
+    Returns
+    -------
+    root: str
+        The root name of the Python simulation
+    wd: str
+        The directory path containing the provided Python .pf file
+    """
+
+    n = root_from_file_path.__name__
+
+    if type(path) != str:
+        raise TypeError("{}: expected string as input".format(n))
+
+    dot = 0
+    slash = 0
+    for i in range(len(path)):
+        letter = path[i]
+        if letter == ".":
+            dot = i
+        elif letter == "/":
+            slash = i + 1
+
+    root = path[slash:dot]
+    wd = path[:slash]
+    if wd == "":
+        wd = "./"
+
+    return root, wd
+
+
+def find_parameter_files(
+    root: str = None, path: str = "./"
+) -> List[str]:
+    """
+    Find Python .pf parameter files recursively from the directory path.
+
+    This function will ignore py_wind.pf parameter files, as well as any
+    root.out.pf files.
+
+    Parameters
+    ----------
+    root: str [optional]
+        If given, only .pf files with the given root will be returned.
+    path: str [optional]
+        The directory to search for Python .pf files from
+
+    Returns
+    -------
+    pfs: List[str]
+        The file path for any Python pf files founds
+    """
+
+    parameter_files = []
+
+    for filename in Path(path).glob("**/*.pf"):
+        file = str(filename)
+
+        if file.find(".out.pf") != -1:
+            continue
+        elif file.find("py_wind.pf") != -1:
+            continue
+        elif file[0] == "/":
+            file = "." + file
+
+        t_root, wd = root_from_file_path(file)
+        if root and t_root != root:
+            continue
+
+        parameter_files.append(file)
+
+    parameter_files = sorted(parameter_files, key=str.lower)
+
+    return parameter_files
+
+
+def get_cpu_count(
+    enable_smt: bool = False
+):
+    """
+    Return the number of CPU cores which can be used when running a Python
+    simulation.
+
+    By default, this will only return the number of physics cores and will
+    exclude hyperthreads.
+
+    Parameters
+    ----------
+    enable_smt: [optional] bool
+        Return the number of logical cores, which includes both physical and
+        SMT threads (hyperthreads).
+
+    Returns
+    -------
+    ncores: int
+        The number of available CPU cores
+    """
+
+    n = get_cpu_count.__name__
+    ncores = 0
+
+    try:
+        ncores = cpu_count(logical=enable_smt)
+    except NotImplementedError:
+        print("{}: unable to determine number of CPU cores, psutil.cpu_count not implemented".format(n))
+
+    return ncores
+
+
 def get_python_version(
     py: str = "py", verbose: bool = False
 ) -> Tuple[str, str]:
@@ -123,8 +334,8 @@ def get_python_version(
     err = stderr.decode("utf-8")
 
     if err:
-        print("{}: captured from stderr".format(n))
         print(stderr)
+        return "N/A", "N/A"
 
     for i in range(len(out)):
         if out[i] == "Version":
@@ -231,17 +442,31 @@ def py_wind(
 ) -> List[str]:
     """
     Run py_wind using the provided commands.
+
+    Parameters
+    ----------
+    root: str
+        The root name of the model.
+    commands: list[str]
+        The commands to pass to py_wind.
+    wd: [optional] str
+        The directory containing the model.
+
+    Returns
+    -------
+    output: list[str]
+        The stdout output from py_wind.
     """
 
     n = py_wind.__name__
 
-    cmd_file = "{}/_tmpcmds.txt".format(wd)
+    cmd_file = "{}/.tmpcmds.txt".format(wd)
 
     with open(cmd_file, "w") as f:
         for i in range(len(commands)):
             f.write("{}\n".format(commands[i]))
 
-    sh = Popen("cd {}; py_wind {} < _tmpcmds.txt".format(wd, root), stdout=PIPE, stderr=PIPE, shell=True)
+    sh = Popen("cd {}; py_wind {} < .tmpcmds.txt".format(wd, root), stdout=PIPE, stderr=PIPE, shell=True)
     stdout, stderr = sh.communicate()
     if stderr:
         print(stderr.decode("utf-8"))
@@ -258,7 +483,7 @@ def subplot_dims(
     Determine the dimensions for a plot with multiple subplot panels. A design
     of two columns of subplot panels will always be used.
 
-    TODO: 1 or 3, 4, etc column plots should be possible as well
+    TODO: update for more sub-panels
 
     Parameters
     ----------
@@ -289,357 +514,6 @@ def subplot_dims(
     return nrows, ncols
 
 
-def split_root_directory(
-    path: str
-) -> Tuple[str, str]:
-    """
-    Split a path name into a directory path and root name for a Python
-    simulation.
-
-    TODO: probably better to use find() or rfind() string methods
-
-    Parameters
-    ----------
-    path: str
-        The directory path to a Python .pf file
-
-    Returns
-    -------
-    root: str
-        The root name of the Python simulation
-    wd: str
-        The directory path containing the provided Python .pf file
-    """
-
-    n = split_root_directory.__name__
-
-    if type(path) != str:
-        raise TypeError("{}: expected string as input".format(n))
-
-    dot = 0
-    slash = 0
-    for i in range(len(path)):
-        letter = path[i]
-        if letter == ".":
-            dot = i
-        elif letter == "/":
-            slash = i + 1
-
-    root = path[slash:dot]
-    wd = path[:slash]
-    if wd == "":
-        wd = "./"
-
-    return root, wd
-
-
-def find_parameter_files(
-    path: str = "./"
-) -> List[str]:
-    """
-    Find Python .pf parameter files recursively from the directory path.
-
-    This function will ignore py_wind.pf parameter files, as well as any
-    root.out.pf files.
-
-    Parameters
-    ----------
-    path: str [optional]
-        The directory to search for Python .pf files from
-
-    Returns
-    -------
-    pfs: List[str]
-        The file path for any Python pf files founds
-    """
-
-    pfs = []
-    for filename in Path(path).glob("**/*.pf"):
-        fname = str(filename)
-        if fname.find("out.pf") != -1:
-            continue
-        if fname.find("py_wind.pf") != -1:
-            continue
-        if fname[0] == "/":
-            fname = "." + fname
-        pfs.append(fname)
-    pfs = sorted(pfs, key=str.lower)
-
-    return pfs
-
-
-def get_pfs(
-    root: str = None
-) -> List[str]:
-    """
-    Search recursively from the calling directory for Python pfs. If root is
-    specified, then only pfs with the same root name as root will be returned.
-
-    Parameters
-    -------
-    root: str, optional
-        If this is set, then any pf which is not named with this root will be
-        removed from the return pfs
-
-    Returns
-    -------
-    pfs: List[str]
-        A list containing the relative paths of the pfs to be updated.
-    """
-
-    pfs = []
-    ppfs = find_parameter_files(".")
-
-    for i in range(len(ppfs)):
-        pf, wd = split_root_directory(ppfs[i])
-        if root:
-            if root == pf:
-                pfs.append(ppfs[i])
-        else:
-            pfs.append(ppfs[i])
-
-    return pfs
-
-
-def remove_photoion_transition_from_data(
-    data: str, atomic: int, istate: int, new_value: float = 9e99
-):
-    """
-    Remove a transition or element from some atomic data. Creates a new atomic
-    data file which is placed in the current working or given directory.
-
-    TODO: include Topbase
-    TODO: include lines
-
-    Parameters
-    ----------
-    data: str
-
-    atomic: int
-
-    istate: int
-
-    new_value: [optional] float
-
-    """
-
-    n = remove_photoion_transition_from_data.__name__
-
-    data = data.lower()
-
-    allowed_data = [
-        "outershell",
-        "innershell",
-    ]
-
-    if data not in allowed_data:
-        print("{}: atomic data {} is unknown, known types are {}".format(n, data, allowed_data))
-        return
-
-    filename = getenv("PYTHON") + "/xdata/atomic/"
-
-    if data == "outershell":
-        stop = "PhotVfkyS"
-        data_name = "vfky_outershell_tab.dat"
-    elif data == "innershell":
-        stop = "InnerVYS"
-        data_name = "vy_innershell_tab.dat"
-    else:
-        return
-
-    filename += data_name
-
-    atomic = str(atomic)
-    istate = str(istate)
-    new_value = str(new_value)
-
-    new = []
-
-    with open(filename, "r") as f:
-        lines = f.readlines()
-
-    i = 0
-    while i < (len(lines)):
-        line = lines[i].split() + ["\n"]
-
-        if line[0] == stop and line[1] == atomic and line[2] == istate:
-            line[5] = new_value
-            new.append(" ".join(line))
-
-            npoints = int(line[6])
-            for j in range(npoints):
-                edit_line = lines[i + j + 1].split() + ["\n"]
-                edit_line[1] = new_value
-                new.append(" ".join(edit_line))
-            i += npoints + 1
-        else:
-            i += 1
-            new.append(" ".join(line))
-
-    with open(data_name, "w") as f:
-        f.writelines(new)
-
-    return
-
-
-def remove_bound_lines_for_ion(
-    z: int, istate: int
-):
-    """
-    Remove all bound-bound transitions for a single ion from the atomic data.
-    This is achieved by setting the oscillator strengths of the transition, f,
-    to f = 0, effectively removing the transition.
-
-    Parameters
-    ----------
-    z: int
-        The atomic number for the ion.
-    istate: int
-        The ionization state of the ion.
-    """
-
-    n = remove_bound_lines_for_ion.__name__
-
-    filename = getenv("PYTHON") + "/xdata/atomic/lines_linked_ver_2.dat"
-
-    z = str(z)
-    istate = str(istate)
-
-    with open(filename, "r") as f:
-        lines = f.readlines()
-
-    for i in range(len(lines)):
-        line = lines[i].split() + ["\n"]
-        if line[1] == z and line[2] == istate:
-            line[4] = "0.000000"
-        lines[i] = " ".join(line)
-
-    with open("lines_linked_ver_2.dat", "w") as f:
-        f.writelines(lines)
-
-    return
-
-
-def get_cpu_count(
-    enable_smt: bool = False
-):
-    """
-    Return the number of CPU cores which can be used when running a Python
-    simulation.
-
-    By default, this will only return the number of physics cores and will
-    exclude hyperthreads.
-
-    Parameters
-    ----------
-    enable_smt: [optional] bool
-        Return the number of logical cores, which includes both physical and
-        SMT threads (hyperthreads).
-
-    Returns
-    -------
-    ncores: int
-        The number of available CPU cores
-    """
-
-    n = get_cpu_count.__name__
-    ncores = 0
-
-    try:
-        ncores = cpu_count(logical=enable_smt)
-    except NotImplementedError:
-        print("{}: unable to determine number of CPU cores, psutil.cpu_count not implemented".format(n))
-
-    return ncores
-
-
-def file_len(
-    fname: str
-) -> int:
-    """
-    Count the number of lines in a file.
-
-    Parameters
-    ----------
-    fname: str
-
-    Returns
-    -------
-    The number of lines in the file.
-    """
-
-    with open(fname, "r") as f:
-        for i, l in enumerate(f):
-            pass
-
-    return i + 1
-
-
-def array_index(
-    x: np.ndarray, target: float
-) -> int:
-    """
-    Return the index for an array for a given value.
-
-    Parameters
-    ----------
-    x: np.ndarray
-
-    target: float
-
-    Returns
-    -------
-    The index for the target value in the array x.
-    """
-
-    if target < np.min(x):
-        return -1
-    if target > np.max(x):
-        return -1
-
-    index = np.abs(x - target).argmin()
-
-    return index
-
-
-def round_to_sig_figs(
-    x: np.ndarray, sigfigs: int
-):
-    """
-    Truncate values in a numpy array to the given level of significant figures.
-
-    Written by some maniac on Stack Overflow.
-    https://stackoverflow.com/questions/18915378/rounding-to-significant-figures-in-numpy
-
-    Parameters
-    ----------
-    x: np.ndarray
-        The array to preform the operation on.
-    sigfigs: int
-        The number of significant figures.
-
-    Returns
-    -------
-    x: np.ndarray
-        The array rounded to the provided number of significant figures.
-    """
-
-    xsgn = np.sign(x)
-    absx = xsgn * x
-    mantissa, binaryExponent = np.frexp(absx)
-
-    decimalExponent = LOG_BASE_10_OF_TWO * binaryExponent
-    omag = np.floor(decimalExponent)
-
-    mantissa *= 10.0 ** (decimalExponent - omag)
-
-    if mantissa.any() < 1.0:
-        mantissa *= 10.0
-        omag -= 1.0
-
-    return xsgn * np.around(mantissa, decimals=sigfigs - 1) * 10.0 ** omag
-
-
 def create_run_script(commands: List[str]):
     """
     Create a shell run script given a list of commands to do. This assumes that
@@ -655,7 +529,7 @@ def create_run_script(commands: List[str]):
     directories = []
     pfs = find_parameter_files()
     for pf in pfs:
-        root, directory = split_root_directory(pf)
+        root, directory = root_from_file_path(pf)
         directories.append(directory)
 
     file = "#!/bin/bash\n\ndeclare -a directories=(\n"

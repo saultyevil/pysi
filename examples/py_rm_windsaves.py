@@ -9,7 +9,7 @@ standard name, i.e. python_01.wind_save.
 import argparse as ap
 from subprocess import Popen, PIPE
 from typing import List
-from PyPython import PythonUtils as Utils
+from pyPython import pythonUtil as Utils
 
 
 def delete_windsaves(wdpf: List[str], root) -> None:
@@ -19,7 +19,7 @@ def delete_windsaves(wdpf: List[str], root) -> None:
     """
 
     for i in range(len(wdpf)):
-        pf, wd = Utils.split_root_directory(wdpf[i])
+        pf, wd = Utils.root_from_file_path(wdpf[i])
         cmd = "cd {}; rm {}*.wind_save".format(wd, root)
         sh = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         stdout, stderr = sh.communicate()
@@ -34,4 +34,4 @@ if __name__ == "__main__":
     p.add_argument("root",
                    help="The root name of the wind_save files.")
     args = p.parse_args()
-    delete_windsaves(Utils.get_pfs(args.root), args.root)
+    delete_windsaves(Utils.find_parameter_files(args.root), args.root)

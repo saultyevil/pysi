@@ -8,10 +8,11 @@ from finding these spectrum files.
 """
 
 
-from .Error import DimensionError
-from .Constants import C, ANGSTROM
-from .PythonUtils import split_root_directory
+from .error import DimensionError, EXIT_FAIL
+from .constants import C, ANGSTROM
+from .pythonUtil import root_from_file_path
 
+from sys import exit
 from pathlib import Path
 import pandas as pd
 import numpy as np
@@ -29,7 +30,7 @@ def find_spec_files(
         root: str = None, path: str = ".", ingore_delay_dump: bool = True
 ) -> List[str]:
     """
-    Find root.spec files recursively in provided directory path.
+    Find root.spec files recursively in tge provided directory.
 
     Parameters
     ----------
@@ -48,6 +49,7 @@ def find_spec_files(
     """
 
     spec_files = []
+
     for filename in Path(path).glob("**/*.spec"):
         fname = str(filename)
 
@@ -55,17 +57,19 @@ def find_spec_files(
             continue
 
         if root:
-            froot, wd = split_root_directory(fname)
-            if froot == root:
+            t_root, wd = root_from_file_path(fname)
+
+            if t_root == root:
                 spec_files.append(fname)
-            continue
+            else:
+                continue
 
         spec_files.append(fname)
 
     return spec_files
 
 
-def read_spec_file(
+def read_spectrum(
     fname: str, delim: str = None, numpy: bool = False
 ) -> Union[int, np.ndarray, pd.DataFrame]:
     """
@@ -88,27 +92,41 @@ def read_spec_file(
         The .spec file as a Numpy array or a Pandas DataFrame
     """
 
-    n = read_spec_file.__name__
+    n = read_spectrum.__name__
 
-    with open(fname, "r") as f:
-        flines = f.readlines()
+    try:
+        with open(fname, "r") as f:
+            flines = f.readlines()
+    except IOError:
+        print("{}: unable to open file {}".format(n, fname))
+        exit(EXIT_FAIL)
 
     lines = []
+
     for i in range(len(flines)):
         line = flines[i].strip()
+
         if delim:
             line = line.split(delim)
         else:
             line = line.split()
+
+        # Ignore empty lines and comment lines
+
         if len(line) == 0:
             continue
         if line[0] == "#":
             continue
+
+        # Extract the header line
+
         if line[0] == "Freq." or line[0] == "Lambda":
+
             for j in range(len(line)):
                 if line[j][0] == "A":
                     index = line[j].find("P")
                     line[j] = line[j][1:index]
+
         lines.append(line)
 
     if numpy:
@@ -116,12 +134,13 @@ def read_spec_file(
             spec = np.array(lines, dtype=float)
             return spec
         except ValueError:
-            return np.array(lines)
+            print("{}: unable to convert spectrum to numpy array of floats".format(n))
+            exit(EXIT_FAIL)
 
     return pd.DataFrame(lines[1:], columns=lines[0]).astype(float)
 
 
-def get_spec_units(
+def get_spectrum_units(
     fname: str
 ):
     """
@@ -152,7 +171,7 @@ def get_spec_units(
     return units
 
 
-def get_spec_inclinations(
+def get_spectrum_inclinations(
     spec: Union[pd.DataFrame, np.ndarray, List[str], str]
 ) -> list:
     """
@@ -171,7 +190,7 @@ def get_spec_inclinations(
         All of the unique inclination angles found in the Python .spec files
     """
 
-    n = get_spec_inclinations.__name__
+    n = get_spectrum_inclinations.__name__
     inclinations = []
 
     nspec = 1
@@ -189,7 +208,7 @@ def get_spec_inclinations(
     # Find the viewing angles in each .spec file
     for i in range(nspec):
         if readin:
-            spec = read_spec_file(spec[i])
+            spec = read_spectrum(spec[i])
 
         if type(spec) == pd.core.frame.DataFrame:
             col_names = spec.columns.values
@@ -207,7 +226,7 @@ def get_spec_inclinations(
     return inclinations
 
 
-def check_inclination(
+def check_valid_inclination(
     inclination: str, spec: Union[pd.DataFrame, np.ndarray]
 ) -> bool:
     """
@@ -227,8 +246,8 @@ def check_inclination(
         If True, angle is a legal angle, otherwise false
     """
 
-    n = check_inclination.__name__
-    allowed = False
+    n = check_valid_inclination.__name__
+    is_allowed = False
 
     if type(spec) == pd.core.frame.DataFrame:
         headers = spec.columns.values
@@ -242,23 +261,23 @@ def check_inclination(
             inclination = str(inclination)
         except ValueError:
             print("{}: could not convert {} into string".format(n, inclination))
-            return allowed
+            return is_allowed
 
     if inclination in headers:
-        allowed = True
+        is_allowed = True
 
-    return allowed
+    return is_allowed
 
 
 def smooth(
-    input: Union[np.ndarray, List[Union[float, int]]], smooth_amount: Union[int, float]
+    array: Union[np.ndarray, List[Union[float, int]]], smooth_amount: Union[int, float]
 ) -> np.ndarray:
     """
     Smooth a 1D array of data using a boxcar filter of width smooth pixels.
 
     Parameters
     ----------
-    input: np.array[float]
+    array: np.array[float]
         The data to smooth using the boxcar filter
     smooth_amount: int
         The size of the window for the boxcar filter
@@ -271,42 +290,46 @@ def smooth(
 
     n = smooth.__name__
 
-    input = np.array(input)
+    # If smooth_amount is None, then the user has indicated they didn't want
+    # to use any smoothing so return the original array. Though, I think using
+    # a smoothing window of 1 has the same effect............... dunno
 
-    if type(input) != list and type(input) != np.ndarray:
-        raise TypeError("{}: expecting list or np.ndarray".format(n))
-
-    if type(input) == list:
-        input = np.array(input, dtype=float)
-
-    if len(input.shape) > 2:
-        raise DimensionError("{}: data is not 1 dimensional but has shape {}".format(n, input.shape))
-
-    if type(smooth_amount) != int:
+    if smooth_amount is None:
+        return array
+    elif type(smooth_amount) != int:
         try:
             smooth_amount = int(smooth_amount)
         except ValueError:
             print("{}: could not convert smooth = {} into an integer. Returning original array.".format(n, smooth_amount))
-            return input
+            return array
 
-    input = np.reshape(input, (len(input),))
-    smoothed = convolve(input, boxcar(smooth_amount) / float(smooth_amount), mode="same")
+    # Now we need to make sure the array is actually an array and not a list and
+    # convert it. We also check the dimensions of the array.
+
+    if type(array) != np.ndarray:
+        array = np.array(array)
+
+    if len(array.shape) > 2:
+        raise DimensionError("{}: data is not 1 dimensional but has shape {}".format(n, array.shape))
+
+    array = np.reshape(array, (len(array),))  # because fuck me, why does it have to be this form?
+    smoothed = convolve(array, boxcar(smooth_amount) / float(smooth_amount), mode="same")
 
     return smoothed
 
 
-def get_ylims(
-    wavelength: np.array, flux: np.array, xmin: float, xmax: float, scale: float = 10
-) -> Tuple[float, float]:
+def calculate_axis_y_limits(
+    x: np.array, y: np.array, xmin: float, xmax: float, scale: float = 10
+) -> Union[Tuple[float, float], Tuple[None, None]]:
     """
     Determine the lower and upper limit for the flux given a restricted
     wavelength range (wmin, wmax).
 
     Parameters
     ----------
-    wavelength: np.array[float]
+    x: np.array[float]
         An array containing all wavelengths in a spectrum
-    flux: np.array[float]
+    y: np.array[float]
         An array containing the flux at each wavelength point
     xmin: float
 
@@ -323,29 +346,41 @@ def get_ylims(
         The upper y limit to use with the wavelength range
     """
 
-    n = get_ylims.__name__
+    n = calculate_axis_y_limits.__name__
 
-    if wavelength.shape[0] != flux.shape[0]:
+    if x.shape[0] != y.shape[0]:
         raise DimensionError("{}: wavelength and flux are of different dimensions wavelength {} flux {}"
-                             .format(n, wavelength.shape, flux.shape))
+                             .format(n, x.shape, y.shape))
 
-    if type(wavelength) != np.ndarray or type(flux) != np.ndarray:
-        raise TypeError("{}: wavelength or flux array not a numpy arrays wavelength {} flux {}"
-                        .format(n, type(wavelength), type(flux)))
+    if type(x) == pd.Series or type(y) == pd.Series:
+        try:
+            x = np.array(x)  # x = x.values
+            y = np.array(y)  # y = y.values
+        except ValueError:
+            raise TypeError("{}: x or y not a numpy array or pandas series x {} y {}" .format(n, type(x), type(y)))
+    elif type(x) != np.ndarray or type(y) != np.ndarray:
+        raise TypeError("{}: x or y not a numpy array or pandas series x {} y {}" .format(n, type(x), type(y)))
+
+    if not xmin or not xmax:
+        return None, None
 
     # Determine indices which are within the wavelength range
-    idx_wmin = wavelength < xmin
-    idx_wmax = wavelength > xmax
+
+    id_xmin = x < xmin
+    id_xmax = x > xmax
 
     # Extract flux which is in the wavelength range, remove 0 values and then
     # find min and max value and scale
-    flux_lim_wav = np.where(idx_wmin == idx_wmax)[0]
-    flux = flux[flux_lim_wav]
-    flux = flux[flux != 0]
-    yupper = np.max(flux) * scale
-    ylower = np.min(flux) / scale
 
-    return ylower, yupper
+    y_lim_x = np.where(id_xmin == id_xmax)[0]
+
+    y = y[y_lim_x]
+    y = y[y != 0]
+
+    ymax = np.max(y) * scale
+    ymin = np.min(y) / scale
+
+    return ymin, ymax
 
 
 def plot_line_ids(

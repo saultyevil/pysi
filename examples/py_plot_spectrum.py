@@ -14,8 +14,8 @@ import argparse as ap
 from typing import Tuple
 from matplotlib import pyplot as plt
 
-from PyPython import SpectrumUtils
-from PyPython import SpectrumPlot
+from pyPython import spectrumUtil
+from pyPython import spectrumPlot
 
 plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15
@@ -154,12 +154,12 @@ def spectra_on_same_panel(
     spectrum_filename = "{}/{}.spec".format(wd, root)
 
     try:
-        s = SpectrumUtils.read_spec_file(spectrum_filename)
-    except Exception:
+        s = spectrumUtil.read_spectrum(spectrum_filename)
+    except:
         print("Unable to open the spectrum file with name {}".format(spectrum_filename))
-        return
+        exit(1)
 
-    ia = SpectrumUtils.get_spec_inclinations(s)
+    ia = spectrumUtil.get_spectrum_inclinations(s)
     fig, ax = plt.subplots(1, 1, figsize=(12, 8))
 
     if frequency_space:
@@ -188,9 +188,9 @@ def spectra_on_same_panel(
         xmax = xlims[1]
 
     for a in ia:
-        y = SpectrumUtils.smooth(s[a].values, smooth_amount)
+        y = spectrumUtil.smooth(s[a].values, smooth_amount)
 
-        tmin, tmax = SpectrumUtils.get_ylims(x, y, xmin, xmax)
+        tmin, tmax = spectrumUtil.calculate_axis_y_limits(x, y, xmin, xmax)
         if tmin < ymin:
             ymin = tmin
         if tmax > ymax:
@@ -200,7 +200,7 @@ def spectra_on_same_panel(
         if frequency_space:
             y *= s["Lambda"].values
 
-        fig, ax = SpectrumPlot.plot_simple(
+        fig, ax = spectrumPlot.plot_simple(
             x, y, xmin, xmax, xlabel, ylabel, axes_scales, fig, ax, label=str(a) + r"$^{\circ}$"
         )
 
@@ -212,7 +212,7 @@ def spectra_on_same_panel(
             logx = True
         else:
             logx = False
-        ax = SpectrumUtils.plot_line_ids(ax, SpectrumUtils.common_lines_list(), logx)
+        ax = spectrumUtil.plot_line_ids(ax, spectrumUtil.common_lines_list(), logx)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
     fig.savefig("{}/{}_spectra_single.{}".format(wd, root, file_ext))
@@ -257,7 +257,7 @@ def spectra_on_multiple_panels(
         The matplotlib Axes objects for the plot panels.
     """
 
-    fig, ax = SpectrumPlot.plot_all_spectra(root, wd, xmin, xmax, smooth_amount, common_lines, frequency_space, axes_scales)
+    fig, ax = spectrumPlot.plot_spectra_single_panel(root, wd, xmin, xmax, smooth_amount, common_lines, frequency_space, axes_scales)
     fig.savefig("{}/{}_spectra.{}".format(wd, root, file_ext))
 
     return fig, ax
@@ -301,12 +301,12 @@ def individual_spectra(
     spectrum_filename = "{}/{}.spec".format(wd, root)
 
     try:
-        s = SpectrumUtils.read_spec_file(spectrum_filename)
+        s = spectrumUtil.read_spectrum(spectrum_filename)
     except IOError:
         print("Unable to open the spectrum file with name {}".format(spectrum_filename))
-        return
+        exit(1)
 
-    ia = SpectrumUtils.get_spec_inclinations(s)
+    ia = spectrumUtil.get_spectrum_inclinations(s)
 
     if frequency_space:
         xlabel = "Freq."
@@ -325,17 +325,17 @@ def individual_spectra(
     # Plot each inclination a in ia on different fig and ax objects
 
     for a in ia:
-        y = SpectrumUtils.smooth(s[a].values, smooth_amount)
+        y = spectrumUtil.smooth(s[a].values, smooth_amount)
         # Convert into lambda F_lambda which is (I hope) the same as nu F_nu
         if frequency_space:
             y *= s["Lambda"].values
 
-        fig, ax = SpectrumPlot.plot_simple(x, y, xmin, xmax, xlabel, ylabel, axes_scales)
+        fig, ax = spectrumPlot.plot_simple(x, y, xmin, xmax, xlabel, ylabel, axes_scales)
         if axes_scales == "loglog" or axes_scales == "logx":
             logx = True
         else:
             logx = False
-        ax = SpectrumUtils.plot_line_ids(ax, SpectrumUtils.common_lines_list(), logx)
+        ax = spectrumUtil.plot_line_ids(ax, spectrumUtil.common_lines_list(), logx)
         ax.set_title("Inclination i = {}".format(str(a)) + r"$^{\circ}$")
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
         fig.savefig("{}/{}_i{}_spectrum.{}".format(wd, root, str(a), file_ext))
@@ -377,8 +377,6 @@ def main(
         The matplotlib Axes objects for the plot panels.
     """
 
-    div_len = 80
-
     if setup:
         root, wd, xmin, xmax, frequency_space, common_lines, axes_scales, smooth_amount, file_ext, display = setup
     else:
@@ -387,13 +385,17 @@ def main(
 
     root = root.replace("/", "")
 
-    fig, ax = spectra_on_same_panel(root, wd, xmin, xmax, smooth_amount, frequency_space, axes_scales, common_lines,
-                                    file_ext)
+    fig, ax = spectra_on_same_panel(
+        root, wd, xmin, xmax, smooth_amount, frequency_space, axes_scales, common_lines, file_ext
+    )
 
-    fig, ax = spectra_on_multiple_panels(root, wd, xmin, xmax, smooth_amount, frequency_space, axes_scales,
-                                         False, file_ext)
+    fig, ax = spectra_on_multiple_panels(
+        root, wd, xmin, xmax, smooth_amount, frequency_space, axes_scales, False, file_ext
+    )
 
-    individual_spectra(root, wd, xmin, xmax, smooth_amount, frequency_space, axes_scales, file_ext)
+    individual_spectra(
+        root, wd, xmin, xmax, smooth_amount, frequency_space, axes_scales, file_ext
+    )
 
     if display:
         plt.show()

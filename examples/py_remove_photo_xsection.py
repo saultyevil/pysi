@@ -7,7 +7,7 @@ often tedious to remove a single transition from the photoionization data.
 """
 
 import argparse as ap
-from PyPython.PythonUtils import remove_photoion_transition_from_data
+from pyPython.pythonUtil import remove_photoion_transition_from_data
 
 
 def command_line():

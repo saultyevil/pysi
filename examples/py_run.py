@@ -22,12 +22,12 @@ from typing import List
 from subprocess import Popen, PIPE
 from py_plot import plot
 
-from PyPython import Grid
-from PyPython import Simulation
-from PyPython import PythonUtils
-from PyPython.Log import log, init_logfile, close_logfile
-from PyPython import Quotes
-from PyPython.Error import EXIT_FAIL
+from pyPython import grid
+from pyPython import simulation
+from pyPython import pythonUtil
+from pyPython.log import log, init_logfile, close_logfile
+from pyPython import quotes
+from pyPython.error import EXIT_FAIL
 
 
 CONVERGED = \
@@ -354,7 +354,7 @@ def convergence_check(root: str, wd: str, nmodels: int) \
 
     converged = False
 
-    model_convergence = Simulation.check_convergence(root, wd)
+    model_convergence = simulation.check_convergence(root, wd)
     if type(model_convergence) is list:
         model_convergence = model_convergence[0]
     log("Model convergence ........... {}".format(model_convergence))
@@ -494,11 +494,11 @@ def run_model(root: str, wd: str, use_mpi: bool, ncores: int, resume_model: bool
 
     try:
         if split_cycles and not restart_from_spec_cycles:
-            Grid.change_parameter(wd + pf, "Spectrum_cycles", "0", backup=True, verbose=verbose)
+            grid.update_single_parameter(wd + pf, "Spectrum_cycles", "0", backup=True, verbose=verbose)
 
         if split_cycles and restart_from_spec_cycles:
-            Grid.change_parameter(wd + pf, "Spectrum_cycles", "5", backup=False, verbose=verbose)
-            Grid.change_parameter(wd + pf, "Photons_per_cycle", "1e6", backup=False, verbose=verbose)
+            grid.update_single_parameter(wd + pf, "Spectrum_cycles", "5", backup=False, verbose=verbose)
+            grid.update_single_parameter(wd + pf, "Photons_per_cycle", "1e6", backup=False, verbose=verbose)
     except IOError:
         print("Unable to open parameter file {} to change any parameters".format(wd + pf))
         return EXIT_FAIL
@@ -570,7 +570,7 @@ def run_model(root: str, wd: str, use_mpi: bool, ncores: int, resume_model: bool
 
     # For the ease of future me, write out the version used run the model
 
-    version, commit = PythonUtils.get_python_version(PYTHON_BINARY, verbose)
+    version, commit = pythonUtil.get_python_version(PYTHON_BINARY, verbose)
     with open("version", "w") as f:
         f.write("{}\n{}".format(version, commit))
 
@@ -617,7 +617,7 @@ def control(roots: List[str], use_mpi: bool, n_cores: int) \
 
     for i, sim in enumerate(roots):
 
-        root, wd = PythonUtils.split_root_directory(sim)
+        root, wd = pythonUtil.root_from_file_path(sim)
         log("------------------------\n")
         log("        Model {}/{}".format(i + 1, nmodels))
         log("\n------------------------\n")
@@ -638,7 +638,7 @@ def control(roots: List[str], use_mpi: bool, n_cores: int) \
 
         # Check for the error report and print to the screen
 
-        errors = Simulation.error_summary(root, wd, N_CORES)
+        errors = simulation.error_summary(root, wd, N_CORES)
         print_errors(errors, root)
 
         # Check the convergence of the model
@@ -654,7 +654,7 @@ def control(roots: List[str], use_mpi: bool, n_cores: int) \
                            split_cycles=True)
             the_rc[i] = rc
             # Check for the error report and print to the screen
-            errors = Simulation.error_summary(root, wd, N_CORES)
+            errors = simulation.error_summary(root, wd, N_CORES)
             print_errors(errors, root)
         elif SPLIT_CYCLES and model_converged < CONVERGENCE_LOWER_LIMIT:
             log("The model has not converged to the set convergence limit of {}.".format(CONVERGENCE_LOWER_LIMIT))
@@ -692,13 +692,13 @@ def main() \
     init_logfile("Log{}{:02d}{:02d}.log.txt".format(str(DATE.year)[-2:], int(DATE.month), int(DATE.day)))
 
     log("")
-    Quotes.random_quote()
+    quotes.random_quote()
     log("------------------------\n")
 
     # Find models to run by searching recursively from the calling directory
     # for .pf files
 
-    the_pfs = PythonUtils.find_parameter_files()
+    the_pfs = pythonUtil.find_parameter_files()
     nmodels = len(the_pfs)
     if not nmodels:
         log("No parameter files found, nothing to do!\n")
@@ -711,7 +711,7 @@ def main() \
     if N_CORES:
         ncores_to_use = N_CORES
     else:
-        ncores_to_use = PythonUtils.get_cpu_count()
+        ncores_to_use = pythonUtil.get_cpu_count()
     if ncores_to_use > 1:
         mpirun = True
     else:

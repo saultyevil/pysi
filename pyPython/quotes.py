@@ -37,6 +37,8 @@ QUOTES = [
     "GGG: i can get 12 cans of carling for 8 leffe",
     # Jack # 1
     "Citrus Lime: my zesty nature keeps me celibate",
+    # Misc # 1
+    "Ed ward"
 ]
 
 

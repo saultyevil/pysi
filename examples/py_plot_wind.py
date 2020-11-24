@@ -15,10 +15,10 @@ from sys import exit
 from typing import List, Tuple
 from matplotlib import pyplot as plt
 
-from PyPython import WindPlot
-from PyPython import WindUtils
-from PyPython import PythonUtils
-from PyPython.Error import EXIT_FAIL
+from pyPython import windPlot
+from pyPython import windUtils
+from pyPython import pythonUtil
+from pyPython.error import EXIT_FAIL
 
 
 plt.rcParams['xtick.labelsize'] = 15
@@ -181,7 +181,7 @@ def plot_wind(
             quantity_type = wind_variable_types[index]
 
             try:
-                x, z, w = WindUtils.get_wind_variable(
+                x, z, w = windUtils.get_wind_variable(
                     root, quantity, quantity_type, wd, projection, return_indices=use_cell_indices
                 )
             except Exception as e:
@@ -191,10 +191,10 @@ def plot_wind(
                 continue
 
             if projection == "rectilinear":
-                fig, ax = WindPlot.rectilinear_wind(x, z, w, quantity, quantity_type, fig, ax, i, j, scale=axes_scales)
+                fig, ax = windPlot.rectilinear_wind(x, z, w, quantity, quantity_type, fig, ax, i, j, scale=axes_scales)
             else:
                 polar_ax = plt.subplot(panel_dims[0], panel_dims[1], index + 1, projection="polar")
-                axx = WindPlot.polar_wind(x, z, w, quantity, quantity_type, polar_ax, index + 1, scale=axes_scales)
+                axx = windPlot.polar_wind(x, z, w, quantity, quantity_type, polar_ax, index + 1, scale=axes_scales)
                 ax.append(axx)
 
             index += 1
@@ -256,7 +256,7 @@ Parameters
 
     # First, we probably need to run windsave2table
 
-    PythonUtils.windsave2table(root, wd, ion_density=use_ion_density)
+    pythonUtil.windsave2table(root, wd, ion_density=use_ion_density)
 
     # Plot the wind quantities first
 

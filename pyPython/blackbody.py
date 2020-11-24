@@ -9,7 +9,7 @@ Functions to describe a black body.
 import numpy as np
 from typing import Union
 
-from .Constants import BOLTZMANN, H, VLIGHT, ANGSTROM
+from .constants import BOLTZMANN, H, VLIGHT, ANGSTROM
 
 
 def planck_nu(

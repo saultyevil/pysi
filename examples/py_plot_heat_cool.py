@@ -15,10 +15,10 @@ from sys import exit
 from typing import List, Tuple
 from matplotlib import pyplot as plt
 
-from PyPython import WindPlot
-from PyPython import WindUtils
-from PyPython import PythonUtils
-from PyPython.Error import EXIT_FAIL
+from pyPython import windPlot
+from pyPython import windUtils
+from pyPython import pythonUtil
+from pyPython.error import EXIT_FAIL
 
 
 plt.rcParams['xtick.labelsize'] = 15
@@ -57,7 +57,7 @@ for i in range(len(vars)):
         var = "heat_tot"
 
     try:
-        x, z, w = WindUtils.get_wind_variable(
+        x, z, w = windUtils.get_wind_variable(
             root, var, "wind", ".", "rectilinear",
         )
     except Exception as e:
@@ -66,10 +66,10 @@ for i in range(len(vars)):
         continue
 
     if vars[i] == "heat/cool":
-        x, z, ww = WindUtils.get_wind_variable(root, "cool_tot", "wind", ".", "rectilinear")
+        x, z, ww = windUtils.get_wind_variable(root, "cool_tot", "wind", ".", "rectilinear")
         w /= ww
 
-    fig, ax = WindPlot.rectilinear_wind(x, z, w, vars[i], "wind", fig, ax, 0, i)
+    fig, ax = windPlot.rectilinear_wind(x, z, w, vars[i], "wind", fig, ax, 0, i)
 
 fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 plt.show()
