@@ -146,8 +146,9 @@ def plot(
     ax = ax.flatten()  # Allows looping over 1 dimension of plt.Axes instead
 
     # TODO put into a separate function in PythonUtils or something - delete_extra_axes
-    if nrows * ncols > ninc:
-        for i in range(ninc, nrows * ncols):
+    n_panel = nrows * ncols
+    if n_panel > ninc:
+        for i in range(ninc, n_panel):
             fig.delaxes(ax[i])
 
     ymin = +1e99
@@ -225,7 +226,7 @@ def plot(
                 logx = True
             else:
                 logx = False
-            ax[i] = spectrumUtil.plot_line_ids(ax[i], spectrumUtil.common_lines_list(), logx)
+            ax[i] = spectrumUtil.add_line_id(ax[i], spectrumUtil.common_lines_list(), logx)
 
     ax[0].legend(loc="lower left")
 

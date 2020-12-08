@@ -27,7 +27,7 @@ UNITS_LNU = "erg/s/Hz"
 
 
 def find_spec_files(
-        root: str = None, path: str = ".", ingore_delay_dump: bool = True
+    root: str = None, path: str = ".", ingore_delay_dump: bool = True
 ) -> List[str]:
     """
     Find root.spec files recursively in tge provided directory.
@@ -130,14 +130,11 @@ def read_spectrum(
         lines.append(line)
 
     if numpy:
-        try:
-            spec = np.array(lines, dtype=float)
-            return spec
-        except ValueError:
-            print("{}: unable to convert spectrum to numpy array of floats".format(n))
-            exit(EXIT_FAIL)
+        spec = np.array(lines, dtype=float)
+        return spec
 
     return pd.DataFrame(lines[1:], columns=lines[0]).astype(float)
+
 
 
 def get_spectrum_units(
@@ -210,6 +207,9 @@ def get_spectrum_inclinations(
         if readin:
             spec = read_spectrum(spec[i])
 
+        # I only know what to do when I expect the spectrum to be a pd.DataFrame
+        # or a np.array
+
         if type(spec) == pd.core.frame.DataFrame:
             col_names = spec.columns.values
         elif type(spec) == np.ndarray:
@@ -257,11 +257,7 @@ def check_valid_inclination(
         raise TypeError("{}: unknown data type {} for function".format(n, type(spec)))
 
     if type(inclination) != str:
-        try:
-            inclination = str(inclination)
-        except ValueError:
-            print("{}: could not convert {} into string".format(n, inclination))
-            return is_allowed
+        inclination = str(inclination)
 
     if inclination in headers:
         is_allowed = True
@@ -300,7 +296,7 @@ def smooth(
         try:
             smooth_amount = int(smooth_amount)
         except ValueError:
-            print("{}: could not convert smooth = {} into an integer. Returning original array.".format(n, smooth_amount))
+            print("{}: could not convert smooth {} into an integer. Returning original array.".format(n, smooth_amount))
             return array
 
     # Now we need to make sure the array is actually an array and not a list and
@@ -383,7 +379,7 @@ def calculate_axis_y_limits(
     return ymin, ymax
 
 
-def plot_line_ids(
+def ax_add_line_id(
     ax: plt.Axes, lines: list, logx: bool = False, offset: float = 25, rotation: str = "vertical", fontsize: int = 10
 )-> plt.Axes:
     """

@@ -16,7 +16,7 @@ from typing import List, Tuple
 from matplotlib import pyplot as plt
 
 from pyPython import windPlot
-from pyPython import windUtils
+from pyPython import windUtil
 from pyPython import pythonUtil
 from pyPython.error import EXIT_FAIL
 
@@ -181,7 +181,7 @@ def plot_wind(
             quantity_type = wind_variable_types[index]
 
             try:
-                x, z, w = windUtils.get_wind_variable(
+                x, z, w = windUtil.get_wind_variable(
                     root, quantity, quantity_type, wd, projection, return_indices=use_cell_indices
                 )
             except Exception as e:
@@ -191,10 +191,10 @@ def plot_wind(
                 continue
 
             if projection == "rectilinear":
-                fig, ax = windPlot.rectilinear_wind(x, z, w, quantity, quantity_type, fig, ax, i, j, scale=axes_scales)
+                fig, ax = windPlot.plot_rectilinear_wind(x, z, w, quantity, quantity_type, fig, ax, i, j, scale=axes_scales)
             else:
                 polar_ax = plt.subplot(panel_dims[0], panel_dims[1], index + 1, projection="polar")
-                axx = windPlot.polar_wind(x, z, w, quantity, quantity_type, polar_ax, index + 1, scale=axes_scales)
+                axx = windPlot.plot_polar_wind(x, z, w, quantity, quantity_type, polar_ax, index + 1, scale=axes_scales)
                 ax.append(axx)
 
             index += 1

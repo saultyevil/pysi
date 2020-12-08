@@ -64,7 +64,7 @@ def main():
     try:
         master = pd.read_csv(input_file, delim_whitespace=True)
     except IOError:
-        windsave2table(root, "./", no_ep_complete=True)
+        windsave2table(root, "./", no_all_complete=True)
         master = pd.read_csv(input_file, delim_whitespace=True)
 
     master = master[master["inwind"] == 0]

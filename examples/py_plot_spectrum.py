@@ -212,7 +212,7 @@ def spectra_on_same_panel(
             logx = True
         else:
             logx = False
-        ax = spectrumUtil.plot_line_ids(ax, spectrumUtil.common_lines_list(), logx)
+        ax = spectrumUtil.add_line_id(ax, spectrumUtil.common_lines_list(), logx)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
     fig.savefig("{}/{}_spectra_single.{}".format(wd, root, file_ext))
@@ -257,7 +257,7 @@ def spectra_on_multiple_panels(
         The matplotlib Axes objects for the plot panels.
     """
 
-    fig, ax = spectrumPlot.plot_spectra_single_panel(root, wd, xmin, xmax, smooth_amount, common_lines, frequency_space, axes_scales)
+    fig, ax = spectrumPlot.plot_spectra_subpanels(root, wd, xmin, xmax, smooth_amount, common_lines, frequency_space, axes_scales)
     fig.savefig("{}/{}_spectra.{}".format(wd, root, file_ext))
 
     return fig, ax
@@ -335,7 +335,7 @@ def individual_spectra(
             logx = True
         else:
             logx = False
-        ax = spectrumUtil.plot_line_ids(ax, spectrumUtil.common_lines_list(), logx)
+        ax = spectrumUtil.add_line_id(ax, spectrumUtil.common_lines_list(), logx)
         ax.set_title("Inclination i = {}".format(str(a)) + r"$^{\circ}$")
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
         fig.savefig("{}/{}_i{}_spectrum.{}".format(wd, root, str(a), file_ext))

@@ -16,7 +16,7 @@ from typing import List, Tuple
 from matplotlib import pyplot as plt
 
 from pyPython import windPlot
-from pyPython import windUtils
+from pyPython import windUtil
 from pyPython import pythonUtil
 from pyPython.error import EXIT_FAIL
 
@@ -57,7 +57,7 @@ for i in range(len(vars)):
         var = "heat_tot"
 
     try:
-        x, z, w = windUtils.get_wind_variable(
+        x, z, w = windUtil.get_wind_variable(
             root, var, "wind", ".", "rectilinear",
         )
     except Exception as e:
@@ -66,10 +66,10 @@ for i in range(len(vars)):
         continue
 
     if vars[i] == "heat/cool":
-        x, z, ww = windUtils.get_wind_variable(root, "cool_tot", "wind", ".", "rectilinear")
+        x, z, ww = windUtil.get_wind_variable(root, "cool_tot", "wind", ".", "rectilinear")
         w /= ww
 
-    fig, ax = windPlot.rectilinear_wind(x, z, w, vars[i], "wind", fig, ax, 0, i)
+    fig, ax = windPlot.plot_rectilinear_wind(x, z, w, vars[i], "wind", fig, ax, 0, i)
 
 fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 plt.show()

@@ -94,8 +94,8 @@ VERBOSE_ALL = 4
 VERBOSITY = VERBOSE_EXTRA_INFORMATION
 
 
-def setup_script() \
-        -> None:
+def setup_script(
+) -> None:
     """
     Setup the global variables which control the logic of the script.
     """
@@ -199,8 +199,9 @@ def setup_script() \
     return
 
 
-def print_python_output(input_line: str, n_cores, verbosity: int = VERBOSITY) \
-        -> None:
+def print_python_output(
+    input_line: str, n_cores, verbosity: int = VERBOSITY
+) -> None:
     """
     Process the output from a Python simulation and print something to screen.
 
@@ -309,7 +310,9 @@ def print_python_output(input_line: str, n_cores, verbosity: int = VERBOSITY) \
     return
 
 
-def plot_model(root: str, wd: str):
+def plot_model(
+    root: str, wd: str
+) -> None:
     """
     Run py_plot.py.plot() to create a bunch of default plots for the model.
 
@@ -330,8 +333,9 @@ def plot_model(root: str, wd: str):
     return
 
 
-def convergence_check(root: str, wd: str, nmodels: int) \
-        -> bool:
+def convergence_check(
+    root: str, wd: str, nmodels: int
+) -> bool:
     """
     Check the convergence of a Python simulation by parsing the master diag
     file. If more than one model is being run, then the convergence of each
@@ -399,8 +403,9 @@ def convergence_check(root: str, wd: str, nmodels: int) \
     return converged
 
 
-def restore_backup_pf(root: str, wd: str) \
-        -> None:
+def restore_backup_pf(
+    root: str, wd: str
+) -> None:
     """
     Copy a backup parameter file back to the original parameter file
     destination.
@@ -420,8 +425,9 @@ def restore_backup_pf(root: str, wd: str) \
     return
 
 
-def print_errors(error: dict, root: str) \
-        -> None:
+def print_errors(
+    error: dict, root: str
+) -> None:
     """
     Print an errors dictionary.
 
@@ -441,9 +447,10 @@ def print_errors(error: dict, root: str) \
     return
 
 
-def run_model(root: str, wd: str, use_mpi: bool, ncores: int, resume_model: bool = False,
-              restart_from_spec_cycles: bool = False, split_cycles: bool = False) \
-        -> int:
+def run_model(
+    root: str, wd: str, use_mpi: bool, ncores: int, resume_model: bool = False, restart_from_spec_cycles: bool = False,
+    split_cycles: bool = False
+) -> int:
     """
     The purpose of this function is to use the Subprocess library to call
     Python. Unfortunately, to cover a wide range of situations with how one
@@ -571,7 +578,7 @@ def run_model(root: str, wd: str, use_mpi: bool, ncores: int, resume_model: bool
     # For the ease of future me, write out the version used run the model
 
     version, commit = pythonUtil.get_python_version(PYTHON_BINARY, verbose)
-    with open("version", "w") as f:
+    with open(".py_version", "w") as f:
         f.write("{}\n{}".format(version, commit))
 
     # If we have modified the parameter file because we are splitting the
@@ -583,8 +590,9 @@ def run_model(root: str, wd: str, use_mpi: bool, ncores: int, resume_model: bool
     return rc
 
 
-def control(roots: List[str], use_mpi: bool, n_cores: int) \
-        -> List[int]:
+def control(
+    roots: List[str], use_mpi: bool, n_cores: int
+) -> List[int]:
     """
     Run the parts of the scripts requested to by run by the user.
 
@@ -627,8 +635,12 @@ def control(roots: List[str], use_mpi: bool, n_cores: int) \
         # Run Python
 
         model_converged = False
-        rc = run_model(root, wd, use_mpi, n_cores, resume_model=RESTART_MODEL, restart_from_spec_cycles=False,
-                       split_cycles=SPLIT_CYCLES)
+
+        rc = run_model(
+            root, wd, use_mpi, n_cores, resume_model=RESTART_MODEL, restart_from_spec_cycles=False,
+            split_cycles=SPLIT_CYCLES
+        )
+
         the_rc.append(rc)
 
         if rc:
@@ -678,8 +690,8 @@ def control(roots: List[str], use_mpi: bool, n_cores: int) \
     return the_rc
 
 
-def main() \
-        -> None:
+def main(
+) -> None:
     """
     Main control function of the script.
     """
@@ -712,6 +724,7 @@ def main() \
         ncores_to_use = N_CORES
     else:
         ncores_to_use = pythonUtil.get_cpu_count()
+
     if ncores_to_use > 1:
         mpirun = True
     else:

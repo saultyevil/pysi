@@ -9,7 +9,7 @@ matrix_pow ionisation solver.
 
 
 import argparse as ap
-from pyPython import windUtils
+from pyPython import windUtil
 from pyPython import pythonUtil as Utils
 from pyPython.spectrumUtil import smooth
 from subprocess import Popen, PIPE
@@ -77,8 +77,6 @@ def py_wind(root: str, nx: int, nz: int, i: int, j: int):
         The i-th index for the grid cell in question.
     j: int
         The j-th index for th grid cell in question.
-    commands: List[str] [optional]
-        Commands for py_wind to run
 
     Returns
     -------
@@ -86,16 +84,16 @@ def py_wind(root: str, nx: int, nz: int, i: int, j: int):
         The screen output from py_wind.
     """
 
-    elem = windUtils.get_wind_elem_number(nx, nz, i, j)
+    elem = windUtil.get_wind_elem_number(nx, nz, i, j)
     cmds = np.array(["1", "e", str(elem)])
-    np.savetxt("_tmpcmd.txt", cmds, fmt="%s")
-    sh = Popen("Setup_Py_Dir; py_wind {} < _tmpcmd.txt".format(root), stdout=PIPE, stderr=PIPE, shell=True)
+    np.savetxt(".tmpcmd.txt", cmds, fmt="%s")
+    sh = Popen("Setup_Py_Dir; py_wind {} < .tmpcmd.txt".format(root), stdout=PIPE, stderr=PIPE, shell=True)
     stdout, stderr = sh.communicate()
 
     # if stderr:
     #     print(stderr.decode("utf-8"))
 
-    Utils.remove_data_sym_links("./")
+    Utils.remove_data_sym_links(".")
 
     return stdout.decode("utf-8")
 

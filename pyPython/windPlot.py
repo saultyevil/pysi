@@ -7,7 +7,7 @@ The design of the function is to return the figure and axes objects so the
 user can then add axes labels and etc themselves.
 """
 
-from .windUtils import sightline_coords
+from .windUtil import sightline_coords
 from .error import InvalidParameter
 
 import numpy as np
@@ -21,14 +21,13 @@ plt.rcParams['ytick.labelsize'] = 15
 plt.rcParams['axes.labelsize'] = 15
 
 
-# TODO rename to wind_1d or something
-def spherical_wind(
+def plot_spherical_wind(
     r: np.ndarray, w: np.ndarray, w_name: str, w_type: str, fig: plt.Figure = None, ax: plt.Axes = None, i: int = None,
     j: int = None, scale: str = "loglog", figsize: Tuple[int, int] = (5, 5)
 ) -> Tuple[plt.Figure, plt.Axes]:
     """Creates wind plots for 1D spherically symmetric winds."""
 
-    n = spherical_wind.__name__
+    n = plot_spherical_wind.__name__
 
     if fig is None and ax is None:
         i = 0
@@ -67,7 +66,7 @@ def spherical_wind(
     return fig, ax
 
 
-def rectilinear_wind(
+def plot_rectilinear_wind(
     x: np.ndarray, z: np.ndarray, w: np.ndarray, w_name: str, w_type: str, fig: plt.Figure = None, ax: plt.Axes = None,
     i: int = None, j: int = None, scale: str = "loglog", obs_los: List[float] = None, figsize: Tuple[int, int] = (5, 5)
 ) -> Tuple[plt.Figure, plt.Axes]:
@@ -112,7 +111,7 @@ def rectilinear_wind(
         The plt.Axes object.
     """
 
-    n = rectilinear_wind.__name__
+    n = plot_rectilinear_wind.__name__
 
     if fig is None and ax is None:
         i = 0
@@ -170,7 +169,7 @@ def rectilinear_wind(
     return fig, ax
 
 
-def polar_wind(
+def plot_polar_wind(
     r: np.ndarray, theta: np.ndarray, w: np.ndarray, w_name: str, w_type: str, ax: plt.Axes = None, index: int = None,
     obs_los: List[float] = None, scale: str = "log"
 ) -> plt.Axes:
@@ -208,7 +207,7 @@ def polar_wind(
         The plt.Axes object.
     """
 
-    n = polar_wind.__name__
+    n = plot_polar_wind.__name__
 
     if ax:
         if index is None:
@@ -256,7 +255,7 @@ def polar_wind(
     else:
         ax.set_ylabel("R [cm]")
 
-    if w_name == "converge" or w_name == "convergence" or w_name == "converging":
+    if w_name in ["converge", "convergence", "converging"]:
         ax.set_title(w_name)
     else:
         ax.set_title(r"$\log_{10}$(" + w_name + ")")
