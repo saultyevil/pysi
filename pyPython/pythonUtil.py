@@ -14,9 +14,10 @@ import pandas as pd
 from subprocess import Popen, PIPE
 from platform import system
 from shutil import which
-from typing import Tuple, List
+from typing import Tuple, List, Union
 from psutil import cpu_count
 import numpy as np
+from matplotlib import pyplot as plt
 
 
 def get_array_index(
@@ -37,7 +38,7 @@ def get_array_index(
     """
 
     if target < np.min(x):
-        return -1
+        return 0
     if target > np.max(x):
         return -1
 
@@ -159,14 +160,17 @@ def remove_data_sym_links(
         return ndel
 
     dirs = stdout.split()
+
     for i in range(len(dirs)):
         dir = search_dir + dirs[i][1:]
         cmd = "rm {}".format(dir)
         stdout, stderr = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
         stdout = stdout.decode("utf-8")
-        if stdout and verbose:
-            print(stdout)
         stderr = stderr.decode("utf-8")
+
+        if verbose:
+            print(stdout)
+
         if stderr:
             print(stderr)
         else:
@@ -343,12 +347,7 @@ def get_python_version(
         if out[i] == "hash":
             commit_hash = out[i + 1]
 
-    if version == "" and verbose:
-        print("{}: couldn't find version for {}".format(n, py))
-    if commit_hash == "" and verbose:
-        print("{}: couldn't find commit hash for {}".format(n, py))
-
-    if verbose and version and commit_hash:
+    if verbose:
         print("{} version {}".format(py, version))
         print("Git commit hash    {}".format(commit_hash))
         print("Short commit hash  {}".format(commit_hash[:7]))
@@ -357,7 +356,7 @@ def get_python_version(
 
 
 def windsave2table(
-    root: str, path: str, ion_density: bool = False, no_ep_complete: bool = False, verbose: bool = False
+    root: str, wd: str = ".", ion_density: bool = False, no_all_complete: bool = False, verbose: bool = False
 ) -> None:
     """
     Runs windsave2table in the directory path to create a bunch of data tables
@@ -368,11 +367,11 @@ def windsave2table(
     ----------
     root: str
         The root name of the Python simulation
-    path: str
+    wd: str
         The directory of the Python simulation where windsave2table will be run
     ion_density: bool [optional]
         Pump out the ion density instead of ion fractions
-    no_ep_complete: bool [optional]
+    no_all_complete: bool [optional]
         Return from this function before a root.ep.complete file is created.
     verbose: bool [optional]
         Enable verbose logging
@@ -381,14 +380,14 @@ def windsave2table(
     n = windsave2table.__name__
 
     version, hash = get_python_version("windsave2table", verbose)
+
     try:
-        with open("version", "r") as f:
+        with open(".py_version", "r") as f:
             lines = f.readlines()
         run_version = lines[0]
         run_hash = lines[1]
         if run_version != version and run_hash != hash:
-            if verbose:
-                print("{}: windsave2table and wind_save versions are different: be careful!".format(n))
+            print("{}: windsave2table and wind_save versions are different: be careful!".format(n))
     except IOError:
         if verbose:
             print("{}: unable to determine wind_save version: be careful!".format(n))
@@ -397,42 +396,66 @@ def windsave2table(
     if not in_path:
         raise OSError("{}: windsave2table not in $PATH and executable".format(n))
 
-    command = "cd {}; Setup_Py_Dir; windsave2table".format(path)
+    command = "cd {}; Setup_Py_Dir; windsave2table".format(wd)
     if ion_density:
         command += " -d"
     command += " {}".format(root)
 
     cmd = Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
     stdout, stderr = cmd.communicate()
-    output = stdout.decode("utf-8")
-    err = stderr.decode("utf-8")
+    stdout = stdout.decode("utf-8")
+    stderr = stderr.decode("utf-8")
 
     if verbose:
-        print(output)
-    if err:
+        print(stdout)
+    if stderr:
         print("{}: the following was sent to stderr:".format(n))
-        print(err)
+        print(stderr)
 
-    if no_ep_complete:
+    if no_all_complete:
         return
 
-    # Now create a "complete" file which is the master and heat put together into one csv
-    heat_file = "{}/{}.heat.txt".format(path, root)
-    master_file = "{}/{}.master.txt".format(path, root)
+    # Now create a "complete" file which includes all the "wind" files, excluding
+    # the ion files, created by windsave2table. It attempts to remove duplicate
+    # columns, but I could have made a mistake
 
-    try:
-        heat = pd.read_csv(heat_file, delim_whitespace=True)
-        master = pd.read_csv(master_file, delim_whitespace=True)
-    except IOError as e:
-        print("{}: could not open master or heat file for root {}".format(n, root))
-        print(e)
-        return
+    include_files = [
+        "heat", "gradient", "converge", "spec"
+    ]
 
-    # This merges the heat and master table together :-)
-    append = heat.columns.values[14:]
-    for i, col in enumerate(append):
-        master[col] = pd.Series(heat[col])
-    master.to_csv("{}/{}.ep.complete".format(path, root), sep=" ")
+    include_files_index = [  # This is which column to index from to include as to avoid duplicate columns
+        14, 9, 26, 8
+    ]
+
+    # Read in the master file first...
+
+    mdf = pd.read_csv("{}/{}.master.txt".format(wd, root), delim_whitespace=True)
+
+    # Now append all the other tables onto the end, to create one big thing
+
+    for i, file in enumerate(include_files):
+        fname = "{}/{}.{}.txt".format(wd, root, file)
+        try:
+            df = pd.read_csv(fname, delim_whitespace=True)
+        except IOError:
+            print("{}: unable to append {} to complete file".format(n, file))
+            continue
+
+        columns_to_add = df.columns.values[include_files_index[i]:]
+
+        for new_column in columns_to_add:
+            mdf[new_column] = pd.Series(df[new_column])
+
+    if verbose:
+        print(mdf)
+
+    # Use numpy to write it as a fixed width file. Need to add the headings
+    # at the top
+
+    shape = mdf.values.shape
+    marr = mdf.columns.values
+    marr = np.reshape(np.append(marr, mdf.values), (shape[0] + 1, shape[1]))
+    np.savetxt("{}/{}.all.complete.txt".format(wd, root), marr, fmt="%25s")
 
     return
 
@@ -549,3 +572,51 @@ def create_run_script(commands: List[str]):
         f.write(file)
 
     return
+
+
+def remove_extra_axes(
+    fig: plt.Figure, ax: Union[plt.Axes, np.ndarray], n_wanted: int, n_panel: int
+):
+    """
+    Remove additional axes which are included in a plot. This can be used if you
+    have 4 x 2 = 8 panels but only want to use 7 of tha panels. The 8th panel
+    will be removed.
+
+    Parameters
+    ----------
+    fig: plt.Figure
+        The Figure object to modify.
+    ax: plt.Axes
+        The Axes objects to modify.
+    n_wanted: int
+        The actual number of plots/panels which are wanted.
+    n_panel: int
+        The number of panels which are currently in the Figure and Axes objects.
+
+    Returns
+    -------
+    fig: plt.Figure
+        The modified Figure.
+    ax: plt.Axes
+        The modified Axes.
+    """
+
+    if type(ax) != np.ndarray:
+        return fig, ax
+    elif len(ax) == 1:
+        return fig, ax
+
+    # Flatten the axes array to make life easier with indexing
+
+    shape = ax.shape
+    ax = ax.flatten()
+
+    if n_panel > n_wanted:
+        for i in range(n_wanted, n_panel):
+            fig.delaxes(ax[i])
+
+    # Return ax to the shape it was passed as
+
+    ax = np.reshape(ax, (shape[0], shape[1]))
+
+    return fig, ax
