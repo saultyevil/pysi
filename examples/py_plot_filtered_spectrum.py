@@ -12,6 +12,7 @@ from matplotlib import pyplot as plt
 
 from pyPython import spectrumUtil
 from pyPython import filteredSpectrum
+from pyPython import conversion
 
 
 plt.rcParams['xtick.labelsize'] = 15
@@ -54,6 +55,18 @@ def setup_script() -> tuple:
                           default=100,
                           help="The distance normalization in units of parsec.")
 
+    create_p.add_argument("-xl",
+                        "--xmin",
+                        type=float,
+                        default=None,
+                        help="The lower x-axis boundary to display.")
+
+    create_p.add_argument("-xu",
+                        "--xmax",
+                        type=float,
+                        default=None,
+                        help="The upper x-axis boundary to display.")
+
     create_p.add_argument("-nj",
                           "--jit",
                           action="store_false",
@@ -72,6 +85,12 @@ def setup_script() -> tuple:
                           type=int,
                           default=10000,
                           help="The number of frequency or wavelength bins for the spectrum.")
+
+    create_p.add_argument("-lb",
+                          "--logbins",
+                          action="store_true",
+                          default=False,
+                          help="Create the spectrum using log scaling for the wavelength/frequency bins.")
 
     create_p.add_argument("-wd",
                           "--working_directory",
@@ -136,6 +155,12 @@ def setup_script() -> tuple:
                         default=False,
                         help="Create the figure in frequency space.")
 
+    plot_p.add_argument("-lb",
+                        "--logbins",
+                        action="store_true",
+                        default=False,
+                        help="Create the figure using log scaling for the wavelength/frequency bins.")
+
     plot_p.add_argument("-e",
                         "--ext",
                         default="png",
@@ -164,13 +189,14 @@ def setup_script() -> tuple:
             args.extract_line,
             args.nbins,
             args.working_directory,
-            None,
-            None,
+            args.xmin,
+            args.xmax,
             True,
             False,
             "loglog",
             5,
             "png",
+            args.logbins,
             False,
         )
     else:
@@ -191,6 +217,7 @@ def setup_script() -> tuple:
             args.scales,
             args.smooth_amount,
             args.ext,
+            args.logbins,
             args.display
         )
 
@@ -199,15 +226,38 @@ def setup_script() -> tuple:
 
 def plot(
     root: str, wd: str, filtered_spectrum: np.ndarray, extract_line: tuple = (-1,), sm: int = 1, d_norm_pc: float = 100,
-    xmin: float = None, xmax: float = None, scale: str = "loglog", frequency_space: bool = False, plot_lines: bool = False, file_ext: str = ".png",
-    display: bool = False
+    xmin: float = None, xmax: float = None, scale: str = "loglog", frequency_space: bool = False, logbins: bool = True,
+    plot_lines: bool = False, file_ext: str = ".png", display: bool = False
 ):
     """
-    Plotting function
+
+    Parameters
+    ----------
+    root
+    wd
+    filtered_spectrum
+    extract_line
+    sm
+    d_norm_pc
+    xmin
+    xmax
+    scale
+    frequency_space
+    logbins
+    plot_lines
+    file_ext
+    display
+
+    Returns
+    -------
+
     """
 
     try:
-        full_spectrum = spectrumUtil.read_spectrum("{}/{}.log_spec".format(wd, root))
+        if logbins:
+            full_spectrum = spectrumUtil.read_spectrum("{}/{}.log_spec".format(wd, root))
+        else:
+            full_spectrum = spectrumUtil.read_spectrum("{}/{}.spec".format(wd, root))
         inclinations = spectrumUtil.get_spectrum_inclinations(full_spectrum)
         include_full_spectrum = True
     except IOError:
@@ -256,7 +306,7 @@ def plot(
                 logx = True
             else:
                 logx = False
-            ax = spectrumUtil.plot_line_ids(ax, spectrumUtil.common_lines_list(freq=frequency_space), logx)
+            ax = spectrumUtil.add_line_id(ax, spectrumUtil.common_lines_list(freq=frequency_space), logx)
 
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 
@@ -269,7 +319,7 @@ def plot(
             name = "{}/{}_i{}_delay_dump_spec".format(wd, root, inc)
 
         fig.savefig("{}.{}".format(name, file_ext), dpi=300)
-        if file_ext == "pdf":  # Save both pdf and png versions
+        if file_ext != "png":  # Save both pdf and png versions
             fig.savefig("{}.png".format(name), dpi=300)
 
     if display:
@@ -314,10 +364,10 @@ def main(setup: tuple = None):
 
     if setup:
         mode, root, spec_norm, ncores_norm, distance_norm, jit, extract_nres, nbins, wd, xmin, xmax, frequency_space, \
-            common_lines, axes_scales, smooth_amount, file_ext, display = setup
+            common_lines, axes_scales, smooth_amount, file_ext, logbins, display = setup
     else:
         mode, root, spec_norm, ncores_norm, distance_norm, jit, extract_nres, nbins, wd, xmin, xmax, frequency_space, \
-            common_lines, axes_scales, smooth_amount, file_ext, display = setup_script()
+            common_lines, axes_scales, smooth_amount, file_ext, logbins, display = setup_script()
 
     # Now we either create, or plot the filtered spectrum if it has already been created
 
@@ -340,14 +390,13 @@ def main(setup: tuple = None):
                 name += ".delay_dump.spec"
             else:
                 name = "{}/{}.delay_dump.spec".format(wd, root)
-            print(name)
             filtered_spectrum = np.loadtxt(name, skiprows=2)  # TODO: could be replaced by something in pyPython?
         except IOError:
             print("Unable to load filtered spectrum", name, "to plot anything")
             return
         plot(
             root, wd, filtered_spectrum, extract_nres, smooth_amount, distance_norm, xmin, xmax, axes_scales,
-            frequency_space, common_lines, file_ext, display
+            frequency_space, True, common_lines, file_ext, display
         )
 
     return
