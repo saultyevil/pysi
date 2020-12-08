@@ -20,8 +20,8 @@ from astropy.table import Table
 
 
 def get_wind_variable(
-    root: str, v: str, vtype: str, path: str = ".", coord: str = "rectilinear", input_file: str = None,
-    return_indices: bool = False
+    root: str, v: str, vtype: str, path: str = ".", coord: str = "rectilinear", input_dataframe: pd.DataFrame = None,
+    input_fname: str = None, return_indices: bool = False
 ) -> Tuple[np.array, np.array, np.array]:
     """
     Read in a given variable for a model in Python. For this to work, the user
@@ -42,7 +42,10 @@ def get_wind_variable(
     coord: str [optional]
         The coordinate system in use. Currently this only works for polar
         and rectilinear coordinate systems
-    input_file: str [optional]
+    input_dataframe: pd.DataFrame [bool]
+        If this is provided, then this DataFrame will be used to search for
+        the wind variable.
+    input_fname: str [optional]
         If this is provided, then the wind quantity will be searched from in
         the file provided
     return_indices: bool [optional]
@@ -77,37 +80,39 @@ def get_wind_variable(
     # Open the file containing the key, this is determined by the variable
     # type. For input_file, any file can be provided
 
-    if input_file:
-        if type(input_file) != str:
-            raise TypeError("{}: input_file should be provided as a string".format(n))
-        fname = input_file
-
+    if input_dataframe is not None:
+        data = input_dataframe
     else:
-        # Ion file
-        if vtype== "ion" or vtype == "ion_density":
-            ele_idx = v.find("_")
-            element = v[:ele_idx]
-            key = v[ele_idx + 1:]
-            if vtype == "ion":
-                fname = "{}/{}.{}.frac.txt".format(path, root, element)
-            else:
-                fname = "{}/{}.{}.den.txt".format(path, root, element)
-        # Wind file - this uses the .all.complete file
-        elif vtype == "wind":
-            fname = "{}/{}.all.complete.txt".format(path, root)
-        # This catches all the other cases
-        elif vtype in allowed_types:
-            fname = "{}/{}.{}.txt".format(path, root, vtype)
+        if input_fname is not None:
+            if type(input_fname) != str:
+                raise TypeError("{}: input_file should be provided as a string".format(n))
+            fname = input_fname
         else:
-            raise InvalidParameter(
-                "{}: v type {} not recognised with v {}. Allowed types: {}".format(n, vtype, v, allowed_types)
-            )
+            # Ion file
+            if vtype== "ion" or vtype == "ion_density":
+                ele_idx = v.find("_")
+                element = v[:ele_idx]
+                key = v[ele_idx + 1:]
+                if vtype == "ion":
+                    fname = "{}/{}.{}.frac.txt".format(path, root, element)
+                else:
+                    fname = "{}/{}.{}.den.txt".format(path, root, element)
+            # Wind file - this uses the .all.complete file
+            elif vtype == "wind":
+                fname = "{}/{}.all.complete.txt".format(path, root)
+            # This catches all the other cases
+            elif vtype in allowed_types:
+                fname = "{}/{}.{}.txt".format(path, root, vtype)
+            else:
+                raise InvalidParameter(
+                    "{}: v type {} not recognised with v {}. Allowed types: {}".format(n, vtype, v, allowed_types)
+                )
 
-    file_exists = os.path.isfile(fname)
-    if not file_exists:
-        raise IOError("{}: the file {} does not exist!!".format(n, fname))
+        file_exists = os.path.isfile(fname)
+        if not file_exists:
+            raise IOError("{}: the file {} does not exist!!".format(n, fname))
 
-    data = pd.read_csv(fname, delim_whitespace=True)
+        data = pd.read_csv(fname, delim_whitespace=True)
 
     # For polar coordinates, ignore anything > 90 degrees, expect for ion files
     # for some reason which are fine
