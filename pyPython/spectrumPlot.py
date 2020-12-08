@@ -9,7 +9,7 @@ being saved to disk or displayed.
 """
 
 from .constants import PARSEC
-from .spectrumUtil import photo_edges_list, common_lines_list, plot_line_ids, smooth
+from .spectrumUtil import photo_edges_list, common_lines_list, add_line_id, smooth
 from .spectrumUtil import read_spectrum, get_spectrum_inclinations, calculate_axis_y_limits, get_spectrum_units
 from .spectrumUtil import UNITS_FLAMBDA, UNITS_FNU, UNITS_LNU
 from .pythonUtil import subplot_dims
@@ -169,12 +169,9 @@ def plot_simple(
     # so at this point we will throw an error message and return
 
     if fig and not ax:
-        print("{}: fig has been provided, but ax has not. Both are required.".format(n))
-        raise InvalidParameter()
-
+        raise InvalidParameter("{}: fig has been provided, but ax has not. Both are required.".format(n))
     if not fig and ax:
-        print("{}: fig has not been provided, but ax has. Both are required.".format(n))
-        raise InvalidParameter()
+        raise InvalidParameter("{}: fig has not been provided, but ax has. Both are required.".format(n))
 
     if not fig and not ax:
         fig, ax = plt.subplots(nrows, ncols, figsize=(12, 5))
@@ -336,7 +333,7 @@ def plot_optical_depth(
             logx = True
         else:
             logx = False
-        plot_line_ids(ax, photo_edges_list(frequency_space), logx, fontsize=15)
+        add_line_id(ax, photo_edges_list(frequency_space), logx, fontsize=15)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 
@@ -405,12 +402,7 @@ def plot_spectrum_components(
         extension = "spec"
 
     fname = "{}/{}.{}".format(wd, root, extension)
-
-    try:
-        s = read_spectrum(fname)
-    except IOError:
-        print("{}: unable to open .spec file with name {}".format(n, fname))
-        exit(EXIT_FAIL)
+    s = read_spectrum(fname)
 
     if frequency_space:
         x = s["Freq."].values
@@ -443,7 +435,7 @@ def plot_spectrum_components(
     return fig, ax
 
 
-def plot_spectra_single_panel(
+def plot_spectra_subpanels(
     root: str, wd: str, xmin: float = None, xmax: float = None, smooth_amount: int = 5, add_line_ids: bool = True,
     frequency_space: bool = False, scale: str = "logy", figsize: Tuple[float, float] = None, display: bool = False
 ) -> Tuple[plt.Figure, plt.Axes]:
@@ -485,23 +477,26 @@ def plot_spectra_single_panel(
         :param add_line_ids:
     """
 
-    n = plot_spectra_single_panel.__name__
+    n = plot_spectra_subpanels.__name__
 
     fname = "{}/{}.spec".format(wd, root)
-    try:
-        s = read_spectrum(fname)
-    except IOError:
-        print("{}: unable to open .spec file with name {}".format(n, fname))
-        exit(EXIT_FAIL)
-
+    s = read_spectrum(fname)
     units = get_spectrum_units(fname)
     inclinations = get_spectrum_inclinations(s)
+    n_inc = len(inclinations)
     panel_dims = subplot_dims(len(inclinations))
-    size = (12, 10)
+
     if figsize:
         size = figsize
+    else:
+        size = (12, 10)
+
     fig, ax = plt.subplots(panel_dims[0], panel_dims[1], figsize=size, squeeze=False)
-    # ax = ax.flatten()
+
+    n_panel = panel_dims[0] * panel_dims[1]
+    if n_panel > n_inc:
+        for i in range(n_inc, n_panel):
+            fig.delaxes(ax[i])
 
     # Use either frequency or wavelength and set the plot limits respectively
     if frequency_space:
@@ -519,7 +514,7 @@ def plot_spectra_single_panel(
     ii = 0
     for i in range(panel_dims[0]):
         for j in range(panel_dims[1]):
-            if ii > len(inclinations) - 1:
+            if ii > n_inc - 1:
                 break
             name = str(inclinations[ii])
             ax[i, j] = __panel_subplot(
@@ -532,7 +527,7 @@ def plot_spectra_single_panel(
                     logx = True
                 else:
                     logx = False
-                ax[i, j] = plot_line_ids(ax[i, j], common_lines_list(frequency_space), logx)
+                ax[i, j] = add_line_id(ax[i, j], common_lines_list(frequency_space), logx)
             ii += 1
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
@@ -584,11 +579,7 @@ def plot_single_spectrum(
     n = plot_single_spectrum.__name__
 
     fname = "{}/{}.spec".format(wd, root)
-    try:
-        s = read_spectrum(fname)
-    except IOError:
-        print("{}: unable to open .spec file with name {}".format(n, fname))
-        exit(EXIT_FAIL)
+    s = read_spectrum(fname)
 
     if frequency_space:
         x = s["Freq."].values
