@@ -72,7 +72,7 @@ def add_to_queue(slurmfs: List[str]) -> None:
         codes.append(stdout.decode("utf-8").split()[-1])
 
     if len(codes) > 1:
-        print("Submitted batch jobs " + ", ".join(codes[:-1]) + " and " + codes[-1])
+        print("Submitted batch jobs" + ", ".join(codes[:-1]) + " and " + codes[-1])
     else:
         print("Submitted batch job", codes[0])
 
