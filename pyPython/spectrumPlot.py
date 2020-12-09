@@ -9,10 +9,10 @@ being saved to disk or displayed.
 """
 
 from .constants import PARSEC
-from .spectrumUtil import photo_edges_list, common_lines_list, add_line_id, smooth
+from .spectrumUtil import photo_edges_list, common_lines_list, ax_add_line_id, smooth
 from .spectrumUtil import read_spectrum, get_spectrum_inclinations, calculate_axis_y_limits, get_spectrum_units
 from .spectrumUtil import UNITS_FLAMBDA, UNITS_FNU, UNITS_LNU
-from .pythonUtil import subplot_dims
+from .pythonUtil import subplot_dims, remove_extra_axes
 from .error import InvalidParameter, EXIT_FAIL
 
 import pandas as pd
@@ -30,9 +30,9 @@ MIN_SPEC_COMP_FLUX = 1e-15
 DEFAULT_PYTHON_DISTANCE = 100 * PARSEC
 
 
-def __panel_subplot(
+def _plot_panel_subplot(
     ax: plt.Axes, x: np.ndarray, spec: pd.DataFrame, units: str, dname: Union[List[str], str], xlims: Tuple[float, float],
-    smooth_amount: int, scale: str, frequency_space: bool, skip_sparse: bool, n: str
+    smooth_amount: int, alpha: float, scale: str, frequency_space: bool, skip_sparse: bool, n: str
 ) -> plt.Axes:
     """
     Create a subplot panel for a figure given the spectrum components names
@@ -52,8 +52,10 @@ def __panel_subplot(
         The name of the spectrum components to add to the subplot panel
     xlims: Tuple[float, float]
         The lower and upper x-axis boundaries (xlower, xupper)
-    smooth: int
+    smooth_amount: int
         The size of the boxcar filter to smooth the spectrum components
+    alpha: float
+        The alpha value of the spectrum to be plotted.
     scale: bool
         Set the scale for the plot axes
     frequency_space: bool
@@ -95,7 +97,7 @@ def __panel_subplot(
         if units == UNITS_LNU:
             fl *= spec["Freq."].values
 
-        ax.plot(x, fl, label=dname[i])
+        ax.plot(x, fl, label=dname[i], alpha=alpha)
 
         if scale == "logx" or scale == "loglog":
             ax.set_xscale("log")
@@ -121,7 +123,8 @@ def __panel_subplot(
 
 def plot_simple(
     x: np.ndarray, y: np.ndarray, xmin: float = None, xmax: float = None, xlabel: str = None, ylabel: str = None,
-    scale: str = "logy", fig: plt.Figure = None, ax: plt.Axes = None, label: str = None, display: bool = False
+    scale: str = "logy", fig: plt.Figure = None, ax: plt.Axes = None, label: str = None, alpha: float = 1.0,
+    display: bool = False
 ) -> Tuple[plt.Figure, plt.Axes]:
     """
     This is a simple plotting function designed to give you the bare minimum.
@@ -150,6 +153,8 @@ def plot_simple(
         A matplotlib Axes object of which to use to create the plot.
     label: str [optional]
         A label for the data being plotted.
+    alpha: float [optional]
+        The alpha value for the data to be plotted.
     display: bool [optional]
         If set to True, then the plot will be displayed.
 
@@ -179,7 +184,7 @@ def plot_simple(
     if label is None:
         label = ""
 
-    ax.plot(x, y, label=label)
+    ax.plot(x, y, label=label, alpha=alpha)
 
     # Set the scales of the aes
 
@@ -333,7 +338,7 @@ def plot_optical_depth(
             logx = True
         else:
             logx = False
-        add_line_id(ax, photo_edges_list(frequency_space), logx, fontsize=15)
+        ax_add_line_id(ax, photo_edges_list(frequency_space), logx, fontsize=15)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 
@@ -347,7 +352,8 @@ def plot_optical_depth(
 
 def plot_spectrum_components(
     root: str, wd: str, spec_tot: bool = False, wind_tot: bool = False, xmin: float = None, xmax: float = None,
-    smooth_amount: int = 5, scale: str = "loglog", frequency_space: bool = False, display: bool = False
+    smooth_amount: int = 5, scale: str = "loglog", alpha: float = 0.6, frequency_space: bool = False,
+    display: bool = False
 ) -> Tuple[plt.Figure, plt.Axes]:
     """
     Create a figure of the different spectrum components of a Python spectrum
@@ -373,6 +379,8 @@ def plot_spectrum_components(
     scale: bool [optional]
         The scale to use for the axes. Allowed values are linlin, logx, logy and
         loglog.
+    alpha: float [optional]
+        The alpha value used for plotting the spectra.
     frequency_space: bool [optional]
         Create the figure in frequency space instead of wavelength space
     display: bool [optional]
@@ -416,12 +424,12 @@ def plot_spectrum_components(
         xmax = xlims[1]
     xlims = (xmin, xmax)
 
-    ax[0] = __panel_subplot(
-        ax[0], x, s, get_spectrum_units(fname), ["Created", "WCreated", "Emitted"], xlims, smooth_amount, scale,
+    ax[0] = _plot_panel_subplot(
+        ax[0], x, s, get_spectrum_units(fname), ["Created", "WCreated", "Emitted"], xlims, smooth_amount, alpha, scale,
         frequency_space, True, n
     )
-    ax[1] = __panel_subplot(
-        ax[1], x, s, get_spectrum_units(fname), ["CenSrc", "Disk", "Wind", "HitSurf"], xlims, smooth_amount,
+    ax[1] = _plot_panel_subplot(
+        ax[1], x, s, get_spectrum_units(fname), ["CenSrc", "Disk", "Wind", "HitSurf"], xlims, smooth_amount, alpha,
         scale, frequency_space, True, n
     )
 
@@ -435,7 +443,7 @@ def plot_spectrum_components(
     return fig, ax
 
 
-def plot_spectra_subpanels(
+def plot_spectra_in_subpanels(
     root: str, wd: str, xmin: float = None, xmax: float = None, smooth_amount: int = 5, add_line_ids: bool = True,
     frequency_space: bool = False, scale: str = "logy", figsize: Tuple[float, float] = None, display: bool = False
 ) -> Tuple[plt.Figure, plt.Axes]:
@@ -477,8 +485,9 @@ def plot_spectra_subpanels(
         :param add_line_ids:
     """
 
-    n = plot_spectra_subpanels.__name__
+    n = plot_spectra_in_subpanels.__name__
 
+    alpha = 1
     fname = "{}/{}.spec".format(wd, root)
     s = read_spectrum(fname)
     units = get_spectrum_units(fname)
@@ -492,11 +501,7 @@ def plot_spectra_subpanels(
         size = (12, 10)
 
     fig, ax = plt.subplots(panel_dims[0], panel_dims[1], figsize=size, squeeze=False)
-
-    n_panel = panel_dims[0] * panel_dims[1]
-    if n_panel > n_inc:
-        for i in range(n_inc, n_panel):
-            fig.delaxes(ax[i])
+    fig, ax =  remove_extra_axes(fig, ax, n_inc, panel_dims[0] * panel_dims[1])
 
     # Use either frequency or wavelength and set the plot limits respectively
     if frequency_space:
@@ -517,8 +522,8 @@ def plot_spectra_subpanels(
             if ii > n_inc - 1:
                 break
             name = str(inclinations[ii])
-            ax[i, j] = __panel_subplot(
-                ax[i, j], x, s, units, name, xlims, smooth_amount, scale, frequency_space, False, n)
+            ax[i, j] = _plot_panel_subplot(
+                ax[i, j], x, s, units, name, xlims, smooth_amount, alpha, scale, frequency_space, False, n)
             ymin, ymax = calculate_axis_y_limits(x, s[name].values, xmin, xmax)
             ax[i, j].set_ylim(ymin, ymax)
 
@@ -527,7 +532,7 @@ def plot_spectra_subpanels(
                     logx = True
                 else:
                     logx = False
-                ax[i, j] = add_line_id(ax[i, j], common_lines_list(frequency_space), logx)
+                ax[i, j] = ax_add_line_id(ax[i, j], common_lines_list(frequency_space), logx)
             ii += 1
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])

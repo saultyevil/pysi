@@ -199,6 +199,8 @@ def plot_wind(
 
             index += 1
 
+    fig, ax = pythonUtil.remove_extra_axes(fig, ax, len(wind_variables), panel_dims[0] * panel_dims[1])
+
     if title:
         fig.suptitle(title, fontsize=15)
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
@@ -277,7 +279,6 @@ Parameters
     elements = ["KeyIons", "H", "He", "C", "N", "O", "Si"]
     ions = [
         ["H_i01", "Si_i04", "N_i05", "C_i04"],
-        # ["O_i05", "Si_i04", "Si_i05", "N_i04", "N_i05", "N_i06", "C_i04", "C_i05"],
         ["H_i01", "H_i02"],
         ["He_i01", "He_i02", "He_i03"],
         ["C_i01", "C_i02", "C_i03", "C_i04", "C_i05", "C_i06"],

@@ -357,20 +357,12 @@ def main(
         The matplotlib Axes objects for the plot panels.
     """
 
-    div_len = 80
-
     if setup:
         root, wd, units, axes_scales, cell_indices, file_ext, display = setup
     else:
         root, wd, units, axes_scales, cell_indices, file_ext, display = setup_script()
 
     root = root.replace("/", "")
-    wdd = wd
-    if wd == "./":
-        wdd = ""
-
-    print("-" * div_len)
-    print("\nCreating velocity plots for {}{}.pf".format(wdd, root))
 
     # First, we probably need to run windsave2table
 
@@ -382,10 +374,6 @@ def main(
 
     if display:
         plt.show()
-
-    print("")
-    if __name__ == "__main__":
-        print("-" * div_len)
 
     return fig, ax
 
