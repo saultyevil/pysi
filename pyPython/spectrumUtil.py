@@ -371,10 +371,10 @@ def calculate_axis_y_limits(
     y_lim_x = np.where(id_xmin == id_xmax)[0]
 
     y = y[y_lim_x]
-    y = y[y != 0]
+    y = y[y > 0]
 
-    ymax = np.max(y) * scale
     ymin = np.min(y) / scale
+    ymax = np.max(y) * scale
 
     return ymin, ymax
 
