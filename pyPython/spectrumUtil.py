@@ -336,9 +336,9 @@ def calculate_axis_y_limits(
 
     Returns
     -------
-    ylower: float
+    ymin: float
         The lower y limit to use with the wavelength range
-    yupper: float
+    ymax: float
         The upper y limit to use with the wavelength range
     """
 
