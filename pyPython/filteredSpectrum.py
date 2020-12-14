@@ -326,7 +326,7 @@ def bin_photon_weights(
 
 
 def construct_spectrum_from_weights(
-    delay_dump_photons: pd.DataFrame, spectrum: np.ndarray, spec_norm: float, n_cores_norm: int,
+    delay_dump_photons: pd.DataFrame, spectrum: np.ndarray, n_cores_norm: int,
     extract_nres: tuple = (UNFILTERED_SPECTRUM,), logbins: bool = True
 ) -> np.ndarray:
     """
@@ -347,15 +347,10 @@ def construct_spectrum_from_weights(
     spectrum: np.ndarray (nbins, nspec)
         An array containing the frequency bins and empty bins for each
         inclination angle.
-    spec_norm: float
-        The spectrum normalization amount - usually the number of spectrum
     n_cores_norm: [optional] int
         The number of cores which were used to generate the delay_dump filecycles.
     extract_nres: [optional] int
         The line number for a specific line to be extracted.
-    d_norm_pc: [optional] float
-        The distance normalization for the flux calculation in parsecs. By
-        default this is 100 parsecs.
     logbins: [optional] bool
         Use frequency bins spaced equally in log space.
 
@@ -489,7 +484,7 @@ def create_filtered_spectrum(
     # weights as well as any other normalization constants
 
     spectrum = construct_spectrum_from_weights(
-        dumped_photons, spectrum, spec_cycle_norm, n_cores_norm, extract_nres=extract_nres, logbins=logbins
+        dumped_photons, spectrum, n_cores_norm, extract_nres=extract_nres, logbins=logbins
     )
 
     spectrum = convert_weight_to_flux(
