@@ -56,16 +56,16 @@ def setup_script() -> tuple:
                           help="The distance normalization in units of parsec.")
 
     create_p.add_argument("-xl",
-                        "--xmin",
-                        type=float,
-                        default=None,
-                        help="The lower x-axis boundary to display.")
+                          "--xmin",
+                          type=float,
+                          default=None,
+                          help="The lower x-axis boundary to display.")
 
     create_p.add_argument("-xu",
-                        "--xmax",
-                        type=float,
-                        default=None,
-                        help="The upper x-axis boundary to display.")
+                          "--xmax",
+                          type=float,
+                          default=None,
+                          help="The upper x-axis boundary to display.")
 
     create_p.add_argument("-nj",
                           "--jit",
@@ -306,7 +306,7 @@ def plot(
                 logx = True
             else:
                 logx = False
-            ax = spectrumUtil.add_line_id(ax, spectrumUtil.common_lines_list(freq=frequency_space), logx)
+            ax = spectrumUtil.ax_add_line_id(ax, spectrumUtil.common_lines_list(freq=frequency_space), logx)
 
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 
@@ -371,29 +371,22 @@ def main(setup: tuple = None):
 
     # Now we either create, or plot the filtered spectrum if it has already been created
 
-    # TODO: determine the run mode first, i.e. create or plot
-    # TODO: force re-creation of spectrum
-
     extract_nres = tuple(extract_nres)
 
     if mode == "create":
-        filteredSpectrum.create_filtered_spectrum(
-            root, wd, extract_nres, xmin, xmax, nbins, distance_norm, spec_norm, ncores_norm, True, jit
-        )
+        # TODO remove s_extract references
+        s_extract = spectrumUtil.read_spectrum("{}/{}.log_spec".format(wd, root))
+        filteredSpectrum.create_filtered_spectrum(root, wd, s_extract["Freq."].values, extract_nres, xmin, xmax, nbins,
+                                                  distance_norm, spec_norm, ncores_norm, True, jit)
     else:
-        name = ""
-        try:
-            if extract_nres[0] != filteredSpectrum.UNFILTERED_SPECTRUM:
-                name = "{}/{}_line".format(wd, root)
-                for line in extract_nres:
-                    name += "_{}".format(line)
-                name += ".delay_dump.spec"
-            else:
-                name = "{}/{}.delay_dump.spec".format(wd, root)
-            filtered_spectrum = np.loadtxt(name, skiprows=2)  # TODO: could be replaced by something in pyPython?
-        except IOError:
-            print("Unable to load filtered spectrum", name, "to plot anything")
-            return
+        if extract_nres[0] != filteredSpectrum.UNFILTERED_SPECTRUM:
+            name = "{}/{}_line".format(wd, root)
+            for line in extract_nres:
+                name += "_{}".format(line)
+            name += ".delay_dump.spec"
+        else:
+            name = "{}/{}.delay_dump.spec".format(wd, root)
+        filtered_spectrum = np.loadtxt(name, skiprows=2)  # TODO: could be replaced by something in pyPython?
         plot(
             root, wd, filtered_spectrum, extract_nres, smooth_amount, distance_norm, xmin, xmax, axes_scales,
             frequency_space, True, common_lines, file_ext, display
