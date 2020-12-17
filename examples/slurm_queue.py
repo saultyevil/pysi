@@ -139,7 +139,7 @@ def main() -> None:
     add = setup()
     slurmf = find_slurm_files()
 
-    print("The following .slurm {} files will be added to the queue:\n".format(len(slurmf)))
+    print("The following {} .slurm files will be added to the queue:\n".format(len(slurmf)))
     for n, f in enumerate(slurmf):
         print("{}\t{}".format(n + 1, f))
     print("")
