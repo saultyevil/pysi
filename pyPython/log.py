@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-This file contains functions related to logging to both a log file and to
-the screen.
+Logging utilities.
 """
 
 LOGFILE = None
@@ -59,7 +58,7 @@ def close_logfile(
     elif LOGFILE:
         LOGFILE.close()
     else:
-        print("{}: No logfile to close? ahhh".format(n))
+        print("{}: No logfile to close but somehow got here? ahhh disaster".format(n))
 
     return
 

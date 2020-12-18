@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
 """
-Functions to describe a black body.
+Contains functions for calculating the properties of a blackbody.
 """
 
 import numpy as np
@@ -33,9 +32,9 @@ def planck_nu(
         frequency. Has units ergs s^-1 cm^-2 Hz^-1.
     """
 
-    x = H * frequency / BOLTZMANN / temperature
-    y = 2 * H * frequency ** 3 / VLIGHT ** 2
-    b_nu = y / (np.exp(x) - 1)
+    with np.errstate(all="ignore"):
+        x = H * frequency / (BOLTZMANN * temperature)
+        b_nu = (2 * H * frequency ** 3) / (VLIGHT ** 2 * (np.exp(x) - 1))
 
     return b_nu
 
@@ -61,9 +60,10 @@ def planck_lambda(
         wavelength. Has units ergs s^-1 cm^-2 A^-1.
     """
 
-    lcm = lamda * ANGSTROM
-    x = H * VLIGHT / lcm / BOLTZMANN / temperature
-    y = 2 * H * VLIGHT ** 2 / lcm ** 5
-    b_lamda = y / (np.exp(x) - 1)
+    with np.errstate(all="ignore"):
+        lcm = lamda * ANGSTROM
+        x = H * VLIGHT / lcm / BOLTZMANN / temperature
+        y = 2 * H * VLIGHT ** 2 / lcm ** 5
+        b_lamda = y / (np.exp(x) - 1)
 
     return b_lamda

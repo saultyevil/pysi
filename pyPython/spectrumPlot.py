@@ -21,9 +21,9 @@ from typing import List, Tuple, Union
 from matplotlib import pyplot as plt
 
 
-plt.rcParams['xtick.labelsize'] = 15
-plt.rcParams['ytick.labelsize'] = 15
-plt.rcParams['axes.labelsize'] = 15
+plt.rcParams["xtick.labelsize"] = 15
+plt.rcParams["ytick.labelsize"] = 15
+plt.rcParams["axes.labelsize"] = 15
 
 
 MIN_SPEC_COMP_FLUX = 1e-15
@@ -31,8 +31,8 @@ DEFAULT_PYTHON_DISTANCE = 100 * PARSEC
 
 
 def _plot_panel_subplot(
-    ax: plt.Axes, x: np.ndarray, spec: pd.DataFrame, units: str, dname: Union[List[str], str], xlims: Tuple[float, float],
-    smooth_amount: int, alpha: float, scale: str, frequency_space: bool, skip_sparse: bool, n: str
+    ax: plt.Axes, x: np.ndarray, spec: pd.DataFrame, units: str, dname: Union[List[str], str],
+    xlims: Tuple[float, float], sm: int, alpha: float, scale: str, frequency_space: bool, skip_sparse: bool, n: str
 ) -> plt.Axes:
     """
     Create a subplot panel for a figure given the spectrum components names
@@ -40,8 +40,8 @@ def _plot_panel_subplot(
 
     Parameters
     ----------
-    ax: pyplot.Axes
-        The pyplot.Axes object for the subplot
+    ax: plt.Axes
+        The plt.Axes object for the subplot
     x: np.array[float]
         The x-axis data, i.e. wavelength or frequency
     spec: pd.DataFrame
@@ -52,7 +52,7 @@ def _plot_panel_subplot(
         The name of the spectrum components to add to the subplot panel
     xlims: Tuple[float, float]
         The lower and upper x-axis boundaries (xlower, xupper)
-    smooth_amount: int
+    sm: int
         The size of the boxcar filter to smooth the spectrum components
     alpha: float
         The alpha value of the spectrum to be plotted.
@@ -77,7 +77,7 @@ def _plot_panel_subplot(
     for i in range(len(dname)):
 
         try:
-            fl = smooth(spec[dname[i]].values, smooth_amount)
+            fl = smooth(spec[dname[i]].values, sm)
         except KeyError:
             print("{}: unable to find data column with label {}".format(n, dname[i]))
             continue
@@ -443,7 +443,7 @@ def plot_spectrum_components(
     return fig, ax
 
 
-def plot_spectra_in_subpanels(
+def plot_spectrum_inclinations_in_subpanels(
     root: str, wd: str, xmin: float = None, xmax: float = None, smooth_amount: int = 5, add_line_ids: bool = True,
     frequency_space: bool = False, scale: str = "logy", figsize: Tuple[float, float] = None, display: bool = False
 ) -> Tuple[plt.Figure, plt.Axes]:
@@ -485,7 +485,7 @@ def plot_spectra_in_subpanels(
         :param add_line_ids:
     """
 
-    n = plot_spectra_in_subpanels.__name__
+    n = plot_spectrum_inclinations_in_subpanels.__name__
 
     alpha = 1
     fname = "{}/{}.spec".format(wd, root)
@@ -493,7 +493,7 @@ def plot_spectra_in_subpanels(
     units = get_spectrum_units(fname)
     inclinations = get_spectrum_inclinations(s)
     n_inc = len(inclinations)
-    panel_dims = subplot_dims(len(inclinations))
+    panel_dims = subplot_dims(n_inc)
 
     if figsize:
         size = figsize
@@ -501,7 +501,7 @@ def plot_spectra_in_subpanels(
         size = (12, 10)
 
     fig, ax = plt.subplots(panel_dims[0], panel_dims[1], figsize=size, squeeze=False)
-    fig, ax =  remove_extra_axes(fig, ax, n_inc, panel_dims[0] * panel_dims[1])
+    fig, ax = remove_extra_axes(fig, ax, n_inc, panel_dims[0] * panel_dims[1])
 
     # Use either frequency or wavelength and set the plot limits respectively
     if frequency_space:
@@ -545,7 +545,7 @@ def plot_spectra_in_subpanels(
     return fig, ax
 
 
-def plot_single_spectrum(
+def plot_single_spectrum_inclination(
     root: str, wd: str, inclination: Union[str, float, int], xmin: float = None, xmax: float = None,
     smooth_amount: int = 5, scale: str = "logy", frequency_space: bool = False, display: bool = False
 ) -> Union[None, Tuple[plt.Figure, plt.Axes]]:
@@ -581,7 +581,7 @@ def plot_single_spectrum(
         The pyplot.Axes object for the created figure
     """
 
-    n = plot_single_spectrum.__name__
+    n = plot_single_spectrum_inclination.__name__
 
     fname = "{}/{}.spec".format(wd, root)
     s = read_spectrum(fname)

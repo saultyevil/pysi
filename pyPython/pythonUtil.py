@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-This file contains various utility functions which can be used to ease the
-trials and tribulations of using Python and the Unix command line.
+Utility functions to ease the pain of using Python or a Unix environment whilst
+trying to do computational astrophysics.
 """
 
 from .constants import LOG_BASE_10_OF_TWO
@@ -24,13 +24,18 @@ def get_array_index(
     x: np.ndarray, target: float
 ) -> int:
     """
-    Return the index for an array for a given value.
+    Return the index for a given value in an array.
+
+    This function is fairly limited in that it can't deal with arrays with
+    duplicate values. It will always return the first value which is closest
+    to the target value.
 
     Parameters
     ----------
     x: np.ndarray
-
+        The array of values.
     target: float
+        The value, or closest value, to find the index of.
 
     Returns
     -------
@@ -48,25 +53,26 @@ def get_array_index(
 
 
 def round_to_sig_figs(
-    x: np.ndarray, sigfigs: int
+    x: np.ndarray, n_sig: int
 ):
     """
-    Truncate values in a numpy array to the given level of significant figures.
+    Truncate values in a numpy array to some given number of significant
+    figures. This wasw ritten by some maniac on Stack Overflow at the following
+    URL,
 
-    Written by some maniac on Stack Overflow.
     https://stackoverflow.com/questions/18915378/rounding-to-significant-figures-in-numpy
 
     Parameters
     ----------
     x: np.ndarray
-        The array to preform the operation on.
-    sigfigs: int
+        The array of values.
+    n_sig: int
         The number of significant figures.
 
     Returns
     -------
     x: np.ndarray
-        The array rounded to the provided number of significant figures.
+        The array rounded to the required number of significant figures.
     """
 
     xsgn = np.sign(x)
@@ -82,7 +88,7 @@ def round_to_sig_figs(
         mantissa *= 10.0
         omag -= 1.0
 
-    return xsgn * np.around(mantissa, decimals=sigfigs - 1) * 10.0 ** omag
+    return xsgn * np.around(mantissa, decimals=n_sig - 1) * 10.0 ** omag
 
 
 def file_len(
@@ -91,9 +97,12 @@ def file_len(
     """
     Count the number of lines in a file.
 
+    TODO update to jit_open or some other more efficient method
+
     Parameters
     ----------
     fname: str
+        The file name and path of the file to count the lines of.
 
     Returns
     -------
@@ -108,42 +117,40 @@ def file_len(
 
 
 def remove_data_sym_links(
-    search_dir: str = "./", verbose: bool = False
+    wd: str = ".", verbose: bool = False
 ):
     """
-    Search recursively from the specified directory search_dir for all symbolic
-    links named data. The purpose of this script is to clean up the symbolic
-    links if a directory is being uploaded to cloud storage or transferred using
-    scp.
+    Search recursively from the specified directory for symbolic links named
+    data.
 
     This script will only work on Unix systems where the find command is
     available.
 
-    TODO: find solution which is system agnostic -> pathlib?
+    TODO update to a system agnostic method to find symbolic links like pathlib
 
     Parameters
     ----------
-    search_dir: str
+    wd: str
         The starting directory to search recursively from for symbolic links
     verbose: bool [optional]
         Enable verbose output
 
     Returns
     -------
-    ndel: int
-        The number of symbolic links which were deleted
+    n_del: int
+        The number of symbolic links deleted
     """
 
     n = remove_data_sym_links.__name__
-    ndel = 0
+    n_del = 0
 
     os = system().lower()
     if os != "darwin" and os != "linux":
         print("{}: system {} unavailable", n, os)
-        return ndel
+        return n_del
 
     # - type l will only search for symbolic links
-    cmd = "cd {}; find . -type l -name 'data'".format(search_dir)
+    cmd = "cd {}; find . -type l -name 'data'".format(wd)
     stdout, stderr = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
     stdout = stdout.decode("utf-8")
     stderr = stderr.decode("utf-8")
@@ -151,47 +158,44 @@ def remove_data_sym_links(
     if stderr:
         print("{}: stderr".format(n))
         print(stderr)
-    if stdout:
-        if verbose:
-            print("{}: deleting data symbolic links in the following directories:\n\n{}".format(n, stdout[:-1]))
+
+    if stdout and verbose:
+        print("{}: deleting data symbolic links in the following directories:\n\n{}".format(n, stdout[:-1]))
     else:
         if verbose:
             print("{}: no data symlinks to delete".format(n))
-        return ndel
+        return n_del
 
-    dirs = stdout.split()
+    directories = stdout.split()
 
-    for i in range(len(dirs)):
-        dir = search_dir + dirs[i][1:]
-        cmd = "rm {}".format(dir)
+    for i in range(len(directories)):
+        current = wd + directories[i][1:]
+        cmd = "rm {}".format(current)
         stdout, stderr = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
-        stdout = stdout.decode("utf-8")
-        stderr = stderr.decode("utf-8")
 
         if verbose:
-            print(stdout)
+            print(stdout.decode("utf-8"))
 
         if stderr:
-            print(stderr)
+            print(stderr.decode("utf-8"))
         else:
-            ndel += 1
+            n_del += 1
 
-    return ndel
+    return n_del
 
 
-def root_from_file_path(
-    path: str
+def get_root(
+    path: str, return_wd: bool = True
 ) -> Tuple[str, str]:
     """
-    Split a path name into a directory path and root name for a Python
-    simulation.
-
-    TODO: probably better to use find() or rfind() string methods
+    Get the root name of a Python simulation, extracting it from a file path.
 
     Parameters
     ----------
     path: str
         The directory path to a Python .pf file
+    return_wd: str
+        Returns the directory containing the .pf file.
 
     Returns
     -------
@@ -201,13 +205,16 @@ def root_from_file_path(
         The directory path containing the provided Python .pf file
     """
 
-    n = root_from_file_path.__name__
+    n = get_root.__name__
 
     if type(path) != str:
         raise TypeError("{}: expected string as input".format(n))
 
     dot = 0
     slash = 0
+
+    # TODO use find or rfind instead
+
     for i in range(len(path)):
         letter = path[i]
         if letter == ".":
@@ -217,20 +224,22 @@ def root_from_file_path(
 
     root = path[slash:dot]
     wd = path[:slash]
-    if wd == "":
-        wd = "./"
 
-    return root, wd
+    if wd == "":
+        wd = "."
+
+    if return_wd:
+        return root, wd
+    else:
+        return root
 
 
 def find_parameter_files(
-    root: str = None, path: str = "./"
+    root: str = None, path: str = "."
 ) -> List[str]:
     """
-    Find Python .pf parameter files recursively from the directory path.
-
-    This function will ignore py_wind.pf parameter files, as well as any
-    root.out.pf files.
+    Search recursively for Python .pf files. This function will ignore
+    py_wind.pf parameter files, as well as any root.out.pf files.
 
     Parameters
     ----------
@@ -241,7 +250,7 @@ def find_parameter_files(
 
     Returns
     -------
-    pfs: List[str]
+    parameter_files: List[str]
         The file path for any Python pf files founds
     """
 
@@ -257,7 +266,7 @@ def find_parameter_files(
         elif file[0] == "/":
             file = "." + file
 
-        t_root, wd = root_from_file_path(file)
+        t_root, wd = get_root(file)
         if root and t_root != root:
             continue
 
@@ -273,36 +282,36 @@ def get_cpu_count(
 ):
     """
     Return the number of CPU cores which can be used when running a Python
-    simulation.
-
-    By default, this will only return the number of physics cores and will
-    exclude hyperthreads.
+    simulation. By default, this will only return the number of physical cores
+    and will ignore logical threads, i.e. in Intel terms, it will not count the
+    "hyperthreads".
 
     Parameters
     ----------
     enable_smt: [optional] bool
         Return the number of logical cores, which includes both physical and
-        SMT threads (hyperthreads).
+        logical (SMT/hyperthreads) threads.
 
     Returns
     -------
-    ncores: int
+    n_cores: int
         The number of available CPU cores
     """
 
     n = get_cpu_count.__name__
-    ncores = 0
+
+    n_cores = 0
 
     try:
-        ncores = cpu_count(logical=enable_smt)
+        n_cores = cpu_count(logical=enable_smt)
     except NotImplementedError:
         print("{}: unable to determine number of CPU cores, psutil.cpu_count not implemented".format(n))
 
-    return ncores
+    return n_cores
 
 
 def get_python_version(
-    py: str = "py", verbose: bool = False
+    executable: str = "py", verbose: bool = False
 ) -> Tuple[str, str]:
     """
     Get the Python version and commit hash for the provided Python binary.
@@ -310,7 +319,7 @@ def get_python_version(
 
     Parameters
     ----------
-    py: str, optional
+    executable: str, optional
         The name of the Python executable in $PATH whose version will be queried
     verbose: bool, optional
         Enable verbose logging
@@ -319,19 +328,19 @@ def get_python_version(
     --------
     version: str
         The version number of Python
-    commit_hash: str
+    hash: str
         The commit hash of Python
     """
 
     n = get_python_version.__name__
     version = ""
-    commit_hash = ""
+    hash = ""
 
-    path = which(py)
+    path = which(executable)
     if not path:
-        raise OSError("{}: {} is not in $PATH".format(n, py))
+        raise OSError("{}: {} is not in $PATH".format(n, executable))
 
-    command = "{} --version".format(py)
+    command = "{} --version".format(executable)
     cmd = Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
     stdout, stderr = cmd.communicate()
     out = stdout.decode("utf-8").split()
@@ -345,36 +354,37 @@ def get_python_version(
         if out[i] == "Version":
             version = out[i + 1]
         if out[i] == "hash":
-            commit_hash = out[i + 1]
+            hash = out[i + 1]
 
     if verbose:
-        print("{} version {}".format(py, version))
-        print("Git commit hash    {}".format(commit_hash))
-        print("Short commit hash  {}".format(commit_hash[:7]))
+        print("{} version {}".format(executable, version))
+        print("Git hash   {}".format(hash))
+        print("Short hash {}".format(hash[:7]))
 
-    return version, commit_hash
+    return version, hash
 
 
 def windsave2table(
     root: str, wd: str = ".", ion_density: bool = False, no_all_complete: bool = False, verbose: bool = False
 ) -> None:
     """
-    Runs windsave2table in the directory path to create a bunch of data tables
-    from the Python wind_save file. This function also created a
-    root.ep.complete file which merges the heat and master data tables together.
+    Run windsave2table in a directory to create the standard data tables. The
+    function can also create a root.all.complete.txt file which merges all the
+    data tables together into one (a little big) file.
 
     Parameters
     ----------
     root: str
         The root name of the Python simulation
     wd: str
-        The directory of the Python simulation where windsave2table will be run
+        The directory where windsave2table will run
     ion_density: bool [optional]
-        Pump out the ion density instead of ion fractions
+        Use windsave2table in the ion density version instead of ion fractions
     no_all_complete: bool [optional]
-        Return from this function before a root.ep.complete file is created.
+        Return from this function before a root.all.complete.txt file is
+        created.
     verbose: bool [optional]
-        Enable verbose logging
+        Enable verbose output
     """
 
     n = windsave2table.__name__
@@ -384,9 +394,9 @@ def windsave2table(
     try:
         with open(".py_version", "r") as f:
             lines = f.readlines()
-        run_version = lines[0]
-        run_hash = lines[1]
-        if run_version != version and run_hash != hash:
+        c_version = lines[0]
+        c_hash = lines[1]
+        if c_version != version or c_hash != hash:
             print("{}: windsave2table and wind_save versions are different: be careful!".format(n))
     except IOError:
         if verbose:
@@ -403,14 +413,12 @@ def windsave2table(
 
     cmd = Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
     stdout, stderr = cmd.communicate()
-    stdout = stdout.decode("utf-8")
-    stderr = stderr.decode("utf-8")
 
     if verbose:
-        print(stdout)
+        print(stdout.decode("utf-8"))
     if stderr:
         print("{}: the following was sent to stderr:".format(n))
-        print(stderr)
+        print(stderr.decode("utf-8"))
 
     if no_all_complete:
         return
@@ -461,10 +469,10 @@ def windsave2table(
 
 
 def py_wind(
-    root: str, commands: List[str], wd: str = "./"
+    root: str, commands: List[str], wd: str = "."
 ) -> List[str]:
     """
-    Run py_wind using the provided commands.
+    Run py_wind with the provided commands.
 
     Parameters
     ----------
@@ -500,17 +508,19 @@ def py_wind(
 
 
 def subplot_dims(
-    nplots: int
+    n_plots: int
 ) -> Tuple[int, int]:
     """
-    Determine the dimensions for a plot with multiple subplot panels. A design
-    of two columns of subplot panels will always be used.
+    Return the dimensions for a plot with multiple subplot panels. A design
+    of two of three columns of subplot panels will always be used, until I
+    program something more sensible or intelligent, like using the catography
+    thing in MPI.
 
-    TODO: update for more sub-panels
+    TODO update for more plots to divide into more sensible sub-panels
 
     Parameters
     ----------
-    nplots: int
+    n_plots: int
         The number of subplots which will be plotted
 
     Returns
@@ -521,57 +531,20 @@ def subplot_dims(
 
     n = subplot_dims.__name__
 
-    if nplots < 1 or type(nplots) != int:
-        raise ValueError("{}: nplots should be a non-zero, positive and an integer".format(n))
+    if n_plots < 1 or type(n_plots) != int:
+        raise ValueError("{}: n_plots should be a non-zero, positive and an integer".format(n))
 
-    if nplots > 2:
-        ncols = 2
-        nrows = (1 + nplots) // ncols
-    elif nplots > 9:
-        ncols = 3
-        nrows = (1 + nplots) // ncols
+    if n_plots > 2:
+        n_cols = 2
+        n_rows = (1 + n_plots) // n_cols
+    elif n_plots > 9:
+        n_cols = 3
+        n_rows = (1 + n_plots) // n_cols
     else:
-        ncols = 1
-        nrows = nplots
+        n_cols = 1
+        n_rows = n_plots
 
-    return nrows, ncols
-
-
-def create_run_script(commands: List[str]):
-    """
-    Create a shell run script given a list of commands to do. This assumes that
-    you want to use a bash interpreter.
-
-    Parameters
-    ----------
-    commands: List[str]
-        The commands which are going to be run.
-    """
-
-    # Find any python parameter file in the directory and subdirectories
-    directories = []
-    pfs = find_parameter_files()
-    for pf in pfs:
-        root, directory = root_from_file_path(pf)
-        directories.append(directory)
-
-    file = "#!/bin/bash\n\ndeclare -a directories=(\n"
-    for d in directories:
-        file += "\t\"{}\"\n".format(d)
-    file += ")\n\ncwd=$(pwd)\nfor i in \"${directories[@]}\"\ndo\n\tcd $i\n\tpwd\n"
-    if len(commands) > 1:
-        for k in range(len(commands) - 1):
-            file += "\t{}\n".format(commands[k + 1])
-    else:
-        file += "\t# commands\n"
-    file += "\tcd $cwd\ndone\n"
-
-    # Print the file and write it to the current directory
-    print(file)
-    with open("commands.sh", "w") as f:
-        f.write(file)
-
-    return
+    return n_rows, n_cols
 
 
 def remove_extra_axes(
@@ -620,3 +593,38 @@ def remove_extra_axes(
     ax = np.reshape(ax, (shape[0], shape[1]))
 
     return fig, ax
+
+
+def create_run_script(commands: List[str]):
+    """
+    Create a shell run script given a list of commands to do. This assumes that
+    you want to use a bash interpreter.
+
+    Parameters
+    ----------
+    commands: List[str]
+        The commands which are going to be run.
+    """
+
+    directories = []
+    pfs = find_parameter_files()
+    for pf in pfs:
+        root, directory = get_root(pf)
+        directories.append(directory)
+
+    file = "#!/bin/bash\n\ndeclare -a directories=(\n"
+    for d in directories:
+        file += "\t\"{}\"\n".format(d)
+    file += ")\n\ncwd=$(pwd)\nfor i in \"${directories[@]}\"\ndo\n\tcd $i\n\tpwd\n"
+    if len(commands) > 1:
+        for k in range(len(commands) - 1):
+            file += "\t{}\n".format(commands[k + 1])
+    else:
+        file += "\t# commands\n"
+    file += "\tcd $cwd\ndone\n"
+
+    print(file)
+    with open("commands.sh", "w") as f:
+        f.write(file)
+
+    return

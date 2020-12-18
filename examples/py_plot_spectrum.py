@@ -253,7 +253,7 @@ def spectra_on_multiple_panels(
         The matplotlib Axes objects for the plot panels.
     """
 
-    fig, ax = spectrumPlot.plot_spectra_in_subpanels(
+    fig, ax = spectrumPlot.plot_spectrum_inclinations_in_subpanels(
         root, wd, xmin, xmax, smooth_amount, common_lines, frequency_space, axes_scales
     )
     fig.savefig("{}/{}_spectra.{}".format(wd, root, file_ext))

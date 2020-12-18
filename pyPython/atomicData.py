@@ -2,39 +2,44 @@
 # -*- coding: utf-8 -*-
 
 """
-Functions dedicated to manipulating the atomic data in Python.
+The point of this part of pyPython is to manipulating the atomic data used in
+Python, to i.e. remove various transitions from the data..
 """
 
 
+from sys import exit
 from os import getenv
 
+from .error import EXIT_FAIL
 
-def remove_photoion_transition_from_data(
-    data: str, atomic: int, istate: int, new_value: float = 9e99
+
+def remove_photoionization_edge(
+    data: str, atomic_number: int, ionization_state: int, new_value: float = 9e99
 ):
     """
     Remove a transition or element from some atomic data. Creates a new atomic
     data file which is placed in the current working or given directory.
 
-    TODO: include Topbase
-    TODO: include lines
+    To remove a photionization edge from the data, the frequency threshold is,
+    by default, set to something large. It is also possible to just change this
+    threshold instead to something else (for experimentation reasons?).
 
     Parameters
     ----------
     data: str
-
-    atomic: int
-
-    istate: int
-
+        The type of atomic data to be edited: outershell or innershell.
+    atomic_number: int
+        The atomic number of the element related to the edge to be
+        removed.
+    ionization_state: int
+        The ionization state corresponding to the edge to be removed.
     new_value: [optional] float
-
+        The value of the new frequency threshold for the edge.
     """
 
-    n = remove_photoion_transition_from_data.__name__
+    n = remove_photoionization_edge.__name__
 
     data = data.lower()
-
     allowed_data = [
         "outershell",
         "innershell",
@@ -42,9 +47,12 @@ def remove_photoion_transition_from_data(
 
     if data not in allowed_data:
         print("{}: atomic data {} is unknown, known types are {}".format(n, data, allowed_data))
-        return
+        exit(EXIT_FAIL)
 
     filename = getenv("PYTHON") + "/xdata/atomic/"
+
+    stop = ""
+    data_name = ""
 
     if data == "outershell":
         stop = "PhotVfkyS"
@@ -52,13 +60,11 @@ def remove_photoion_transition_from_data(
     elif data == "innershell":
         stop = "InnerVYS"
         data_name = "vy_innershell_tab.dat"
-    else:
-        return
 
     filename += data_name
 
-    atomic = str(atomic)
-    istate = str(istate)
+    atomic_number = str(atomic_number)
+    ionization_state = str(ionization_state)
     new_value = str(new_value)
 
     new = []
@@ -70,16 +76,16 @@ def remove_photoion_transition_from_data(
     while i < (len(lines)):
         line = lines[i].split() + ["\n"]
 
-        if line[0] == stop and line[1] == atomic and line[2] == istate:
+        if line[0] == stop and line[1] == atomic_number and line[2] == ionization_state:
             line[5] = new_value
             new.append(" ".join(line))
 
-            npoints = int(line[6])
-            for j in range(npoints):
+            n_points = int(line[6])
+            for j in range(n_points):
                 edit_line = lines[i + j + 1].split() + ["\n"]
                 edit_line[1] = new_value
                 new.append(" ".join(edit_line))
-            i += npoints + 1
+            i += n_points + 1
         else:
             i += 1
             new.append(" ".join(line))
@@ -90,8 +96,8 @@ def remove_photoion_transition_from_data(
     return
 
 
-def remove_bound_lines_for_ion(
-    z: int, istate: int
+def remove_bound_bound_transitions_ion(
+    atomic_number: int, ionization_state: int
 ):
     """
     Remove all bound-bound transitions for a single ion from the atomic data.
@@ -100,25 +106,25 @@ def remove_bound_lines_for_ion(
 
     Parameters
     ----------
-    z: int
-        The atomic number for the ion.
-    istate: int
-        The ionization state of the ion.
+    atomic_number: int
+        The atomic number for the ion/atom the line is associated with.
+    ionization_state: int
+        The ionization state of the ion/atom the line is associated with.
     """
 
-    n = remove_bound_lines_for_ion.__name__
+    n = remove_bound_bound_transitions_ion.__name__
 
     filename = getenv("PYTHON") + "/xdata/atomic/lines_linked_ver_2.dat"
 
-    z = str(z)
-    istate = str(istate)
+    atomic_number = str(atomic_number)
+    ionization_state = str(ionization_state)
 
     with open(filename, "r") as f:
         lines = f.readlines()
 
     for i in range(len(lines)):
         line = lines[i].split() + ["\n"]
-        if line[1] == z and line[2] == istate:
+        if line[1] == atomic_number and line[2] == ionization_state:
             line[4] = "0.000000"
         lines[i] = " ".join(line)
 

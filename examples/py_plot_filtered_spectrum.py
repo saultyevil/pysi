@@ -11,7 +11,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from pyPython import spectrumUtil
-from pyPython import filteredSpectrum
+from pyPython import spectrumCreate
 from pyPython import conversion
 
 
@@ -77,7 +77,7 @@ def setup_script() -> tuple:
                           "--extract_line",
                           nargs="+",
                           type=int,
-                          default=(filteredSpectrum.UNFILTERED_SPECTRUM,),
+                          default=(spectrumCreate.UNFILTERED_SPECTRUM,),
                           help="The line number to only extract.")
 
     create_p.add_argument("-n",
@@ -122,7 +122,7 @@ def setup_script() -> tuple:
                         "--extract_line",
                         nargs="+",
                         type=int,
-                        default=(filteredSpectrum.UNFILTERED_SPECTRUM,),
+                        default=(spectrumCreate.UNFILTERED_SPECTRUM,),
                         help="The line number to only extract.")
 
     plot_p.add_argument("-xl",
@@ -310,7 +310,7 @@ def plot(
 
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 
-        if extract_line[0] != filteredSpectrum.UNFILTERED_SPECTRUM:
+        if extract_line[0] != spectrumCreate.UNFILTERED_SPECTRUM:
             name = "{}/{}_line".format(wd, root)
             for line in extract_line:
                 name += "_{}".format(line)
@@ -376,10 +376,10 @@ def main(setup: tuple = None):
     if mode == "create":
         # TODO remove s_extract references
         s_extract = spectrumUtil.read_spectrum("{}/{}.log_spec".format(wd, root))
-        filteredSpectrum.create_filtered_spectrum(root, wd, s_extract["Freq."].values, extract_nres, xmin, xmax, nbins,
-                                                  distance_norm, spec_norm, ncores_norm, True, jit)
+        spectrumCreate.create_spectrum(root, wd, s_extract["Freq."].values, extract_nres, xmin, xmax, nbins,
+                                       distance_norm, spec_norm, ncores_norm, True, jit)
     else:
-        if extract_nres[0] != filteredSpectrum.UNFILTERED_SPECTRUM:
+        if extract_nres[0] != spectrumCreate.UNFILTERED_SPECTRUM:
             name = "{}/{}_line".format(wd, root)
             for line in extract_nres:
                 name += "_{}".format(line)

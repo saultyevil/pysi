@@ -15,7 +15,7 @@ PLOT FOR EACH PROCESS.
 import numpy as np
 import argparse as ap
 from matplotlib import pyplot as plt
-from pyPython.pythonUtil import find_parameter_files, root_from_file_path
+from pyPython.pythonUtil import find_parameter_files, get_root
 from pyPython.simulation import check_convergence
 
 
@@ -106,7 +106,7 @@ def main():
     for pf in pfs:
         if pf.find("continuum") != -1:
             continue
-        root, wd = root_from_file_path(pf)
+        root, wd = get_root(pf)
         print(pf, root, wd)
         check_luminosity_balance(root, wd)
 

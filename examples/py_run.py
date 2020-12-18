@@ -625,7 +625,7 @@ def control(
 
     for i, sim in enumerate(roots):
 
-        root, wd = pythonUtil.root_from_file_path(sim)
+        root, wd = pythonUtil.get_root(sim)
         log("------------------------\n")
         log("        Model {}/{}".format(i + 1, nmodels))
         log("\n------------------------\n")

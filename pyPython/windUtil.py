@@ -2,10 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-This file contains various functions used to create visualisations of the
-wind and ionisation structure of the wind from Python. This includes utility
-functions from creating data tables, as well as functions to create plots of the
-wind.
+Functions for extracting wind quantities, as well as just ease of life things to
+make plotting the wind easier.
 """
 
 

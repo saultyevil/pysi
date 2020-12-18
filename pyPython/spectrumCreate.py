@@ -360,20 +360,20 @@ def construct_spectrum_from_weights(
         The constructed spectrum in units of F_lambda erg/s/cm/cm/A.
     """
 
-    n = construct_spectrum_from_weights.__name__
-
-    photon_freqs = delay_dump_photons["Freq."].values
-    photon_weights = delay_dump_photons["Weight"].values
-    photon_spec_index = delay_dump_photons["Spec."].values.astype(int) + 1
-    photon_nres  = delay_dump_photons["Res."].values.astype(int)
-    photon_line_nres = delay_dump_photons["LineRes."].values.astype(int)
-
     freq_min = np.min(spectrum[:, 0])
     freq_max = np.max(spectrum[:, 0])
 
     spectrum = bin_photon_weights(
-        spectrum, freq_min, freq_max, photon_freqs, photon_weights, photon_spec_index, photon_nres,
-        photon_line_nres, extract_nres, logbins
+        spectrum,
+        freq_min,
+        freq_max,
+        delay_dump_photons["Freq."].values,
+        delay_dump_photons["Weight"].values,
+        delay_dump_photons["Spec."].values.astype(int) + 1,
+        delay_dump_photons["Res."].values.astype(int),
+        delay_dump_photons["LineRes."].values.astype(int),
+        extract_nres,
+        logbins
     )
 
     spectrum[:, 1:] /= n_cores_norm
@@ -381,7 +381,7 @@ def construct_spectrum_from_weights(
     return spectrum
 
 
-def create_filtered_spectrum(
+def create_spectrum(
     root: str, wd: str = ".", extract_nres: tuple = (UNFILTERED_SPECTRUM,), dumped_photons: pd.DataFrame = None,
     freq_bins: np.ndarray = None, freq_min: float = None, freq_max: float = None, n_bins: int = 10000,
     d_norm_pc: float = 100, spec_cycle_norm: float = 1, n_cores_norm: int = 1, logbins: bool = True,
@@ -435,7 +435,7 @@ def create_filtered_spectrum(
         fluxes for each inclination angle in the other columns.
     """
 
-    n = create_filtered_spectrum.__name__
+    n = create_spectrum.__name__
 
     if type(extract_nres) != tuple:
         print("{}: extract_nres is not a tuple but is of type {}".format(n, type(extract_nres)))

@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Stored in here are various functions which will calculate quantities for
-different wind models.
+Calculate quantities for different wind models. Empty for now.
 """
 
 

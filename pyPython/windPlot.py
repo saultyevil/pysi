@@ -23,9 +23,42 @@ plt.rcParams['axes.labelsize'] = 15
 
 def plot_spherical_wind(
     r: np.ndarray, w: np.ndarray, w_name: str, w_type: str, fig: plt.Figure = None, ax: plt.Axes = None, i: int = None,
-    j: int = None, scale: str = "loglog", figsize: Tuple[int, int] = (5, 5)
+    j: int = None, scale: str = "loglog", figsize: Tuple[float, float] = (5, 5)
 ) -> Tuple[plt.Figure, plt.Axes]:
-    """Creates wind plots for 1D spherically symmetric winds."""
+    """
+    Plot a spherically symmetric 1d wind.
+
+    Parameters
+    ----------
+    r: np.ndarray
+        The radial grid points.
+    w: np.ndarray
+        The array of wind quantaties to plot.
+    w_name: str
+        The name of the quantity to be plotted.
+    w_type: str
+        The type of quantity being plotted, i.e. wind, ion, ion_density etc.
+    fig: plt.Figure [optional]
+        The plt.Figure object. Not required, as one can be made in the function.
+    ax: plt.Axes [optional]
+        The plt.Axes object. Not required, as one can be made in the function.
+    i: int [optional]
+        The i index if plotting multiple sub panels.
+    j: int [optional]
+        The j index if plotting multiple sub panels.
+    scale: int [optional]
+        The scaling of the x and y axes, allowed:
+            ["logx", "logy", "loglog", "linlin"]
+    figsize: Tuple(float, float) [optional]
+        The size of the figure.
+
+    Returns
+    -------
+    fig: plt.Figure
+        The Figure object.
+    ax: plt.Axes
+        The Axes object.
+    """
 
     n = plot_spherical_wind.__name__
 

@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 
 """
-This file contains functions which are helpful to use in a HPC environment. It
-is obviously specifically tailored for me and Iridis 5.
+Functions which should be helpful to use in a slurm environment. The functions
+contained were specifically made to be used on Iridis 5 at the University of
+Southampton, but they should work in any slurm environment, I guess.
 """
 
 
 def create_slurm_file(
-    name: str, ncores: int, split_cycle: bool, thours: int, tminutes: int, root: str, flags: str, wd: str = "."
+    name: str, n_cores: int, split_cycle: bool, n_hours: int, n_minutes: int, root: str, flags: str, wd: str = "."
 ) -> None:
     """
     Create a slurm file in the directory wd with the name root.slurm. All
@@ -18,11 +19,11 @@ def create_slurm_file(
     ----------
     name: str
         The name of the slurm file
-    ncores: int
+    n_cores: int
         The number of cores which to use
-    thours: int
+    n_hours: int
         The number of hours to allow
-    tminutes: int
+    n_minutes: int
         The number of minutes to allow
     split_cycle: bool
         If True, then py_run will use the split_cycle method
@@ -50,7 +51,7 @@ module load openmpi/3.0.0/gcc
 module load conda/py3-latest
 source activate pyPython
 python /home/ejp1n17/PythonScripts/py_run.py -n {} {} -f="{}"
-""".format(ncores, thours, tminutes, ncores, split, flags, root)
+""".format(n_cores, n_hours, n_minutes, n_cores, split, flags, root)
 
     if wd[-1] != "/":
         wd += "/"

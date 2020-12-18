@@ -8,7 +8,7 @@ TODO: this will only work for a simulation which didn't crash
 """
 
 
-from pyPython.pythonUtil import find_parameter_files, root_from_file_path
+from pyPython.pythonUtil import find_parameter_files, get_root
 from pyPython.simulation import error_summary
 
 
@@ -22,7 +22,7 @@ def main():
     pfs = find_parameter_files()
 
     for i in range(len(pfs)):
-        root, wd = root_from_file_path(pfs[i])
+        root, wd = get_root(pfs[i])
         if wd.find("continuum") != -1:
             continue
         errors = error_summary(root, wd, print_errors=True)

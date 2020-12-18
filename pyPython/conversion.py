@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-The functions in this file are concerned with converting quantities from one
-unit to another.
+Contains functions to convert various quantities into other quantities, i.e.
+frequency to wavelength, or to convert from one set of units to another.
 """
 
 
@@ -39,7 +39,6 @@ def hz_to_angstrom(freq: float):
     Returns
     -------
     The wavelength in Angstroms.
-
     """
 
     return C / freq / ANGSTROM

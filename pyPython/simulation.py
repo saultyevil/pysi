@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 
 """
-This file contains various functions used monitor, check and run Python
-simulations as well as run a grid of simulations.
+Functions for evaluating the convergence or the number of errors in a Python
+simulation, as well as (in the future) other helpful little things.
 """
 
 from copy import copy
-from typing import Union, List, Tuple
+from typing import List, Tuple
 from glob import glob
 
 
@@ -38,6 +38,7 @@ def check_convergence(
     """
 
     n = check_convergence.__name__
+
     brief_summary_len = 9
     convergence = [-1]
     converging = [-1]
@@ -98,7 +99,7 @@ def check_convergence(
 
 def check_convergence_breakdown(
     root: str, wd: str = "./"
-) -> Tuple[List[Union[float, int]], List[Union[float, int]], List[Union[float, int]], List[Union[float, int]]]:
+) -> Tuple[List[float], List[float], List[float], List[float]]:
     """
     Returns a break down in terms of the number of cells which have passed
     the convergence checks on radiation temperature, electron temperature and
@@ -110,6 +111,21 @@ def check_convergence_breakdown(
         The root name of the Python simulation
     wd: str [optional]
         The working directory of the Python simulation
+
+    Returns
+    -------
+    n_tr: List[float]
+        The fraction of cells which have passed the radiation temperature
+        convergence test.
+    n_te: List[float]
+        The fraction of cells which have passed the electron temperature
+        convergence test.
+    n_te_max: List[float]
+        The fraction of cells which have reached the maximum electron
+        temperature.
+    n_hc: List[float]
+        The fraction of cells which have passed the heating/cooling
+        convergence test.
     """
 
     n = check_convergence_breakdown.__name__
@@ -158,13 +174,13 @@ def check_convergence_breakdown(
 
 
 def error_summary(
-    root: str, wd: str = "./", ncores: int = -1, print_errors: bool = False
+    root: str, wd: str = "./", n_cores: int = -1, print_errors: bool = False
 ) -> dict:
     """
     Return a dictionary containing each error found in the error summary for
     each processor for a Python simulation.
 
-    TODO: make a dict for each processes?
+    TODO make a dict for each process
 
     Parameters
     ----------
@@ -172,8 +188,8 @@ def error_summary(
         The root name of the Python simulation
     wd: str [optional]
         The working directory of the Python simulation
-    ncores: int [optional]
-        If this is provided, then only the first ncores processes will be
+    n_cores: int [optional]
+        If this is provided, then only the first n_cores processes will be
         checked for errors
     print_errors: bool [optional]
         Print the error summary to screen
@@ -187,14 +203,14 @@ def error_summary(
     """
 
     n = error_summary.__name__
-    max_read_errors = 100
+
     total_errors = {}
 
     glob_directory = "{}/diag_{}/{}_*.diag".format(wd, root, root)
     diag_files = glob(glob_directory)
 
-    if ncores > 0:
-        ndiag = ncores
+    if n_cores > 0:
+        ndiag = n_cores
     else:
         ndiag = len(diag_files)
 
@@ -215,7 +231,7 @@ def error_summary(
 
         # Find the final error summary: look over the lines list in reverse
 
-        error_start = error_end = -1
+        error_end = -1
         for k, start_line in enumerate(lines):
 
             # Find error summary

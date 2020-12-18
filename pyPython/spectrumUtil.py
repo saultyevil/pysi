@@ -10,7 +10,7 @@ from finding these spectrum files.
 
 from .error import DimensionError, EXIT_FAIL
 from .constants import C, ANGSTROM
-from .pythonUtil import root_from_file_path
+from .pythonUtil import get_root
 
 from sys import exit
 from pathlib import Path
@@ -26,20 +26,89 @@ UNITS_FNU = "erg/s/cm^-2/Hz"
 UNITS_LNU = "erg/s/Hz"
 
 
+def read_spectrum(
+    fname: str, delim: str = None, numpy: bool = False
+) -> Union[int, np.ndarray, pd.DataFrame]:
+    """
+    Read in a spectrum .spec file. The spectrum is read in line by line and
+    ignores comments which being with #.
+
+    TODO update to be consistent with the root wd approach
+
+    Parameters
+    ----------
+    fname: str
+        The path to the .spec file
+    delim: str [optional]
+        The value delimiter.
+    numpy:bool [optional]
+        Return a Numpy array of strings instead. This is the less ideal option,
+        but is retained for legacy reasons.
+
+    Returns
+    -------
+    spectrum: np.ndarray or pd.DataFrame
+        The read in spectrum either as a numpy array or pandas DataFrame.
+    """
+
+    n = read_spectrum.__name__
+
+    try:
+        with open(fname, "r") as f:
+            lines = f.readlines()
+    except IOError:
+        print("{}: unable to open file {}".format(n, fname))
+        exit(EXIT_FAIL)
+
+    spectrum = []
+
+    for i in range(len(lines)):
+        line = lines[i].strip()
+
+        if delim:
+            line = line.split(delim)
+        else:
+            line = line.split()
+
+        # Ignore empty and comment lines
+
+        if len(line) == 0:
+            continue
+        elif line[0] == "#":
+            continue
+
+        # Extract the header line
+
+        if line[0] == "Freq." or line[0] == "Lambda":
+            for j in range(len(line)):
+                # Remove the phase from headers, I don't care about them
+                if line[j][0] == "A":
+                    index = line[j].find("P")
+                    line[j] = line[j][1:index]
+
+        spectrum.append(line)
+
+    if numpy:
+        spectrum = np.array(spectrum, dtype=float)
+        return spectrum
+    else:
+        return pd.DataFrame(spectrum[1:], columns=spectrum[0]).astype(float)
+
+
 def find_spec_files(
-    root: str = None, path: str = ".", ingore_delay_dump: bool = True
+    root: str = None, wd: str = ".", ignore_delay_dump_spec: bool = True
 ) -> List[str]:
     """
-    Find root.spec files recursively in tge provided directory.
+    Find root.spec files recursively in the provided directory.
 
     Parameters
     ----------
     root: str [optional]
         If root is set, then only .spec files with this root name will be
         returned
-    path: str [optional]
+    wd: str [optional]
         The path to recursively search from
-    ingore_delay_dump: [optional] bool
+    ignore_delay_dump_spec: [optional] bool
         When True, root.delay_dump.spec files will be ignored
 
     Returns
@@ -50,103 +119,35 @@ def find_spec_files(
 
     spec_files = []
 
-    for filename in Path(path).glob("**/*.spec"):
+    for filename in Path(wd).glob("**/*.spec"):
+
         fname = str(filename)
 
-        if ingore_delay_dump and fname.find(".delay_dump.spec") != -1:
+        if ignore_delay_dump_spec and fname.find(".delay_dump.spec") != -1:
             continue
 
         if root:
-            t_root, wd = root_from_file_path(fname)
-
+            t_root, wd = get_root(fname)
             if t_root == root:
                 spec_files.append(fname)
             else:
                 continue
-
         spec_files.append(fname)
 
     return spec_files
-
-
-def read_spectrum(
-    fname: str, delim: str = None, numpy: bool = False
-) -> Union[int, np.ndarray, pd.DataFrame]:
-    """
-    Read in data from an external file, line by line whilst ignoring comments.
-        - Comments begin with #
-        - The default delimiter is assumed to be a space
-
-    Parameters
-    ----------
-    fname: str
-        The directory path to the spec file to be read in
-    delim: str [optional]
-        The delimiter between values in the file, by default a space is assumed
-    numpy:bool [optional]
-        If True, a Numpy array of strings will be used instead :-(
-
-    Returns
-    -------
-    lines: np.ndarray or pd.DataFrame
-        The .spec file as a Numpy array or a Pandas DataFrame
-    """
-
-    n = read_spectrum.__name__
-
-    try:
-        with open(fname, "r") as f:
-            flines = f.readlines()
-    except IOError:
-        print("{}: unable to open file {}".format(n, fname))
-        exit(EXIT_FAIL)
-
-    lines = []
-
-    for i in range(len(flines)):
-        line = flines[i].strip()
-
-        if delim:
-            line = line.split(delim)
-        else:
-            line = line.split()
-
-        # Ignore empty lines and comment lines
-
-        if len(line) == 0:
-            continue
-        if line[0] == "#":
-            continue
-
-        # Extract the header line
-
-        if line[0] == "Freq." or line[0] == "Lambda":
-
-            for j in range(len(line)):
-                if line[j][0] == "A":
-                    index = line[j].find("P")
-                    line[j] = line[j][1:index]
-
-        lines.append(line)
-
-    if numpy:
-        spec = np.array(lines, dtype=float)
-        return spec
-
-    return pd.DataFrame(lines[1:], columns=lines[0]).astype(float)
-
 
 
 def get_spectrum_units(
     fname: str
 ):
     """
-    Get the units of the provided spectrum.
+    Get the units of a Python spectrum. This information is contained in the
+    top matter of the spectrum file.
 
     Parameters
     ----------
     fname: str
-        The directory path to the spectrum file.
+        The path to the spectrum file.
 
     Returns
     -------
@@ -169,15 +170,16 @@ def get_spectrum_units(
 
 
 def get_spectrum_inclinations(
-    spec: Union[pd.DataFrame, np.ndarray, List[str], str]
+    spectra: Union[pd.DataFrame, np.ndarray, List[str], str]
 ) -> list:
     """
-    Find the unique inclination angles for a set of Python .spec files given
-    the path for multiple .spec files.
+    Return the inclination angles for a single or multiple spectrum files. A
+    single spectrum or multiple spectra can be provided, either as a numpy array
+    of strings, a list of file names or as pandas DataFrames.
 
     Parameters
     ----------
-    spec: List[str]
+    spectra: List[str, np.array[str], pd.DataFrame]
         A spectrum in the form of pd.DataFrame/np.ndarray or a list of
         directories to Python .spec files
 
@@ -188,34 +190,36 @@ def get_spectrum_inclinations(
     """
 
     n = get_spectrum_inclinations.__name__
+
+    n_spec = 1
+    b_read_in_spec = False
     inclinations = []
 
-    nspec = 1
-    readin = False
-
-    if type(spec) == list:
-        nspec = len(spec)
-        readin = True
-    elif type(spec) == str:
-        spec = [spec]
-        readin = True
-    elif type(spec) != pd.core.frame.DataFrame and type(spec) != np.ndarray:
-        raise TypeError("{}: spec passed is of unknown type {}".format(n, type(spec)))
+    if type(spectra) == list:
+        b_read_in_spec = True
+        n_spec = len(spectra)
+    elif type(spectra) == str:
+        b_read_in_spec = True
+        spectra = [spectra]
+    elif type(spectra) != pd.DataFrame and type(spectra) != np.ndarray:
+        raise TypeError("{}: spec passed is of unknown type {}".format(n, type(spectra)))
+    else:
+        spectra = [spectra]
 
     # Find the viewing angles in each .spec file
-    for i in range(nspec):
-        if readin:
-            spec = read_spectrum(spec[i])
+    for i in range(n_spec):
+        if b_read_in_spec:
+            spectra = read_spectrum(spectra[i])
 
         # I only know what to do when I expect the spectrum to be a pd.DataFrame
         # or a np.array
 
-        if type(spec) == pd.core.frame.DataFrame:
-            col_names = spec.columns.values
-        elif type(spec) == np.ndarray:
-            col_names = spec[0, :]
+        if type(spectra) == pd.DataFrame:
+            col_names = spectra.columns.values
+        elif type(spectra) == np.ndarray:
+            col_names = spectra[0, :]
         else:
-            raise TypeError("{}: bad data type {}: require pd.DataFrame or np.array".format(n, type(spec)))
+            raise TypeError("{}: bad data type {}: require pd.DataFrame or np.array".format(n, type(spectra)))
 
         for j in range(len(col_names)):
             if col_names[j].isdigit() is True and col_names[j] not in inclinations:
@@ -226,19 +230,19 @@ def get_spectrum_inclinations(
     return inclinations
 
 
-def check_valid_inclination(
-    inclination: str, spec: Union[pd.DataFrame, np.ndarray]
+def check_inclination_valid(
+    inclination: str, spectrum: Union[pd.DataFrame, np.ndarray, str]
 ) -> bool:
     """
-    Check that an inclination angle is in a spectrum.
+    Check that an inclination angle is one which exists in the spectrum.
 
     Parameters
     ----------
     inclination: str
         The inclination angle to check
-    spec: np.ndarray
-        The spectrum array to read -- assume that it is a np.array of strings
-        Note that tde_spec_plot has a similar routine for pd.DataFrame's, whoops!
+    spectrum: str, pd.DataFrame, np.ndarray
+        The spectrum to check against. Can either be a pandas DataFrame, numpy
+        array of strings or the file name of the spectrum.
 
     Returns
     -------
@@ -246,15 +250,18 @@ def check_valid_inclination(
         If True, angle is a legal angle, otherwise false
     """
 
-    n = check_valid_inclination.__name__
+    n = check_inclination_valid.__name__
+
     is_allowed = False
 
-    if type(spec) == pd.core.frame.DataFrame:
-        headers = spec.columns.values
-    elif type(spec) == np.ndarray:
-        headers = spec[0, :]
+    if type(spectrum) == pd.DataFrame:
+        headers = spectrum.columns.values
+    elif type(spectrum) == np.ndarray:
+        headers = spectrum[0, :]
+    elif type(spectrum) == str:
+        headers = read_spectrum(spectrum).columns.values
     else:
-        raise TypeError("{}: unknown data type {} for function".format(n, type(spec)))
+        raise TypeError("{}: unknown data type {} for function".format(n, type(spectrum)))
 
     if type(inclination) != str:
         inclination = str(inclination)
@@ -269,19 +276,19 @@ def smooth(
     array: Union[np.ndarray, List[Union[float, int]]], smooth_amount: Union[int, float]
 ) -> np.ndarray:
     """
-    Smooth a 1D array of data using a boxcar filter of width smooth pixels.
+    Smooth a 1D array of data using a boxcar filter.
 
     Parameters
     ----------
     array: np.array[float]
-        The data to smooth using the boxcar filter
+        The array to be smoothed.
     smooth_amount: int
-        The size of the window for the boxcar filter
+        The size of the boxcar filter.
 
     Returns
     -------
     smoothed: np.ndarray
-        The smoothed data
+        The smoothed array
     """
 
     n = smooth.__name__
@@ -318,35 +325,37 @@ def calculate_axis_y_limits(
     x: np.array, y: np.array, xmin: float, xmax: float, scale: float = 10
 ) -> Union[Tuple[float, float], Tuple[None, None]]:
     """
-    Determine the lower and upper limit for the flux given a restricted
-    wavelength range (wmin, wmax).
+    Determine the lower and upper y limits for a matplotlib plot given a
+    restricted x range, since matplotlib doesn't do this automatically.
+
 
     Parameters
     ----------
     x: np.array[float]
-        An array containing all wavelengths in a spectrum
+        The array of x axis points.
     y: np.array[float]
-        An array containing the flux at each wavelength point
+        The array of y axis points.
     xmin: float
-
+        The lowest x value.
     xmax: float
-
+        The largest x value.
     scale: float [optional]
         The scaling factor for white space around the data
 
     Returns
     -------
     ymin: float
-        The lower y limit to use with the wavelength range
+        The lowest y value.
     ymax: float
-        The upper y limit to use with the wavelength range
+        The highest y value.
     """
 
     n = calculate_axis_y_limits.__name__
 
     if x.shape[0] != y.shape[0]:
-        raise DimensionError("{}: wavelength and flux are of different dimensions wavelength {} flux {}"
-                             .format(n, x.shape, y.shape))
+        raise DimensionError(
+            "{}: wavelength and flux are of different dimensions wavelength {} flux {}".format(n, x.shape, y.shape)
+        )
 
     if type(x) == pd.Series or type(y) == pd.Series:
         try:
@@ -381,21 +390,21 @@ def calculate_axis_y_limits(
 
 def ax_add_line_id(
     ax: plt.Axes, lines: list, logx: bool = False, offset: float = 25, rotation: str = "vertical", fontsize: int = 10
-)-> plt.Axes:
+) -> plt.Axes:
     """
-    Plot line IDs onto a figure. This should probably be used after the x-limits
-    have been set on the figure which these labels are being plotted onto.
+    Add labels for line transitions or other regions of interest onto a
+    matplotlib figure. Labels are placed at the top of the panel and dashed
+    lines, with zorder = 0, are drawn from top to bottom.
 
     Parameters
     ----------
     ax: plt.Axes
-        The plot object to add line IDs to
+        The axes (plt.Axes) to add line labels too
     lines: list
         A list containing the line name and wavelength in Angstroms
         (ordered by wavelength)
     logx: bool [optional]
-        If the x-axis is logarithmic, then we need to calculate the xnorm
-        value slightly differently
+        Use when the x-axis is logarithmic
     offset: float [optional]
         The amount to offset line labels along the x-axis
     rotation: str [optional]

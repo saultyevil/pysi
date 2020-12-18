@@ -130,7 +130,7 @@ def main():
 
     pfs = Utils.find_parameter_files()
     for i in range(len(pfs)):
-        root, wd = Utils.root_from_file_path(pfs[i])
+        root, wd = Utils.get_root(pfs[i])
         if wd.find("continuum") != -1:
             continue
         print("-" * COL_WIDTH)

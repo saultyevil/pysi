@@ -226,7 +226,7 @@ def plot(
                 logx = True
             else:
                 logx = False
-            ax[i] = spectrumUtil.add_line_id(ax[i], spectrumUtil.common_lines_list(), logx)
+            ax[i] = spectrumUtil.ax_add_line_id(ax[i], spectrumUtil.common_lines_list(), logx)
 
     ax[0].legend(loc="lower left")
 

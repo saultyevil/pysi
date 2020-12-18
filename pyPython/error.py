@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-This file contains various custom exceptions which are raised throughout to give
-more detailed error messages.
+Error codes and custom exceptions.
 """
 
 

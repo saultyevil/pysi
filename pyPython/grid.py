@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-This file contains various functions used to create a grid of parameter files
-or to edit a grid of parameter files.
+Functions used to create a grid of parameter files or to edit a grid of
+parameter files.
 """
 
 
@@ -12,7 +12,7 @@ from shutil import copyfile
 
 
 def update_single_parameter(
-    pf_path: str, parameter_name: str, new_value: str, backup: bool = True, verbose: bool = False
+    path: str, parameter_name: str, new_value: str, backup: bool = True, verbose: bool = False
 ):
     """
     Change the value of a parameter in a Python parameter file. If the old and
@@ -21,12 +21,12 @@ def update_single_parameter(
 
     Parameters
     ----------
-    pf_path: str
-        The absolute or relative path to the parameter file
+    path: str
+        The path to the parameter file
     parameter_name: str
-        The name of the parameter being updated
+        The name of the parameter to update
     new_value: str
-        The updated value for the parameter
+        The updated value of the parameter
     backup: bool [optional]
         Create a back up of the original parameter file
     verbose: bool [optional]
@@ -35,20 +35,20 @@ def update_single_parameter(
 
     n = update_single_parameter.__name__
 
-    if pf_path.find(".pf") == -1:
-        raise IOError("{}: provided parameter file path {} is not a .pf parameter file".format(n, pf_path))
+    if path.find(".pf") == -1:
+        raise IOError("{}: provided parameter file path {} is not a .pf parameter file".format(n, path))
 
     if backup:
-        copyfile(pf_path, pf_path + ".bak")
+        copyfile(path, path + ".bak")
 
     old = ""
     new = ""
 
     try:
-        with open(pf_path, "r") as f:
+        with open(path, "r") as f:
             pf = f.readlines()
     except IOError:
-        print("{}: unable to open parameter file {}".format(n, pf_path))
+        print("{}: unable to open parameter file {}".format(n, path))
         return
 
     for i, line in enumerate(pf):
@@ -65,19 +65,17 @@ def update_single_parameter(
                 )
             )
     else:
-        print("-\n" * 80)
-        print("{}: unable to update: could not find parameter {} in file {}".format(n, parameter_name, pf_path))
-        print("\n-" * 80)
+        print("{}: unable to update: could not find parameter {} in file {}".format(n, parameter_name, path))
         return
 
-    with open(pf_path, "w") as f:
+    with open(path, "w") as f:
         f.writelines(pf)
 
     return
 
 
 def add_single_parameter(
-    pf_path: str, parameter_name: str, new_value: str, backup: bool = True, verbose: bool = False
+    path: str, parameter_name: str, new_value: str, backup: bool = True, verbose: bool = False
 ):
     """
     Add a parameter which doesn't already exist to the end of an already
@@ -87,12 +85,12 @@ def add_single_parameter(
 
     Parameters
     ----------
-    pf_path: str
-        The absolute or relative path to the parameter file
+    path: str
+        The path to the parameter file
     parameter_name: str
-        The name of the parameter being updated
+        The name of the parameter to be added
     new_value: str
-        The updated value for the parameter
+        The value of the parameter
     backup: bool [optional]
         Create a back up of the original parameter file
     verbose: bool [optional]
@@ -101,29 +99,29 @@ def add_single_parameter(
 
     n = add_single_parameter.__name__
 
-    if pf_path.find(".pf") == -1:
-        raise IOError("{}: provided parameter file path {} is not a .pf parameter file".format(n, pf_path))
+    if path.find(".pf") == -1:
+        raise IOError("{}: provided parameter file path {} is not a .pf parameter file".format(n, path))
 
     if backup:
-        copyfile(pf_path, pf_path + ".bak")
+        copyfile(path, path + ".bak")
 
     try:
-        with open(pf_path, "r") as f:
+        with open(path, "r") as f:
             pf = f.readlines()
     except IOError:
-        print("{}: unable to open parameter file {}".format(n, pf_path))
+        print("{}: unable to open parameter file {}".format(n, path))
         return
 
     pf.append("{:40s} {}\n".format(parameter_name, new_value))
 
-    with open(pf_path, "w") as f:
+    with open(path, "w") as f:
         f.writelines(pf)
 
     return
 
 
 def create_grid(
-    pf_path: str, parameter_name: str, grid_values: List[str], extra_name: str = None, backup: bool = True,
+    path: str, parameter_name: str, grid_values: List[str], extra_name: str = None, backup: bool = True,
     verbose: bool = False
 ) -> List[str]:
     """
@@ -134,11 +132,10 @@ def create_grid(
 
     Parameters
     ----------
-    pf_path: str
-        An absolute or relative path to the base parameter file to construct
-        the grid from
+    path: str
+        The path to the base parameter file to construct the grid from
     parameter_name: str
-        The name of the parameter to construct a grid for
+        The name of the parameter to create a grid of
     grid_values: List[str]
         A list of values for the simulation grid for the parameter
     extra_name: str [optional]
@@ -150,29 +147,30 @@ def create_grid(
 
     Returns
     -------
-    grid_pf: List[str]
+    grid: List[str]
         The paths to the newly generated parameter files for the grid
     """
 
     n = create_grid.__name__
-    ngrid = len(grid_values)
-    grid_pf = []
+
+    n_grid = len(grid_values)
+    grid = []
 
     if backup:
-        copyfile(pf_path, pf_path + ".bak")
+        copyfile(path, path + ".bak")
 
-    ext = pf_path.find(".pf")
+    ext = path.find(".pf")
     if ext == -1:
-        raise IOError("{}: provided file path {} is not a .pf parameter file".format(n, pf_path))
+        raise IOError("{}: provided file path {} is not a .pf parameter file".format(n, path))
 
-    for i in range(ngrid):
-        path = pf_path[:ext]
+    for i in range(n_grid):
+        path = path[:ext]
         if extra_name:
             path += "_{}".format(extra_name)
         path += "_{}".format(grid_values[i]) + ".pf"
         print(path)
-        copyfile(pf_path, path)
+        copyfile(path, path)
         update_single_parameter(path, parameter_name, grid_values[i], backup=False, verbose=verbose)
-        grid_pf.append(path)
+        grid.append(path)
 
-    return grid_pf
+    return grid

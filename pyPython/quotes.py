@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-This file contains a bunch of random quotes in a list, as well as a function
-which can pick a random quote.
+Some dumb quotes, as well as a function to pick a random quote and print it
+to the screen.
 """
 
 
@@ -52,9 +52,8 @@ def random_quote():
         The random quote.
     """
 
-    nquotes = len(QUOTES)
-    quote = QUOTES[randint(0, nquotes)]
-    print(quote)
-    print()
+    n_quotes = len(QUOTES)
+    quote = QUOTES[randint(0, n_quotes)]
+    print(quote, end="\n\n")
 
     return quote
