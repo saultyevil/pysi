@@ -113,7 +113,7 @@ def setup_script(
     return setup
 
 
-def spectra_on_same_panel(
+def plot_all_spectrum_inclinations_in_one_panel(
     root: str, wd: str = "./", xmin: float = None, xmax: float = None, smooth_amount: int = 5,
     frequency_space: bool = False, axes_scales: str = "logy", common_lines: bool = True, file_ext: str = "png"
 ) -> Tuple[plt.Figure, plt.Axes]:
@@ -216,7 +216,7 @@ def spectra_on_same_panel(
     return fig, ax
 
 
-def spectra_on_multiple_panels(
+def plot_spectrum_inclinations_on_one_figure_in_subpanels(
     root: str, wd: str = "./", xmin: float = None, xmax: float = None, smooth_amount: int = 5,
     frequency_space: bool = False, axes_scales: str = "logy", common_lines: bool = True, file_ext: str = "png"
 ) -> Tuple[plt.Figure, plt.Axes]:
@@ -261,7 +261,7 @@ def spectra_on_multiple_panels(
     return fig, ax
 
 
-def spectrum_inclination_in_one_figure(
+def plot_spectrum_inclination_in_individual_figures(
     root: str, wd: str = "./", xmin: float = None, xmax: float = None, smooth_amount: int = 5,
     frequency_space: bool = False, axes_scales: str = "logy", file_ext: str = "png"
 ) -> None:
@@ -378,15 +378,15 @@ def main(
 
     root = root.replace("/", "")
 
-    fig, ax = spectra_on_same_panel(
+    fig, ax = plot_all_spectrum_inclinations_in_one_panel(
         root, wd, xmin, xmax, smooth_amount, frequency_space, axes_scales, common_lines, file_ext
     )
 
-    fig, ax = spectra_on_multiple_panels(
+    fig, ax = plot_spectrum_inclinations_on_one_figure_in_subpanels(
         root, wd, xmin, xmax, smooth_amount, frequency_space, axes_scales, False, file_ext
     )
 
-    spectrum_inclination_in_one_figure(
+    plot_spectrum_inclination_in_individual_figures(
         root, wd, xmin, xmax, smooth_amount, frequency_space, axes_scales, file_ext
     )
 
