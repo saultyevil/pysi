@@ -203,8 +203,6 @@ def get_spectrum_inclinations(
         spectra = [spectra]
     elif type(spectra) != pd.DataFrame and type(spectra) != np.ndarray:
         raise TypeError("{}: spec passed is of unknown type {}".format(n, type(spectra)))
-    else:
-        spectra = [spectra]
 
     # Find the viewing angles in each .spec file
     for i in range(n_spec):
