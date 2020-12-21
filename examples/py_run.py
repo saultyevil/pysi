@@ -18,9 +18,9 @@ import datetime
 from copy import copy
 from sys import exit
 from shutil import copyfile
-from typing import List
+from typing import List, Tuple
 from subprocess import Popen, PIPE
-from py_plot import plot
+from socket import gethostname
 
 from pyPython import grid
 from pyPython import simulation
@@ -28,6 +28,7 @@ from pyPython import pythonUtil
 from pyPython.log import log, init_logfile, close_logfile
 from pyPython import quotes
 from pyPython.error import EXIT_FAIL
+from pyPython.mailNotifications import send_notification
 
 
 CONVERGED = \
@@ -74,16 +75,14 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ __ _ _ _ _ _ _ _ _
 
 
 # Global variables
-DATE = datetime.datetime.now()
-N_CORES = 0
+N_CORES = 1
 PYTHON_BINARY = "py"
 RUNTIME_FLAGS = None
 RESTART_MODEL = False
 AUTOMATIC_RESTART_OVERRIDE = False
-CONVERGENCE_LOWER_LIMIT = 0.85
+CONVERGENCE_LOWER_LIMIT = 0.80
 SPLIT_CYCLES = False
 DRY_RUN = False
-PLOT = False
 
 # Verbosity levels of Python output
 VERBOSE_SILENT = 0
@@ -91,7 +90,7 @@ VERBOSE_PROGRESS_REPORT = 1
 VERBOSE_EXTRA_INFORMATION = 2
 VERBOSE_EXTRA_INFORMATION_TRANSPORT = 3
 VERBOSE_ALL = 4
-VERBOSITY = VERBOSE_EXTRA_INFORMATION
+VERBOSITY = VERBOSE_EXTRA_INFORMATION_TRANSPORT
 
 
 def setup_script(
@@ -109,70 +108,80 @@ def setup_script(
     global CONVERGENCE_LOWER_LIMIT
     global DRY_RUN
     global N_CORES
-    global PLOT
 
     p = ap.ArgumentParser(description=__doc__)
 
-    p.add_argument("-sc",
-                   "--split_cycles",
-                   action="store_true",
-                   default=SPLIT_CYCLES,
-                   help="Split the ionization and spectrum cycles into two separate Python runs.")
+    p.add_argument(
+        "-sc",
+        "--split_cycles",
+        action="store_true",
+        default=SPLIT_CYCLES,
+        help="Split the ionization and spectrum cycles into two separate Python runs."
+    )
 
-    p.add_argument("-r",
-                   "--restart",
-                   action="store_true",
-                   default=RESTART_MODEL,
-                   help="Restart a Python model from a previous wind_save.")
+    p.add_argument(
+        "-r",
+        "--restart",
+        action="store_true",
+        default=RESTART_MODEL,
+        help="Restart a Python model from a previous wind_save."
+    )
 
-    p.add_argument("-ro",
-                   "--restart_override",
-                   action="store_true",
-                   default=AUTOMATIC_RESTART_OVERRIDE,
-                   help="Disable the automatic restarting run function.")
+    p.add_argument(
+        "-ro",
+        "--restart_override",
+        action="store_true",
+        default=AUTOMATIC_RESTART_OVERRIDE,
+        help="Disable the automatic restarting run function."
+    )
 
-    p.add_argument("-py",
-                   "--python",
-                   default=PYTHON_BINARY,
-                   help="The name of the of the Python binary to use.")
+    p.add_argument(
+        "-py",
+        "--python",
+        default=PYTHON_BINARY,
+        help="The name of the of the Python binary to use."
+    )
 
-    p.add_argument("-f",
-                   "--python_flags",
-                   default=RUNTIME_FLAGS,
-                   help="Any run-time flags to pass to Python.")
+    p.add_argument(
+        "-f",
+        "--python_flags",
+        default=RUNTIME_FLAGS,
+        help="Any run-time flags to pass to Python."
+    )
 
-    p.add_argument("-c",
-                   "--convergence_limit",
-                   type=float,
-                   default=CONVERGENCE_LOWER_LIMIT,
-                   help="The 'limit' for considering a model converged. This value is 0 < c_value < 1.")
+    p.add_argument(
+        "-c",
+        "--convergence_limit",
+        type=float,
+        default=CONVERGENCE_LOWER_LIMIT,
+        help="The 'limit' for considering a model converged. This value is 0 < c_value < 1."
+    )
 
-    p.add_argument("-v",
-                   "--verbosity",
-                   type=int,
-                   default=VERBOSE_EXTRA_INFORMATION,
-                   help="The level of verbosity for Python's output.")
+    p.add_argument(
+        "-v",
+        "--verbosity",
+        type=int,
+        default=VERBOSE_EXTRA_INFORMATION,
+        help="The level of verbosity for Python's output."
+    )
 
-    p.add_argument("-n",
-                   "--n_cores",
-                   type=int,
-                   default=N_CORES,
-                   help="The number of processor cores to run Python with.")
+    p.add_argument(
+        "-n",
+        "--n_cores",
+        type=int,
+        default=N_CORES,
+        help="The number of processor cores to run Python with."
+    )
 
-    p.add_argument("-d",
-                   "--dry_run",
-                   action="store_true",
-                   default=DRY_RUN,
-                   help="Print the models found to screen and then exit.")
-
-    p.add_argument("-p",
-                   "--plot",
-                   action="store_true",
-                   default=PLOT,
-                   help="Create plots for the models after running Python.")
+    p.add_argument(
+        "-d",
+        "--dry_run",
+        action="store_true",
+        default=DRY_RUN,
+        help="Print the models found to screen and then exit."
+    )
 
     args = p.parse_args()
-
     VERBOSITY = args.verbosity
     SPLIT_CYCLES = args.split_cycles
     PYTHON_BINARY = args.python
@@ -182,17 +191,19 @@ def setup_script(
     CONVERGENCE_LOWER_LIMIT = args.convergence_limit
     DRY_RUN = args.dry_run
     N_CORES = args.n_cores
-    PLOT = args.plot
 
-    log("Python  .......................... {}".format(PYTHON_BINARY))
-    log("Split cycles ..................... {}".format(SPLIT_CYCLES))
-    log("Resume run ....................... {}".format(RESTART_MODEL))
-    log("Automatic restart override ....... {}".format(AUTOMATIC_RESTART_OVERRIDE))
-    log("Number of cores .................. {}".format(N_CORES))
-    log("Convergence limit ................ {}".format(CONVERGENCE_LOWER_LIMIT))
-    log("Verbosity level .................. {}".format(VERBOSITY))
-    log("Plot model ....................... {}".format(PLOT))
+    msg = """\
+Python  .......................... {}
+Split cycles ..................... {}
+Resume run ....................... {}
+Automatic restart override ....... {}
+Number of cores .................. {}
+Convergence limit ................ {}
+Verbosity level .................. {}
+""".format(PYTHON_BINARY, SPLIT_CYCLES, RESTART_MODEL, AUTOMATIC_RESTART_OVERRIDE, N_CORES, CONVERGENCE_LOWER_LIMIT,
+           VERBOSITY)
 
+    log(msg)
     if RUNTIME_FLAGS:
         log("\nUsing these extra python flags:\n\t{}".format(RUNTIME_FLAGS))
 
@@ -204,12 +215,9 @@ def print_python_output(
 ) -> None:
     """
     Process the output from a Python simulation and print something to screen.
-
     The amount printed to screen will vary depending on the verbosity level
     chosen.
 
-    Level                                     Result
-    -----                                     ------
     0: VERBOSE_SILENT                         Nothing
     1: VERBOSE_PROGRESS_REPORT                Cycle information
     2: VERBOSE_EXTRA_INFORMATION              Convergence plus the above
@@ -310,99 +318,6 @@ def print_python_output(
     return
 
 
-def plot_model(
-    root: str, wd: str
-) -> None:
-    """
-    Run py_plot.py.plot() to create a bunch of default plots for the model.
-
-    Parameters
-    ----------
-    root: str
-        The root name of the Python simulation
-    wd: str
-        The working directory containing the Python simulation
-    """
-
-    try:
-        plot((root, wd, None, None, False, "rectilinear", 5, "png", False))
-    except Exception as e:
-        print(e)
-        print("Unable to create plots of model. Do you have a valid X session?")
-
-    return
-
-
-def convergence_check(
-    root: str, wd: str, nmodels: int
-) -> bool:
-    """
-    Check the convergence of a Python simulation by parsing the master diag
-    file. If more than one model is being run, then the convergence of each
-    model will be appended to the convergence tracking files.
-
-    Parameters
-    ----------
-    root: str
-        The root name of the Python simulation
-    wd: str
-        The working directory containing the Python simulation
-    nmodels: int
-        The number of models which are scheduled to run.
-
-    Returns
-    -------
-    converged: bool
-        If the simulation has converged, True is returned.
-    """
-
-    converged = False
-
-    model_convergence = simulation.check_convergence(root, wd)
-    if type(model_convergence) is list:
-        model_convergence = model_convergence[0]
-    log("Model convergence ........... {}".format(model_convergence))
-
-    # An unknown convergence has been returned
-    if 0 > model_convergence > 1:
-        log(ITS_A_MYSTERY)
-    # The model has not converged
-    elif model_convergence < CONVERGENCE_LOWER_LIMIT:
-        log(NOT_CONVERGED)
-    # The model has converged
-    elif model_convergence >= CONVERGENCE_LOWER_LIMIT:
-        converged = True
-        log(CONVERGED)
-
-    log("")
-
-    # If there is only one model being run, then we don't need to write out
-    # the convergence to a bunch of files
-
-    if nmodels == 1:
-        return converged
-
-    # If there are multiple models being run, then we will track the convergence
-    # of each model in some master convergence files
-
-    if converged is False:
-        output = "not_converged.txt"
-    else:
-        output = "converged.txt"
-
-    # Write the model name and convergence to the appropriate output file
-
-    with open(output, "a") as f:
-        f.write("{}\t{}.pf\t{}\n".format(wd, root, model_convergence))
-
-    # Write the model name and convergence to the master convergence file
-
-    with open("convergence_report.txt", "a") as f:
-        f.write("{}\t{}.pf\t{}\n".format(wd, root, model_convergence))
-
-    return converged
-
-
 def restore_backup_pf(
     root: str, wd: str
 ) -> None:
@@ -423,6 +338,54 @@ def restore_backup_pf(
     copyfile(bak, opf)
 
     return
+
+
+def convergence_check(
+    root: str, wd: str
+) -> Tuple[bool, float]:
+    """
+    Check the convergence of a Python simulation by parsing the master diag
+    file. If more than one model is being run, then the convergence of each
+    model will be appended to the convergence tracking files.
+
+    Parameters
+    ----------
+    root: str
+        The root name of the Python simulation
+    wd: str
+        The working directory containing the Python simulation
+
+    Returns
+    -------
+    converged: bool
+        If the simulation has converged, True is returned.
+    """
+
+    converged = False
+
+    model_convergence = simulation.check_convergence(root, wd)
+    if type(model_convergence) == list:
+        model_convergence = model_convergence[-1]
+
+    # An unknown convergence has been returned
+
+    if 0 > model_convergence > 1:
+        log(ITS_A_MYSTERY)
+
+    # The model has not converged
+
+    elif model_convergence < CONVERGENCE_LOWER_LIMIT:
+        log(NOT_CONVERGED)
+
+    # The model has converged
+
+    elif model_convergence >= CONVERGENCE_LOWER_LIMIT:
+        converged = True
+        log(CONVERGED)
+
+    log("")
+
+    return converged, model_convergence
 
 
 def print_errors(
@@ -447,8 +410,8 @@ def print_errors(
     return
 
 
-def run_model(
-    root: str, wd: str, use_mpi: bool, ncores: int, resume_model: bool = False, restart_from_spec_cycles: bool = False,
+def run_single_model(
+    root: str, wd: str, use_mpi: bool, n_cores: int, resume_model: bool = False, restart_from_spec_cycles: bool = False,
     split_cycles: bool = False
 ) -> int:
     """
@@ -465,7 +428,7 @@ def run_model(
         The working directory to run the Python simulation in.
     use_mpi: bool
         If True, Python will be run using mpirun.
-    ncores: int
+    n_cores: int
         If use_mpi is True, then Python will be run using the number of cores
         provided.
     resume_model: bool, optional
@@ -498,16 +461,16 @@ def run_model(
     # this is because you may need 5e7 photons during the ionization cycles for
     # the model to converge, but you are unlikely to need this many to make a
     # low signal/noise spectrum. Note we make a backup of the original pf.
+    # TODO put into seperate function
 
     try:
         if split_cycles and not restart_from_spec_cycles:
             grid.update_single_parameter(wd + pf, "Spectrum_cycles", "0", backup=True, verbose=verbose)
-
-        if split_cycles and restart_from_spec_cycles:
+        elif split_cycles and restart_from_spec_cycles:
             grid.update_single_parameter(wd + pf, "Spectrum_cycles", "5", backup=False, verbose=verbose)
             grid.update_single_parameter(wd + pf, "Photons_per_cycle", "1e6", backup=False, verbose=verbose)
     except IOError:
-        print("Unable to open parameter file {} to change any parameters".format(wd + pf))
+        print("Unable to open parameter file {} in split cycle mode to change parameters".format(wd + pf))
         return EXIT_FAIL
 
     # Construct shell command to run Python and use subprocess to run
@@ -516,7 +479,7 @@ def run_model(
     if not path.exists("{}/data".format(wd)):
         command += "Setup_Py_Dir; "
     if use_mpi:
-        command += "mpirun -n {} ".format(ncores)
+        command += "mpirun -n {} ".format(n_cores)
 
     command += " {} ".format(PYTHON_BINARY)
 
@@ -546,15 +509,16 @@ def run_model(
 
     # This next bit provides real time output of Python's output...
 
-    model_log = "{}/{}_{}{:02d}{:02d}.log.txt".format(wd, root, DATE.year, int(DATE.month), int(DATE.day))
+    model_log = "{}/{}.log.txt".format(wd, root)
     model_logfile = open(model_log, "a")
+    model_logfile.write("{}\n".format(datetime.datetime.now()))
 
     for stdout_line in iter(cmd.stdout.readline, ""):
         if not stdout_line:
             break
         line = stdout_line.decode("utf-8").replace("\n", "")
         model_logfile.write("{}\n".format(line))
-        print_python_output(line, ncores, VERBOSITY)
+        print_python_output(line, n_cores, VERBOSITY)
 
     if not verbose:
         log("")
@@ -575,12 +539,6 @@ def run_model(
     if rc:
         print("Python exited with non-zero exit code: {}\n".format(rc))
 
-    # For the ease of future me, write out the version used run the model
-
-    version, commit = pythonUtil.get_python_version(PYTHON_BINARY, verbose)
-    with open(".py_version", "w") as f:
-        f.write("{}\n{}".format(version, commit))
-
     # If we have modified the parameter file because we are splitting the
     # model into two runs, then restore the original backup
 
@@ -590,7 +548,7 @@ def run_model(
     return rc
 
 
-def control(
+def run_all_models(
     roots: List[str], use_mpi: bool, n_cores: int
 ) -> List[int]:
     """
@@ -611,108 +569,111 @@ def control(
         The return codes of the Python models
     """
 
-    nmodels = len(roots)
-
-    # We only track convergence in these files if there are multiple models
-    # being run - so do not touch or create them otherwise!
-
-    if nmodels > 1:
-        open("not_converged.txt", "w").close()
-        open("converged.txt", "w").close()
-        open("convergence_report.txt", "w").close()
-
-    the_rc = []
+    host = gethostname()
+    n_models = len(roots)
+    return_codes = []
 
     for i, sim in enumerate(roots):
 
         root, wd = pythonUtil.get_root(sim)
-        log("------------------------\n")
-        log("        Model {}/{}".format(i + 1, nmodels))
-        log("\n------------------------\n")
-        log("Root ...................... {}".format(root))
-        log("Directory ................. {}\n".format(wd))
+        msg = """\
+------------------------
 
-        # Run Python
+        Model {}/{}
 
-        model_converged = False
+------------------------
 
-        rc = run_model(
+Root ...................... {}
+Directory ................. {}
+""".format(i + 1, n_models, root, wd)
+
+        log(msg)
+
+        send_notification(
+            "ejp1n17@soton.ac.uk", "{}: Model {}/{} has started running".format(host, i + 1, n_models),
+            "The model {} has started running on {}".format(sim, host)
+        )
+
+        rc = run_single_model(
             root, wd, use_mpi, n_cores, resume_model=RESTART_MODEL, restart_from_spec_cycles=False,
             split_cycles=SPLIT_CYCLES
         )
 
-        the_rc.append(rc)
+        return_codes.append(rc)
 
-        if rc:
-            log("Python exited with error code {}.".format(rc))
-            log("Skipping to the next model.\n")
-            continue
-
-        # Check for the error report and print to the screen
+        # Print the error report and the convergence
 
         errors = simulation.error_summary(root, wd, N_CORES)
+        b_converged, convergence = convergence_check(root, wd)
         print_errors(errors, root)
+        log("Model convergence ........... {}".format(convergence))
 
-        # Check the convergence of the model
+        # If the return code is non-zero, then something bad has happened. So
+        # we skip the rest of the code
 
-        if not rc:
-            log("\nChecking the convergence of the simulation:\n")
-            model_converged = convergence_check(root, wd, nmodels)
-
-        # If the cycles are being split, handle the logic here to do so
-
-        if SPLIT_CYCLES and model_converged > CONVERGENCE_LOWER_LIMIT:
-            rc = run_model(root, wd, use_mpi, n_cores, resume_model=True, restart_from_spec_cycles=True,
-                           split_cycles=True)
-            the_rc[i] = rc
-            # Check for the error report and print to the screen
-            errors = simulation.error_summary(root, wd, N_CORES)
-            print_errors(errors, root)
-        elif SPLIT_CYCLES and model_converged < CONVERGENCE_LOWER_LIMIT:
-            log("The model has not converged to the set convergence limit of {}.".format(CONVERGENCE_LOWER_LIMIT))
-            log("Skipping spectral cycles.")
-
-        if rc:
-            log("Python exited for error code {} after spectral cycles.".format(rc))
-            log("Skipping to the next model.\n")
+        if rc != 0:
+            log("Python exited with return code {}.".format(rc))
+            send_notification(
+                "ejp1n17@soton.ac.uk", "{}: Model {}/{} failed".format(host, i + 1, n_models),
+                "The model {} has failed on {}\nReturn code {}".format(sim, host, rc)
+            )
             continue
 
-        # Plot the model if the script has been given the ability to do so -
-        # this is an extra flag for use on HPC clusters where there is no X
-        # session or similar
+        # If the cycles are being split into two separate runs to lower the
+        # number of photons during a spectrum cycles, handle that situation here
 
-        if PLOT:
-            print("Plotting the output of the model:\n")
-            plot_model(root, wd)
+        if SPLIT_CYCLES and b_converged:
+            rc = run_single_model(
+                root, wd, use_mpi, n_cores, resume_model=True, restart_from_spec_cycles=True, split_cycles=True
+            )
+            return_codes[i] = rc
+            errors = simulation.error_summary(root, wd, N_CORES)
+            print_errors(errors, root)
+        elif SPLIT_CYCLES and not b_converged:
+            log("The model has not converged to the set convergence limit of {}.".format(CONVERGENCE_LOWER_LIMIT))
+            send_notification(
+                "ejp1n17@soton.ac.uk", "{}: Model {}/{} failed".format(host, i + 1, n_models),
+                "The model {} has failed on {}\nReturn code {}".format(sim, host, rc)
+            )
+
+        # rc will determine if the model failed or not
+
+        if rc != 0:
+            log("Python exited for error code {} after spectral cycles.".format(rc))
+            send_notification(
+                "ejp1n17@soton.ac.uk", "{}: Model {}/{} spectral cycles failed".format(host, i + 1, n_models),
+                "The model {} has failed during spectral cycles on {}\nReturn code {}".format(sim, host, rc)
+            )
+            continue
+        else:
+            send_notification(
+                "ejp1n17@soton.ac.uk", "{}: Model {}/{} finished".format(host, i + 1, n_models),
+                "The model {} has finished running on {}\nReturn code {}\nConvergence {}".format(sim, host, rc,
+                                                                                                 convergence)
+            )
 
         log("")
 
-    return the_rc
+    return return_codes
 
 
 def main(
 ) -> None:
-    """
-    Main control function of the script.
-    """
-
-    log("------------------------\n")
-
-    # Setup the script run mode and initialise the log file
+    """Main function of the script."""
 
     setup_script()
-    init_logfile("Log{}{:02d}{:02d}.log.txt".format(str(DATE.year)[-2:], int(DATE.month), int(DATE.day)))
-
-    log("")
+    init_logfile("Log.txt")
     quotes.random_quote()
     log("------------------------\n")
+    log("{}".format(datetime.datetime.now()))
 
     # Find models to run by searching recursively from the calling directory
     # for .pf files
 
-    the_pfs = pythonUtil.find_parameter_files()
-    nmodels = len(the_pfs)
-    if not nmodels:
+    parameter_files = pythonUtil.find_parameter_files()
+    n_models = len(parameter_files)
+
+    if not n_models:
         log("No parameter files found, nothing to do!\n")
         log("------------------------")
         return
@@ -732,9 +693,9 @@ def main(
 
     # Print the models which are going to be run to the screen
 
-    log("\nThe following {} parameter files were found:\n".format(len(the_pfs)))
-    for i in range(len(the_pfs)):
-        log("{}".format(the_pfs[i]))
+    log("\nThe following {} parameter files were found:\n".format(len(parameter_files)))
+    for i in range(len(parameter_files)):
+        log("{}".format(parameter_files[i]))
     log("")
 
     # If we're doing a dry-run, then we don't go any further
@@ -745,12 +706,12 @@ def main(
 
     # Now run Python...
 
-    the_rc = control(the_pfs, mpirun, ncores_to_use)
+    return_codes = run_all_models(parameter_files, mpirun, ncores_to_use)
 
     ncrash = 0
-    for i, rc in enumerate(the_rc):
+    for pf, rc in zip(parameter_files, return_codes):
         if rc > 0:
-            log("Model {} failed with rc {}".format(the_pfs[i], rc))
+            log("Model {} failed with rc {}".format(pf, rc))
             ncrash += 1
 
     log("------------------------")

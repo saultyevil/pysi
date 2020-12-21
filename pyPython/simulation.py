@@ -7,13 +7,13 @@ simulation, as well as (in the future) other helpful little things.
 """
 
 from copy import copy
-from typing import List, Tuple
+from typing import Tuple, Union, List
 from glob import glob
 
 
 def check_convergence(
     root: str, wd: str = "./", return_per_cycle: bool = False, return_converging: bool = False
-) -> List[float]:
+) -> Union[float, list]:
     """
     Check the convergence of a Python simulation by parsing the
     !!Check_convergence line in the Python diag file.
