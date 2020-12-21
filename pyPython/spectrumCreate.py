@@ -116,7 +116,7 @@ def write_delay_dump_spectrum_to_file(
         output_fname += ".line_luminosity.diag"
         f = open(output_fname, "w")
         f.write("Line luminosities -- units [erg / s]\n")
-        for i in range(spectrum.shape[1] - 2):
+        for i in range(spectrum.shape[1] - 1):
             flux = np.sum(spectrum[:, i + 1])
             lum = 4 * np.pi * (d_norm_pc * PARSEC) ** 2 * flux
             f.write("Spectrum {} : L = {} erg / s\n".format(header[i], lum))
@@ -491,14 +491,14 @@ def create_spectrum(
         spectrum, spec_cycle_norm, d_norm_pc
     )
 
-    spectrum, inclinations = write_delay_dump_spectrum_to_file(
-        root, wd, spectrum, extract_nres, n_spec, n_bins, d_norm_pc, return_inclinations=True
-    )
-
     # Remove the first and last bin, consistent with Python
 
     n_bins -= 2
     spectrum = spectrum[1:-1, :]
+
+    spectrum, inclinations = write_delay_dump_spectrum_to_file(
+        root, wd, spectrum, extract_nres, n_spec, n_bins, d_norm_pc, return_inclinations=True
+    )
 
     if output_numpy:
         return spectrum
