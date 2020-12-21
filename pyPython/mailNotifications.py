@@ -120,20 +120,23 @@ def send_notification(
 
     # If there are no (valid) credentials available, let the user log in
 
-    if not credentials or not credentials.valid:
+    try:
+        if not credentials or not credentials.valid:
 
-        if credentials and credentials.expired and credentials.refresh_token:
-            credentials.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file("credentials.json", scope)
-            credentials = flow.run_local_server(port=0)
+            if credentials and credentials.expired and credentials.refresh_token:
+                credentials.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file("credentials.json", scope)
+                credentials = flow.run_local_server(port=0)
 
-        # Save the credentials for next time
+            # Save the credentials for next time
 
-        with open(token_path, "wb") as token:
-            pickle.dump(credentials, token)
+            with open(token_path, "wb") as token:
+                pickle.dump(credentials, token)
 
-    service = build('gmail', 'v1', credentials=credentials)
-    message = send_email_message(service, message, sender)
-
-    return message
+        service = build('gmail', 'v1', credentials=credentials)
+        message = send_email_message(service, message, sender)
+        return message
+    except Exception as e:
+        print(e)
+        return {}

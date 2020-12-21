@@ -7,7 +7,7 @@ print("Setting up email notifications by sending a message...")
 
 message = mailNotifications.send_notification(
     "ejp1n17@soton.ac.uk", "Token creation success", 
-    "The computer {} has been setup to send email notifications".format(gethostname)
+    "The computer {} has been setup to send email notifications".format(gethostname())
 )
 
 print(message)
