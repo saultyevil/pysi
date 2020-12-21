@@ -23,7 +23,7 @@ from socket import gethostname
 from pyPython import grid
 from pyPython import simulation
 from pyPython import pythonUtil
-from pyPython.log import log, init_logfile, close_logfile
+from pyPython.log import log, log_silent, init_logfile, close_logfile
 from pyPython import quotes
 from pyPython.error import EXIT_FAIL
 from pyPython.mailNotifications import send_notification
@@ -663,7 +663,7 @@ def main(
     init_logfile("Log.txt")
     quotes.random_quote()
     log("------------------------\n")
-    log("{}".format(datetime.datetime.now()))
+    log_silent("{}".format(datetime.datetime.now()))
 
     # Find models to run by searching recursively from the calling directory
     # for .pf files

@@ -88,3 +88,28 @@ def log(
         return
 
     return
+
+
+def log_silent(
+    message: str, logfile=None
+) -> None:
+    """
+    Log a message to the logfile, but do not print it to the screen.
+
+    Parameters
+    ----------
+    message: str
+        The message to log to file
+    logfile: io.TextIO, optional
+        An open file object which is the logfile to log to. If this is not
+        provided, then the global logfile
+    """
+
+    if logfile:
+        logfile.write("{}\n".format(message))
+    elif LOGFILE:
+        LOGFILE.write("{}\n".format(message))
+    else:
+        return
+
+    return
