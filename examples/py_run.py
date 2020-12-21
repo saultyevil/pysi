@@ -6,8 +6,6 @@ Run a batch of Python models. This script searches recursively for Python pfs
 (disregarding anything which is py_wind.pf or .out.pf files) and executes a
 number of commands depending on what is requested by the user using command
 line flags.
-
-The script can also be run in a directory containing only one Python pf.
 """
 
 
@@ -606,7 +604,7 @@ Directory ................. {}
         errors = simulation.error_summary(root, wd, N_CORES)
         b_converged, convergence = convergence_check(root, wd)
         print_errors(errors, root)
-        log("Model convergence ........... {}".format(convergence))
+        log("\nModel convergence ........... {}".format(convergence))
 
         # If the return code is non-zero, then something bad has happened. So
         # we skip the rest of the code
