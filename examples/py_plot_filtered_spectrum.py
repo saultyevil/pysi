@@ -67,12 +67,6 @@ def setup_script() -> tuple:
                           default=None,
                           help="The upper x-axis boundary to display.")
 
-    create_p.add_argument("-nj",
-                          "--jit",
-                          action="store_false",
-                          default=True,
-                          help="Disable the use of JIT to speed up photon binning.")
-
     create_p.add_argument("-el",
                           "--extract_line",
                           nargs="+",
@@ -185,7 +179,6 @@ def setup_script() -> tuple:
             args.spec_norm,
             args.ncores_norm,
             args.distance_norm,
-            args.jit,
             args.extract_line,
             args.nbins,
             args.working_directory,
@@ -206,7 +199,6 @@ def setup_script() -> tuple:
             1,
             1,
             100,
-            True,
             args.extract_line,
             10000,
             args.working_directory,
@@ -363,21 +355,28 @@ def main(setup: tuple = None):
     # variables required and this is my fault :-)
 
     if setup:
-        mode, root, spec_norm, ncores_norm, distance_norm, jit, extract_nres, nbins, wd, xmin, xmax, frequency_space, \
+        mode, root, spec_cycle_norm, n_cores_norm, d_norm_pc, extract_nres, n_bins, wd, w_xmin, w_xmax, frequency_space, \
             common_lines, axes_scales, smooth_amount, file_ext, logbins, display = setup
     else:
-        mode, root, spec_norm, ncores_norm, distance_norm, jit, extract_nres, nbins, wd, xmin, xmax, frequency_space, \
+        mode, root, spec_cycle_norm, n_cores_norm, d_norm_pc, extract_nres, n_bins, wd, w_xmin, w_xmax, frequency_space, \
             common_lines, axes_scales, smooth_amount, file_ext, logbins, display = setup_script()
 
     # Now we either create, or plot the filtered spectrum if it has already been created
 
     extract_nres = tuple(extract_nres)
 
+    xmin = w_xmin
+    xmax = w_xmax
+    if w_xmax and frequency_space:
+        xmin = conversion.angstrom_to_hz(w_xmax)
+    if w_xmin and frequency_space:
+        xmax = conversion.angstrom_to_hz(w_xmin)
+
     if mode == "create":
-        # TODO remove s_extract references
-        s_extract = spectrumUtil.read_spectrum("{}/{}.log_spec".format(wd, root))
-        spectrumCreate.create_spectrum(root, wd, s_extract["Freq."].values, extract_nres, xmin, xmax, nbins,
-                                       distance_norm, spec_norm, ncores_norm, True, jit)
+        spectrumCreate.create_spectrum(
+            root, wd, extract_nres, freq_min=xmin, freq_max=xmax, n_bins=n_bins, d_norm_pc=d_norm_pc,
+            spec_cycle_norm=spec_cycle_norm, n_cores_norm=n_cores_norm
+        )
     else:
         if extract_nres[0] != spectrumCreate.UNFILTERED_SPECTRUM:
             name = "{}/{}_line".format(wd, root)
@@ -388,7 +387,7 @@ def main(setup: tuple = None):
             name = "{}/{}.delay_dump.spec".format(wd, root)
         filtered_spectrum = np.loadtxt(name, skiprows=2)  # TODO: could be replaced by something in pyPython?
         plot(
-            root, wd, filtered_spectrum, extract_nres, smooth_amount, distance_norm, xmin, xmax, axes_scales,
+            root, wd, filtered_spectrum, extract_nres, smooth_amount, d_norm_pc, w_xmin, w_xmax, axes_scales,
             frequency_space, True, common_lines, file_ext, display
         )
 
