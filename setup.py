@@ -16,6 +16,7 @@ setup(
       zip_safe=False,
       install_requires=[
             "matplotlib", "scipy", "numpy", "pandas", "astropy", "numba", "psutil",
-            "pathlib", "argparse"
+            "pathlib", "argparse", "google-api-python-client", "google-auth-httplib2",
+            "google-auth-oauthlib"
       ]
       )
