@@ -7,7 +7,7 @@ to the screen.
 """
 
 
-from numpy.random import randint
+import numpy as np
 
 
 QUOTES = [
@@ -53,7 +53,7 @@ def random_quote():
     """
 
     n_quotes = len(QUOTES)
-    quote = QUOTES[randint(0, n_quotes)]
+    quote = QUOTES[np.random.randint(0, n_quotes)]
     print(quote, end="\n\n")
 
     return quote
