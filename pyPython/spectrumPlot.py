@@ -9,7 +9,7 @@ being saved to disk or displayed.
 """
 
 from .constants import PARSEC
-from .spectrumUtil import photo_edges_list, common_lines_list, ax_add_line_id, smooth
+from .spectrumUtil import photo_edges_list, common_lines_list, ax_add_line_id, smooth, check_inclination_valid
 from .spectrumUtil import read_spectrum, get_spectrum_inclinations, calculate_axis_y_limits, get_spectrum_units
 from .spectrumUtil import UNITS_FLAMBDA, UNITS_FNU, UNITS_LNU
 from .pythonUtil import subplot_dims, remove_extra_axes
@@ -622,5 +622,161 @@ def plot_single_spectrum_inclination(
         plt.show()
     else:
         plt.close()
+
+    return fig, ax
+
+
+def plot_multiple_model_spectra(
+    output_name: str, spectrum_list: list, inclination_angle: str, wd: str = ".", x_min: float = None,
+    x_max: float = None, frequency_space: bool = False, axes_scales: str = "logy", sm: int = 5,
+    plot_common_lines: bool = False, file_ext: str = "png", display: bool = False
+) -> Tuple[plt.Figure, plt.Axes]:
+    """
+    Plot multiple spectra, from multiple models, given in the list of spectra
+    provided.
+
+
+    Parameters
+    ----------
+    output_name: str
+        The name to use for the created plot.
+    spectrum_list: List[str]
+        A list of spectrum file paths.
+    inclination_angle: str
+        The inclination angle(s) to plot
+    wd: [optional] str
+        The working directory containing the Python simulation
+    x_min: [optional] float
+        The smallest value on the x axis.
+    x_max: [optional] float
+        The largest value on the x axis.
+    frequency_space: [optional] bool
+        Create the plot in frequency space and use nu F_nu instead.
+    axes_scales: [optional] str
+        The scaling of the x and y axis. Allowed logx, logy, linlin, loglog
+    sm: [optional] int
+        The amount of smoothing to use.
+    plot_common_lines: [optional] bool
+        Add line labels to the figure.
+    file_ext: [optional] str
+        The file extension of the output plot.
+    display: [optional] bool
+        Show the plot when finished
+
+    Returns
+    -------
+    fig: plt.Figure
+        Figure object.
+    ax: plt.Axes
+        Axes object.
+    """
+
+    if inclination_angle == "all":
+        inclinations = []
+        for s in spectrum_list:
+            inclinations += get_spectrum_inclinations(s)
+        inclinations = sorted(list(dict.fromkeys(inclinations)))  # Removes duplicate values
+        figure_size = (12, 12)
+    else:
+        # I don't think we need to check if the inclinations are valid...
+        inclinations = [inclination_angle]
+        figure_size = (12, 5)
+
+    alpha = 0.75
+    n_inc = len(inclinations)
+    n_row, n_cols = subplot_dims(n_inc)
+    fig, ax = plt.subplots(n_row, n_cols, figsize=figure_size, squeeze=False)
+    fig, ax = remove_extra_axes(fig, ax, n_row * n_cols)
+    ax = ax.flatten()
+
+    y_min = +1e99
+    y_max = -1e99
+
+    for i, inc in enumerate(inclinations):
+
+        for f in spectrum_list:
+
+            # Ignore spectra which are from continuum only models...
+            if f.find("continuum") != -1:
+                continue
+            s = read_spectrum(f)
+
+            if frequency_space:
+                x = s["Freq."].values
+            else:
+                x = s["Lambda"].values
+
+            try:
+                if frequency_space:
+                    y = s["Lambda"].values * s[inc].values
+                else:
+                    y = s[inc].values
+                y = smooth(y, sm)
+            except KeyError:
+                continue
+
+            ax[i].plot(x, y, label=f, alpha=alpha)
+
+            # Calculate the y-axis limits to keep all spectra within the
+            # plot area
+
+            if not x_min:
+                x_min = x.min()
+            if not x_max:
+                x_max = x.max()
+
+            this_y_min, this_y_max = calculate_axis_y_limits(x, y, x_min, x_max)
+            if this_y_min < y_min:
+                y_min = this_y_min
+            if this_y_max > y_max:
+                y_max = this_y_max
+
+        if y_min == +1e99:
+            y_min = None
+        if y_max == -1e99:
+            y_max = None
+
+        ax[i].set_title(r"$i$ " + "= {}".format(inclinations[i]) + r"$^{\circ}$")
+        lims = list(ax[i].get_xlim())
+        if not x_min:
+            x_min = lims[0]
+        if not x_max:
+            x_max = lims[1]
+        ax[i].set_xlim(x_min, x_max)
+        ax[i].set_ylim(y_min, y_max)
+
+        if axes_scales == "loglog" or axes_scales == "logx":
+            ax[i].set_xscale("log")
+        if axes_scales == "loglog" or axes_scales == "logy":
+            ax[i].set_yscale("log")
+
+        if frequency_space:
+            ax[i].set_xlabel(r"Frequency [Hz]")
+            ax[i].set_ylabel(r"$\nu F_{\nu}$ (erg s$^{-1}$ cm$^{-2}$")
+        else:
+            ax[i].set_xlabel(r"Wavelength [$\AA$]")
+            ax[i].set_ylabel(r"$F_{\lambda}$ (erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)")
+
+        if plot_common_lines:
+            if axes_scales == "logx" or axes_scales == "loglog":
+                logx = True
+            else:
+                logx = False
+            ax[i] = ax_add_line_id(ax[i], common_lines_list(), logx)
+
+    ax[0].legend(loc="lower left")
+    fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+
+    if inclination_angle != "all":
+        name = "{}/{}_i{}".format(wd, output_name, inclination_angle)
+    else:
+        name = "{}/{}".format(wd, output_name)
+
+    fig.savefig("{}.{}".format(name, file_ext))
+    if file_ext == "pdf" or file_ext == "eps":
+        fig.savefig("{}.png".format(name))
+
+    if display:
+        plt.show()
 
     return fig, ax

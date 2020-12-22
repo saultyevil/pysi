@@ -12,8 +12,8 @@ from typing import Tuple
 from matplotlib import pyplot as plt
 
 from pyPython import spectrumUtil
-from pyPython import pythonUtil
-
+from pyPython import spectrumPlot
+from pyPython.error import EXIT_FAIL
 
 def setup_script():
     """
@@ -114,137 +114,6 @@ def setup_script():
     return setup
 
 
-def plot(
-    spectra: list, output_name: str, inclination: str, wd: str = ".", xmin: float = None, xmax: float = None,
-    frequency_space: bool = False, axes_scales: str = "logy", smooth_amount: int = 5, plot_common_lines: bool = False,
-    file_ext: str = "png", display: bool = False
-) -> Tuple[plt.Figure, plt.Axes]:
-    """
-    Plotting function.
-    TODO put this function into SpectrumPlot
-
-    When plotting in frequency space, the y axis will be lambda Flambda = nu Fnu
-    instead of regular ol' Flux.
-    """
-
-    alpha = 0.75
-
-    if inclination == "all":
-        inclinations = []
-        for s in spectra:
-            inclinations += spectrumUtil.get_spectrum_inclinations(s)
-        inclinations = sorted(list(dict.fromkeys(inclinations)))  # Removes duplicate values
-        figure_size = (12, 12)
-    else:
-        inclinations = [inclination]
-        figure_size = (12, 5)
-
-    ninc = len(inclinations)
-    nrows, ncols = pythonUtil.subplot_dims(ninc)
-
-    fig, ax = plt.subplots(nrows, ncols, figsize=figure_size, squeeze=False)
-    ax = ax.flatten()  # Allows looping over 1 dimension of plt.Axes instead
-
-    # TODO put into a separate function in PythonUtils or something - delete_extra_axes
-    n_panel = nrows * ncols
-    if n_panel > ninc:
-        for i in range(ninc, n_panel):
-            fig.delaxes(ax[i])
-
-    ymin = +1e99
-    ymax = -1e99
-
-    # Loop over each inclination in the spectrum
-    for i, inc in enumerate(inclinations):
-
-        # Plot each spectrum for each subplot
-        for f in spectra:
-            if f.find("continuum") != -1:
-                continue
-            s = spectrumUtil.read_spectrum(f)
-            if frequency_space:
-                x = s["Freq."].values
-            else:
-                x = s["Lambda"].values
-
-            try:
-                if frequency_space:
-                    y = s["Lambda"].values * s[inc].values
-                else:
-                    y = s[inc].values
-                y = spectrumUtil.smooth(y, smooth_amount)
-            except KeyError:
-                continue
-
-            ax[i].plot(x, y, label=f, alpha=alpha)
-
-            # An attempt to try to keep the y-scale correct when the x range is
-            # limited
-            if not xmin:
-                xmin = x.min()
-            if not xmax:
-                xmax = x.max()
-
-            t_ymin, t_ymax = spectrumUtil.calculate_axis_y_limits(x, y, xmin, xmax)
-            if t_ymin < ymin:
-                ymin = t_ymin
-            if t_ymax > ymax:
-                ymax = t_ymax
-
-        if ymin == +1e99:
-            ymin = None
-        if ymax == -1e99:
-            ymax = None
-
-        ax[i].set_ylim(ymin, ymax)
-
-        # Format things now
-
-        ax[i].set_title(r"$i$ " + "= {}".format(inclinations[i]) + r"$^{\circ}$")
-
-        if axes_scales == "loglog" or axes_scales == "logx":
-            ax[i].set_xscale("log")
-        if axes_scales == "loglog" or axes_scales == "logy":
-            ax[i].set_yscale("log")
-
-        if frequency_space:
-            ax[i].set_xlabel(r"Frequency [Hz]")
-            ax[i].set_ylabel(r"$\nu F_{\nu}$ (erg s$^{-1}$ cm$^{-2}$")
-        else:
-            ax[i].set_xlabel(r"Wavelength [$\AA$]")
-            ax[i].set_ylabel(r"$F_{\lambda}$ (erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)")
-
-        lims = list(ax[i].get_xlim())
-        if not xmin:
-            xmin = lims[0]
-        if not xmax:
-            xmax = lims[1]
-        ax[i].set_xlim(xmin, xmax)
-
-        if plot_common_lines:
-            if axes_scales == "logx" or axes_scales == "loglog":
-                logx = True
-            else:
-                logx = False
-            ax[i] = spectrumUtil.ax_add_line_id(ax[i], spectrumUtil.common_lines_list(), logx)
-
-    ax[0].legend(loc="lower left")
-
-    fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
-    if inclination != "all":
-        name = "{}/{}_i{}".format(wd, output_name, inclination)
-    else:
-        name = "{}/{}".format(wd, output_name)
-    fig.savefig("{}.{}".format(name, file_ext))
-    if file_ext == "pdf" or file_ext == "eps":
-        fig.savefig("{}.png".format(name))
-
-    if display:
-        plt.show()
-
-    return fig, ax
-
-
 def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
     """
     The main function of the script.
@@ -257,25 +126,28 @@ def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
     """
 
     if setup:
-        output_name, wd, inclination, root, xmin, xmax, frequency_space, common_lines, axes_scales, smooth_amount, file_ext, display = setup
+        output_name, wd, inclination, root, x_min, x_max, frequency_space, common_lines, axes_scales, smooth_amount,\
+            file_extension, display = setup
     else:
-        output_name, wd, inclination, root, xmin, xmax, frequency_space, common_lines, axes_scales, smooth_amount, file_ext, display = \
-            setup_script()
+        output_name, wd, inclination, root, x_min, x_max, frequency_space, common_lines, axes_scales, smooth_amount, \
+            file_extension, display = setup_script()
 
     spectra = spectrumUtil.find_spec_files(root)
+
     if len(spectra) == 0:
         print("Unable to find any spectrum files")
-        return
+        exit(EXIT_FAIL)
+
     if root:
-        spectratemp = []
+        spectra_root = []
         for s in spectra:
             if s.find("{}.spec".format(root)) != -1:
-                spectratemp.append(s)
-        spectra = spectratemp
+                spectra_root.append(s)
+        spectra = spectra_root
 
-    fig, ax = plot(
-        spectra, output_name, inclination, wd, xmin, xmax, frequency_space, axes_scales, smooth_amount, common_lines,
-        file_ext, display
+    fig, ax = spectrumPlot.plot_multiple_model_spectra(
+        output_name, spectra, inclination, x_min, x_max, frequency_space, axes_scales, common_lines, file_extension,
+        display
     )
 
     return fig, ax
