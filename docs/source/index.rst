@@ -20,12 +20,11 @@ modules as well a host of utility tools and scripts.
    :maxdepth: 2
    :caption: Contents
 
-   Basic physics         <physics>
-   Creating a spectrum   <spectrum_create>
-   Plotting a spectrum   <spectrum>
-   Plotting the wind     <wind>
-   Managing simulations  <simulation>
-   Utility functions     <utils>
+   Running Python using pyPython          <running>
+   Plotting the Output                    <output>
+   Creating Spectra from Photons          <spectrum_create>
+   Calculating Basic Physical Parameters  <physics>
+   Module Docstrings                      <module_docs>
 
 
 Indices and tables
