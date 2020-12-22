@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-Run a batch of Python models. This script searches recursively for Python pfs
-(disregarding anything which is py_wind.pf or .out.pf files) and executes a
-number of commands depending on what is requested by the user using command
-line flags.
+Run a batch of Python models. Searches recursively for Python parameter files
+(ignoring any py_wind.pf or root.out.pf files) and executes a number of
+commands, most importantly running the model, depending on what is requested by
+the user using a number of runtime flags.
 """
 
 
