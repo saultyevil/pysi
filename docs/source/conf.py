@@ -19,14 +19,14 @@ sys.path.insert(0, os.path.abspath('../..'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'pyPython'
+project = 'pyPython - a module to make using Python a wee bit easier'
 copyright = '2020, Edward J. Parkinson'
 author = 'Edward J. Parkinson'
 
 # The short X.Y version
-version = ''
+version = '1.2'
 # The full version, including alpha/beta/rc tags
-release = '1.2'
+release = '1.2rc'
 
 
 # -- General configuration ---------------------------------------------------
@@ -81,7 +81,7 @@ pygments_style = None
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_material'
+html_theme = 'karma_sphinx_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the

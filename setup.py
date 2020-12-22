@@ -17,6 +17,6 @@ setup(
       install_requires=[
             "matplotlib", "scipy", "numpy", "pandas", "astropy", "numba", "psutil",
             "pathlib", "argparse", "google-api-python-client", "google-auth-httplib2",
-            "google-auth-oauthlib", "sphinx", "sphinx-material"
+            "google-auth-oauthlib", "sphinx", "karma_sphinx_theme"
       ]
 )
