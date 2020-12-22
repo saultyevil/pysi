@@ -9,6 +9,7 @@ line flags.
 """
 
 
+import atexit
 from os import path
 import argparse as ap
 import time
@@ -73,7 +74,7 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ __ _ _ _ _ _ _ _ _
 
 
 # Global variables
-N_CORES = 1
+N_CORES = 0
 PYTHON_BINARY = "py"
 RUNTIME_FLAGS = None
 RESTART_MODEL = False
@@ -667,6 +668,10 @@ def main(
 ) -> None:
     """Main function of the script."""
 
+    atexit.register(
+        send_notification, "ejp1n17@soton.ac.uk", "{}: py_run has exited unexpectedly".format(gethostname()), ""
+    )
+
     setup_script()
     init_logfile("Log.txt")
     quotes.random_quote()
@@ -688,14 +693,14 @@ def main(
     # mpirun flag appropriately
 
     if N_CORES:
-        ncores_to_use = N_CORES
+        n_cores_to_use = N_CORES
     else:
-        ncores_to_use = pythonUtil.get_cpu_count()
+        n_cores_to_use = pythonUtil.get_cpu_count()
 
-    if ncores_to_use > 1:
-        mpirun = True
+    if n_cores_to_use > 1:
+        use_mpi = True
     else:
-        mpirun = False
+        use_mpi = False
 
     # Print the models which are going to be run to the screen
 
@@ -712,7 +717,7 @@ def main(
 
     # Now run Python...
 
-    return_codes = run_all_models(parameter_files, mpirun, ncores_to_use)
+    return_codes = run_all_models(parameter_files, use_mpi, n_cores_to_use)
 
     ncrash = 0
     for pf, rc in zip(parameter_files, return_codes):
@@ -722,6 +727,8 @@ def main(
 
     log("------------------------")
     close_logfile()
+
+    atexit.unregister(send_notification)
 
     if ncrash:
         exit(ncrash)
