@@ -571,6 +571,10 @@ def run_all_models(
     n_models = len(roots)
     return_codes = []
 
+    send_notification(
+        "ejp1n17@soton.ac.uk", "{}: Starting models".format(host), ""
+    )
+
     for i, sim in enumerate(roots):
 
         root, wd = pythonUtil.get_root(sim)
@@ -651,6 +655,10 @@ Directory ................. {}
             )
 
         log("")
+
+    send_notification(
+        "ejp1n17@soton.ac.uk", "{}: All models completed".format(host), ""
+    )
 
     return return_codes
 
