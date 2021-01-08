@@ -460,9 +460,11 @@ def run_single_model(
     # this is because you may need 5e7 photons during the ionization cycles for
     # the model to converge, but you are unlikely to need this many to make a
     # low signal/noise spectrum. Note we make a backup of the original pf.
-    # TODO put into seperate function
+    # TODO put into separate function
 
     try:
+        if wd == ".":
+            wd += "/"
         if split_cycles and not restart_from_spec_cycles:
             grid.update_single_parameter(wd + pf, "Spectrum_cycles", "0", backup=True, verbose=verbose)
         elif split_cycles and restart_from_spec_cycles:
@@ -470,7 +472,7 @@ def run_single_model(
             grid.update_single_parameter(wd + pf, "Photons_per_cycle", "1e6", backup=False, verbose=verbose)
     except IOError:
         print("Unable to open parameter file {} in split cycle mode to change parameters".format(wd + pf))
-        return EXIT_FAIL
+        exit(EXIT_FAIL)
 
     # Construct shell command to run Python and use subprocess to run
 
@@ -603,6 +605,13 @@ Directory ................. {}
         )
 
         return_codes.append(rc)
+        if rc != 0:
+            log("Python exited for error code {}".format(rc))
+            send_notification(
+                "ejp1n17@soton.ac.uk", "{}: Model {}/{} failed".format(host, i + 1, n_models),
+                "The model {} has failed\nReturn code {}".format(sim, host, rc)
+            )
+            continue
 
         # Print the error report and the convergence
 
