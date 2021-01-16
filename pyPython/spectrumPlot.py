@@ -83,17 +83,20 @@ def _plot_panel_subplot(
             continue
 
         # Skip sparse spec components to make prettier plot
+
         if skip_sparse and len(fl[fl < MIN_SPEC_COMP_FLUX]) > 0.7 * len(fl):
             continue
 
         # If plotting in frequency space, of if the units then the flux needs
         # to be converted in nu F nu
+
         if frequency_space and units == UNITS_FLAMBDA:
             fl *= spec["Lambda"].values
         elif frequency_space and units == UNITS_FNU:
             fl *= spec["Freq."].values
 
         # If the spectrum units are Lnu then plot nu Lnu
+
         if units == UNITS_LNU:
             fl *= spec["Freq."].values
 
@@ -121,7 +124,7 @@ def _plot_panel_subplot(
     return ax
 
 
-def plot_simple(
+def plot(
     x: np.ndarray, y: np.ndarray, xmin: float = None, xmax: float = None, xlabel: str = None, ylabel: str = None,
     scale: str = "logy", fig: plt.Figure = None, ax: plt.Axes = None, label: str = None, alpha: float = 1.0,
     display: bool = False
@@ -166,7 +169,7 @@ def plot_simple(
         The axes object containing the plot.
     """
 
-    n = plot_simple.__name__
+    n = plot.__name__
 
     nrows = ncols = 1
 
@@ -285,6 +288,7 @@ def plot_optical_depth(
         xlabel = "Freq."
 
     # Set wavelength or frequency boundaries
+
     x = s[xlabel].values
     if not xmin:
         xmin = np.min(s[xlabel])
@@ -295,9 +299,11 @@ def plot_optical_depth(
     nangles = len(spec_angles)
 
     # Determine the number of inclinations requested in a convoluted way :^)
+
     nplots = len(inclinations)
 
     # Ignore all if other inclinations are passed - assume it was a mistake to pass all
+
     if inclinations[0] == "all" and len(inclinations) > 1:
         inclinations = inclinations[1:]
         nplots = len(inclinations)
@@ -306,6 +312,7 @@ def plot_optical_depth(
         nplots = nangles
 
     # This loop will plot the inclinations provided by the user
+
     for i in range(nplots):
         if inclinations[0] != "all" and inclinations[i] not in spec_angles:  # Skip inclinations which don't exist
             continue
@@ -313,7 +320,9 @@ def plot_optical_depth(
 
         label = r"$i$ = " + ii + r"$^{\circ}$"
         n_non_zero = np.count_nonzero(s[ii])
+
         # Skip inclinations which look through vacuum
+
         if n_non_zero == 0:
             continue
 
@@ -341,6 +350,74 @@ def plot_optical_depth(
         ax_add_line_id(ax, photo_edges_list(frequency_space), logx, fontsize=15)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+
+    if display:
+        plt.show()
+    else:
+        plt.close()
+
+    return fig, ax
+
+
+def plot_spectrum_process_contributions(
+    contributions: dict, inclination: str, root: str, wd: str = ".", xmin: float = None, xmax: float = None,
+    ymin: float = None, ymax: float = None, scale: str = "logy", line_labels: bool = True, sm: int = 5,
+    lw: int = 2, alpha: float = 0.75, file_ext: str = "png", display: bool = False
+) -> Tuple[plt.Figure, plt.Axes]:
+    """
+
+    Parameters
+    ----------
+    contributions
+    inclination
+    root
+    wd
+    xmin
+    xmax
+    ymin
+    ymax
+    scale
+    line_labels
+    sm
+    lw
+    alpha
+    file_ext
+    display
+
+    Returns
+    -------
+    fig: plt.Figure
+        The plt.Figure object for the created figure
+    ax: plt.Axes
+        The plt.Axes object for the created figure
+    """
+
+    fig, ax = plt.subplots(figsize=(12, 8))
+
+    for name, spectrum in contributions.items():
+        ax.plot(spectrum["Lambda"], smooth(spectrum[inclination], sm), label=name, linewidth=lw, alpha=alpha)
+
+    if scale == "logx" or scale == "loglog":
+        ax.set_xscale("log")
+    if scale == "logy" or scale == "loglog":
+        ax.set_yscale("log")
+
+    ax.set_xlim(xmin, xmax)
+    ax.set_ylim(ymin, ymax)
+    ax.legend(loc="upper center", fontsize=15, ncol=len(contributions))
+    ax.set_xlabel(r"Wavelength [$\AA$]", fontsize=13)
+    ax.set_ylabel(r"Flux F$_{\lambda}$ [erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$]", fontsize=15)
+    if line_labels:
+        if scale == "logx" or scale == "loglog":
+            logx = True
+        else:
+            logx = False
+        ax = ax_add_line_id(ax, common_lines_list(), logx=logx, fontsize=15)
+
+    fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+    fig.savefig("{}/{}_spec_processes.{}".format(wd, root, file_ext), dpi=300)
+    if file_ext != "png":
+        fig.savefig("{}/{}_spec_processes.png".format(wd, root), dpi=300)
 
     if display:
         plt.show()
@@ -504,6 +581,7 @@ def plot_spectrum_inclinations_in_subpanels(
     fig, ax = remove_extra_axes(fig, ax, n_inc, panel_dims[0] * panel_dims[1])
 
     # Use either frequency or wavelength and set the plot limits respectively
+
     if frequency_space:
         x = s["Freq."].values
     else:
@@ -602,7 +680,7 @@ def plot_single_spectrum_inclination(
         try:
             inclination = str(inclination)
         except ValueError:
-            print("{}: unable to convert into string".format(n, inclination))
+            print("{}: unable to convert into string".format(n))
             return
 
     y = s[inclination].values
@@ -610,13 +688,12 @@ def plot_single_spectrum_inclination(
     if frequency_space:
         xax = r"Frequency [Hz]"
         yax = r"$\nu F_{\nu}$ (erg s$^{-1}$ cm$^{-2}$)"
-        # Convert into lambda F_lambda which is (I hope) the same as nu F_nu
-        y *= s["Lambda"].values
+        y *= s["Lambda"].values  # Convert into lambda F_lambda which is the same as nu F_nu
     else:
         xax = r"Wavelength [$\AA$]"
         yax = r"$F_{\lambda}$ (erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)"
 
-    fig, ax = plot_simple(x, smooth(y, smooth_amount), xlims[0], xlims[1], xax, yax, scale)
+    fig, ax = plot(x, smooth(y, smooth_amount), xlims[0], xlims[1], xax, yax, scale)
 
     if display:
         plt.show()
@@ -686,19 +763,20 @@ def plot_multiple_model_spectra(
     n_inc = len(inclinations)
     n_row, n_cols = subplot_dims(n_inc)
     fig, ax = plt.subplots(n_row, n_cols, figsize=figure_size, squeeze=False)
-    fig, ax = remove_extra_axes(fig, ax, n_row * n_cols)
+    fig, ax = remove_extra_axes(fig, ax, n_inc, n_row * n_cols)
     ax = ax.flatten()
 
     y_min = +1e99
     y_max = -1e99
 
     for i, inc in enumerate(inclinations):
-
         for f in spectrum_list:
 
             # Ignore spectra which are from continuum only models...
+
             if f.find("continuum") != -1:
                 continue
+
             s = read_spectrum(f)
 
             if frequency_space:

@@ -12,6 +12,7 @@ from .constants import PARSEC, C
 from .conversion import hz_to_angstrom
 from .pythonUtil import file_len
 from .spectrumUtil import read_spectrum, get_spectrum_inclinations
+from .conversion import angstrom_to_hz
 
 import pandas as pd
 from copy import deepcopy
@@ -33,7 +34,7 @@ spectrum_columns_dict_nres = dumped_photon_columns_dict_nres = {
 
 
 def write_delay_dump_spectrum_to_file(
-    root: str, wd: str, spectrum: np.ndarray, extract_nres: tuple, n_spec:int, n_bins: int, d_norm_pc: float,
+    root: str, wd: str, spectrum: np.ndarray, extract_nres: tuple, n_spec: int, n_bins: int, d_norm_pc: float,
     return_inclinations: bool = False
 ) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     """
@@ -507,3 +508,115 @@ def create_spectrum(
         spectrum = np.append(lamda, spectrum, axis=1)
         df = pd.DataFrame(spectrum, columns=["Lambda", "Freq."] + inclinations)
         return df
+
+
+def create_spectrum_process_breakdown(
+    root: str, wl_min: float, wl_max: float, n_cores_norm: int = 1, spec_cycle_norm: float = 1, wd: str = ".",
+    nres: int = None, mode_line_res: bool = True
+) -> dict:
+    """
+    Get the spectra for the different physical processes which contribute to a
+    spectrum. If nres is provided, then only a specific interaction will be
+    extracted, otherwise all resonance interactions will.
+
+
+    Parameters
+    ----------
+    root: str
+        The root name of the simulation.
+    wl_min: float
+        The lower wavelength bound in Angstroms.
+    wl_max: float
+        The upper wavelength bound in Angstroms.
+    n_cores_norm: int [optional]
+        The number of cores normalization constant, i.e. the number of cores used
+        to generate the delay_dump file.
+    spec_cycle_norm: float [optional]
+        The spectral cycle normalization, this is equal to 1 if all spectral
+        cycles were run.
+    wd: str [optional]
+        The directory containing the simulation.
+    nres: int [optional]
+        A specific interaction to extract, is the nres number from Python.
+    mode_line_res: bool [optional]
+        Set as True if the delay_dump has the LineRes. value.
+
+    Returns
+    -------
+    spectra: dict
+        A dictionary where the keys are the name of the spectra and the values
+        are pd.DataFrames of that corresponding spectrum.
+    """
+
+    if mode_line_res:
+        ex = spectrum_columns_dict_line_res
+    else:
+        ex = spectrum_columns_dict_nres
+
+    df = read_delay_dump(root, ex, wd=wd)
+    s = read_spectrum(wd + "/" + root + ".spec")
+
+    # create dataframes for each physical process, what you can actually get
+    # depends on mode_line_res, i.e. if LineRes. is included or not. Store these
+    # data frame in a list
+
+    contributions = []
+    contribution_names = ["Extracted"]
+
+    # Extract either a specific interaction, or all the interactions. If LineRes.
+    # is enabled, then extract the LineRes version of it too
+
+    if nres:
+        if type(nres) != int:
+            nres = int(nres)
+        contributions.append(df[df["Res."] == nres])
+        contribution_names.append("Res." + str(nres))
+        if mode_line_res:
+            contributions.append(df[df["LineRes."] == nres])
+            contribution_names.append("LineRes." + str(nres))
+    else:
+        tmp = df[df["Res."] <= 20000]
+        contributions.append(tmp[tmp["Res."] >= 0])
+        contribution_names.append("Res.")
+        if mode_line_res:
+            tmp = df[df["LineRes."] <= 20000]
+            contributions.append(tmp[tmp["LineRes."] >= 0])
+            contribution_names.append("LineRes.")
+
+    # Extract the scattered spectrum, which is every continuum scatter
+
+    contributions.append(df[df["Res."] == -1])
+    contribution_names.append("Scattered")
+
+    # Extract pure BF, FF and ES events, unless we're in Res. mode, which extracts
+    # last scatters
+
+    if mode_line_res:
+        contributions.append(df[df["LineRes."] == -1])
+        contributions.append(df[df["LineRes."] == -2])
+        contributions.append(df[df["LineRes."] > 20000])
+        contribution_names.append("ES")
+        contribution_names.append("FF")
+        contribution_names.append("BF")
+    else:
+        contributions.append(df[df["Res."] == -2])
+        contributions.append(df[df["Res."] > 20000])
+        contribution_names.append("FF")
+        contribution_names.append("BF")
+
+    # Create each individual spectrum
+
+    created_spectra = [s]
+    for contribution in contributions:
+        created_spectra.append(
+            create_spectrum(
+                root, wd, dumped_photons=contribution, freq_min=angstrom_to_hz(wl_max), freq_max=angstrom_to_hz(wl_min),
+                n_cores_norm=n_cores_norm, spec_cycle_norm=spec_cycle_norm
+            )
+        )
+    n_spec = len(created_spectra)
+
+    # dict comprehension to use contribution_names as the keys and the spectra
+    # as the values
+
+    return {contribution_names[i]: created_spectra[i] for i in range(n_spec)}
