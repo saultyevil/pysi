@@ -297,6 +297,8 @@ def smooth(
 
     if smooth_amount is None:
         return array
+    elif int(smooth_amount) == 1:
+        return array
     elif type(smooth_amount) != int:
         try:
             smooth_amount = int(smooth_amount)
@@ -387,7 +389,8 @@ def calculate_axis_y_limits(
 
 
 def ax_add_line_id(
-    ax: plt.Axes, lines: list, logx: bool = False, offset: float = 25, rotation: str = "vertical", fontsize: int = 10
+    ax: plt.Axes, lines: list, linestyle: str = "dashed", ynorm: float = 0.90, logx: bool = False, offset: float = 25,
+    rotation: str = "vertical", fontsize: int = 10
 ) -> plt.Axes:
     """
     Add labels for line transitions or other regions of interest onto a
@@ -401,6 +404,11 @@ def ax_add_line_id(
     lines: list
         A list containing the line name and wavelength in Angstroms
         (ordered by wavelength)
+    linestyle: str [optional]
+        The type of line to draw to show where the transitions are. Allowed
+        values [none, dashed, top]
+    ynorm: float [optional]
+        The normalized y coordinate to place the label.
     logx: bool [optional]
         Use when the x-axis is logarithmic
     offset: float [optional]
@@ -426,7 +434,12 @@ def ax_add_line_id(
         if x > xlims[1]:
             continue
         label = lines[i][0]
-        ax.axvline(x, linestyle="--", linewidth=0.5, color="k", zorder=1)
+        if linestyle == "dashed":
+            ax.axvline(x, linestyle="--", linewidth=0.5, color="k", zorder=1)
+        if linestyle == "thick":
+            ax.axvline(x, linestyle="-", linewidth=2, color="k", zorder=1)
+        elif linestyle == "top":
+            pass  # TODO: to implement
         x = x - offset
 
         # Calculate the x location of the label in axes coordinates
@@ -436,8 +449,9 @@ def ax_add_line_id(
         else:
             xnorm = (x - xlims[0]) / (xlims[1] - xlims[0])
 
-        ax.text(xnorm, 0.93, label, ha="center", va="center", rotation=rotation, fontsize=fontsize,
-                transform=ax.transAxes)
+        ax.text(
+            xnorm, ynorm, label, ha="center", va="center", rotation=rotation, fontsize=fontsize, transform=ax.transAxes
+        )
 
     return ax
 
@@ -464,10 +478,7 @@ def common_lines_list(
     """
 
     lines = [
-        ["He II Edge", 229],
         ["N III/O III", 305],
-        ["He I Edge", 504],
-        ["Lyman Edge", 912],
         ["P V", 1118],
         [r"Ly$\alpha$/N V", 1216],
         ["", 1242],
@@ -481,7 +492,6 @@ def common_lines_list(
         ["Al III", 1854],
         ["C III]", 1908],
         ["Mg II", 2798],
-        ["Balmer Edge", 3646],
         ["Ca II", 3934],
         ["", 3969],
         [r"H$_{\delta}$", 4101],
@@ -492,7 +502,6 @@ def common_lines_list(
         ["Na I", 5891],
         ["", 5897],
         [r"H$_{\alpha}$", 6564],
-        ["Paschen Edge", 8204]
     ]
 
     if freq:
@@ -524,13 +533,13 @@ def photo_edges_list(
     """
 
     edges = [
-        ["He II Edge", 229],
-        ["He I Edge", 504],
-        ["Lyman Edge", 912],
-        ["Ca I", 2028],
-        ["Al I", 2071],
-        ["Balmer Edge", 3646],
-        ["Paschen Edge", 8204],
+        ["He II", 229],
+        ["He I", 504],
+        ["Lyman", 912],
+        # ["Ca I", 2028],
+        # ["Al I", 2071],
+        ["Balmer", 3646],
+        ["Paschen", 8204],
     ]
 
     if freq:

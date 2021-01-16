@@ -196,7 +196,7 @@ def plot_all_spectrum_inclinations_in_one_panel(
         if frequency_space:
             y *= s["Lambda"].values
 
-        fig, ax = spectrumPlot.plot_simple(
+        fig, ax = spectrumPlot.plot(
             x, y, xmin, xmax, xlabel, ylabel, axes_scales, fig, ax, label=str(a) + r"$^{\circ}$", alpha=alpha
         )
 
@@ -323,7 +323,7 @@ def plot_spectrum_inclination_in_individual_figures(
         if frequency_space:
             y *= s["Lambda"].values
 
-        fig, ax = spectrumPlot.plot_simple(x, y, xmin, xmax, xlabel, ylabel, axes_scales, alpha=alpha)
+        fig, ax = spectrumPlot.plot(x, y, xmin, xmax, xlabel, ylabel, axes_scales, alpha=alpha)
         if axes_scales == "loglog" or axes_scales == "logx":
             logx = True
         else:

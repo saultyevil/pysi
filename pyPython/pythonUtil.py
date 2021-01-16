@@ -446,7 +446,7 @@ def windsave2table(
         try:
             df = pd.read_csv(fname, delim_whitespace=True)
         except IOError:
-            print("{}: unable to append {} to complete file".format(n, file))
+            print("{}: warning: unable to append {}.{}.txt table to {}.all.complete.txt file".format(n, file, root, root))
             continue
 
         columns_to_add = df.columns.values[include_files_index[i]:]

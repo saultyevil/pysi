@@ -162,16 +162,16 @@ def plot_rectilinear_wind(
 
     with np.errstate(divide="ignore"):
         if w_name == "converge" or w_name == "convergence" or w_name == "converging":
-            im = ax[i, j].pcolormesh(x, z, w, vmin=0, vmax=3)
+            im = ax[i, j].pcolormesh(x, z, w, vmin=0, vmax=3, shading="auto")
         elif w_name.find("units = c") != -1:
             w = np.ma.masked_where(w == 0, w)
-            im = ax[i, j].pcolormesh(x, z, w)
+            im = ax[i, j].pcolormesh(x, z, w, shading="auto")
         elif w_type == "ion":
-            im = ax[i, j].pcolormesh(x, z, np.log10(w), norm=colors.Normalize(vmin=-10, vmax=0))
+            im = ax[i, j].pcolormesh(x, z, np.log10(w), norm=colors.Normalize(vmin=-10, vmax=0), shading="auto")
         elif w_type == "ion_density":
-            im = ax[i, j].pcolormesh(x, z, np.log10(w))
+            im = ax[i, j].pcolormesh(x, z, np.log10(w), shading="auto")
         elif w_type == "wind":
-            im = ax[i, j].pcolormesh(x, z, np.log10(w))
+            im = ax[i, j].pcolormesh(x, z, np.log10(w), shading="auto")
         else:
             raise InvalidParameter("{}: unknown wind variable type {}".format(n, w_type))
 
@@ -179,7 +179,7 @@ def plot_rectilinear_wind(
         xsight = np.linspace(0, np.max(x), int(1e5))
         for inc in obs_los:
             zsight = sightline_coords(xsight, np.deg2rad(float(inc)))
-            ax[i, j].plot_simple(xsight, zsight, label="i = {}".format(inc) + r"$^{\circ}$ sightline")
+            ax[i, j].plot(xsight, zsight, label="i = {}".format(inc) + r"$^{\circ}$ sightline")
 
     fig.colorbar(im, ax=ax[i, j])
 
@@ -256,13 +256,13 @@ def plot_polar_wind(
 
     with np.errstate(divide="ignore"):
         if w_name == "converge" or w_name == "convergence" or w_name == "converging":
-            im = ax.pcolormesh(theta, r, w, vmin=0, vmax=3)
+            im = ax.pcolormesh(theta, r, w, vmin=0, vmax=3, shading="auto")
         elif w_name == "inwind":
-            im = ax.pcolormesh(theta, r, w)
+            im = ax.pcolormesh(theta, r, w, shading="auto")
         elif w_type == "wind":
-            im = ax.pcolormesh(theta, r, np.log10(w))
+            im = ax.pcolormesh(theta, r, np.log10(w), shading="auto")
         elif w_type == "ion":
-            im = ax.pcolormesh(theta, r, np.log10(w), norm=colors.Normalize(vmin=-10, vmax=0))
+            im = ax.pcolormesh(theta, r, np.log10(w), norm=colors.Normalize(vmin=-10, vmax=0), shading="auto")
         else:
             raise InvalidParameter("{}: unknown wind variable type {}".format(n, w_type))
 

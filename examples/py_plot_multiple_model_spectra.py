@@ -146,8 +146,8 @@ def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
         spectra = spectra_root
 
     fig, ax = spectrumPlot.plot_multiple_model_spectra(
-        output_name, spectra, inclination, x_min, x_max, frequency_space, axes_scales, common_lines, file_extension,
-        display
+        output_name, spectra, inclination, wd, x_min, x_max, frequency_space, axes_scales, smooth_amount, common_lines,
+        file_extension, display 
     )
 
     return fig, ax
