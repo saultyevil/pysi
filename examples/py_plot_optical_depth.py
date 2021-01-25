@@ -12,7 +12,7 @@ import argparse as ap
 from typing import Tuple
 from matplotlib import pyplot as plt
 
-from pyPython import spectrumPlot
+from pypython import spectrumplot
 
 
 plt.rcParams['xtick.labelsize'] = 15
@@ -121,7 +121,7 @@ def plot_optical_depth_spectrum(
 
     """
 
-    fig, ax = spectrumPlot.plot_optical_depth(
+    fig, ax = spectrumplot.plot_optical_depth(
         root, wd, ["all"], xmin, xmax, scale, show_absorption_edges, frequency_space, display=display
     )
 

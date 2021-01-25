@@ -7,7 +7,7 @@ The design of the function is to return the figure and axes objects so the
 user can then add axes labels and etc themselves.
 """
 
-from .windUtil import sightline_coords
+from .windutil import sightline_coords
 from .error import InvalidParameter
 
 import numpy as np

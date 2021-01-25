@@ -9,9 +9,9 @@ and to create any plots which are related to the convergence of a simulation.
 
 import numpy as np
 from matplotlib import pyplot as plt
-from pyPython import simulation
-from pyPython import pythonUtil as Utils
-from pyPython import quotes
+from pypython import simulation
+from pypython import pythonutil as Utils
+from pypython import quotes
 from typing import List, Union
 
 

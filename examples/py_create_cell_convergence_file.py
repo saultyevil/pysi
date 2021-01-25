@@ -14,7 +14,7 @@ converging output as well.
 
 import argparse as ap
 import pandas as pd
-from pyPython.pythonUtil import windsave2table
+from pypython.pythonutil import windsave2table
 from typing import Union
 
 

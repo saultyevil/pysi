@@ -12,7 +12,7 @@ import argparse as ap
 from typing import Tuple
 from matplotlib import pyplot as plt
 
-from pyPython import spectrumPlot
+from pypython import spectrumplot
 
 
 plt.rcParams['xtick.labelsize'] = 15
@@ -167,19 +167,19 @@ def main(setup: tuple = None) \
     alpha = 0.75
 
     # Spectrum Components - extracted spectrum
-    fig, ax = spectrumPlot.plot_spectrum_components(
+    fig, ax = spectrumplot.plot_spectrum_components(
         root, wd, False, False, xmin, xmax, smooth_amount, axes_scales, alpha, frequency_space, display
     )
     fig.savefig("{}/{}_spectrum_components.{}".format(wd, root, file_ext))
 
     # log_spec_tot - all photons
-    fig, ax = spectrumPlot.plot_spectrum_components(
+    fig, ax = spectrumplot.plot_spectrum_components(
         root, wd, True, False, xmin, xmax, smooth_amount, axes_scales, alpha, frequency_space, display
     )
     fig.savefig("{}/{}_spec_tot.{}".format(wd, root, file_ext))
 
     # log_spec_tot_wind - anything which is "inwind"
-    fig, ax = spectrumPlot.plot_spectrum_components(
+    fig, ax = spectrumplot.plot_spectrum_components(
         root, wd, False, True, xmin, xmax, smooth_amount, axes_scales, alpha, frequency_space, display
     )
     fig.savefig("{}/{}_spec_tot_wind.{}".format(wd, root, file_ext))

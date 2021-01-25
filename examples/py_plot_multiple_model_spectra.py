@@ -11,9 +11,9 @@ import argparse as ap
 from typing import Tuple
 from matplotlib import pyplot as plt
 
-from pyPython import spectrumUtil
-from pyPython import spectrumPlot
-from pyPython.error import EXIT_FAIL
+from pypython import spectumutil
+from pypython import spectrumplot
+from pypython.error import EXIT_FAIL
 
 def setup_script():
     """
@@ -132,7 +132,7 @@ def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
         output_name, wd, inclination, root, x_min, x_max, frequency_space, common_lines, axes_scales, smooth_amount, \
             file_extension, display = setup_script()
 
-    spectra = spectrumUtil.find_spec_files(root)
+    spectra = spectumutil.find_spec_files(root)
 
     if len(spectra) == 0:
         print("Unable to find any spectrum files")
@@ -145,7 +145,7 @@ def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
                 spectra_root.append(s)
         spectra = spectra_root
 
-    fig, ax = spectrumPlot.plot_multiple_model_spectra(
+    fig, ax = spectrumplot.plot_multiple_model_spectra(
         output_name, spectra, inclination, wd, x_min, x_max, frequency_space, axes_scales, smooth_amount, common_lines,
         file_extension, display 
     )

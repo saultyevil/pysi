@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'pyPython - a module to make using Python a wee bit easier'
+project = 'pypython - a module to make using Python a wee bit easier'
 copyright = '2020, Edward J. Parkinson'
 author = 'Edward J. Parkinson'
 
@@ -135,7 +135,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'pyPython.tex', 'pyPython Documentation',
+    (master_doc, 'pypython.tex', 'pypython Documentation',
      'Edward J. Parkinson', 'manual'),
 ]
 
@@ -145,7 +145,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'pypython', 'pyPython Documentation',
+    (master_doc, 'pypython', 'pypython Documentation',
      [author], 1)
 ]
 
@@ -156,8 +156,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'pyPython', 'pyPython Documentation',
-     author, 'pyPython', 'One line description of project.',
+    (master_doc, 'pypython', 'pypython Documentation',
+     author, 'pypython', 'One line description of project.',
      'Miscellaneous'),
 ]
 

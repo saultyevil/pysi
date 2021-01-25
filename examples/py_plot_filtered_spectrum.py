@@ -10,9 +10,9 @@ import argparse as ap
 import numpy as np
 from matplotlib import pyplot as plt
 
-from pyPython import spectrumUtil
-from pyPython import spectrumCreate
-from pyPython import conversion
+from pypython import spectumutil
+from pypython import spectrumcreate
+from pypython import conversion
 
 
 plt.rcParams['xtick.labelsize'] = 15
@@ -71,7 +71,7 @@ def setup_script() -> tuple:
                           "--extract_line",
                           nargs="+",
                           type=int,
-                          default=(spectrumCreate.UNFILTERED_SPECTRUM,),
+                          default=(spectrumcreate.UNFILTERED_SPECTRUM,),
                           help="The line number to only extract.")
 
     create_p.add_argument("-n",
@@ -116,7 +116,7 @@ def setup_script() -> tuple:
                         "--extract_line",
                         nargs="+",
                         type=int,
-                        default=(spectrumCreate.UNFILTERED_SPECTRUM,),
+                        default=(spectrumcreate.UNFILTERED_SPECTRUM,),
                         help="The line number to only extract.")
 
     plot_p.add_argument("-xl",
@@ -247,10 +247,10 @@ def plot(
 
     try:
         if logbins:
-            full_spectrum = spectrumUtil.read_spectrum("{}/{}.log_spec".format(wd, root))
+            full_spectrum = spectumutil.read_spectrum("{}/{}.log_spec".format(wd, root))
         else:
-            full_spectrum = spectrumUtil.read_spectrum("{}/{}.spec".format(wd, root))
-        inclinations = spectrumUtil.get_spectrum_inclinations(full_spectrum)
+            full_spectrum = spectumutil.read_spectrum("{}/{}.spec".format(wd, root))
+        inclinations = spectumutil.get_spectrum_inclinations(full_spectrum)
         include_full_spectrum = True
     except IOError:
         include_full_spectrum = False
@@ -263,7 +263,7 @@ def plot(
 
         if include_full_spectrum:
             ax.plot(
-                full_spectrum["Lambda"], spectrumUtil.smooth(full_spectrum[inc], sm), linewidth=1.4, alpha=0.75,
+                full_spectrum["Lambda"], spectumutil.smooth(full_spectrum[inc], sm), linewidth=1.4, alpha=0.75,
                 label="Full Spectrum"
             )
 
@@ -273,7 +273,7 @@ def plot(
             index = 1
 
         ax.plot(
-            filtered_spectrum[:-1, index], spectrumUtil.smooth(filtered_spectrum[:-1, e + 2], sm), linewidth=1.4,
+            filtered_spectrum[:-1, index], spectumutil.smooth(filtered_spectrum[:-1, e + 2], sm), linewidth=1.4,
             alpha=0.75, label="Filtered Spectrum"
         )
 
@@ -282,8 +282,8 @@ def plot(
         if scale == "loglog" or scale == "logy":
             ax.set_yscale("log")
         ax.set_xlim(xmin, xmax)
-        ax.set_ylim(spectrumUtil.calculate_axis_y_limits(
-                filtered_spectrum[:-1, index], spectrumUtil.smooth(filtered_spectrum[:-1, e + 2], sm), xmin, xmax
+        ax.set_ylim(spectumutil.calculate_axis_y_limits(
+                filtered_spectrum[:-1, index], spectumutil.smooth(filtered_spectrum[:-1, e + 2], sm), xmin, xmax
             )
         )
 
@@ -298,11 +298,11 @@ def plot(
                 logx = True
             else:
                 logx = False
-            ax = spectrumUtil.ax_add_line_id(ax, spectrumUtil.common_lines_list(freq=frequency_space), logx)
+            ax = spectumutil.ax_add_line_id(ax, spectumutil.common_lines_list(freq=frequency_space), logx)
 
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 
-        if extract_line[0] != spectrumCreate.UNFILTERED_SPECTRUM:
+        if extract_line[0] != spectrumcreate.UNFILTERED_SPECTRUM:
             name = "{}/{}_line".format(wd, root)
             for line in extract_line:
                 name += "_{}".format(line)
@@ -373,19 +373,19 @@ def main(setup: tuple = None):
         xmax = conversion.angstrom_to_hz(w_xmin)
 
     if mode == "create":
-        spectrumCreate.create_spectrum(
+        spectrumcreate.create_spectrum(
             root, wd, extract_nres, freq_min=xmin, freq_max=xmax, n_bins=n_bins, d_norm_pc=d_norm_pc,
             spec_cycle_norm=spec_cycle_norm, n_cores_norm=n_cores_norm
         )
     else:
-        if extract_nres[0] != spectrumCreate.UNFILTERED_SPECTRUM:
+        if extract_nres[0] != spectrumcreate.UNFILTERED_SPECTRUM:
             name = "{}/{}_line".format(wd, root)
             for line in extract_nres:
                 name += "_{}".format(line)
             name += ".delay_dump.spec"
         else:
             name = "{}/{}.delay_dump.spec".format(wd, root)
-        filtered_spectrum = np.loadtxt(name, skiprows=2)  # TODO: could be replaced by something in pyPython?
+        filtered_spectrum = np.loadtxt(name, skiprows=2)  # TODO: could be replaced by something in pypython?
         plot(
             root, wd, filtered_spectrum, extract_nres, smooth_amount, d_norm_pc, w_xmin, w_xmax, axes_scales,
             frequency_space, True, common_lines, file_ext, display

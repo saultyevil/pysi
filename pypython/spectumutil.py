@@ -10,7 +10,7 @@ from finding these spectrum files.
 
 from .error import DimensionError, EXIT_FAIL
 from .constants import C, ANGSTROM
-from .pythonUtil import get_root
+from .util import get_root
 
 from sys import exit
 from pathlib import Path

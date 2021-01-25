@@ -11,8 +11,8 @@ on pf files which have the same root name.
 
 import argpase as ap
 from typing import List
-from pyPython import pythonUtil as Utils
-from pyPython import grid
+from pypython import pythonutil as Utils
+from pypython import grid
 
 
 def add_parameter(wdpf: List[str], parameter: str, value: str):

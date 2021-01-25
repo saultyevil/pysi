@@ -10,8 +10,8 @@ a spectrum from the delay_dump output.
 from .error import EXIT_FAIL
 from .constants import PARSEC, C
 from .conversion import hz_to_angstrom
-from .pythonUtil import file_len
-from .spectrumUtil import read_spectrum, get_spectrum_inclinations
+from .util import file_len
+from .spectumutil import read_spectrum, get_spectrum_inclinations
 from .conversion import angstrom_to_hz
 
 import pandas as pd

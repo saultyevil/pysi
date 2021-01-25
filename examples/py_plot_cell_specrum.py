@@ -9,9 +9,9 @@ matrix_pow ionisation solver.
 
 
 import argparse as ap
-from pyPython import windUtil
-from pyPython import pythonUtil as Utils
-from pyPython.spectrumUtil import smooth
+from pypython import windutil
+from pypython import pythonutil as Utils
+from pypython.spectumutil import smooth
 from subprocess import Popen, PIPE
 import numpy as np
 from matplotlib import pyplot as plt
@@ -84,7 +84,7 @@ def py_wind(root: str, nx: int, nz: int, i: int, j: int):
         The screen output from py_wind.
     """
 
-    elem = windUtil.get_wind_elem_number(nx, nz, i, j)
+    elem = windutil.get_wind_elem_number(nx, nz, i, j)
     cmds = np.array(["1", "e", str(elem)])
     np.savetxt(".tmpcmd.txt", cmds, fmt="%s")
     sh = Popen("Setup_Py_Dir; py_wind {} < .tmpcmd.txt".format(root), stdout=PIPE, stderr=PIPE, shell=True)

@@ -15,10 +15,10 @@ from sys import exit
 from typing import List, Tuple
 from matplotlib import pyplot as plt
 
-from pyPython import windPlot
-from pyPython import windUtil
-from pyPython import pythonUtil
-from pyPython.error import EXIT_FAIL
+from pypython import windplot
+from pypython import windutil
+from pypython import pythonutil
+from pypython.error import EXIT_FAIL
 
 
 plt.rcParams['xtick.labelsize'] = 15
@@ -181,7 +181,7 @@ def plot_wind(
             quantity_type = wind_variable_types[index]
 
             try:
-                x, z, w = windUtil.get_wind_variable(
+                x, z, w = windutil.get_wind_variable(
                     root, quantity, quantity_type, wd, projection, return_indices=use_cell_indices
                 )
             except Exception as e:
@@ -191,15 +191,15 @@ def plot_wind(
                 continue
 
             if projection == "rectilinear":
-                fig, ax = windPlot.plot_rectilinear_wind(x, z, w, quantity, quantity_type, fig, ax, i, j, scale=axes_scales)
+                fig, ax = windplot.plot_rectilinear_wind(x, z, w, quantity, quantity_type, fig, ax, i, j, scale=axes_scales)
             else:
                 polar_ax = plt.subplot(panel_dims[0], panel_dims[1], index + 1, projection="polar")
-                axx = windPlot.plot_polar_wind(x, z, w, quantity, quantity_type, polar_ax, index + 1, scale=axes_scales)
+                axx = windplot.plot_polar_wind(x, z, w, quantity, quantity_type, polar_ax, index + 1, scale=axes_scales)
                 ax.append(axx)
 
             index += 1
 
-    fig, ax = pythonUtil.remove_extra_axes(fig, ax, len(wind_variables), panel_dims[0] * panel_dims[1])
+    fig, ax = pythonutil.remove_extra_axes(fig, ax, len(wind_variables), panel_dims[0] * panel_dims[1])
 
     if title:
         fig.suptitle(title, fontsize=15)
@@ -258,7 +258,7 @@ Parameters
 
     # First, we probably need to run windsave2table
 
-    pythonUtil.windsave2table(root, wd, ion_density=use_ion_density)
+    pythonutil.windsave2table(root, wd, ion_density=use_ion_density)
 
     # Plot the wind quantities first
 

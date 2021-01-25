@@ -21,13 +21,13 @@ from typing import List, Tuple
 from subprocess import Popen, PIPE
 from socket import gethostname
 
-from pyPython import grid
-from pyPython import simulation
-from pyPython import pythonUtil
-from pyPython.log import log, log_silent, init_logfile, close_logfile
-from pyPython import quotes
-from pyPython.error import EXIT_FAIL
-from pyPython.mailNotifications import send_notification
+from pypython import grid
+from pypython import simulation
+from pypython import pythonutil
+from pypython.log import log, log_silent, init_logfile, close_logfile
+from pypython import quotes
+from pypython.error import EXIT_FAIL
+from pypython.mailnotifs import send_notification
 
 
 CONVERGED = \
@@ -580,7 +580,7 @@ def run_all_models(
 
     for i, sim in enumerate(roots):
 
-        root, wd = pythonUtil.get_root(sim)
+        root, wd = pythonutil.get_root(sim)
         msg = """\
 ------------------------
 
@@ -690,7 +690,7 @@ def main(
     # Find models to run by searching recursively from the calling directory
     # for .pf files
 
-    parameter_files = pythonUtil.find_parameter_files()
+    parameter_files = pythonutil.find_parameter_files()
     n_models = len(parameter_files)
 
     if not n_models:
@@ -704,7 +704,7 @@ def main(
     if N_CORES:
         n_cores_to_use = N_CORES
     else:
-        n_cores_to_use = pythonUtil.get_cpu_count()
+        n_cores_to_use = pythonutil.get_cpu_count()
 
     if n_cores_to_use > 1:
         use_mpi = True

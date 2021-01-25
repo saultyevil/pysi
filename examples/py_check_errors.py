@@ -8,8 +8,8 @@ TODO: this will only work for a simulation which didn't crash
 """
 
 
-from pyPython.pythonUtil import find_parameter_files, get_root
-from pyPython.simulation import error_summary
+from pypython.pythonutil import find_parameter_files, get_root
+from pypython.simulation import error_summary
 
 
 COL_LEN = 80

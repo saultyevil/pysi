@@ -18,11 +18,11 @@ from typing import Tuple, Union, List
 from sys import exit
 from matplotlib import pyplot as plt
 
-from pyPython import windPlot
-from pyPython import windUtil
-from pyPython import pythonUtil
-from pyPython.constants import CMS_TO_KMS, VLIGHT
-from pyPython.error import EXIT_FAIL
+from pypython import windplot
+from pypython import windutil
+from pypython import pythonutil
+from pypython.constants import CMS_TO_KMS, VLIGHT
+from pypython.error import EXIT_FAIL
 
 
 plt.rcParams['xtick.labelsize'] = 15
@@ -259,13 +259,13 @@ def velocity_plot(
     # First get the velocity in cartesian coordinates and then project this into
     # cylindrical coordinates. We will put everything into km/s.
 
-    vx_x, vx_z, vx = windUtil.get_wind_variable(
+    vx_x, vx_z, vx = windutil.get_wind_variable(
         root, "v_x", "wind", wd, "rectilinear", return_indices=use_cell_indices
     )
-    vy_x, vy_z, vy = windUtil.get_wind_variable(
+    vy_x, vy_z, vy = windutil.get_wind_variable(
         root, "v_y", "wind", wd, "rectilinear", return_indices=use_cell_indices
     )
-    vz_x, vz_z, vz = windUtil.get_wind_variable(
+    vz_x, vz_z, vz = windutil.get_wind_variable(
         root, "v_z", "wind", wd, "rectilinear", return_indices=use_cell_indices
     )
 
@@ -316,7 +316,7 @@ def velocity_plot(
             #     vel = 10 ** vel
 
             name = velocities_to_plot[index] + " (units = {})".format(velocity_units)
-            fig, ax = windPlot.plot_rectilinear_wind(
+            fig, ax = windplot.plot_rectilinear_wind(
                 vx_x, vx_z, vel, name, "wind", fig, ax, i, j, scale=axes_scales
             )
             index += 1
@@ -366,7 +366,7 @@ def main(
 
     # First, we probably need to run windsave2table
 
-    pythonUtil.windsave2table(root, wd)
+    pythonutil.windsave2table(root, wd)
 
     # Now we can plot the stuff
 

@@ -14,8 +14,8 @@ import argparse as ap
 from typing import Tuple
 from matplotlib import pyplot as plt
 
-from pyPython import spectrumUtil
-from pyPython import spectrumPlot
+from pypython import spectumutil
+from pypython import spectrumplot
 
 plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15
@@ -153,8 +153,8 @@ def plot_all_spectrum_inclinations_in_one_panel(
 
     alpha = 0.75
     spectrum_filename = "{}/{}.spec".format(wd, root)
-    s = spectrumUtil.read_spectrum(spectrum_filename)
-    ia = spectrumUtil.get_spectrum_inclinations(s)
+    s = spectumutil.read_spectrum(spectrum_filename)
+    ia = spectumutil.get_spectrum_inclinations(s)
 
     fig, ax = plt.subplots(figsize=(12, 8))
 
@@ -184,9 +184,9 @@ def plot_all_spectrum_inclinations_in_one_panel(
         xmax = xlims[1]
 
     for a in ia:
-        y = spectrumUtil.smooth(s[a].values, smooth_amount)
+        y = spectumutil.smooth(s[a].values, smooth_amount)
 
-        tmin, tmax = spectrumUtil.calculate_axis_y_limits(x, y, xmin, xmax)
+        tmin, tmax = spectumutil.calculate_axis_y_limits(x, y, xmin, xmax)
         if tmin < ymin:
             ymin = tmin
         if tmax > ymax:
@@ -196,7 +196,7 @@ def plot_all_spectrum_inclinations_in_one_panel(
         if frequency_space:
             y *= s["Lambda"].values
 
-        fig, ax = spectrumPlot.plot(
+        fig, ax = spectrumplot.plot(
             x, y, xmin, xmax, xlabel, ylabel, axes_scales, fig, ax, label=str(a) + r"$^{\circ}$", alpha=alpha
         )
 
@@ -208,7 +208,7 @@ def plot_all_spectrum_inclinations_in_one_panel(
             logx = True
         else:
             logx = False
-        ax = spectrumUtil.ax_add_line_id(ax, spectrumUtil.common_lines_list(), logx)
+        ax = spectumutil.ax_add_line_id(ax, spectumutil.common_lines_list(), logx)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
     fig.savefig("{}/{}_spectra_single.{}".format(wd, root, file_ext))
@@ -253,7 +253,7 @@ def plot_spectrum_inclinations_on_one_figure_in_subpanels(
         The matplotlib Axes objects for the plot panels.
     """
 
-    fig, ax = spectrumPlot.plot_spectrum_inclinations_in_subpanels(
+    fig, ax = spectrumplot.plot_spectrum_inclinations_in_subpanels(
         root, wd, xmin, xmax, smooth_amount, common_lines, frequency_space, axes_scales
     )
     fig.savefig("{}/{}_spectra.{}".format(wd, root, file_ext))
@@ -298,8 +298,8 @@ def plot_spectrum_inclination_in_individual_figures(
 
     alpha = 0.75
     spectrum_filename = "{}/{}.spec".format(wd, root)
-    s = spectrumUtil.read_spectrum(spectrum_filename)
-    ia = spectrumUtil.get_spectrum_inclinations(s)
+    s = spectumutil.read_spectrum(spectrum_filename)
+    ia = spectumutil.get_spectrum_inclinations(s)
 
     if frequency_space:
         xlabel = "Freq."
@@ -318,17 +318,17 @@ def plot_spectrum_inclination_in_individual_figures(
     # Plot each inclination a in ia on different fig and ax objects
 
     for a in ia:
-        y = spectrumUtil.smooth(s[a].values, smooth_amount)
+        y = spectumutil.smooth(s[a].values, smooth_amount)
         # Convert into lambda F_lambda which is (I hope) the same as nu F_nu
         if frequency_space:
             y *= s["Lambda"].values
 
-        fig, ax = spectrumPlot.plot(x, y, xmin, xmax, xlabel, ylabel, axes_scales, alpha=alpha)
+        fig, ax = spectrumplot.plot(x, y, xmin, xmax, xlabel, ylabel, axes_scales, alpha=alpha)
         if axes_scales == "loglog" or axes_scales == "logx":
             logx = True
         else:
             logx = False
-        ax = spectrumUtil.ax_add_line_id(ax, spectrumUtil.common_lines_list(), logx)
+        ax = spectumutil.ax_add_line_id(ax, spectumutil.common_lines_list(), logx)
         ax.set_title("Inclination i = {}".format(str(a)) + r"$^{\circ}$")
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
         fig.savefig("{}/{}_i{}_spectrum.{}".format(wd, root, str(a), file_ext))

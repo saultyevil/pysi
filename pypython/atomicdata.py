@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-The point of this part of pyPython is to manipulating the atomic data used in
+The point of this part of pypython is to manipulating the atomic data used in
 Python, to i.e. remove various transitions from the data..
 """
 

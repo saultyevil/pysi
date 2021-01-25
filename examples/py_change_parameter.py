@@ -10,8 +10,8 @@ files. If a root name is provided, however, then the script will only operate
 
 
 import argparse as ap
-from pyPython import grid
-from pyPython import pythonUtil as Utils
+from pypython import grid
+from pypython import pythonutil as Utils
 from typing import List
 
 
