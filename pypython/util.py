@@ -17,7 +17,6 @@ from shutil import which
 from typing import Tuple, List, Union
 from psutil import cpu_count
 import numpy as np
-from matplotlib import pyplot as plt
 
 
 def get_array_index(
@@ -186,7 +185,7 @@ def remove_data_sym_links(
 
 def get_root(
     path: str, return_wd: bool = True
-) -> Tuple[str, str]:
+) -> Union[str, Tuple[str, str]]:
     """
     Get the root name of a Python simulation, extracting it from a file path.
 
@@ -507,94 +506,6 @@ def py_wind(
     return stdout.decode("utf-8").split("\n")
 
 
-def subplot_dims(
-    n_plots: int
-) -> Tuple[int, int]:
-    """
-    Return the dimensions for a plot with multiple subplot panels. A design
-    of two of three columns of subplot panels will always be used, until I
-    program something more sensible or intelligent, like using the catography
-    thing in MPI.
-
-    TODO update for more plots to divide into more sensible sub-panels
-
-    Parameters
-    ----------
-    n_plots: int
-        The number of subplots which will be plotted
-
-    Returns
-    -------
-    dims: Tuple[int, int]
-        The dimensions of the subplots returned as (nrows, ncols)
-    """
-
-    n = subplot_dims.__name__
-
-    if n_plots < 1 or type(n_plots) != int:
-        raise ValueError("{}: n_plots should be a non-zero, positive and an integer".format(n))
-
-    if n_plots > 2:
-        n_cols = 2
-        n_rows = (1 + n_plots) // n_cols
-    elif n_plots > 9:
-        n_cols = 3
-        n_rows = (1 + n_plots) // n_cols
-    else:
-        n_cols = 1
-        n_rows = n_plots
-
-    return n_rows, n_cols
-
-
-def remove_extra_axes(
-    fig: plt.Figure, ax: Union[plt.Axes, np.ndarray], n_wanted: int, n_panel: int
-):
-    """
-    Remove additional axes which are included in a plot. This can be used if you
-    have 4 x 2 = 8 panels but only want to use 7 of tha panels. The 8th panel
-    will be removed.
-
-    Parameters
-    ----------
-    fig: plt.Figure
-        The Figure object to modify.
-    ax: plt.Axes
-        The Axes objects to modify.
-    n_wanted: int
-        The actual number of plots/panels which are wanted.
-    n_panel: int
-        The number of panels which are currently in the Figure and Axes objects.
-
-    Returns
-    -------
-    fig: plt.Figure
-        The modified Figure.
-    ax: plt.Axes
-        The modified Axes.
-    """
-
-    if type(ax) != np.ndarray:
-        return fig, ax
-    elif len(ax) == 1:
-        return fig, ax
-
-    # Flatten the axes array to make life easier with indexing
-
-    shape = ax.shape
-    ax = ax.flatten()
-
-    if n_panel > n_wanted:
-        for i in range(n_wanted, n_panel):
-            fig.delaxes(ax[i])
-
-    # Return ax to the shape it was passed as
-
-    ax = np.reshape(ax, (shape[0], shape[1]))
-
-    return fig, ax
-
-
 def create_run_script(commands: List[str]):
     """
     Create a shell run script given a list of commands to do. This assumes that
@@ -628,3 +539,6 @@ def create_run_script(commands: List[str]):
         f.write(file)
 
     return
+
+
+
