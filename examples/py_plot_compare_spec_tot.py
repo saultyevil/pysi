@@ -31,7 +31,7 @@ for i, file in enumerate(specs):
 
 ax.set_xlim(1e14, 1e18)
 ax.set_ylim(1e24, 1e51)
-spectumutil.add_line_id(ax, spectumutil.common_lines_list(freq=True), logx=True)
+spectumutil.add_line_id(ax, spectumutil.common_lines(freq=True), logx=True)
 
 fig.tight_layout()
 fig.savefig("spec_tot.pdf", dpi=300)

@@ -282,7 +282,7 @@ def plot(
         if scale == "loglog" or scale == "logy":
             ax.set_yscale("log")
         ax.set_xlim(xmin, xmax)
-        ax.set_ylim(spectumutil.calculate_axis_y_limits(
+        ax.set_ylim(spectumutil.get_y_lims_for_x_lims(
                 filtered_spectrum[:-1, index], spectumutil.smooth(filtered_spectrum[:-1, e + 2], sm), xmin, xmax
             )
         )
@@ -298,7 +298,7 @@ def plot(
                 logx = True
             else:
                 logx = False
-            ax = spectumutil.ax_add_line_id(ax, spectumutil.common_lines_list(freq=frequency_space), logx)
+            ax = spectumutil.ax_add_line_ids(ax, spectumutil.common_lines(freq=frequency_space), logx)
 
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 

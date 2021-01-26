@@ -218,7 +218,7 @@ def create_plot(
     ax.set_xlim(np.min(optical_depth_freq), np.max(optical_depth_freq))
     ax.set_zorder(ax2.get_zorder() + 1)
     ax.patch.set_visible(False)
-    ax = spectumutil.add_line_id(ax, spectumutil.photo_edges_list(True), logx=True)
+    ax = spectumutil.add_line_id(ax, spectumutil.photoionization_edges(True), logx=True)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
     fig.savefig("{}_reprocess.png".format(root), dpi=300)

@@ -7,52 +7,10 @@ Functions for helping plotting with matplotlib.
 
 import numpy as np
 from typing import List, Union, Tuple
-from scipy.signal import convolve, boxcar
 from matplotlib import pyplot as plt
 
 from .constants import C, ANGSTROM
 from .error import DimensionError
-
-
-def smooth_array(
-    array: Union[np.ndarray, List[Union[float, int]]], smooth_amount: Union[int, float]
-) -> np.ndarray:
-    """
-    Smooth a 1D array of data using a boxcar filter.
-
-    Parameters
-    ----------
-    array: np.array[float]
-        The array to be smoothed.
-    smooth_amount: int
-        The size of the boxcar filter.
-
-    Returns
-    -------
-    smoothed: np.ndarray
-        The smoothed array
-    """
-
-    # If smooth_amount is None or 1, then the user has indicated they didn't
-    # actually want to use any smoothing, so return the original array
-
-    if smooth_amount is None or smooth_amount == 0:
-        return array
-
-    if type(smooth_amount) is not int:
-        try:
-            smooth_amount = int(smooth_amount)
-        except ValueError:
-            print("Unable to cast {} into an int".format(smooth_amount))
-            return array
-
-    if type(array) is not np.ndarray:
-        array = np.array(array)
-
-    array = np.reshape(array, (len(array),))  # todo: why do I have to do this?
-    smoothed = convolve(array, boxcar(smooth_amount) / float(smooth_amount), mode="same")
-
-    return smoothed
 
 
 def subplot_dims(

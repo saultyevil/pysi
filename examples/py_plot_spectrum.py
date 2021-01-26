@@ -186,7 +186,7 @@ def plot_all_spectrum_inclinations_in_one_panel(
     for a in ia:
         y = spectumutil.smooth(s[a].values, smooth_amount)
 
-        tmin, tmax = spectumutil.calculate_axis_y_limits(x, y, xmin, xmax)
+        tmin, tmax = spectumutil.get_y_lims_for_x_lims(x, y, xmin, xmax)
         if tmin < ymin:
             ymin = tmin
         if tmax > ymax:
@@ -208,7 +208,7 @@ def plot_all_spectrum_inclinations_in_one_panel(
             logx = True
         else:
             logx = False
-        ax = spectumutil.ax_add_line_id(ax, spectumutil.common_lines_list(), logx)
+        ax = spectumutil.ax_add_line_ids(ax, spectumutil.common_lines(), logx)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
     fig.savefig("{}/{}_spectra_single.{}".format(wd, root, file_ext))
@@ -328,7 +328,7 @@ def plot_spectrum_inclination_in_individual_figures(
             logx = True
         else:
             logx = False
-        ax = spectumutil.ax_add_line_id(ax, spectumutil.common_lines_list(), logx)
+        ax = spectumutil.ax_add_line_ids(ax, spectumutil.common_lines(), logx)
         ax.set_title("Inclination i = {}".format(str(a)) + r"$^{\circ}$")
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
         fig.savefig("{}/{}_i{}_spectrum.{}".format(wd, root, str(a), file_ext))

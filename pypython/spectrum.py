@@ -8,7 +8,6 @@ Spectrum object
 
 import numpy as np
 from pathlib import Path
-from scipy.signal import convolve, boxcar
 from typing import List, Union
 import textwrap
 
@@ -134,6 +133,10 @@ class Spectrum:
         """Smooth the spectrum flux/luminosity bins."""
         raise NotImplementedError
 
+    def unsmooth_spectrum(self):
+        """Restore the spectrum to its unsmoothed form."""
+        raise NotImplementedError
+
     def __getitem__(self, key):
         """Return an array in the spectrum dictionary when indexing."""
         return self.spectrum[key]
@@ -151,17 +154,17 @@ class Spectrum:
 
 
 def get_spectrum_files(
-    root: str = None, wd: str = ".", ignore_delay_dump_spec: bool = True
+    this_root: str = None, cd: str = ".", ignore_delay_dump_spec: bool = True
 ) -> List[str]:
     """
     Find root.spec files recursively in the provided directory.
 
     Parameters
     ----------
-    root: str [optional]
+    this_root: str [optional]
         If root is set, then only .spec files with this root name will be
         returned
-    wd: str [optional]
+    cd: str [optional]
         The path to recursively search from
     ignore_delay_dump_spec: [optional] bool
         When True, root.delay_dump.spec files will be ignored
@@ -174,19 +177,16 @@ def get_spectrum_files(
 
     spec_files = []
 
-    for filename in Path(wd).glob("**/*.spec"):
-
-        fname = str(filename)
-
-        if ignore_delay_dump_spec and fname.find(".delay_dump.spec") != -1:
+    for filepath in Path(cd).glob("**/*.spec"):
+        str_filepath = str(filepath)
+        if ignore_delay_dump_spec and str_filepath.find(".delay_dump.spec") != -1:
             continue
-
-        if root:
-            t_root, wd = get_root(fname)
-            if t_root == root:
-                spec_files.append(fname)
+        if this_root:
+            root, cd = get_root(str_filepath)
+            if root == this_root:
+                spec_files.append(str_filepath)
             else:
                 continue
-        spec_files.append(fname)
+        spec_files.append(str_filepath)
 
     return spec_files

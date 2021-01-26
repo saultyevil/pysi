@@ -9,8 +9,8 @@ being saved to disk or displayed.
 """
 
 from .constants import PARSEC
-from .spectumutil import photo_edges_list, common_lines_list, ax_add_line_id, smooth, check_inclination_valid
-from .spectumutil import read_spectrum, get_spectrum_inclinations, calculate_axis_y_limits, get_spectrum_units
+from .spectumutil import photoionization_edges, common_lines, ax_add_line_ids, smooth, check_inclination_valid
+from .spectumutil import read_spectrum, get_spectrum_inclinations, get_y_lims_for_x_lims, get_spectrum_units
 from .spectumutil import UNITS_FLAMBDA, UNITS_FNU, UNITS_LNU
 from .util import subplot_dims, remove_extra_axes
 from .error import InvalidParameter, EXIT_FAIL
@@ -215,7 +215,7 @@ def plot(
     xlims = (xmin, xmax)
     ax.set_xlim(xlims[0], xlims[1])
 
-    ymin, ymax = calculate_axis_y_limits(x, y, xmin, xmax)
+    ymin, ymax = get_y_lims_for_x_lims(x, y, xmin, xmax)
     ax.set_ylim(ymin, ymax)
 
     if display:
@@ -347,7 +347,7 @@ def plot_optical_depth(
             logx = True
         else:
             logx = False
-        ax_add_line_id(ax, photo_edges_list(frequency_space), logx, fontsize=15)
+        ax_add_line_ids(ax, photoionization_edges(frequency_space), logx, fontsize=15)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 
@@ -412,7 +412,7 @@ def plot_spectrum_process_contributions(
             logx = True
         else:
             logx = False
-        ax = ax_add_line_id(ax, common_lines_list(), logx=logx, fontsize=15)
+        ax = ax_add_line_ids(ax, common_lines(), logx=logx, fontsize=15)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
     fig.savefig("{}/{}_spec_processes.{}".format(wd, root, file_ext), dpi=300)
@@ -602,7 +602,7 @@ def plot_spectrum_inclinations_in_subpanels(
             name = str(inclinations[ii])
             ax[i, j] = _plot_panel_subplot(
                 ax[i, j], x, s, units, name, xlims, smooth_amount, alpha, scale, frequency_space, False, n)
-            ymin, ymax = calculate_axis_y_limits(x, s[name].values, xmin, xmax)
+            ymin, ymax = get_y_lims_for_x_lims(x, s[name].values, xmin, xmax)
             ax[i, j].set_ylim(ymin, ymax)
 
             if add_line_ids:
@@ -610,7 +610,7 @@ def plot_spectrum_inclinations_in_subpanels(
                     logx = True
                 else:
                     logx = False
-                ax[i, j] = ax_add_line_id(ax[i, j], common_lines_list(frequency_space), logx)
+                ax[i, j] = ax_add_line_ids(ax[i, j], common_lines(frequency_space), logx)
             ii += 1
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
@@ -803,7 +803,7 @@ def plot_multiple_model_spectra(
             if not x_max:
                 x_max = x.max()
 
-            this_y_min, this_y_max = calculate_axis_y_limits(x, y, x_min, x_max)
+            this_y_min, this_y_max = get_y_lims_for_x_lims(x, y, x_min, x_max)
             if this_y_min < y_min:
                 y_min = this_y_min
             if this_y_max > y_max:
@@ -840,7 +840,7 @@ def plot_multiple_model_spectra(
                 logx = True
             else:
                 logx = False
-            ax[i] = ax_add_line_id(ax[i], common_lines_list(), logx)
+            ax[i] = ax_add_line_ids(ax[i], common_lines(), logx)
 
     ax[0].legend(loc="lower left")
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
