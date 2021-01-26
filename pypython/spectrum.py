@@ -13,7 +13,7 @@ from typing import List, Union, Tuple
 import textwrap
 import copy
 
-from .util import get_root
+from .util import get_root_from_filepath
 
 
 UNITS_LNU = "erg/s/Hz"
@@ -224,7 +224,7 @@ def get_spectrum_files(
         if ignore_delay_dump_spec and str_filepath.find(".delay_dump.spec") != -1:
             continue
         if this_root:
-            root, cd = get_root(str_filepath)
+            root, cd = get_root_from_filepath(str_filepath)
             if root == this_root:
                 spec_files.append(str_filepath)
             else:

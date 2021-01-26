@@ -56,7 +56,7 @@ def main():
 
     args = p.parse_args()
 
-    change_pfs(Utils.find_parameter_files(args.root), args.parameter, args.value)
+    change_pfs(Utils.get_parameter_files(args.root), args.parameter, args.value)
 
     return
 

@@ -8,7 +8,7 @@ Contains functions for calculating the properties of a blackbody.
 import numpy as np
 from typing import Union
 
-from .constants import BOLTZMANN, H, VLIGHT, ANGSTROM
+from constants import BOLTZMANN, H, VLIGHT, ANGSTROM
 
 
 def planck_nu(

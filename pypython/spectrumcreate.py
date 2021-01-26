@@ -8,9 +8,9 @@ a spectrum from the delay_dump output.
 """
 
 from .error import EXIT_FAIL
-from .constants import PARSEC, C
+from physics.constants import PARSEC, C
 from .conversion import hz_to_angstrom
-from .util import file_len
+from .util import get_file_len
 from .spectumutil import read_spectrum, get_spectrum_inclinations
 from .conversion import angstrom_to_hz
 
@@ -158,7 +158,7 @@ def read_delay_dump(
     n = read_delay_dump.__name__
 
     file = "{}/{}.delay_dump".format(wd, root)
-    n_lines = file_len(file)
+    n_lines = get_file_len(file)
 
     # There are cases where LineRes. is not defined within the delay dump file,
     # i.e. in the regular dev version

@@ -6,7 +6,6 @@ Utility functions to ease the pain of using Python or a Unix environment whilst
 trying to do computational astrophysics.
 """
 
-from .constants import LOG_BASE_10_OF_TWO
 
 from os import remove
 from pathlib import Path
@@ -18,6 +17,7 @@ from scipy.signal import convolve, boxcar
 from typing import Tuple, List, Union
 from psutil import cpu_count
 import numpy as np
+import textwrap
 
 
 def get_array_index(
@@ -52,56 +52,57 @@ def get_array_index(
     return index
 
 
-def round_to_sig_figs(
-    x: np.ndarray, n_sig: int
-):
+def smooth_array(
+    array: Union[np.ndarray, List[Union[float, int]]], width: Union[int, float]
+) -> np.ndarray:
     """
-    Truncate values in a numpy array to some given number of significant
-    figures. This wasw ritten by some maniac on Stack Overflow at the following
-    URL,
-
-    https://stackoverflow.com/questions/18915378/rounding-to-significant-figures-in-numpy
+    Smooth a 1D array of data using a boxcar filter.
 
     Parameters
     ----------
-    x: np.ndarray
-        The array of values.
-    n_sig: int
-        The number of significant figures.
+    array: np.array[float]
+        The array to be smoothed.
+    width: int
+        The size of the boxcar filter.
 
     Returns
     -------
-    x: np.ndarray
-        The array rounded to the required number of significant figures.
+    smoothed: np.ndarray
+        The smoothed array
     """
 
-    xsgn = np.sign(x)
-    absx = xsgn * x
-    mantissa, binaryExponent = np.frexp(absx)
+    # If smooth_amount is None or 1, then the user has indicated they didn't
+    # actually want to use any smoothing, so return the original array
 
-    decimalExponent = LOG_BASE_10_OF_TWO * binaryExponent
-    omag = np.floor(decimalExponent)
+    if width is None or width == 0:
+        return array
 
-    mantissa *= 10.0 ** (decimalExponent - omag)
+    if type(width) is not int:
+        try:
+            width = int(width)
+        except ValueError:
+            print("Unable to cast {} into an int".format(width))
+            return array
 
-    if mantissa.any() < 1.0:
-        mantissa *= 10.0
-        omag -= 1.0
+    if type(array) is not np.ndarray:
+        array = np.array(array)
 
-    return xsgn * np.around(mantissa, decimals=n_sig - 1) * 10.0 ** omag
+    array = np.reshape(array, (len(array),))  # todo: why do I have to do this? safety probably
+
+    return convolve(array, boxcar(width) / float(width), mode="same")
 
 
-def file_len(
-    fname: str
+def get_file_len(
+    filename: str
 ) -> int:
     """
-    Count the number of lines in a file.
+    Slowly count the number of lines in a file.
 
     TODO update to jit_open or some other more efficient method
 
     Parameters
     ----------
-    fname: str
+    filename: str
         The file name and path of the file to count the lines of.
 
     Returns
@@ -109,14 +110,14 @@ def file_len(
     The number of lines in the file.
     """
 
-    with open(fname, "r") as f:
+    with open(filename, "r") as f:
         for i, l in enumerate(f):
             pass
 
     return i + 1
 
 
-def remove_data_sym_links(
+def clean_up_data_sym_links(
     wd: str = ".", verbose: bool = False
 ):
     """
@@ -141,12 +142,11 @@ def remove_data_sym_links(
         The number of symbolic links deleted
     """
 
-    n = remove_data_sym_links.__name__
     n_del = 0
 
     os = system().lower()
     if os != "darwin" and os != "linux":
-        print("{}: system {} unavailable", n, os)
+        print("your system does not work with this function", os)
         return n_del
 
     # - type l will only search for symbolic links
@@ -156,14 +156,13 @@ def remove_data_sym_links(
     stderr = stderr.decode("utf-8")
 
     if stderr:
-        print("{}: stderr".format(n))
+        print("sent from stderr")
         print(stderr)
 
     if stdout and verbose:
-        print("{}: deleting data symbolic links in the following directories:\n\n{}".format(n, stdout[:-1]))
+        print("deleting data symbolic links in the following directories:\n\n{}".format(stdout[:-1]))
     else:
-        if verbose:
-            print("{}: no data symlinks to delete".format(n))
+        print("no data symlinks to delete")
         return n_del
 
     directories = stdout.split()
@@ -184,8 +183,8 @@ def remove_data_sym_links(
     return n_del
 
 
-def get_root(
-    path: str, return_wd: bool = True
+def get_root_from_filepath(
+    path: str, return_cd: bool = True
 ) -> Union[str, Tuple[str, str]]:
     """
     Get the root name of a Python simulation, extracting it from a file path.
@@ -194,26 +193,24 @@ def get_root(
     ----------
     path: str
         The directory path to a Python .pf file
-    return_wd: str
+    return_cd: str
         Returns the directory containing the .pf file.
 
     Returns
     -------
     root: str
         The root name of the Python simulation
-    wd: str
+    cd: str
         The directory path containing the provided Python .pf file
     """
 
-    n = get_root.__name__
-
-    if type(path) != str:
-        raise TypeError("{}: expected string as input".format(n))
+    if type(path) is not str:
+        raise TypeError("expected string as input, not whatever you put")
 
     dot = 0
     slash = 0
 
-    # TODO use find or rfind instead
+    # todo: use find or rfind instead to avoid this mess
 
     for i in range(len(path)):
         letter = path[i]
@@ -223,19 +220,19 @@ def get_root(
             slash = i + 1
 
     root = path[slash:dot]
-    wd = path[:slash]
+    cd = path[:slash]
 
-    if wd == "":
-        wd = "."
+    if cd == "":
+        cd = "."
 
-    if return_wd:
-        return root, wd
+    if return_cd:
+        return root, cd
     else:
         return root
 
 
-def find_parameter_files(
-    root: str = None, path: str = "."
+def get_parameter_files(
+    root: str = None, cd: str = "."
 ) -> List[str]:
     """
     Search recursively for Python .pf files. This function will ignore
@@ -245,7 +242,7 @@ def find_parameter_files(
     ----------
     root: str [optional]
         If given, only .pf files with the given root will be returned.
-    path: str [optional]
+    cd: str [optional]
         The directory to search for Python .pf files from
 
     Returns
@@ -256,21 +253,18 @@ def find_parameter_files(
 
     parameter_files = []
 
-    for filename in Path(path).glob("**/*.pf"):
-        file = str(filename)
-
-        if file.find(".out.pf") != -1:
+    for filepath in Path(cd).glob("**/*.pf"):
+        str_filepath = str(filepath)
+        if str_filepath.find(".out.pf") != -1:
             continue
-        elif file.find("py_wind.pf") != -1:
+        elif str_filepath.find("py_wind.pf") != -1:
             continue
-        elif file[0] == "/":
-            file = "." + file
-
-        t_root, wd = get_root(file)
+        elif str_filepath[0] == "/":
+            str_filepath = "." + str_filepath
+        t_root, wd = get_root_from_filepath(str_filepath)
         if root and t_root != root:
             continue
-
-        parameter_files.append(file)
+        parameter_files.append(str_filepath)
 
     parameter_files = sorted(parameter_files, key=str.lower)
 
@@ -284,7 +278,7 @@ def get_cpu_count(
     Return the number of CPU cores which can be used when running a Python
     simulation. By default, this will only return the number of physical cores
     and will ignore logical threads, i.e. in Intel terms, it will not count the
-    "hyperthreads".
+    hyperthreads.
 
     Parameters
     ----------
@@ -305,66 +299,12 @@ def get_cpu_count(
     try:
         n_cores = cpu_count(logical=enable_smt)
     except NotImplementedError:
-        print("{}: unable to determine number of CPU cores, psutil.cpu_count not implemented".format(n))
+        print("{}: unable to determine number of CPU cores, psutil.cpu_count not implemented for your system".format(n))
 
     return n_cores
 
 
-def get_python_version(
-    executable: str = "py", verbose: bool = False
-) -> Tuple[str, str]:
-    """
-    Get the Python version and commit hash for the provided Python binary.
-    This should also work with windsave2table.
-
-    Parameters
-    ----------
-    executable: str, optional
-        The name of the Python executable in $PATH whose version will be queried
-    verbose: bool, optional
-        Enable verbose logging
-
-    Returns
-    --------
-    version: str
-        The version number of Python
-    hash: str
-        The commit hash of Python
-    """
-
-    n = get_python_version.__name__
-    version = ""
-    hash = ""
-
-    path = which(executable)
-    if not path:
-        raise OSError("{}: {} is not in $PATH".format(n, executable))
-
-    command = "{} --version".format(executable)
-    cmd = Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
-    stdout, stderr = cmd.communicate()
-    out = stdout.decode("utf-8").split()
-    err = stderr.decode("utf-8")
-
-    if err:
-        print(stderr)
-        return "N/A", "N/A"
-
-    for i in range(len(out)):
-        if out[i] == "Version":
-            version = out[i + 1]
-        if out[i] == "hash":
-            hash = out[i + 1]
-
-    if verbose:
-        print("{} version {}".format(executable, version))
-        print("Git hash   {}".format(hash))
-        print("Short hash {}".format(hash[:7]))
-
-    return version, hash
-
-
-def windsave2table(
+def create_wind_save_table(
     root: str, wd: str = ".", ion_density: bool = False, no_all_complete: bool = False, verbose: bool = False
 ) -> None:
     """
@@ -387,24 +327,9 @@ def windsave2table(
         Enable verbose output
     """
 
-    n = windsave2table.__name__
-
-    version, hash = get_python_version("windsave2table", verbose)
-
-    try:
-        with open(".py_version", "r") as f:
-            lines = f.readlines()
-        c_version = lines[0]
-        c_hash = lines[1]
-        if c_version != version or c_hash != hash:
-            print("{}: windsave2table and wind_save versions are different: be careful!".format(n))
-    except IOError:
-        if verbose:
-            print("{}: unable to determine wind_save version: be careful!".format(n))
-
     in_path = which("windsave2table")
     if not in_path:
-        raise OSError("{}: windsave2table not in $PATH and executable".format(n))
+        raise OSError("windsave2table not in $PATH and executable")
 
     command = "cd {}; Setup_Py_Dir; windsave2table".format(wd)
     if ion_density:
@@ -417,7 +342,7 @@ def windsave2table(
     if verbose:
         print(stdout.decode("utf-8"))
     if stderr:
-        print("{}: the following was sent to stderr:".format(n))
+        print("the following was sent to stderr:")
         print(stderr.decode("utf-8"))
 
     if no_all_complete:
@@ -446,7 +371,7 @@ def windsave2table(
         try:
             df = pd.read_csv(fname, delim_whitespace=True)
         except IOError:
-            print("{}: warning: unable to append {}.{}.txt table to {}.all.complete.txt file".format(n, file, root, root))
+            print("unable to append {}.{}.txt table to {}.all.complete.txt file".format(file, root, root))
             continue
 
         columns_to_add = df.columns.values[include_files_index[i]:]
@@ -468,7 +393,7 @@ def windsave2table(
     return
 
 
-def py_wind(
+def run_py_wind_commands(
     root: str, commands: List[str], wd: str = "."
 ) -> List[str]:
     """
@@ -489,8 +414,6 @@ def py_wind(
         The stdout output from py_wind.
     """
 
-    n = py_wind.__name__
-
     cmd_file = "{}/.tmpcmds.txt".format(wd)
 
     with open(cmd_file, "w") as f:
@@ -507,6 +430,59 @@ def py_wind(
     return stdout.decode("utf-8").split("\n")
 
 
+def create_slurm_file(
+    name: str, n_cores: int, split_cycle: bool, n_hours: int, n_minutes: int, root: str, flags: str, wd: str = "."
+) -> None:
+    """
+    Create a slurm file in the directory wd with the name root.slurm. All
+    of the script flags are passed using the flags variable.
+
+    Parameters
+    ----------
+    name: str
+        The name of the slurm file
+    n_cores: int
+        The number of cores which to use
+    n_hours: int
+        The number of hours to allow
+    n_minutes: int
+        The number of minutes to allow
+    split_cycle: bool
+        If True, then py_run will use the split_cycle method
+    flags: str
+        The run-time flags of which to execute Python with
+    root: str
+        The root name of the model
+    wd: str
+        The directory to write the file to
+    """
+
+    if split_cycle:
+        split = "-sc"
+    else:
+        split = ""
+
+    slurm = textwrap.dedent("""#!/bin/bash
+        #SBATCH --mail-user=ejp1n17@soton.ac.uk
+        #SBATCH --mail-type=ALL
+        #SBATCH --ntasks={}
+        #SBATCH --time={}:{}:00
+        #SBATCH --partition=batch
+        module load openmpi/3.0.0/gcc
+        module load conda/py3-latest
+        source activate pypython
+        python /home/ejp1n17/PythonScripts/py_run.py -n {} {} -f="{}"
+        """.format(n_cores, n_hours, n_minutes, n_cores, split, flags, root))
+
+    if wd[-1] != "/":
+        wd += "/"
+    fname = wd + name + ".slurm"
+    with open(fname, "w") as f:
+        f.write("{}".format(slurm))
+
+    return
+
+
 def create_run_script(commands: List[str]):
     """
     Create a shell run script given a list of commands to do. This assumes that
@@ -519,9 +495,9 @@ def create_run_script(commands: List[str]):
     """
 
     directories = []
-    pfs = find_parameter_files()
+    pfs = get_parameter_files()
     for pf in pfs:
-        root, directory = get_root(pf)
+        root, directory = get_root_from_filepath(pf)
         directories.append(directory)
 
     file = "#!/bin/bash\n\ndeclare -a directories=(\n"
@@ -540,44 +516,3 @@ def create_run_script(commands: List[str]):
         f.write(file)
 
     return
-
-
-def smooth_array(
-    array: Union[np.ndarray, List[Union[float, int]]], smooth_amount: Union[int, float]
-) -> np.ndarray:
-    """
-    Smooth a 1D array of data using a boxcar filter.
-
-    Parameters
-    ----------
-    array: np.array[float]
-        The array to be smoothed.
-    smooth_amount: int
-        The size of the boxcar filter.
-
-    Returns
-    -------
-    smoothed: np.ndarray
-        The smoothed array
-    """
-
-    # If smooth_amount is None or 1, then the user has indicated they didn't
-    # actually want to use any smoothing, so return the original array
-
-    if smooth_amount is None or smooth_amount == 0:
-        return array
-
-    if type(smooth_amount) is not int:
-        try:
-            smooth_amount = int(smooth_amount)
-        except ValueError:
-            print("Unable to cast {} into an int".format(smooth_amount))
-            return array
-
-    if type(array) is not np.ndarray:
-        array = np.array(array)
-
-    array = np.reshape(array, (len(array),))  # todo: why do I have to do this?
-    smoothed = convolve(array, boxcar(smooth_amount) / float(smooth_amount), mode="same")
-
-    return smoothed

@@ -9,7 +9,7 @@ for two atomic levels.
 
 import numpy as np
 
-from .constants import PI, MELEC, BOLTZMANN, H
+from constants import PI, MELEC, BOLTZMANN, H
 
 
 def saha_population_ratio(
@@ -18,7 +18,7 @@ def saha_population_ratio(
 ):
     """
     Calculate the ratio of two level populations n_i+1 / n_i, using the
-    Saha-Boltzman equation.
+    Saha-Boltzmann equation.
 
     Parameters
     ----------

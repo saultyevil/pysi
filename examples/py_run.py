@@ -580,7 +580,7 @@ def run_all_models(
 
     for i, sim in enumerate(roots):
 
-        root, wd = pythonutil.get_root(sim)
+        root, wd = pythonutil.get_root_from_filepath(sim)
         msg = """\
 ------------------------
 
@@ -690,7 +690,7 @@ def main(
     # Find models to run by searching recursively from the calling directory
     # for .pf files
 
-    parameter_files = pythonutil.find_parameter_files()
+    parameter_files = pythonutil.get_parameter_files()
     n_models = len(parameter_files)
 
     if not n_models:

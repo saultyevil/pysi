@@ -258,7 +258,7 @@ Parameters
 
     # First, we probably need to run windsave2table
 
-    pythonutil.windsave2table(root, wd, ion_density=use_ion_density)
+    pythonutil.create_wind_save_table(root, wd, ion_density=use_ion_density)
 
     # Plot the wind quantities first
 

@@ -8,8 +8,8 @@ figure and axes objects, just in case anything else wants to be changed before
 being saved to disk or displayed.
 """
 
-from .constants import PARSEC
-from .spectumutil import photoionization_edges, common_lines, ax_add_line_ids, smooth, check_inclination_valid
+from physics.constants import PARSEC
+from .spectumutil import photoionization_edges, common_lines, ax_add_line_ids, smooth
 from .spectumutil import read_spectrum, get_spectrum_inclinations, get_y_lims_for_x_lims, get_spectrum_units
 from .spectumutil import UNITS_FLAMBDA, UNITS_FNU, UNITS_LNU
 from .util import subplot_dims, remove_extra_axes

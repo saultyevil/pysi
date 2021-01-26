@@ -7,7 +7,7 @@ frequency to wavelength, or to convert from one set of units to another.
 """
 
 
-from .constants import ANGSTROM, C
+from physics.constants import ANGSTROM, C
 
 
 def angstrom_to_hz(wl: float):

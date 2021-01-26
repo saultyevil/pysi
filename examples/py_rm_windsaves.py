@@ -19,7 +19,7 @@ def delete_windsaves(wdpf: List[str], root) -> None:
     """
 
     for i in range(len(wdpf)):
-        pf, wd = Utils.get_root(wdpf[i])
+        pf, wd = Utils.get_root_from_filepath(wdpf[i])
         cmd = "cd {}; rm {}*.wind_save".format(wd, root)
         sh = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         stdout, stderr = sh.communicate()
@@ -34,4 +34,4 @@ if __name__ == "__main__":
     p.add_argument("root",
                    help="The root name of the wind_save files.")
     args = p.parse_args()
-    delete_windsaves(Utils.find_parameter_files(args.root), args.root)
+    delete_windsaves(Utils.get_parameter_files(args.root), args.root)

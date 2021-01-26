@@ -63,7 +63,7 @@ def main():
 
     args = p.parse_args()
 
-    add_parameter(Utils.find_parameter_files(args.root), args.parameter, args.value)
+    add_parameter(Utils.get_parameter_files(args.root), args.parameter, args.value)
 
     return
 

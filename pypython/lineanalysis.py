@@ -9,8 +9,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from .error import EXIT_FAIL
-from .pythonutil import get_array_index
-from .spectrumutil import calculate_axis_y_limits, ax_add_line_id, common_lines_list
+from .util import get_array_index
+from .plotutil import get_y_lims_for_x_lims, ax_add_line_ids, common_lines
 
 
 def fit_gaussian():
@@ -78,10 +78,10 @@ def measure_equivalent_width(
     fig, ax = plt.subplots(figsize=(12, 5))
     ax.loglog(wavelength, flux, linewidth=2, label="Spectrum")
     ax.set_xlim(display_xmin, display_xmax)
-    ax.set_ylim(calculate_axis_y_limits(wavelength, flux, display_xmin, display_xmax))
+    ax.set_ylim(get_y_lims_for_x_lims(wavelength, flux, display_xmin, display_xmax))
     ax.set_xlabel("Wavelength")
     ax.set_ylabel("Flux")
-    ax = ax_add_line_id(ax, common_lines_list(), logx=True)
+    ax = ax_add_line_ids(ax, common_lines(), logx=True)
     ax.set_title("Mark the blue and then red end of the line")
     cid = fig.canvas.mpl_connect("button_press_event", onclick)
     plt.show()
@@ -119,7 +119,7 @@ def measure_equivalent_width(
     ax.plot(a, b, linewidth=2, label="Extracted bit")
     ax.plot(a, fit(a), label="Linear fit")
     ax.set_xlim(display_xmin, display_xmax)
-    ax.set_ylim(calculate_axis_y_limits(wavelength, flux, display_xmin, display_xmax))
+    ax.set_ylim(get_y_lims_for_x_lims(wavelength, flux, display_xmin, display_xmax))
     ax.legend()
     ax.set_xlabel("Wavelength")
     ax.set_ylabel("Flux")

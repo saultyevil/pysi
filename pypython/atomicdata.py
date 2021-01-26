@@ -37,8 +37,6 @@ def remove_photoionization_edge(
         The value of the new frequency threshold for the edge.
     """
 
-    n = remove_photoionization_edge.__name__
-
     data = data.lower()
     allowed_data = [
         "outershell",
@@ -46,7 +44,7 @@ def remove_photoionization_edge(
     ]
 
     if data not in allowed_data:
-        print("{}: atomic data {} is unknown, known types are {}".format(n, data, allowed_data))
+        print("atomic data {} is unknown, known types are {}".format(data, allowed_data))
         exit(EXIT_FAIL)
 
     filename = getenv("PYTHON") + "/xdata/atomic/"
@@ -111,8 +109,6 @@ def remove_bound_bound_transitions_ion(
     ionization_state: int
         The ionization state of the ion/atom the line is associated with.
     """
-
-    n = remove_bound_bound_transitions_ion.__name__
 
     filename = getenv("PYTHON") + "/xdata/atomic/lines_linked_ver_2.dat"
 

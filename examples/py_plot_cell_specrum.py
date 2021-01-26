@@ -93,7 +93,7 @@ def py_wind(root: str, nx: int, nz: int, i: int, j: int):
     # if stderr:
     #     print(stderr.decode("utf-8"))
 
-    Utils.remove_data_sym_links(".")
+    Utils.clean_up_data_sym_links(".")
 
     return stdout.decode("utf-8")
 

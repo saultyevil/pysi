@@ -9,7 +9,7 @@ Both are plotted as a function of frequency.
 
 from shutil import copy
 from os import mkdir
-from sys import argv, exit
+from sys import exit
 import pandas as pd
 from pathlib import Path
 from subprocess import Popen, PIPE
@@ -18,7 +18,7 @@ from typing import Tuple
 from matplotlib import pyplot as plt
 import argparse as ap
 
-from pypython.constants import PI, PARSEC
+from physics.constants import PI, PARSEC
 from pypython import spectumutil
 from pypython.grid import update_single_parameter
 from pypython.pythonutil import remove_data_sym_links, get_cpu_count

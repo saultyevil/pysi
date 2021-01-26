@@ -128,9 +128,9 @@ def main():
 
     quotes.random_quote()
 
-    pfs = Utils.find_parameter_files()
+    pfs = Utils.get_parameter_files()
     for i in range(len(pfs)):
-        root, wd = Utils.get_root(pfs[i])
+        root, wd = Utils.get_root_from_filepath(pfs[i])
         if wd.find("continuum") != -1:
             continue
         print("-" * COL_WIDTH)
