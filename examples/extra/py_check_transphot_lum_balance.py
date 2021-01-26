@@ -15,7 +15,7 @@ PLOT FOR EACH PROCESS.
 import numpy as np
 import argparse as ap
 from matplotlib import pyplot as plt
-from pypython.pythonutil import find_parameter_files, get_root
+from pypython.util import find_parameter_files, get_root
 from pypython.simulation import check_convergence
 
 

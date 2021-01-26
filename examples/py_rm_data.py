@@ -13,7 +13,7 @@ Usage:
 """
 
 from sys import argv, exit
-from pypython.pythonutil import remove_data_sym_links
+from pypython.util import remove_data_sym_links
 
 
 print("--------------------------------------------------------------------------------\n")

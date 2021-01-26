@@ -87,7 +87,7 @@ def get_wind_variable(
             fname = input_fname
         else:
             # Ion file
-            if vtype== "ion" or vtype == "ion_density":
+            if vtype == "ion" or vtype == "ion_density":
                 ele_idx = v.find("_")
                 element = v[:ele_idx]
                 key = v[ele_idx + 1:]

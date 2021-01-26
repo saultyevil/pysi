@@ -23,7 +23,7 @@ from socket import gethostname
 
 from pypython import grid
 from pypython import simulation
-from pypython import pythonutil
+from pypython import util
 from pypython.log import log, log_silent, init_logfile, close_logfile
 from pypython import quotes
 from pypython.error import EXIT_FAIL
@@ -580,7 +580,7 @@ def run_all_models(
 
     for i, sim in enumerate(roots):
 
-        root, wd = pythonutil.get_root(sim)
+        root, wd = util.get_root(sim)
         msg = """\
 ------------------------
 
@@ -690,7 +690,7 @@ def main(
     # Find models to run by searching recursively from the calling directory
     # for .pf files
 
-    parameter_files = pythonutil.find_parameter_files()
+    parameter_files = util.find_parameter_files()
     n_models = len(parameter_files)
 
     if not n_models:
@@ -704,7 +704,7 @@ def main(
     if N_CORES:
         n_cores_to_use = N_CORES
     else:
-        n_cores_to_use = pythonutil.get_cpu_count()
+        n_cores_to_use = util.get_cpu_count()
 
     if n_cores_to_use > 1:
         use_mpi = True

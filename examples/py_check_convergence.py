@@ -10,7 +10,7 @@ and to create any plots which are related to the convergence of a simulation.
 import numpy as np
 from matplotlib import pyplot as plt
 from pypython import simulation
-from pypython import pythonutil as Utils
+from pypython import util
 from pypython import quotes
 from typing import List, Union
 
@@ -128,9 +128,9 @@ def main():
 
     quotes.random_quote()
 
-    pfs = Utils.find_parameter_files()
+    pfs = util.find_parameter_files()
     for i in range(len(pfs)):
-        root, wd = Utils.get_root(pfs[i])
+        root, wd = util.get_root(pfs[i])
         if wd.find("continuum") != -1:
             continue
         print("-" * COL_WIDTH)

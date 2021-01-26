@@ -15,12 +15,11 @@ NOTE: THIS ONLY WORKS WITH RECTILINEAR PLOTS FOR NOW - NO POLAR STUFF!!!
 import numpy as np
 import argparse as ap
 from typing import Tuple, Union, List
-from sys import exit
 from matplotlib import pyplot as plt
 
 from pypython import windplot
 from pypython import windutil
-from pypython import pythonutil
+from pypython import util
 from pypython.constants import CMS_TO_KMS, VLIGHT
 from pypython.error import EXIT_FAIL
 
