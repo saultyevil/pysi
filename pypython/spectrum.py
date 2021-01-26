@@ -6,10 +6,12 @@ Spectrum object
 """
 
 
+from scipy.signal import convolve, boxcar
 import numpy as np
 from pathlib import Path
-from typing import List, Union
+from typing import List, Union, Tuple
 import textwrap
+import copy
 
 from .util import get_root
 
@@ -57,8 +59,13 @@ class Spectrum:
         self.inclinations = []
         self.units = "unknown"
 
+        # self.unsmoothed is a variable which keeps a copy of the spectrum for
+        # safe keeping if it is smoothed
+
+        self.unsmoothed = None
+
         # The next method call reads in the spectrum and initializes the above
-        # member variables
+        # member variables.
 
         self.read_spectrum()
 
@@ -129,13 +136,48 @@ class Spectrum:
         self.columns = tuple(self.columns)
         self.inclinations = tuple(self.inclinations)
 
-    def smooth_spectrum(self):
-        """Smooth the spectrum flux/luminosity bins."""
-        raise NotImplementedError
+    def smooth(self, width: int = 5, to_smooth: Union[List[str], Tuple[str], str] = None):
+        """
+        Smooth the spectrum flux/luminosity bins.
 
-    def unsmooth_spectrum(self):
+        Parameters
+        ----------
+        width: int [optional]
+            The width of the boxcar filter (in bins).
+        to_smooth: list or tuple of strings [optional]
+            A list or tuple
+        """
+
+        if type(width) is not int:
+            try:
+                width = int(width)
+            except ValueError:
+                print("Unable to cast {} into an int".format(width))
+                return
+
+        if to_smooth is None:
+            to_smooth = (
+                "Created", "WCreated", "Emitted", "CenSrc", "Disk", "Wind", "HitSurf", "Scattered"
+            ) + tuple(self.inclinations)
+        elif type(to_smooth) is str:
+            to_smooth = to_smooth,
+
+        # Create a backup of the unsmoothed array before it is smoothed it
+
+        if self.unsmoothed is None:
+            self.unsmoothed = copy.deepcopy(self.spectrum)
+
+        for thing_to_smooth in to_smooth:
+            if type(thing_to_smooth) is not str:
+                print("skipping {} not a string".format(thing_to_smooth))
+                continue
+            self.spectrum[thing_to_smooth] = convolve(
+                self.spectrum[thing_to_smooth], boxcar(width) / float(width), mode="same"
+            )
+
+    def unsmooth(self):
         """Restore the spectrum to its unsmoothed form."""
-        raise NotImplementedError
+        self.spectrum = copy.deepcopy(self.unsmoothed)
 
     def __getitem__(self, key):
         """Return an array in the spectrum dictionary when indexing."""
