@@ -10,6 +10,7 @@ import numpy as np
 from pathlib import Path
 from scipy.signal import convolve, boxcar
 from typing import List, Union
+import textwrap
 
 from .util import get_root
 
@@ -20,35 +21,27 @@ UNITS_FLAMBDA = "erg/s/cm^-2/A"
 
 
 class Spectrum:
-
-    class Flux:
-        def __init__(self, values: np.ndarray):
-            # todo: include more type checking
-            if type(values) == list:
-                values = np.array(values, dtype=np.float64)
-            self.values = values
-            self.nelem = values.size
-
-        def smooth(self, width: Union[int, float]):
-            """Return a smoothed version"""
-            if width is None:
-                return self.values
-            try:
-                array = np.reshape(self.values, (self.nelem,))
-                return convolve(array, boxcar(width) / float(width), mode="same")
-            except Exception as e:
-                print(e)
-                print("Returning un-smoothed flux")
-                return self.values
-
-        def __str__(self):
-            return "{}".format(self.values)
-
-        # def __new__(self):
-        #     return self.values
-
+    """
+    A class to store PYTHON .spec and .log_spec files.
+    The PYTHON spectrum is read in and stored within a dict, where each column
+    name is a key and the data is stored as a numpy array.
+    """
     def __init__(self, root: str, cd: str = ".", logspec: bool = False):
-        """Initialise the spectrum object"""
+        """
+        Initialise a Spectrum object. This method will construct the file path
+        of the spectrum file given the root, containing directory and whether
+        the logarithmic spectrum is used or not. The spectrum is then read in.
+         
+        Parameters
+        ----------
+        root: str
+            The root name of the model.
+        cd: str [optional]
+            The directory containing the model.
+        logspec: bool [optional]
+            Read in the logarithmic spectrum if True, otherwise linear.
+        """""
+
         self.root = root
         self.logspec = logspec
 
@@ -64,10 +57,24 @@ class Spectrum:
         self.columns = []
         self.inclinations = []
         self.units = "unknown"
+
+        # The next method call reads in the spectrum and initializes the above
+        # member variables
+
         self.read_spectrum()
 
     def read_spectrum(self, delim: str = None):
-        """Read in a spectrum file"""
+        """
+        Read in a spectrum file given in self.filepath. The spectrum is stored
+        as a dictionary in self.spectrum where each key is the name of the
+        columns.
+
+        Parameters
+        ----------
+        delim: str [optional]
+            A custom delimiter, useful for reading in files which have sometimes
+            between delimited with commas instead of spaces.
+        """
 
         try:
             with open(self.filepath, "r") as f:
@@ -87,6 +94,7 @@ class Spectrum:
                 line = line.split(delim)
             else:
                 line = line.split()
+            # todo: determine the units elsewhere
             if "Units:" in line:
                 self.units = line[4][1:-1]
             if len(line) == 0 or line[0] == "#":
@@ -115,21 +123,31 @@ class Spectrum:
 
         self.columns = header
         for i, column_name in enumerate(header):
-            self.spectrum[column_name] = Spectrum.Flux(spectrum[:, i])
+            self.spectrum[column_name] = spectrum[:, i]
         for col in header:
             if col.isdigit() and col not in self.inclinations:
                 self.inclinations.append(col)
         self.columns = tuple(self.columns)
         self.inclinations = tuple(self.inclinations)
 
+    def smooth_spectrum(self):
+        """Smooth the spectrum flux/luminosity bins."""
+        raise NotImplementedError
+
     def __getitem__(self, key):
+        """Return an array in the spectrum dictionary when indexing."""
         return self.spectrum[key]
 
     def __setitem__(self, key, value):
+        """Allows to modify the arrays in the spectrum dictionary."""
         self.spectrum[key] = value
 
     def __str__(self):
-        return "Spectrum object for {}".format(self.root)
+        """Print the basic details about the spectrum."""
+        return textwrap.dedent("""\
+            PYTHON spectrum for model {}
+            File path: {}
+            Headers: {}""".format(self.root, self.filepath, self.columns))
 
 
 def get_spectrum_files(
