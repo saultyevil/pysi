@@ -2,13 +2,12 @@
 # -*- coding: utf-8 -*-
 
 """
-Run a batch of Python models. Searches recursively for Python parameter files
-(ignoring any py_wind.pf or root.out.pf files) and executes a number of
-commands, most importantly running the model, depending on what is requested by
-the user using a number of runtime flags.
+Run a batch of Python models. This script searches recursively for parameter
+files and executes a number of commands, most importantly running the model,
+depending on what is requested by the user using a number of runtime flags.
 """
 
-
+import textwrap
 import atexit
 from os import path
 import argparse as ap
@@ -20,12 +19,10 @@ from shutil import copyfile
 from typing import List, Tuple
 from subprocess import Popen, PIPE
 from socket import gethostname
-
 from pypython import grid
 from pypython import simulation
 from pypython import util
 from pypython.log import log, log_silent, init_logfile, close_logfile
-from pypython import quotes
 from pypython.error import EXIT_FAIL
 from pypython.mailnotifs import send_notification
 
@@ -72,8 +69,6 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ __ _ _ _ _ _ _ _ _
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ __ _ _ _ _ _ _ _ _
 """
 
-
-# Global variables
 N_CORES = 0
 PYTHON_BINARY = "py"
 RUNTIME_FLAGS = None
@@ -84,6 +79,7 @@ SPLIT_CYCLES = False
 DRY_RUN = False
 
 # Verbosity levels of Python output
+
 VERBOSE_SILENT = 0
 VERBOSE_PROGRESS_REPORT = 1
 VERBOSE_EXTRA_INFORMATION = 2
@@ -94,9 +90,7 @@ VERBOSITY = VERBOSE_EXTRA_INFORMATION_TRANSPORT
 
 def setup_script(
 ) -> None:
-    """
-    Setup the global variables which control the logic of the script.
-    """
+    """Setup the global variables via command line arguments."""
 
     global VERBOSITY
     global SPLIT_CYCLES
@@ -111,73 +105,36 @@ def setup_script(
     p = ap.ArgumentParser(description=__doc__)
 
     p.add_argument(
-        "-sc",
-        "--split_cycles",
-        action="store_true",
-        default=SPLIT_CYCLES,
+        "-sc", "--split_cycles", action="store_true", default=SPLIT_CYCLES,
         help="Split the ionization and spectrum cycles into two separate Python runs."
     )
-
     p.add_argument(
-        "-r",
-        "--restart",
-        action="store_true",
-        default=RESTART_MODEL,
+        "-r", "--restart", action="store_true", default=RESTART_MODEL,
         help="Restart a Python model from a previous wind_save."
     )
-
     p.add_argument(
-        "-ro",
-        "--restart_override",
-        action="store_true",
-        default=AUTOMATIC_RESTART_OVERRIDE,
+        "-ro", "--restart_override", action="store_true", default=AUTOMATIC_RESTART_OVERRIDE,
         help="Disable the automatic restarting run function."
     )
-
     p.add_argument(
-        "-py",
-        "--python",
-        default=PYTHON_BINARY,
-        help="The name of the of the Python binary to use."
+        "-py", "--python", default=PYTHON_BINARY, help="The name of the of the Python binary to use."
     )
-
     p.add_argument(
-        "-f",
-        "--python_flags",
-        default=RUNTIME_FLAGS,
-        help="Any run-time flags to pass to Python."
+        "-f", "--python_flags", default=RUNTIME_FLAGS, help="Any run-time flags to pass to Python."
     )
-
     p.add_argument(
-        "-c",
-        "--convergence_limit",
-        type=float,
-        default=CONVERGENCE_LOWER_LIMIT,
+        "-c", "--convergence_limit", type=float, default=CONVERGENCE_LOWER_LIMIT,
         help="The 'limit' for considering a model converged. This value is 0 < c_value < 1."
     )
-
     p.add_argument(
-        "-v",
-        "--verbosity",
-        type=int,
-        default=VERBOSE_EXTRA_INFORMATION,
+        "-v", "--verbosity", type=int, default=VERBOSE_EXTRA_INFORMATION,
         help="The level of verbosity for Python's output."
     )
-
     p.add_argument(
-        "-n",
-        "--n_cores",
-        type=int,
-        default=N_CORES,
-        help="The number of processor cores to run Python with."
+        "-n", "--n_cores", type=int, default=N_CORES, help="The number of processor cores to run Python with."
     )
-
     p.add_argument(
-        "-d",
-        "--dry_run",
-        action="store_true",
-        default=DRY_RUN,
-        help="Print the models found to screen and then exit."
+        "-d", "--dry_run", action="store_true", default=DRY_RUN, help="Print the models found to screen and then exit."
     )
 
     args = p.parse_args()
@@ -191,16 +148,17 @@ def setup_script(
     DRY_RUN = args.dry_run
     N_CORES = args.n_cores
 
-    msg = """\
-Python  .......................... {}
-Split cycles ..................... {}
-Resume run ....................... {}
-Automatic restart override ....... {}
-Number of cores .................. {}
-Convergence limit ................ {}
-Verbosity level .................. {}
-""".format(PYTHON_BINARY, SPLIT_CYCLES, RESTART_MODEL, AUTOMATIC_RESTART_OVERRIDE, N_CORES, CONVERGENCE_LOWER_LIMIT,
-           VERBOSITY)
+    msg = textwrap.dedent("""\
+        Python  .......................... {}
+        Split cycles ..................... {}
+        Resume run ....................... {}
+        Automatic restart override ....... {}
+        Number of cores .................. {}
+        Convergence limit ................ {}
+        Verbosity level .................. {}
+        """.format(PYTHON_BINARY, SPLIT_CYCLES, RESTART_MODEL, AUTOMATIC_RESTART_OVERRIDE, N_CORES,
+                   CONVERGENCE_LOWER_LIMIT, VERBOSITY)
+    )
 
     log(msg)
     if RUNTIME_FLAGS:
@@ -210,10 +168,9 @@ Verbosity level .................. {}
 
 
 def print_python_output(
-    input_line: str, n_cores, verbosity: int = VERBOSITY
+    input_line: str, n_cores: int, verbosity: int = VERBOSITY
 ) -> None:
-    """
-    Process the output from a Python simulation and print something to screen.
+    """Process the output from a Python simulation and print something to screen.
     The amount printed to screen will vary depending on the verbosity level
     chosen.
 
@@ -231,8 +188,7 @@ def print_python_output(
         The number of cores the simulation is being run with. This is required
         to calculate the total photon number
     verbosity: bool, optional
-        If this is True, then every line will be printed to screen
-    """
+        If this is True, then every line will be printed to screen"""
 
     line = copy(input_line)
     split_line = line.split()
@@ -311,28 +267,26 @@ def print_python_output(
         log("         Photons transported in {} hrs:mins:secs".format(transport_time))
 
     # PRINT ERROR MESSAGES
-    elif line.find("Error: ") != -1 and verbosity >= VERBOSE_EXTRA_INFORMATION:
+    elif line.find("Error: ") != -1 and verbosity >= VERBOSE_EXTRA_INFORMATION_TRANSPORT:
         log("         {}".format(line))
 
     return
 
 
 def restore_backup_pf(
-    root: str, wd: str
+    root: str, cd: str
 ) -> None:
-    """
-    Copy a backup parameter file back to the original parameter file
+    """Copy a backup parameter file back to the original parameter file
     destination.
 
     Parameters
     ----------
     root: str
         The root name of the Python simulation.
-    wd: str
-        The working directory to run the Python simulation in.
-    """
+    cd: str
+        The working directory to run the Python simulation in."""
 
-    opf = "{}/{}.pf".format(wd, root)
+    opf = "{}/{}.pf".format(cd, root)
     bak = opf + ".bak"
     copyfile(bak, opf)
 
@@ -340,10 +294,9 @@ def restore_backup_pf(
 
 
 def convergence_check(
-    root: str, wd: str
+    root: str, cd: str
 ) -> Tuple[bool, float]:
-    """
-    Check the convergence of a Python simulation by parsing the master diag
+    """Check the convergence of a Python simulation by parsing the master diag
     file. If more than one model is being run, then the convergence of each
     model will be appended to the convergence tracking files.
 
@@ -351,18 +304,16 @@ def convergence_check(
     ----------
     root: str
         The root name of the Python simulation
-    wd: str
+    cd: str
         The working directory containing the Python simulation
 
     Returns
     -------
     converged: bool
-        If the simulation has converged, True is returned.
-    """
+        If the simulation has converged, True is returned."""
 
     converged = False
-
-    model_convergence = simulation.check_convergence(root, wd)
+    model_convergence = simulation.check_convergence(root, cd)
     if type(model_convergence) == list:
         model_convergence = model_convergence[-1]
 
@@ -390,8 +341,7 @@ def convergence_check(
 def print_errors(
     error: dict, root: str
 ) -> None:
-    """
-    Print an errors dictionary.
+    """Print an errors dictionary.
 
     Parameters
     ----------
@@ -399,8 +349,7 @@ def print_errors(
         A dictionary where the keys are the error messages and the values are
         the number of times the error happened.
     root: str
-        The root name of the Python simulation
-    """
+        The root name of the Python simulation"""
 
     log("Total errors reported for {}:\n".format(root))
     for key in error.keys():
@@ -413,8 +362,7 @@ def run_single_model(
     root: str, wd: str, use_mpi: bool, n_cores: int, resume_model: bool = False, restart_from_spec_cycles: bool = False,
     split_cycles: bool = False
 ) -> int:
-    """
-    The purpose of this function is to use the Subprocess library to call
+    """The purpose of this function is to use the Subprocess library to call
     Python. Unfortunately, to cover a wide range of situations with how one
     may want to run Python, this function has become rather complicated and
     could benefit from being modularised further.
@@ -443,8 +391,7 @@ def run_single_model(
     Returns
     -------
     rc: int
-        The return code from the Python simulation
-    """
+        The return code from the Python simulation"""
 
     if VERBOSITY >= VERBOSE_ALL:
         verbose = True
@@ -460,7 +407,7 @@ def run_single_model(
     # this is because you may need 5e7 photons during the ionization cycles for
     # the model to converge, but you are unlikely to need this many to make a
     # low signal/noise spectrum. Note we make a backup of the original pf.
-    # TODO put into separate function
+    # todo: put into separate function
 
     try:
         if wd == ".":
@@ -552,8 +499,7 @@ def run_single_model(
 def run_all_models(
     roots: List[str], use_mpi: bool, n_cores: int
 ) -> List[int]:
-    """
-    Run the parts of the scripts requested to by run by the user.
+    """Run the parts of the scripts requested to by run by the user.
 
     Parameters
     ----------
@@ -567,8 +513,7 @@ def run_all_models(
     Returns
     -------
     the_rc: List[int]
-        The return codes of the Python models
-    """
+        The return codes of the Python models"""
 
     host = gethostname()
     n_models = len(roots)
@@ -581,16 +526,17 @@ def run_all_models(
     for i, sim in enumerate(roots):
 
         root, wd = util.get_root(sim)
-        msg = """\
-------------------------
-
-        Model {}/{}
-
-------------------------
-
-Root ...................... {}
-Directory ................. {}
-""".format(i + 1, n_models, root, wd)
+        msg = textwrap.dedent("""\
+            ------------------------
+            
+                    Model {}/{}
+            
+            ------------------------
+            
+            Root ...................... {}
+            Directory ................. {}
+            """.format(i + 1, n_models, root, wd)
+        )
 
         log(msg)
 
@@ -683,14 +629,13 @@ def main(
 
     setup_script()
     init_logfile("Log.txt")
-    quotes.random_quote()
     log("------------------------\n")
     log_silent("{}".format(datetime.datetime.now()))
 
     # Find models to run by searching recursively from the calling directory
     # for .pf files
 
-    parameter_files = util.find_parameter_files()
+    parameter_files = util.get_parameter_files()
     n_models = len(parameter_files)
 
     if not n_models:
