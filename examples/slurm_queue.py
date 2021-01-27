@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-The purpose of this script is to find .slurm files recursively from the calling
-directory and then then add these .slurm files to the Iridis 5 queue - or any
-HPC cluster which uses slurm.
+Search recursively for .slurm files and add them to the slurm queue.
 """
 
 
@@ -14,116 +12,110 @@ from typing import List, Tuple
 from pathlib import Path
 
 
-def split_path_fname(path: str) -> Tuple[str, str]:
-    """
+def split_path_and_filename(
+    filepath: str
+) -> Tuple[str, str]:
+    """Extract the slurm file name and the directory it is in from the entire
+    file path.
 
     Parameters
     ----------
-    path: str
-        The relative path of a slurm file: include the slurm file itself and
-        the directories.
+    filepath: str
+        The filepath to split the slurm file name and directory from."""
 
-    Returns
-    -------
-    slurmf: str
-        The name of the slurm file
-    slurmdir: str
-        The relative path containing the slurm file
-    """
+    assert(type(filepath) == str)
 
-    assert(type(path) == str)
-
-    sidx = -1
-    idx = path.find(".slurm")
-    for i in range(idx - 1, -1, -1):
-        if path[i] == "/":
-            sidx = i
+    slash_idx = -1
+    extension_idx = filepath.find(".slurm")
+    for i in range(extension_idx - 1, -1, -1):
+        if filepath[i] == "/":
+            slash_idx = i
             break
 
-    slurmf = path[sidx + 1:]
-    if sidx > -1:
-        slurmdir = path[:sidx]
+    slurm_file = filepath[slash_idx + 1:]
+    if slash_idx > -1:
+        directory = filepath[:slash_idx]
     else:
-        slurmdir = "./"
+        directory = "."
 
-    return slurmf, slurmdir
+    return slurm_file, directory
 
 
-def add_to_queue(slurmfs: List[str]) -> None:
-    """
-    Add a bunch of slurm parameter files to the slurm queue.
+def add_files_to_slurm_queue(
+    slurm_files: List[str]
+) -> None:
+    """Add a bunch of slurm files to the slurm queue. Uses subprocess and so
+    only works on macOS and Linux.
 
     Parameters
     ----------
-    slurmfs: List[str]
-        A list of slurm files to run, must contain the relative path and
-        the .slurm file.
-    """
+    slurm_files: List[str]
+        A list containing the slurm file paths to add to the queue."""
 
-    nslurm = len(slurmfs)
-    codes = []
-    for i in range(nslurm):
-        f, wd = split_path_fname(slurmfs[i])
-        cmd = "cd {}; sbatch {}; cd ..".format(wd, f)
+    rc = []
+
+    for filepath in slurm_files:
+        file, cd = split_path_and_filename(filepath)
+        cmd = "cd {}; sbatch {}".format(cd, file)
         sh = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         stdout, stderr = sh.communicate()
         if stderr:
             print(stderr.decode("utf-8"))
-        codes.append(stdout.decode("utf-8").split()[-1])
+        rc.append(stdout.decode("utf-8").split()[-1])
 
-    if len(codes) > 1:
-        print("Submitted batch jobs" + ", ".join(codes[:-1]) + " and " + codes[-1])
+    if len(rc) > 1:
+        print("Submitted batch jobs" + ", ".join(rc[:-1]) + " and " + rc[-1])
     else:
-        print("Submitted batch job", codes[0])
+        print("Submitted batch job", rc[0])
 
     return
 
 
-def find_slurm_files(path: str = ".") -> List[str]:
-    """
-    Searches recursively from the calling direction for files which end with
+def find_slurm_files(
+    filepath: str = "."
+) -> List[str]:
+    """Searches recursively from the calling direction for files which end with
     the extension *.slurm and returns a list of the found files.
 
     Parameters
     ----------
-    path: str, optional
+    filepath: str, optional
         The directory of which to search recursively from.
 
     Returns
     -------
-    slurmf: List[str]
-        A list containing the relative paths of the slurm files.
-    """
+    slurm_files: List[str]
+        A list containing the relative paths of the slurm files."""
 
-    slurmf = []
+    slurm_files = []
 
-    for filename in Path(path).glob("**/*.slurm"):
-        fname = str(filename)
-        if fname[0] == "/":
-            fname = fname[1:]
-        slurmf.append(fname)
+    for filename in Path(filepath).glob("**/*.slurm"):
+        filename = str(filename)
+        if filename[0] == "/":
+            filename = filename[1:]
+        slurm_files.append(filename)
 
-    if len(slurmf) == 0:
+    if len(slurm_files) == 0:
         print("No .slurm files were found.")
         exit(1)
 
-    slurmf = sorted(slurmf, key=str.lower)
+    slurm_files = sorted(slurm_files, key=str.lower)
 
-    return slurmf
+    return slurm_files
 
 
-def setup():
-    """
-    Parse the command line for run time arguments.
-    """
+def setup() -> bool:
+    """Parse the command line for run time arguments.
+
+    Returns
+    -------
+    add_to_queue: bool
+        Indicates whether to add the slurm files to the queue or not."""
 
     p = ap.ArgumentParser(description=__doc__)
-
-    p.add_argument("-a",
-                   "--add_to_queue",
-                   action="store_true",
-                   default=False,
-                   help="Add slurm files to the slurm queue.")
+    p.add_argument(
+        "-a", "--add_to_queue", action="store_true", default=False, help="Add slurm files to the slurm queue."
+    )
 
     args = p.parse_args()
 
@@ -131,21 +123,18 @@ def setup():
 
 
 def main() -> None:
-    """
-    Main function - calls find_slurm_files to find the slurm files in directories
-    and then uses add_to_queue to add them to the slurm queue.
-    """
+    """Main function of the script."""
 
-    add = setup()
-    slurmf = find_slurm_files()
+    add_to_queue = setup()
+    slurm_files = find_slurm_files()
 
-    print("The following {} .slurm files will be added to the queue:\n".format(len(slurmf)))
-    for n, f in enumerate(slurmf):
-        print("{}\t{}".format(n + 1, f))
+    print("The following {} .slurm files will be added to the queue:\n".format(len(slurm_files)))
+    for n, file in enumerate(slurm_files):
+        print("{}\t{}".format(n + 1, file))
     print("")
 
-    if add:
-        add_to_queue(slurmf)
+    if add_to_queue:
+        add_files_to_slurm_queue(slurm_files)
 
     return
 
