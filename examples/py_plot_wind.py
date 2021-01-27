@@ -14,10 +14,10 @@ import argparse as ap
 from sys import exit
 from typing import List, Tuple
 from matplotlib import pyplot as plt
-
 from pypython import windplot
 from pypython import windutil
 from pypython import util
+from pypython import plotutil
 from pypython.error import EXIT_FAIL
 
 
@@ -25,63 +25,43 @@ plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15
 plt.rcParams['axes.labelsize'] = 15
 
-import warnings
-warnings.filterwarnings("ignore", module="matplotlib")
 
-def setup_script() \
-        -> tuple:
-    """
-    Parse the different modes this script can be run from the command line.
+def setup_script() -> tuple:
+    """Parse the different modes this script can be run from the command line.
 
     Returns
     -------
     setup: tuple
-        A list containing all of the different setup of parameters for plotting.
-    """
+        A list containing all of the different setup of parameters for
+        plotting."""
 
     p = ap.ArgumentParser(description=__doc__)
 
-    p.add_argument("root",
-                   help="The root name of the simulation.")
-
-    p.add_argument("-wd",
-                   "--working_directory",
-                   default=".",
-                   help="The directory containing the simulation.")
-
-    p.add_argument("-d",
-                   "--ion_density",
-                   action="store_true",
-                   default=False,
-                   help="Use ion densities instead of ion fractions.")
-
-    p.add_argument("-p",
-                   "--polar",
-                   action="store_true",
-                   default=False,
-                   help="Plot using polar projection.")
-
-    p.add_argument("-s",
-                   "--scale",
-                   default="loglog",
-                   choices=["logx", "logy", "loglog", "linlin"],
-                   help="The axes scaling to use.")
-
-    p.add_argument("-c",
-                   "--cells",
-                   action="store_true",
-                   default=False,
-                   help="Plot using cell indices rather than spatial scales.")
-
-    p.add_argument("-e",
-                   "--ext",
-                   default="png",
-                   help="The file extension for the output figure.")
-
-    p.add_argument("--display",
-                   action="store_true",
-                   default=False,
-                   help="Display the plot before exiting the script.")
+    p.add_argument(
+        "root", help="The root name of the simulation."
+    )
+    p.add_argument(
+        "-wd", "--working_directory", default=".", help="The directory containing the simulation."
+    )
+    p.add_argument(
+        "-d", "--ion_density", action="store_true", default=False, help="Use ion densities instead of ion fractions."
+    )
+    p.add_argument(
+        "-p", "--polar", action="store_true", default=False, help="Plot using polar projection."
+    )
+    p.add_argument(
+        "-s", "--scale", default="loglog", choices=["logx", "logy", "loglog", "linlin"],
+        help="The axes scaling to use."
+    )
+    p.add_argument(
+        "-c", "--cells", action="store_true", default=False, help="Plot using cell indices rather than spatial scales."
+    )
+    p.add_argument(
+        "-e", "--ext", default="png", help="The file extension for the output figure."
+    )
+    p.add_argument(
+        "--display", action="store_true", default=False, help="Display the plot before exiting the script."
+    )
 
     args = p.parse_args()
 
@@ -199,7 +179,7 @@ def plot_wind(
 
             index += 1
 
-    fig, ax = util.remove_extra_axes(fig, ax, len(wind_variables), panel_dims[0] * panel_dims[1])
+    fig, ax = plotutil.remove_extra_axes(fig, ax, len(wind_variables), panel_dims[0] * panel_dims[1])
 
     if title:
         fig.suptitle(title, fontsize=15)
@@ -209,13 +189,13 @@ def plot_wind(
     return fig, ax
 
 
-def main(setup: tuple = None) \
-        -> Tuple[plt.Figure, plt.Axes]:
-    """
-    The main function of the script. First, the important wind quantities are
+def main(
+    setup: tuple = None
+) -> Tuple[plt.Figure, plt.Axes]:
+    """The main function of the script. First, the important wind quantities are
     plotted. This is then followed by the important ions.
-`
-Parameters
+
+    Parameters
     ----------
     setup: tuple
         A tuple containing the setup parameters to run the script. If this
@@ -237,20 +217,17 @@ Parameters
     fig: plt.Figure
         The matplotlib Figure object for the created plot.
     ax: plt.Axes
-        The matplotlib Axes objects for the plot panels.
-    """
-
-    div_len = 80
+        The matplotlib Axes objects for the plot panels."""
 
     if setup:
         root, wd, projection, use_ion_density, axes_scales, use_cell_indices, file_ext, display = setup
     else:
         root, wd, projection, use_ion_density, axes_scales, use_cell_indices, file_ext, display = setup_script()
 
-    # TODO: need some better way to check if a root file exists, otherwise there's lot of unhelpful output
+    # todo: need some better way to check if a root file exists, otherwise there's lot of unhelpful output
     root = root.replace("/", "")
 
-    # TODO this is some dumb spaghetti code and is very confusing, to even me :-(
+    # todo: this is some dumb spaghetti code and is very confusing, to even me :-(
     if projection:
         projection = "polar"
     else:
@@ -258,7 +235,7 @@ Parameters
 
     # First, we probably need to run windsave2table
 
-    util.windsave2table(root, wd, ion_density=use_ion_density)
+    util.create_wind_save_table(root, wd, ion_density=use_ion_density)
 
     # Plot the wind quantities first
 
