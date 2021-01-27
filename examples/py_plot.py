@@ -17,7 +17,7 @@ import py_plot_optical_depth
 import py_plot_spectrum_components
 
 import argparse as ap
-from pypython.pythonutil import remove_data_sym_links
+from pypython.util import remove_data_sym_links
 
 
 def setup_script() \

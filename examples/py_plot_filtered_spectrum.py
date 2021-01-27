@@ -10,7 +10,7 @@ import argparse as ap
 import numpy as np
 from matplotlib import pyplot as plt
 
-from pypython import spectumutil
+from pypython import spectrumutil
 from pypython import spectrumcreate
 from pypython import conversion
 
@@ -247,10 +247,10 @@ def plot(
 
     try:
         if logbins:
-            full_spectrum = spectumutil.read_spectrum("{}/{}.log_spec".format(wd, root))
+            full_spectrum = spectrumutil.read_spectrum("{}/{}.log_spec".format(wd, root))
         else:
-            full_spectrum = spectumutil.read_spectrum("{}/{}.spec".format(wd, root))
-        inclinations = spectumutil.get_spectrum_inclinations(full_spectrum)
+            full_spectrum = spectrumutil.read_spectrum("{}/{}.spec".format(wd, root))
+        inclinations = spectrumutil.get_spectrum_inclinations(full_spectrum)
         include_full_spectrum = True
     except IOError:
         include_full_spectrum = False
@@ -263,7 +263,7 @@ def plot(
 
         if include_full_spectrum:
             ax.plot(
-                full_spectrum["Lambda"], spectumutil.smooth(full_spectrum[inc], sm), linewidth=1.4, alpha=0.75,
+                full_spectrum["Lambda"], spectrumutil.smooth(full_spectrum[inc], sm), linewidth=1.4, alpha=0.75,
                 label="Full Spectrum"
             )
 
@@ -273,7 +273,7 @@ def plot(
             index = 1
 
         ax.plot(
-            filtered_spectrum[:-1, index], spectumutil.smooth(filtered_spectrum[:-1, e + 2], sm), linewidth=1.4,
+            filtered_spectrum[:-1, index], spectrumutil.smooth(filtered_spectrum[:-1, e + 2], sm), linewidth=1.4,
             alpha=0.75, label="Filtered Spectrum"
         )
 
@@ -282,8 +282,8 @@ def plot(
         if scale == "loglog" or scale == "logy":
             ax.set_yscale("log")
         ax.set_xlim(xmin, xmax)
-        ax.set_ylim(spectumutil.get_y_lims_for_x_lims(
-                filtered_spectrum[:-1, index], spectumutil.smooth(filtered_spectrum[:-1, e + 2], sm), xmin, xmax
+        ax.set_ylim(spectrumutil.calculate_axis_y_limits(
+                filtered_spectrum[:-1, index], spectrumutil.smooth(filtered_spectrum[:-1, e + 2], sm), xmin, xmax
             )
         )
 
@@ -298,7 +298,7 @@ def plot(
                 logx = True
             else:
                 logx = False
-            ax = spectumutil.ax_add_line_ids(ax, spectumutil.common_lines(freq=frequency_space), logx)
+            ax = spectrumutil.ax_add_line_id(ax, spectrumutil.common_lines_list(freq=frequency_space), logx)
 
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 

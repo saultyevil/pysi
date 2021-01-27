@@ -1,4 +1,4 @@
-# pyPython
+# pypython
 
 A Python package to make using the Monte Carlo radiative transfer and ionization
 code Python a wee bit easier. Whilst originally this package was meant to be
@@ -10,7 +10,7 @@ science over the course of my PhD.
 
 pyPython requires Python 3.5+.
 
-There are no _"weird"_ dependencies for pyPython. When installing using the
+There are no _"weird"_ dependencies for pypython. When installing using the
 method below (i.e. using pip), the required dependencies will be automatically
 installed.
 

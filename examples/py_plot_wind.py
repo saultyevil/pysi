@@ -17,7 +17,7 @@ from matplotlib import pyplot as plt
 
 from pypython import windplot
 from pypython import windutil
-from pypython import pythonutil
+from pypython import util
 from pypython.error import EXIT_FAIL
 
 
@@ -199,7 +199,7 @@ def plot_wind(
 
             index += 1
 
-    fig, ax = pythonutil.remove_extra_axes(fig, ax, len(wind_variables), panel_dims[0] * panel_dims[1])
+    fig, ax = util.remove_extra_axes(fig, ax, len(wind_variables), panel_dims[0] * panel_dims[1])
 
     if title:
         fig.suptitle(title, fontsize=15)
@@ -258,7 +258,7 @@ Parameters
 
     # First, we probably need to run windsave2table
 
-    pythonutil.create_wind_save_table(root, wd, ion_density=use_ion_density)
+    util.windsave2table(root, wd, ion_density=use_ion_density)
 
     # Plot the wind quantities first
 

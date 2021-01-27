@@ -18,10 +18,10 @@ from typing import Tuple
 from matplotlib import pyplot as plt
 import argparse as ap
 
-from physics.constants import PI, PARSEC
-from pypython import spectumutil
+from pypython.constants import PI, PARSEC
+from pypython import spectrumutil
 from pypython.grid import update_single_parameter
-from pypython.pythonutil import remove_data_sym_links, get_cpu_count
+from pypython.util import remove_data_sym_links, get_cpu_count
 
 
 def setup_script() -> tuple:
@@ -107,7 +107,7 @@ def get_continuum(
 
     name = "{}/continuum/{}_cont.spec".format(wd, root)
     if Path(name).is_file():
-        t = spectumutil.read_spectrum(name)
+        t = spectrumutil.read_spectrum(name)
         return t
 
     print("Unable to find {}\nRunning Python to create continuum spectrum".format(name))
@@ -146,7 +146,7 @@ def get_continuum(
     if ndel == 0:
         print("There was a problem deleteing the atomic data")
 
-    t = spectumutil.read_spectrum("continuum/{}_cont.spec".format(root))
+    t = spectrumutil.read_spectrum("continuum/{}_cont.spec".format(root))
 
     return t
 
@@ -177,7 +177,7 @@ def create_plot(
     """
 
     # Find the various sightlines of the optical depth spectra
-    sightlines = spectumutil.get_spectrum_inclinations(optical_depth_spectrum)
+    sightlines = spectrumutil.get_spectrum_inclinations(optical_depth_spectrum)
     optical_depth_freq = optical_depth_spectrum["Freq."].values
 
     # Extract the two spectrum components of interest from the spectra files and
@@ -192,10 +192,10 @@ def create_plot(
     fig, ax = plt.subplots(figsize=(13, 7))
     ax2 = ax.twinx()
     ax2.loglog(
-        cont_spec_freq, spectumutil.smooth(cont_spec_flux, sm), "k--", zorder=0, alpha=bgalpha
+        cont_spec_freq, spectrumutil.smooth(cont_spec_flux, sm), "k--", zorder=0, alpha=bgalpha
     )
     ax2.loglog(
-        emerg_spec_freq, spectumutil.smooth(emerg_spec_flux, sm), "k-", zorder=1, alpha=bgalpha
+        emerg_spec_freq, spectrumutil.smooth(emerg_spec_flux, sm), "k-", zorder=1, alpha=bgalpha
     )
     ax2.set_ylabel(r"$\nu L_{\nu}$ [ergs s$^{-1}$]")
 
@@ -218,7 +218,7 @@ def create_plot(
     ax.set_xlim(np.min(optical_depth_freq), np.max(optical_depth_freq))
     ax.set_zorder(ax2.get_zorder() + 1)
     ax.patch.set_visible(False)
-    ax = spectumutil.add_line_id(ax, spectumutil.photoionization_edges(True), logx=True)
+    ax = spectrumutil.add_line_id(ax, spectrumutil.photo_edges_list(True), logx=True)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
     fig.savefig("{}_reprocess.png".format(root), dpi=300)
@@ -255,8 +255,8 @@ def main(setup: tuple = None):
         root, wd, ncores, sm, display = setup_script()
 
     continuum_spectrum = get_continuum(root, wd, ncores)
-    full_spectrum = spectumutil.read_spectrum("{}.spec".format(root))
-    optical_depth = spectumutil.read_spectrum("diag_{}/{}.tau_spec.diag".format(root, root))
+    full_spectrum = spectrumutil.read_spectrum("{}.spec".format(root))
+    optical_depth = spectrumutil.read_spectrum("diag_{}/{}.tau_spec.diag".format(root, root))
     create_plot(root, full_spectrum, optical_depth, continuum_spectrum, sm=sm, display=display)
 
     return

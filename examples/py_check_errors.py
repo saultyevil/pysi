@@ -8,7 +8,7 @@ TODO: this will only work for a simulation which didn't crash
 """
 
 
-from pypython.pythonutil import find_parameter_files, get_root
+from pypython.util import find_parameter_files, get_root
 from pypython.simulation import error_summary
 
 

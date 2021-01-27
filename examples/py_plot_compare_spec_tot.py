@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from matplotlib import pyplot as plt
-from pypython import spectumutil
+from pypython import spectrumutil
 from pathlib import Path
 
 
@@ -18,7 +18,7 @@ l = ["-", "--"]
 
 for i, file in enumerate(specs):
     print("plotting", file)
-    s = spectumutil.read_spectrum(file)
+    s = spectrumutil.read_spectrum(file)
     ax.set_title(file)
     ax.loglog(s["Freq."].values, s["Freq."].values * s["Created"].values, label="Created: " + file, alpha=alpha, zorder=0)
     ax.loglog(s["Freq."].values, s["Freq."].values * s["Emitted"].values, label="Emitted: " + file, alpha=alpha)

@@ -11,7 +11,7 @@ from .error import EXIT_FAIL
 from physics.constants import PARSEC, C
 from .conversion import hz_to_angstrom
 from .util import get_file_len
-from .spectumutil import read_spectrum, get_spectrum_inclinations
+from .spectrumutil import read_spectrum, get_spectrum_inclinations
 from .conversion import angstrom_to_hz
 
 import pandas as pd

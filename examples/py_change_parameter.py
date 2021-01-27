@@ -11,7 +11,7 @@ files. If a root name is provided, however, then the script will only operate
 
 import argparse as ap
 from pypython import grid
-from pypython import pythonutil as Utils
+from pypython import util
 from typing import List
 
 
@@ -56,7 +56,7 @@ def main():
 
     args = p.parse_args()
 
-    change_pfs(Utils.get_parameter_files(args.root), args.parameter, args.value)
+    change_pfs(util.find_parameter_files(args.root), args.parameter, args.value)
 
     return
 

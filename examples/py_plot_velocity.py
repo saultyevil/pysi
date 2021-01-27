@@ -19,8 +19,8 @@ from matplotlib import pyplot as plt
 
 from pypython import windplot
 from pypython import windutil
-from pypython import pythonutil
-from physics.constants import CMS_TO_KMS, VLIGHT
+from pypython import util
+from pypython.constants import CMS_TO_KMS, VLIGHT
 from pypython.error import EXIT_FAIL
 
 
@@ -365,7 +365,7 @@ def main(
 
     # First, we probably need to run windsave2table
 
-    pythonutil.create_wind_save_table(root, wd)
+    pythonutil.windsave2table(root, wd)
 
     # Now we can plot the stuff
 

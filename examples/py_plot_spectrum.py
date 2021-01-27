@@ -14,7 +14,7 @@ import argparse as ap
 from typing import Tuple
 from matplotlib import pyplot as plt
 
-from pypython import spectumutil
+from pypython import spectrumutil
 from pypython import spectrumplot
 
 plt.rcParams['xtick.labelsize'] = 15
@@ -153,8 +153,8 @@ def plot_all_spectrum_inclinations_in_one_panel(
 
     alpha = 0.75
     spectrum_filename = "{}/{}.spec".format(wd, root)
-    s = spectumutil.read_spectrum(spectrum_filename)
-    ia = spectumutil.get_spectrum_inclinations(s)
+    s = spectrumutil.read_spectrum(spectrum_filename)
+    ia = spectrumutil.get_spectrum_inclinations(s)
 
     fig, ax = plt.subplots(figsize=(12, 8))
 
@@ -184,9 +184,9 @@ def plot_all_spectrum_inclinations_in_one_panel(
         xmax = xlims[1]
 
     for a in ia:
-        y = spectumutil.smooth(s[a].values, smooth_amount)
+        y = spectrumutil.smooth(s[a].values, smooth_amount)
 
-        tmin, tmax = spectumutil.get_y_lims_for_x_lims(x, y, xmin, xmax)
+        tmin, tmax = spectrumutil.calculate_axis_y_limits(x, y, xmin, xmax)
         if tmin < ymin:
             ymin = tmin
         if tmax > ymax:
@@ -208,7 +208,7 @@ def plot_all_spectrum_inclinations_in_one_panel(
             logx = True
         else:
             logx = False
-        ax = spectumutil.ax_add_line_ids(ax, spectumutil.common_lines(), logx)
+        ax = spectrumutil.ax_add_line_id(ax, spectrumutil.common_lines_list(), logx)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
     fig.savefig("{}/{}_spectra_single.{}".format(wd, root, file_ext))
@@ -298,8 +298,8 @@ def plot_spectrum_inclination_in_individual_figures(
 
     alpha = 0.75
     spectrum_filename = "{}/{}.spec".format(wd, root)
-    s = spectumutil.read_spectrum(spectrum_filename)
-    ia = spectumutil.get_spectrum_inclinations(s)
+    s = spectrumutil.read_spectrum(spectrum_filename)
+    ia = spectrumutil.get_spectrum_inclinations(s)
 
     if frequency_space:
         xlabel = "Freq."
@@ -318,7 +318,7 @@ def plot_spectrum_inclination_in_individual_figures(
     # Plot each inclination a in ia on different fig and ax objects
 
     for a in ia:
-        y = spectumutil.smooth(s[a].values, smooth_amount)
+        y = spectrumutil.smooth(s[a].values, smooth_amount)
         # Convert into lambda F_lambda which is (I hope) the same as nu F_nu
         if frequency_space:
             y *= s["Lambda"].values
@@ -328,7 +328,7 @@ def plot_spectrum_inclination_in_individual_figures(
             logx = True
         else:
             logx = False
-        ax = spectumutil.ax_add_line_ids(ax, spectumutil.common_lines(), logx)
+        ax = spectrumutil.ax_add_line_id(ax, spectrumutil.common_lines_list(), logx)
         ax.set_title("Inclination i = {}".format(str(a)) + r"$^{\circ}$")
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
         fig.savefig("{}/{}_i{}_spectrum.{}".format(wd, root, str(a), file_ext))

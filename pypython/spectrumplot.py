@@ -9,9 +9,9 @@ being saved to disk or displayed.
 """
 
 from physics.constants import PARSEC
-from .spectumutil import photoionization_edges, common_lines, ax_add_line_ids, smooth
-from .spectumutil import read_spectrum, get_spectrum_inclinations, get_y_lims_for_x_lims, get_spectrum_units
-from .spectumutil import UNITS_FLAMBDA, UNITS_FNU, UNITS_LNU
+from .spectrumutil import photo_edges_list, common_lines_list, ax_add_line_id, smooth, check_inclination_valid
+from .spectrumutil import read_spectrum, get_spectrum_inclinations, calculate_axis_y_limits, get_spectrum_units
+from .spectrumutil import UNITS_FLAMBDA, UNITS_FNU, UNITS_LNU
 from .util import subplot_dims, remove_extra_axes
 from .error import InvalidParameter, EXIT_FAIL
 

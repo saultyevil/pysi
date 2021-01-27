@@ -10,8 +10,8 @@ matrix_pow ionisation solver.
 
 import argparse as ap
 from pypython import windutil
-from pypython import pythonutil as Utils
-from pypython.spectumutil import smooth
+from pypython import util
+from pypython.spectrumutil import smooth
 from subprocess import Popen, PIPE
 import numpy as np
 from matplotlib import pyplot as plt
@@ -93,7 +93,7 @@ def py_wind(root: str, nx: int, nz: int, i: int, j: int):
     # if stderr:
     #     print(stderr.decode("utf-8"))
 
-    Utils.clean_up_data_sym_links(".")
+    util.remove_data_sym_links(".")
 
     return stdout.decode("utf-8")
 
