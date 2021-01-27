@@ -5,7 +5,6 @@
 Search recursively for .slurm files and add them to the slurm queue.
 """
 
-
 import argparse as ap
 from subprocess import Popen, PIPE
 from typing import List, Tuple
