@@ -497,13 +497,13 @@ def run_single_model(
 
 
 def run_all_models(
-    roots: List[str], use_mpi: bool, n_cores: int
+    parameter_files: List[str], use_mpi: bool, n_cores: int
 ) -> List[int]:
     """Run the parts of the scripts requested to by run by the user.
 
     Parameters
     ----------
-    roots: List[str]
+    parameter_files: List[str]
         A list containing the root names of the Python simulations to run.
     use_mpi: bool
         If True, MPI will be used to run Python.
@@ -516,16 +516,16 @@ def run_all_models(
         The return codes of the Python models"""
 
     host = gethostname()
-    n_models = len(roots)
+    n_models = len(parameter_files)
     return_codes = []
 
     send_notification(
         "ejp1n17@soton.ac.uk", "{}: Starting models".format(host), ""
     )
 
-    for i, sim in enumerate(roots):
+    for i, filepath in enumerate(parameter_files):
 
-        root, wd = util.get_root(sim)
+        root, wd = util.get_root_from_filepath(filepath)
         msg = textwrap.dedent("""\
             ------------------------
             
@@ -542,7 +542,7 @@ def run_all_models(
 
         send_notification(
             "ejp1n17@soton.ac.uk", "{}: Model {}/{} has started running".format(host, i + 1, n_models),
-            "The model {} has started running on {}".format(sim, host)
+            "The model {} has started running on {}".format(filepath, host)
         )
 
         rc = run_single_model(
@@ -555,7 +555,7 @@ def run_all_models(
             log("Python exited for error code {}".format(rc))
             send_notification(
                 "ejp1n17@soton.ac.uk", "{}: Model {}/{} failed".format(host, i + 1, n_models),
-                "The model {} has failed\nReturn code {}".format(sim, host, rc)
+                "The model {} has failed\nReturn code {}".format(filepath, host, rc)
             )
             continue
 
@@ -573,7 +573,7 @@ def run_all_models(
             log("Python exited with return code {}.".format(rc))
             send_notification(
                 "ejp1n17@soton.ac.uk", "{}: Model {}/{} failed".format(host, i + 1, n_models),
-                "The model {} has failed on {}\nReturn code {}".format(sim, host, rc)
+                "The model {} has failed on {}\nReturn code {}".format(filepath, host, rc)
             )
             continue
 
@@ -591,7 +591,7 @@ def run_all_models(
             log("The model has not converged to the set convergence limit of {}.".format(CONVERGENCE_LOWER_LIMIT))
             send_notification(
                 "ejp1n17@soton.ac.uk", "{}: Model {}/{} failed".format(host, i + 1, n_models),
-                "The model {} has failed on {}\nReturn code {}".format(sim, host, rc)
+                "The model {} has failed on {}\nReturn code {}".format(filepath, host, rc)
             )
 
         # rc will determine if the model failed or not
@@ -600,13 +600,13 @@ def run_all_models(
             log("Python exited for error code {} after spectral cycles.".format(rc))
             send_notification(
                 "ejp1n17@soton.ac.uk", "{}: Model {}/{} spectral cycles failed".format(host, i + 1, n_models),
-                "The model {} has failed during spectral cycles on {}\nReturn code {}".format(sim, host, rc)
+                "The model {} has failed during spectral cycles on {}\nReturn code {}".format(filepath, host, rc)
             )
             continue
         else:
             send_notification(
                 "ejp1n17@soton.ac.uk", "{}: Model {}/{} finished".format(host, i + 1, n_models),
-                "The model {} has finished running on {}\nReturn code {}\nConvergence {}".format(sim, host, rc,
+                "The model {} has finished running on {}\nReturn code {}\nConvergence {}".format(filepath, host, rc,
                                                                                                  convergence)
             )
 
@@ -659,8 +659,8 @@ def main(
     # Print the models which are going to be run to the screen
 
     log("\nThe following {} parameter files were found:\n".format(len(parameter_files)))
-    for i in range(len(parameter_files)):
-        log("{}".format(parameter_files[i]))
+    for file in parameter_files:
+        log("{}".format(file))
     log("")
 
     # If we're doing a dry-run, then we don't go any further
