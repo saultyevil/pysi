@@ -13,18 +13,18 @@ Usage:
 """
 
 from sys import argv, exit
-from pypython.util import remove_data_sym_links
+from pypython.util import clean_up_data_sym_links
 
 
 print("--------------------------------------------------------------------------------\n")
 if len(argv) == 1:
-    remove_data_sym_links("~/PySims", verbose=True)
+    clean_up_data_sym_links("~/PySims", verbose=True)
 elif len(argv) == 2:
     if argv[1] == "-h" or argv[1] == "--help":
         print(__doc__)
         print("\n--------------------------------------------------------------------------------")
         exit(0)
-    remove_data_sym_links(argv[1], verbose=True)
+    clean_up_data_sym_links(argv[1], verbose=True)
 else:
     print("Unknown number of arguments.")
     print(__doc__)
