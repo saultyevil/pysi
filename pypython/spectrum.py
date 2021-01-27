@@ -27,9 +27,8 @@ class Spectrum:
     The PYTHON spectrum is read in and stored within a dict, where each column
     name is a key and the data is stored as a numpy array.
     """
-    def __init__(self, root: str, cd: str = ".", logspec: bool = False):
-        """
-        Initialise a Spectrum object. This method will construct the file path
+    def __init__(self, root: str, cd: str = ".", logspec: bool = False, customtype: str = None):
+        """Initialise a Spectrum object. This method will construct the file path
         of the spectrum file given the root, containing directory and whether
         the logarithmic spectrum is used or not. The spectrum is then read in.
          
@@ -40,8 +39,9 @@ class Spectrum:
         cd: str [optional]
             The directory containing the model.
         logspec: bool [optional]
-            Read in the logarithmic spectrum if True, otherwise linear.
-        """""
+            Read in the logarithmic spectrum.
+        customtype: str [optional]
+            Read in a spectrum with the given type name."""
 
         self.root = root
         self.logspec = logspec
@@ -50,7 +50,13 @@ class Spectrum:
             cd += "/"
         self.filepath = cd + root
         if self.logspec:
-            self.filepath += ".log_spec"
+            self.filepath += ".log_"
+        if customtype:
+            allowed = ["spec", "spec_tot", "spec_tot_wind", "spec_wind", "spec_tau"]
+            if customtype not in allowed:
+                print("{} is an unknown type of spectrum".format(customtype))
+                exit(1)  # todo: error code
+            self.filepath += "." + customtype
         else:
             self.filepath += ".spec"
 

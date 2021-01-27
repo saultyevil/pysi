@@ -9,91 +9,60 @@ It creates the following figures:
     - Multiple files containing a single panel, done for each spectrum
 """
 
-
 import argparse as ap
 from typing import Tuple
 from matplotlib import pyplot as plt
-
-from pypython import spectrumutil
+from pypython import plotutil
+from pypython.spectrum import Spectrum
 from pypython import spectrumplot
 
 plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15
 plt.rcParams['axes.labelsize'] = 15
 
-import warnings
-warnings.filterwarnings("ignore", module="matplotlib")
 
-
-def setup_script(
-) -> tuple:
-    """
-    Parse the different modes this script can be run from the command line.
+def setup_script() -> tuple:
+    """Parse the different modes this script can be run from the command line.
 
     Returns
     -------
     setup: tuple
-        A list containing all of the different setup of parameters for plotting.
-    """
+        A list containing all of the different setup of parameters for
+        plotting."""
 
     p = ap.ArgumentParser(description=__doc__)
 
-    # Required arguments
-    p.add_argument("root",
-                   type=str,
-                   help="The root name of the simulation.")
-
-    # Supplementary arguments
-    p.add_argument("-wd",
-                   "--working_directory",
-                   default=".",
-                   help="The directory containing the simulation.")
-
-    p.add_argument("-xl",
-                   "--xmin",
-                   type=float,
-                   default=None,
-                   help="The lower x-axis boundary to display.")
-
-    p.add_argument("-xu",
-                   "--xmax",
-                   type=float,
-                   default=None,
-                   help="The upper x-axis boundary to display.")
-
-    p.add_argument("-s",
-                   "--scales",
-                   default="logy",
-                   choices=["logx", "logy", "loglog", "linlin"],
-                   help="The axes scaling to use: logx, logy, loglog, linlin.")
-
-    p.add_argument("-l",
-                   "--common_lines",
-                   action="store_true",
-                   default=False,
-                   help="Plot labels for important absorption edges.")
-
-    p.add_argument("-f",
-                   "--frequency_space",
-                   action="store_true",
-                   default=False,
-                   help="Create the figure in frequency space.")
-
-    p.add_argument("-sm",
-                   "--smooth_amount",
-                   type=int,
-                   default=5,
-                   help="The size of the boxcar smoothing filter.")
-
-    p.add_argument("-e",
-                   "--ext",
-                   default="png",
-                   help="The file extension for the output figure.")
-
-    p.add_argument("--display",
-                   action="store_true",
-                   default=False,
-                   help="Display the plot before exiting the script.")
+    p.add_argument(
+        "root", type=str, help="The root name of the simulation."
+    )
+    p.add_argument(
+        "-wd", "--working_directory", default=".", help="The directory containing the simulation."
+    )
+    p.add_argument(
+        "-xl", "--xmin", type=float, default=None, help="The lower x-axis boundary to display."
+    )
+    p.add_argument(
+        "-xu", "--xmax", type=float, default=None, help="The upper x-axis boundary to display."
+    )
+    p.add_argument(
+        "-s", "--scales", default="logy", choices=["logx", "logy", "loglog", "linlin"],
+        help="The axes scaling to use: logx, logy, loglog, linlin."
+    )
+    p.add_argument(
+        "-l", "--common_lines", action="store_true", default=False, help="Plot labels for important absorption edges."
+    )
+    p.add_argument(
+        "-f", "--frequency_space", action="store_true", default=False, help="Create the figure in frequency space."
+    )
+    p.add_argument(
+        "-sm", "--smooth_amount", type=int, default=5, help="The size of the boxcar smoothing filter."
+    )
+    p.add_argument(
+        "-e", "--ext", default="png", help="The file extension for the output figure."
+    )
+    p.add_argument(
+        "--display", action="store_true", default=False, help="Display the plot before exiting the script."
+    )
 
     args = p.parse_args()
 
@@ -114,18 +83,17 @@ def setup_script(
 
 
 def plot_all_spectrum_inclinations_in_one_panel(
-    root: str, wd: str = "./", xmin: float = None, xmax: float = None, smooth_amount: int = 5,
+    root: str, cd: str = "./", xmin: float = None, xmax: float = None, smooth_amount: int = 5,
     frequency_space: bool = False, axes_scales: str = "logy", common_lines: bool = True, file_ext: str = "png"
 ) -> Tuple[plt.Figure, plt.Axes]:
-    """
-    Plot all of the spectra for a model on the same panel, for some comparison
+    """Plot all of the spectra for a model on the same panel, for some comparison
     reasons. This is best done with small wavelength ranges.
 
     Parameters
     ----------
     root: str
         The root name of the model.
-    wd: str [optional]
+    cd: str [optional]
         The directory where the simulation is stored, by default this assumes
         that it is in the calling directory.
     xmin: float [optional]
@@ -148,13 +116,12 @@ def plot_all_spectrum_inclinations_in_one_panel(
     fig: plt.Figure
         The matplotlib Figure object for the created plot.
     ax: plt.Axes
-        The matplotlib Axes objects for the plot panels.
-    """
+        The matplotlib Axes objects for the plot panels."""
 
     alpha = 0.75
-    spectrum_filename = "{}/{}.spec".format(wd, root)
-    s = spectrumutil.read_spectrum(spectrum_filename)
-    ia = spectrumutil.get_spectrum_inclinations(s)
+    spectrum = Spectrum(root, cd)
+    spectrum.smooth(smooth_amount)
+    spectrum_inclinations = spectrum.inclinations
 
     fig, ax = plt.subplots(figsize=(12, 8))
 
@@ -163,7 +130,7 @@ def plot_all_spectrum_inclinations_in_one_panel(
         axes_scales = "loglog"
     else:
         xlabel = "Lambda"
-    x = s[xlabel].values
+    x = spectrum[xlabel].values
 
     if frequency_space:
         xlabel = r"Frequency [Hz]"
@@ -183,21 +150,21 @@ def plot_all_spectrum_inclinations_in_one_panel(
     if not xmax:
         xmax = xlims[1]
 
-    for a in ia:
-        y = spectrumutil.smooth(s[a].values, smooth_amount)
+    for inclination in spectrum_inclinations:
+        y = spectrum[inclination]
 
-        tmin, tmax = spectrumutil.calculate_axis_y_limits(x, y, xmin, xmax)
-        if tmin < ymin:
-            ymin = tmin
-        if tmax > ymax:
-            ymax = tmax
+        temp_ymin, temp_ymax = plotutil.get_y_lims_for_x_lims(x, y, xmin, xmax)
+        if temp_ymin < ymin:
+            ymin = temp_ymin
+        if temp_ymax > ymax:
+            ymax = temp_ymax
 
-        # Convert into lambda F_lambda which is (I hope) the same as nu F_nu
+        # Convert into lambda F_lambda which is the same as nu F_nu
         if frequency_space:
-            y *= s["Lambda"].values
+            y *= spectrum["Lambda"].values
 
         fig, ax = spectrumplot.plot(
-            x, y, xmin, xmax, xlabel, ylabel, axes_scales, fig, ax, label=str(a) + r"$^{\circ}$", alpha=alpha
+            x, y, xmin, xmax, xlabel, ylabel, axes_scales, fig, ax, label=str(inclination) + r"$^{\circ}$", alpha=alpha
         )
 
     ax.set_ylim(ymin, ymax)
@@ -208,26 +175,25 @@ def plot_all_spectrum_inclinations_in_one_panel(
             logx = True
         else:
             logx = False
-        ax = spectrumutil.ax_add_line_id(ax, spectrumutil.common_lines_list(), logx)
+        ax = plotutil.ax_add_line_ids(ax, plotutil.common_lines(), logx=logx)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
-    fig.savefig("{}/{}_spectra_single.{}".format(wd, root, file_ext))
+    fig.savefig("{}/{}_spectra_single.{}".format(cd, root, file_ext))
 
     return fig, ax
 
 
 def plot_spectrum_inclinations_on_one_figure_in_subpanels(
-    root: str, wd: str = "./", xmin: float = None, xmax: float = None, smooth_amount: int = 5,
+    root: str, cd: str = "./", xmin: float = None, xmax: float = None, smooth_amount: int = 5,
     frequency_space: bool = False, axes_scales: str = "logy", common_lines: bool = True, file_ext: str = "png"
 ) -> Tuple[plt.Figure, plt.Axes]:
-    """
-    Plot each separate spectrum in an individual panel, on one figure.
+    """Plot each separate spectrum in an individual panel, on one figure.
 
     Parameters
     ----------
     root: str
         The root name of the model.
-    wd: str [optional]
+    cd: str [optional]
         The directory where the simulation is stored, by default this assumes
         that it is in the calling directory.
     xmin: float [optional]
@@ -250,29 +216,27 @@ def plot_spectrum_inclinations_on_one_figure_in_subpanels(
     fig: plt.Figure
         The matplotlib Figure object for the created plot.
     ax: plt.Axes
-        The matplotlib Axes objects for the plot panels.
-    """
+        The matplotlib Axes objects for the plot panels."""
 
     fig, ax = spectrumplot.plot_spectrum_inclinations_in_subpanels(
-        root, wd, xmin, xmax, smooth_amount, common_lines, frequency_space, axes_scales
+        root, cd, xmin, xmax, smooth_amount, common_lines, frequency_space, axes_scales
     )
-    fig.savefig("{}/{}_spectra.{}".format(wd, root, file_ext))
+    fig.savefig("{}/{}_spectra.{}".format(cd, root, file_ext))
 
     return fig, ax
 
 
 def plot_spectrum_inclination_in_individual_figures(
-    root: str, wd: str = "./", xmin: float = None, xmax: float = None, smooth_amount: int = 5,
+    root: str, cd: str = "./", xmin: float = None, xmax: float = None, smooth_amount: int = 5,
     frequency_space: bool = False, axes_scales: str = "logy", file_ext: str = "png"
 ) -> None:
-    """
-    Plot each separate spectrum as its own figure.
+    """Plot each separate spectrum as its own figure.
 
     Parameters
     ----------
     root: str
         The root name of the model.
-    wd: str [optional]
+    cd: str [optional]
         The directory where the simulation is stored, by default this assumes
         that it is in the calling directory.
     xmin: float [optional]
@@ -293,20 +257,19 @@ def plot_spectrum_inclination_in_individual_figures(
     fig: plt.Figure
         The matplotlib Figure object for the created plot.
     ax: plt.Axes
-        The matplotlib Axes objects for the plot panels.
-    """
+        The matplotlib Axes objects for the plot panels."""
 
     alpha = 0.75
-    spectrum_filename = "{}/{}.spec".format(wd, root)
-    s = spectrumutil.read_spectrum(spectrum_filename)
-    ia = spectrumutil.get_spectrum_inclinations(s)
+    spectrum = Spectrum(root, cd)
+    spectrum.smooth(smooth_amount)
+    spectrum_inclinations = spectrum.inclinations
 
     if frequency_space:
         xlabel = "Freq."
         axes_scales = "loglog"
     else:
         xlabel = "Lambda"
-    x = s[xlabel].values
+    x = spectrum[xlabel].values
 
     if frequency_space:
         xlabel = r"Frequency [Hz]"
@@ -317,21 +280,20 @@ def plot_spectrum_inclination_in_individual_figures(
 
     # Plot each inclination a in ia on different fig and ax objects
 
-    for a in ia:
-        y = spectrumutil.smooth(s[a].values, smooth_amount)
+    for inclination in spectrum_inclinations:
+        y = spectrum[inclination]
         # Convert into lambda F_lambda which is (I hope) the same as nu F_nu
         if frequency_space:
-            y *= s["Lambda"].values
-
+            y *= spectrum["Lambda"].values
         fig, ax = spectrumplot.plot(x, y, xmin, xmax, xlabel, ylabel, axes_scales, alpha=alpha)
         if axes_scales == "loglog" or axes_scales == "logx":
             logx = True
         else:
             logx = False
-        ax = spectrumutil.ax_add_line_id(ax, spectrumutil.common_lines_list(), logx)
-        ax.set_title("Inclination i = {}".format(str(a)) + r"$^{\circ}$")
+        ax = plotutil.ax_add_line_ids(ax, plotutil.common_lines(), logx=logx)
+        ax.set_title("Inclination i = {}".format(str(inclination)) + r"$^{\circ}$")
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
-        fig.savefig("{}/{}_i{}_spectrum.{}".format(wd, root, str(a), file_ext))
+        fig.savefig("{}/{}_i{}_spectrum.{}".format(cd, root, str(inclination), file_ext))
 
     return
 
@@ -339,11 +301,10 @@ def plot_spectrum_inclination_in_individual_figures(
 def main(
     setup: tuple = None
 ) -> Tuple[plt.Figure, plt.Axes]:
-    """
-    The main function of the script. First, the important wind quantaties are
+    """The main function of the script. First, the important wind quantaties are
     plotted. This is then followed by the important ions.
 
-`   Parameters
+    Parameters
     ----------
     setup: tuple
         A tuple containing the setup parameters to run the script. If this
@@ -367,27 +328,26 @@ def main(
     fig: plt.Figure
         The matplotlib Figure object for the created plot.
     ax: plt.Axes
-        The matplotlib Axes objects for the plot panels.
-    """
+        The matplotlib Axes objects for the plot panels."""
 
     if setup:
-        root, wd, xmin, xmax, frequency_space, common_lines, axes_scales, smooth_amount, file_ext, display = setup
+        root, cd, xmin, xmax, frequency_space, common_lines, axes_scales, smooth_amount, file_ext, display = setup
     else:
-        root, wd, xmin, xmax, frequency_space, common_lines, axes_scales, smooth_amount, file_ext, display = \
+        root, cd, xmin, xmax, frequency_space, common_lines, axes_scales, smooth_amount, file_ext, display = \
             setup_script()
 
     root = root.replace("/", "")
 
     fig, ax = plot_all_spectrum_inclinations_in_one_panel(
-        root, wd, xmin, xmax, smooth_amount, frequency_space, axes_scales, common_lines, file_ext
+        root, cd, xmin, xmax, smooth_amount, frequency_space, axes_scales, common_lines, file_ext
     )
 
     fig, ax = plot_spectrum_inclinations_on_one_figure_in_subpanels(
-        root, wd, xmin, xmax, smooth_amount, frequency_space, axes_scales, False, file_ext
+        root, cd, xmin, xmax, smooth_amount, frequency_space, axes_scales, False, file_ext
     )
 
     plot_spectrum_inclination_in_individual_figures(
-        root, wd, xmin, xmax, smooth_amount, frequency_space, axes_scales, file_ext
+        root, cd, xmin, xmax, smooth_amount, frequency_space, axes_scales, file_ext
     )
 
     if display:

@@ -9,10 +9,11 @@ being saved to disk or displayed.
 """
 
 from physics.constants import PARSEC
-from .spectrumutil import photo_edges_list, common_lines_list, ax_add_line_id, smooth, check_inclination_valid
-from .spectrumutil import read_spectrum, get_spectrum_inclinations, calculate_axis_y_limits, get_spectrum_units
-from .spectrumutil import UNITS_FLAMBDA, UNITS_FNU, UNITS_LNU
-from .util import subplot_dims, remove_extra_axes
+from .plotutil import photoionization_edges, common_lines, ax_add_line_ids
+from .plotutil import get_y_lims_for_x_lims
+from .plotutil import subplot_dims, remove_extra_axes
+from .spectrum import Spectrum, UNITS_FLAMBDA, UNITS_FNU, UNITS_LNU
+from .util import smooth_array
 from .error import InvalidParameter, EXIT_FAIL
 
 import pandas as pd
@@ -32,10 +33,9 @@ DEFAULT_PYTHON_DISTANCE = 100 * PARSEC
 
 def _plot_panel_subplot(
     ax: plt.Axes, x: np.ndarray, spec: pd.DataFrame, units: str, dname: Union[List[str], str],
-    xlims: Tuple[float, float], sm: int, alpha: float, scale: str, frequency_space: bool, skip_sparse: bool, n: str
+    xlims: Tuple[float, float], sm: int, alpha: float, scale: str, frequency_space: bool, skip_sparse: bool
 ) -> plt.Axes:
-    """
-    Create a subplot panel for a figure given the spectrum components names
+    """Create a subplot panel for a figure given the spectrum components names
     in the list dname.
 
     Parameters
@@ -68,18 +68,17 @@ def _plot_panel_subplot(
     Returns
     -------
     ax: pyplot.Axes
-        The pyplot.Axes object for the subplot
-    """
+        The pyplot.Axes object for the subplot"""
 
     if type(dname) == str:
         dname = [dname]
 
-    for i in range(len(dname)):
+    for thing_to_plot in dname:
 
         try:
-            fl = smooth(spec[dname[i]].values, sm)
+            fl = smooth_array(spec[thing_to_plot].values, sm)
         except KeyError:
-            print("{}: unable to find data column with label {}".format(n, dname[i]))
+            print("unable to find data column with label {}".format(thing_to_plot))
             continue
 
         # Skip sparse spec components to make prettier plot
@@ -100,7 +99,7 @@ def _plot_panel_subplot(
         if units == UNITS_LNU:
             fl *= spec["Freq."].values
 
-        ax.plot(x, fl, label=dname[i], alpha=alpha)
+        ax.plot(x, fl, label=thing_to_plot, alpha=alpha)
 
         if scale == "logx" or scale == "loglog":
             ax.set_xscale("log")
@@ -129,8 +128,7 @@ def plot(
     scale: str = "logy", fig: plt.Figure = None, ax: plt.Axes = None, label: str = None, alpha: float = 1.0,
     display: bool = False
 ) -> Tuple[plt.Figure, plt.Axes]:
-    """
-    This is a simple plotting function designed to give you the bare minimum.
+    """This is a simple plotting function designed to give you the bare minimum.
     It will create a figure and axes object for a single panel and that is
     it. It is mostly designed for quick plotting of models and real data.
 
@@ -166,24 +164,17 @@ def plot(
     fig: plt.Figure
         The figure object for the plot.
     ax: plt.Axes
-        The axes object containing the plot.
-    """
-
-    n = plot.__name__
-
-    nrows = ncols = 1
+        The axes object containing the plot."""
 
     # It doesn't make sense to provide only fig and not ax, or ax and not fig
     # so at this point we will throw an error message and return
 
     if fig and not ax:
-        raise InvalidParameter("{}: fig has been provided, but ax has not. Both are required.".format(n))
+        raise InvalidParameter("fig has been provided, but ax has not. Both are required.")
     if not fig and ax:
-        raise InvalidParameter("{}: fig has not been provided, but ax has. Both are required.".format(n))
-
+        raise InvalidParameter("fig has not been provided, but ax has. Both are required.")
     if not fig and not ax:
-        fig, ax = plt.subplots(nrows, ncols, figsize=(12, 5))
-
+        fig, ax = plt.subplots(1, 1, figsize=(12, 5))
     if label is None:
         label = ""
 
@@ -231,8 +222,7 @@ def plot_optical_depth(
     show_absorption_edge_labels: bool = True, frequency_space: bool = True, axes_label_fontsize: float = 15,
     display: bool = False
 ) -> Tuple[plt.Figure, plt.Axes]:
-    """
-    Create an optical depth spectrum for a given Python simulation. This figure
+    """Create an optical depth spectrum for a given Python simulation. This figure
     can be created in both wavelength or frequency space and with various
     choices of axes scaling.
 
@@ -267,8 +257,7 @@ def plot_optical_depth(
     fig: pyplot.Figure
         The pyplot.Figure object for the created figure
     ax: pyplot.Axes
-        The pyplot.Axes object for the created figure
-    """
+        The pyplot.Axes object for the created figure"""
 
     n = plot_optical_depth.__name__
     fig, ax = plt.subplots(1, 1, figsize=(12, 9))
@@ -276,6 +265,8 @@ def plot_optical_depth(
 
     if type(inclinations) == str:
         inclinations = [inclinations]
+
+    # s = Spectrum()
 
     try:
         s = read_spectrum(fname)

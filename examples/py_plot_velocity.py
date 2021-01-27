@@ -1,26 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-
 """
 This purpose of this script is to provide a quick way to plot the different
 velocity components of a Python wind model. It assumes that the output is in
 cartesian coordinates, hence the transformation back into cylindrical
 coordinates later is fine to calculate the polodial and rotational velocity.
-
 NOTE: THIS ONLY WORKS WITH RECTILINEAR PLOTS FOR NOW - NO POLAR STUFF!!!
 """
-
 
 import numpy as np
 import argparse as ap
 from typing import Tuple, Union, List
 from matplotlib import pyplot as plt
-
 from pypython import windplot
 from pypython import windutil
 from pypython import util
-from pypython.constants import CMS_TO_KMS, VLIGHT
+from pypython.physics.constants import CMS_TO_KMS, VLIGHT
 from pypython.error import EXIT_FAIL
 
 
@@ -28,14 +24,9 @@ plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15
 plt.rcParams['axes.labelsize'] = 15
 
-import warnings
-warnings.filterwarnings("ignore", module="matplotlib")
 
-
-def setup_script() \
-        -> tuple:
-    """
-    Parse the different modes this script can be run from the command line.
+def setup_script() -> tuple:
+    """Parse the different modes this script can be run from the command line.
 
     Returns
     -------
@@ -49,58 +40,30 @@ def setup_script() \
             cell_indices,
             file_ext,
             display
-        )
-    """
+        )"""
 
     p = ap.ArgumentParser(description=__doc__)
 
     p.add_argument(
-        "root",
-        help="The root name of the simulation."
+        "root", help="The root name of the simulation."
     )
-
     p.add_argument(
-        "-wd",
-        default=".",
-        help="The directory containing the simulation."
+        "-wd", default=".", help="The directory containing the simulation."
     )
-
     p.add_argument(
-        "-u",
-        "--units",
-        default="kms",
-        choices=["kms", "cms", "c"],
-        help="The unit for velocity"
+        "-u", "--units", default="kms", choices=["kms", "cms", "c"], help="The unit for velocity"
     )
-
     p.add_argument(
-        "-s",
-        "--scales",
-        default="loglog",
-        choices=["logx", "logy", "linlin", "loglog"],
-        help="The axes scaling to use"
+        "-s", "--scales", default="loglog", choices=["logx", "logy", "linlin", "loglog"], help="The axes scaling to use"
     )
-
     p.add_argument(
-        "-c",
-        "--cells",
-        default=False,
-        action="store_true",
-        help="Plot using cell indices rather than spatial scales."
+        "-c", "--cells", default=False, action="store_true", help="Plot using cell indices rather than spatial scales."
     )
-
     p.add_argument(
-        "-e",
-        "--ext",
-        default="png",
-        help="The file extension for the output figure."
+        "-e", "--ext", default="png", help="The file extension for the output figure."
     )
-
     p.add_argument(
-        "--display",
-        default=False,
-        action="store_true",
-        help="Display the plot before exiting the script."
+        "--display", default=False, action="store_true", help="Display the plot before exiting the script."
     )
 
     args = p.parse_args()
@@ -118,12 +81,10 @@ def setup_script() \
     return setup
 
 
-
 def renormalize_vector(
     a: np.ndarray, scalar: Union[float, int]
 ) -> np.ndarray:
-    """
-    This function is used to renormalise a 3-vector quantity.
+    """This function is used to renormalise a 3-vector quantity.
 
     Parameters
     ----------
@@ -135,17 +96,14 @@ def renormalize_vector(
     Returns
     -------
     a: np.ndarray
-        The renormalised 3-vector quantity.
-    """
+        The renormalized 3-vector quantity."""
 
     eps = 1e-10
-    n = renormalize_vector.__name__
 
     x = np.dot(a, a)
 
     if x < eps:
-        # print("{}: Cannot renormalise a vector of length 0".format(n))
-        # print("{}: a = {}".format(n, a))
+        print("Cannot renormaliz ,lo0e a vector of magnitude 0")
         return EXIT_FAIL
 
     x = scalar / np.sqrt(x)
@@ -159,8 +117,7 @@ def renormalize_vector(
 def project_cartesian_to_cylindrical_coordinates(
         a: Union[np.ndarray, List[float]], b: Union[np.ndarray, List[float]]
 ) -> np.ndarray:
-    """
-    Attempt to a vector from cartesian into cylindrical coordinates.
+    """Attempt to project a vector from cartesian into cylindrical coordinates.
 
     Parameters
     ----------
@@ -173,8 +130,8 @@ def project_cartesian_to_cylindrical_coordinates(
     Returns
     -------
     result: np.ndarray
-        The input vector b which is now projected into cylindrical coordinates.
-    """
+        The input vector b which is now projected into cylindrical
+        coordinates."""
 
     result = np.zeros(3)
     n_rho = np.zeros(3)
@@ -200,12 +157,11 @@ def project_cartesian_to_cylindrical_coordinates(
     return result
 
 
-def velocity_plot(
+def plot_velocity(
     root: str, wd: str = "./", velocity_units: str = "kms", axes_scales: str = "loglog", use_cell_indices: bool = False,
     file_ext: str = "png"
 ) -> Tuple[plt.Figure, plt.Axes]:
-    """
-    Create a figure which shows the Cartesian velocities, as well as the
+    """Create a figure which shows the Cartesian velocities, as well as the
     polodial and the rotational velocity. The cylindrical coordinates will be
     evaluated assuming y = 0.
 
@@ -232,13 +188,10 @@ def velocity_plot(
     fig: plt.Figure
         The matplotlib Figure object for the created plot.
     ax: plt.Axes
-        The matplotlib Axes objects for the plot panels.
-    """
+        The matplotlib Axes objects for the plot panels."""
 
-    nrows = 2
-    ncols = 2
-
-    fig, ax = plt.subplots(nrows, ncols, figsize=(13, 10), squeeze=False)
+    n_rows = n_cols = 2
+    fig, ax = plt.subplots(n_rows, n_cols, figsize=(13, 10), squeeze=False)
 
     # Set the scale to linear-linear when plotting with cell indices
 
@@ -252,7 +205,7 @@ def velocity_plot(
     elif velocity_units == "c":
         unit_conversion_factor = 1.0 / VLIGHT
     else:
-        print("{}: unknown units {} -- default to cm/s. Allowed kms, cms, c.")
+        print("unknown units {} -- default to cm/s. Allowed: kms, cms, c.".format(velocity_units))
         unit_conversion_factor = 1.0
 
     # First get the velocity in cartesian coordinates and then project this into
@@ -276,8 +229,8 @@ def velocity_plot(
     for i in range(n1):
         for j in range(n2):
             r = [vx_x[i, j], 0, vx_z[i, j]]
+            # todo: clean up this mess
             # This is some horrible hack to make sure there are no NaNs :^)
-            # TODO: clean up this mess
             if type(vx[i, j]) != np.float64 or type(vy[i, j]) != np.float64 or type(vz[i, j]) != np.float64:
                 vl[i, j] = 0
                 vrot[i, j] = 0
@@ -303,8 +256,8 @@ def velocity_plot(
     velocities_to_plot = ["v_x", "v_z", "v_rot", "v_l"]
     nsize = len(velocities_to_plot) - 1
 
-    for i in range(nrows):
-        for j in range(ncols):
+    for i in range(n_rows):
+        for j in range(n_cols):
 
             if index > nsize:
                 break
@@ -329,8 +282,7 @@ def velocity_plot(
 def main(
         setup: tuple = None
 ) -> Tuple[plt.Figure, plt.Axes]:
-    """
-    The main function of the script. First, the important wind quantaties are
+    """The main function of the script. First, the important wind quantaties are
     plotted. This is then followed by the important ions.
 
 `   Parameters
@@ -357,19 +309,19 @@ def main(
     """
 
     if setup:
-        root, wd, units, axes_scales, cell_indices, file_ext, display = setup
+        root, cd, units, axes_scales, cell_indices, file_ext, display = setup
     else:
-        root, wd, units, axes_scales, cell_indices, file_ext, display = setup_script()
+        root, cd, units, axes_scales, cell_indices, file_ext, display = setup_script()
 
     root = root.replace("/", "")
 
     # First, we probably need to run windsave2table
 
-    pythonutil.windsave2table(root, wd)
+    util.create_wind_save_table(root, cd)
 
     # Now we can plot the stuff
 
-    fig, ax = velocity_plot(root, wd, units, axes_scales, cell_indices, file_ext)
+    fig, ax = plot_velocity(root, cd, units, axes_scales, cell_indices, file_ext)
 
     if display:
         plt.show()
