@@ -684,7 +684,7 @@ def plot_multiple_model_spectra(
     spectrum_objects = []
     for spectrum in spectra_filepaths:
         root, cd = get_root_from_filepath(spectrum)
-        spectrum_objects.append(Spectrum(root, cd).smooth(smooth_amount))
+        spectrum_objects.append(Spectrum(root, cd))
 
     if inclination_angle == "all":
         inclinations = []
@@ -695,6 +695,9 @@ def plot_multiple_model_spectra(
     else:
         inclinations = [inclination_angle]
         figsize = (12, 5)
+
+    for spectrum in spectrum_objects:
+        spectrum.smooth(smooth_amount)
 
     n_inclinations = len(inclinations)
     n_rows, n_cols = subplot_dims(n_inclinations)
@@ -710,7 +713,7 @@ def plot_multiple_model_spectra(
 
             # Ignore spectra which are from continuum only models...
 
-            if spectrum.find("continuum") != -1:
+            if spectrum.filepath.find("continuum") != -1:
                 continue
 
             if frequency_space:
@@ -724,7 +727,7 @@ def plot_multiple_model_spectra(
                     y = spectrum[inclination]
             except KeyError:
                 continue
-            ax[i].plot(x, y, label=spectrum, alpha=0.75)
+            ax[i].plot(x, y, label=spectrum.filepath, alpha=0.75)
 
             # Calculate the y-axis limits to keep all spectra within the
             # plot area
