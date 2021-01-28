@@ -92,8 +92,7 @@ def get_file_len(
     filename: str
 ) -> int:
     """Slowly count the number of lines in a file.
-
-    TODO update to jit_open or some other more efficient method
+    todo: update to jit_open or some other more efficient method
 
     Parameters
     ----------

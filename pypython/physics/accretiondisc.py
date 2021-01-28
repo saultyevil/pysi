@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
 """
 Functions to calculate parameters and quantities for accretion discs and
 accretion in general live here. For example, there are functions for the
@@ -12,7 +11,6 @@ Eddington luminosity or to create a simple accretion disc spectrum.
 from typing import Union
 import numpy as np
 import pandas as pd
-
 from .blackhole import gravitational_radius, innermost_stable_orbit
 from .blackbody import planck_lambda, planck_nu
 from constants import STEFAN_BOLTZMANN, C, MPROT, THOMPSON, G, PI, MSOL, MSOL_PER_YEAR
@@ -21,8 +19,7 @@ from constants import STEFAN_BOLTZMANN, C, MPROT, THOMPSON, G, PI, MSOL, MSOL_PE
 def alpha_disc_effective_temperature(
     ri: Union[np.ndarray, float], r_co: float, m_co: float, mdot: float
 ) -> Union[float, np.ndarray]:
-    """
-    Standard alpha-disc effective temperature profile.
+    """Standard alpha-disc effective temperature profile.
 
     Parameters
     ----------
@@ -39,8 +36,7 @@ def alpha_disc_effective_temperature(
     Returns
     -------
     teff: np.ndarray or float
-        The effective temperature at the provided radius or radii.
-    """
+        The effective temperature at the provided radius or radii."""
 
     m_co *= MSOL
     mdot *= MSOL_PER_YEAR
@@ -55,8 +51,7 @@ def alpha_disc_effective_temperature(
 def modified_eddigton_alpha_disc_effective_temperature(
     ri: Union[np.ndarray, float], m_co: float, mdot: float
 ) -> Union[float, np.ndarray]:
-    """
-    The effective temperature profile from Strubbe and Quataert 2009.
+    """The effective temperature profile from Strubbe and Quataert 2009.
 
     Parameters
     ----------
@@ -71,9 +66,7 @@ def modified_eddigton_alpha_disc_effective_temperature(
     Returns
     -------
     teff: np.ndarray or float
-        The effective temperature at the provided radius or radii.
-
-    """
+        The effective temperature at the provided radius or radii."""
 
     risco = innermost_stable_orbit(m_co)
     rg = gravitational_radius(m_co)
@@ -93,8 +86,7 @@ def modified_eddigton_alpha_disc_effective_temperature(
 def eddington_accretion_limit(
     mbh: float, efficiency: float
 ) -> float:
-    """
-    Calculate the Eddington accretion limit for a black hole. Note that the
+    """Calculate the Eddington accretion limit for a black hole. Note that the
     accretion rate can be larger than the Eddington accretion rate. See, for
     example, Foundations of High-Energy Astrophysics by Mario Vietri.
 
@@ -107,8 +99,7 @@ def eddington_accretion_limit(
 
     Returns
     -------
-    The Eddington accretion rate in units of grams / second.
-    """
+    The Eddington accretion rate in units of grams / second."""
 
     mbh *= MSOL
 
@@ -118,8 +109,7 @@ def eddington_accretion_limit(
 def eddington_luminosity_limit(
     mbh: float
 ) -> float:
-    """
-    Calculate the Eddington luminosity for accretion onto a black hole.
+    """Calculate the Eddington luminosity for accretion onto a black hole.
 
     Parameters
     ----------
@@ -128,8 +118,7 @@ def eddington_luminosity_limit(
 
     Returns
     -------
-    The Eddington luminosity for the black hole in units of ergs / second.
-    """
+    The Eddington luminosity for the black hole in units of ergs / second."""
 
     mbh *= MSOL
 
@@ -140,8 +129,7 @@ def create_disc_spectrum(
     m_co: float, mdot: float, r_in: float, r_out: float, freq_min: float, freq_max: float, freq_units: bool = True,
     n_freq: int = 5000, n_rings: int = 1000
 ) -> np.array:
-    """
-    Create a crude accretion disc spectrum. This works by approximating an
+    """Create a crude accretion disc spectrum. This works by approximating an
     accretion disc as being a collection of annuli radiating at different
     temperatures and treats them as a blackbody. The emerging spectrum is then
     an ensemble of these blackbodies.
@@ -172,8 +160,7 @@ def create_disc_spectrum(
     s: pd.DataFrame
         The accretion disc spectrum. If in frequency units, the columns are
         "Freq." (Hz) and "Lum" (ergs/s/cm^2/Hz). If in wavelength units, the columns are
-        "Lambda" (A) and "Lum" (ergs/s/cm^2/A).
-    """
+        "Lambda" (A) and "Lum" (ergs/s/cm^2/A)."""
 
     if freq_units:
         xlabel = "Freq."

@@ -14,8 +14,7 @@ from constants import BOLTZMANN, H, VLIGHT, ANGSTROM
 def planck_nu(
     temperature: float, frequency: Union[np.ndarray, float]
 ) -> Union[np.ndarray, float]:
-    """
-    Calculate the monochromatic intensity for a black body given a temperature
+    """Calculate the monochromatic intensity for a black body given a temperature
     and frequency of interest.
 
     Parameters
@@ -29,8 +28,7 @@ def planck_nu(
     -------
     b_nu: float
         The value of the Planck function with the provided temperature and
-        frequency. Has units ergs s^-1 cm^-2 Hz^-1.
-    """
+        frequency. Has units ergs s^-1 cm^-2 Hz^-1."""
 
     with np.errstate(all="ignore"):
         x = H * frequency / (BOLTZMANN * temperature)
@@ -42,8 +40,7 @@ def planck_nu(
 def planck_lambda(
     temperature: float, lamda: Union[np.ndarray, float]
 ) -> Union[np.ndarray, float]:
-    """
-    Calculate the monochromatic intensity for a black body given a temperature
+    """Calculate the monochromatic intensity for a black body given a temperature
     and frequency of interest.
 
     Parameters
@@ -57,8 +54,7 @@ def planck_lambda(
     -------
     b_lamda: float
         The value of the Planck function with the provided temperature and
-        wavelength. Has units ergs s^-1 cm^-2 A^-1.
-    """
+        wavelength. Has units ergs s^-1 cm^-2 A^-1."""
 
     with np.errstate(all="ignore"):
         lcm = lamda * ANGSTROM

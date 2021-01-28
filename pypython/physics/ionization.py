@@ -6,18 +6,15 @@ Calculate various atomic quantities, such as the ratio of the level population
 for two atomic levels.
 """
 
-
 import numpy as np
-
 from constants import PI, MELEC, BOLTZMANN, H
 
 
 def saha_population_ratio(
     electron_density: float, g_upper: float, g_lower: float, energy_upper: float, energy_lower: float,
     temperature: float
-):
-    """
-    Calculate the ratio of two level populations n_i+1 / n_i, using the
+) -> float:
+    """Calculate the ratio of two level populations n_i+1 / n_i, using the
     Saha-Boltzmann equation.
 
     Parameters
@@ -39,8 +36,7 @@ def saha_population_ratio(
     -------
     n_i+1 / n_i: float
         The ratio of the population of the upper ionisation and ground state
-        of the atom.
-    """
+        of the atom."""
 
     gratio = 2 * g_upper / g_lower
     saha = ((2 * PI * MELEC * BOLTZMANN * temperature) / H ** 2) ** (3 / 2)
