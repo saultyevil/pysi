@@ -179,9 +179,12 @@ class Spectrum:
             if type(thing_to_smooth) is not str:
                 print("skipping {} not a string".format(thing_to_smooth))
                 continue
-            self.spectrum[thing_to_smooth] = convolve(
-                self.spectrum[thing_to_smooth], boxcar(width) / float(width), mode="same"
-            )
+            try:
+                self.spectrum[thing_to_smooth] = convolve(
+                    self.spectrum[thing_to_smooth], boxcar(width) / float(width), mode="same"
+                )
+            except KeyError:
+                continue
 
     def unsmooth(self):
         """Restore the spectrum to its unsmoothed form."""
