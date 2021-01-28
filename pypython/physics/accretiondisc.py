@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 from .blackhole import gravitational_radius, innermost_stable_orbit
 from .blackbody import planck_lambda, planck_nu
-from constants import STEFAN_BOLTZMANN, C, MPROT, THOMPSON, G, PI, MSOL, MSOL_PER_YEAR
+from .constants import STEFAN_BOLTZMANN, C, MPROT, THOMPSON, G, PI, MSOL, MSOL_PER_YEAR
 
 
 def alpha_disc_effective_temperature(

@@ -8,7 +8,7 @@ figure and axes objects, just in case anything else wants to be changed before
 being saved to disk or displayed.
 """
 
-from physics.constants import PARSEC
+from .physics.constants import PARSEC
 from .plotutil import photoionization_edges, common_lines, ax_add_line_ids
 from .plotutil import get_y_lims_for_x_lims
 from .plotutil import subplot_dims, remove_extra_axes
@@ -74,7 +74,7 @@ def _plot_panel_subplot(
     for thing in things_to_plot:
 
         try:
-            fl = smooth_array(spectrum[thing].values, sm)
+            fl = smooth_array(spectrum[thing], sm)
         except KeyError:
             print("unable to find data column with label {}".format(thing))
             continue
@@ -88,14 +88,14 @@ def _plot_panel_subplot(
         # to be converted in nu F nu
 
         if frequency_space and units == UNITS_FLAMBDA:
-            fl *= spectrum["Lambda"].values
+            fl *= spectrum["Lambda"]
         elif frequency_space and units == UNITS_FNU:
-            fl *= spectrum["Freq."].values
+            fl *= spectrum["Freq."]
 
         # If the spectrum units are Lnu then plot nu Lnu
 
         if units == UNITS_LNU:
-            fl *= spectrum["Freq."].values
+            fl *= spectrum["Freq."]
         ax.plot(x_values, fl, label=thing, alpha=alpha)
         if scale == "logx" or scale == "loglog":
             ax.set_xscale("log")
@@ -257,7 +257,7 @@ def plot_optical_depth(
     fig, ax = plt.subplots(1, 1, figsize=(12, 9))
     if type(inclinations) == str:
         inclinations = [inclinations]
-    spectrum = Spectrum(root, wd, spectype="tau_spec")
+    spectrum = Spectrum(root, wd, spectype="spec_tau")
     spec_angles = spectrum.inclinations
     n_angles = len(spec_angles)
     n_plots = len(inclinations)  # Really have no clue what this does in hindsight...
@@ -277,7 +277,7 @@ def plot_optical_depth(
     if frequency_space:
         xlabel = "Freq."
 
-    x = spectrum[xlabel].values
+    x = spectrum[xlabel]
     if not xmin:
         xmin = np.min(spectrum[xlabel])
     if not xmax:
@@ -442,9 +442,9 @@ def plot_spectrum_components(
 
     spectrum = Spectrum(root, wd, logspec, spectype)
     if frequency_space:
-        x = spectrum["Freq."].values
+        x = spectrum["Freq."]
     else:
-        x = spectrum["Lambda"].values
+        x = spectrum["Lambda"]
     xlims = [x.min(), x.max()]
     if not xmin:
         xmin = xlims[0]
@@ -527,9 +527,9 @@ def plot_spectrum_inclinations_in_subpanels(
     # Use either frequency or wavelength and set the plot limits respectively
 
     if frequency_space:
-        x = spectrum["Freq."].values
+        x = spectrum["Freq."]
     else:
-        x = spectrum["Lambda"].values
+        x = spectrum["Lambda"]
     xlims = [x.min(), x.max()]
     if not xmin:
         xmin = xlims[0]
@@ -545,7 +545,7 @@ def plot_spectrum_inclinations_in_subpanels(
             name = str(spectrum_inclinations[inclination_index])
             ax[i, j] = _plot_panel_subplot(
                 ax[i, j], x, spectrum, spectrum_units, name, xlims, smooth_amount, 1, scale, frequency_space, False)
-            ymin, ymax = get_y_lims_for_x_lims(x, spectrum[name].values, xmin, xmax)
+            ymin, ymax = get_y_lims_for_x_lims(x, spectrum[name], xmin, xmax)
             ax[i, j].set_ylim(ymin, ymax)
 
             if add_line_ids:
@@ -604,9 +604,9 @@ def plot_single_spectrum_inclination(
     s = Spectrum(root, wd).smooth(smooth_amount)
 
     if frequency_space:
-        x = s["Freq."].values
+        x = s["Freq."]
     else:
-        x = s["Lambda"].values
+        x = s["Lambda"]
     xlims = [x.min(), x.max()]
     if not xmin:
         xmin = xlims[0]
@@ -620,11 +620,11 @@ def plot_single_spectrum_inclination(
         except ValueError:
             print("unable to convert into string")
             return
-    y = s[inclination].values
+    y = s[inclination]
     if frequency_space:
         xax = r"Frequency [Hz]"
         yax = r"$\nu F_{\nu}$ (erg s$^{-1}$ cm$^{-2}$)"
-        y *= s["Lambda"].values
+        y *= s["Lambda"]
     else:
         xax = r"Wavelength [$\AA$]"
         yax = r"$F_{\lambda}$ (erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)"
@@ -714,14 +714,14 @@ def plot_multiple_model_spectra(
                 continue
 
             if frequency_space:
-                x = spectrum["Freq."].values
+                x = spectrum["Freq."]
             else:
-                x = spectrum["Lambda"].values
+                x = spectrum["Lambda"]
             try:
                 if frequency_space:
-                    y = spectrum["Lambda"].values * spectrum[inclination].values
+                    y = spectrum["Lambda"] * spectrum[inclination]
                 else:
-                    y = spectrum[inclination].values
+                    y = spectrum[inclination]
             except KeyError:
                 continue
             ax[i].plot(x, y, label=spectrum, alpha=0.75)

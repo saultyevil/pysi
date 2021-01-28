@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import List, Union, Tuple
 import textwrap
 import copy
-
 from .util import get_root_from_filepath
 
 
@@ -56,11 +55,13 @@ class Spectrum:
             if spectype not in allowed:
                 print("{} is an unknown type of spectrum".format(spectype))
                 exit(1)  # todo: error code
-            self.filepath += "." + spectype
+            if not logspec:
+                self.filepath += "."
+            self.filepath += spectype
         else:
             self.filepath += ".spec"
 
-        self.spectrum = {}
+        self.spectrum = self.values = {}
         self.columns = []
         self.inclinations = []
         self.n_inclinations = 0
@@ -89,12 +90,8 @@ class Spectrum:
             between delimited with commas instead of spaces.
         """
 
-        try:
-            with open(self.filepath, "r") as f:
-                spectrum_file = f.readlines()
-        except IOError:
-            print("Unable to open spectrum for file path " + self.filepath)
-            exit(1)  # todo: error code
+        with open(self.filepath, "r") as f:
+            spectrum_file = f.readlines()
 
         # Read in the spectrum file, ignoring empty lines and lines which have
         # been commented out by # at the beginning
@@ -136,7 +133,7 @@ class Spectrum:
 
         self.columns = header
         for i, column_name in enumerate(header):
-            self.spectrum[column_name] = spectrum[:, i]
+            self.values = self.spectrum[column_name] = spectrum[:, i]
         for col in header:
             if col.isdigit() and col not in self.inclinations:
                 self.inclinations.append(col)

@@ -8,7 +8,7 @@ a spectrum from the delay_dump output.
 """
 
 from .error import EXIT_FAIL
-from physics.constants import PARSEC, C
+from .physics.constants import PARSEC, C
 from .conversion import hz_to_angstrom
 from .util import get_file_len
 from .spectrumutil import read_spectrum, get_spectrum_inclinations

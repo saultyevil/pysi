@@ -130,7 +130,7 @@ def plot_all_spectrum_inclinations_in_one_panel(
         axes_scales = "loglog"
     else:
         xlabel = "Lambda"
-    x = spectrum[xlabel].values
+    x = spectrum[xlabel]
 
     if frequency_space:
         xlabel = r"Frequency [Hz]"
@@ -161,7 +161,7 @@ def plot_all_spectrum_inclinations_in_one_panel(
 
         # Convert into lambda F_lambda which is the same as nu F_nu
         if frequency_space:
-            y *= spectrum["Lambda"].values
+            y *= spectrum["Lambda"]
 
         fig, ax = spectrumplot.plot(
             x, y, xmin, xmax, xlabel, ylabel, axes_scales, fig, ax, label=str(inclination) + r"$^{\circ}$", alpha=alpha
@@ -269,7 +269,7 @@ def plot_spectrum_inclination_in_individual_figures(
         axes_scales = "loglog"
     else:
         xlabel = "Lambda"
-    x = spectrum[xlabel].values
+    x = spectrum[xlabel]
 
     if frequency_space:
         xlabel = r"Frequency [Hz]"
@@ -284,7 +284,7 @@ def plot_spectrum_inclination_in_individual_figures(
         y = spectrum[inclination]
         # Convert into lambda F_lambda which is (I hope) the same as nu F_nu
         if frequency_space:
-            y *= spectrum["Lambda"].values
+            y *= spectrum["Lambda"]
         fig, ax = spectrumplot.plot(x, y, xmin, xmax, xlabel, ylabel, axes_scales, alpha=alpha)
         if axes_scales == "loglog" or axes_scales == "logx":
             logx = True

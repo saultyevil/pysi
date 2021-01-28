@@ -5,7 +5,7 @@
 Calculate various parameters relating to black holes.
 """
 
-from constants import MSOL, GRAV, VLIGHT
+from .constants import MSOL, GRAV, VLIGHT
 
 
 def schwarzchild_radius(m_bh: float):

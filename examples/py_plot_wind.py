@@ -9,7 +9,6 @@ the electron temperature and density, as well figures for the ion fractions
 for H, He, C, N, O and Si.
 """
 
-
 import argparse as ap
 from sys import exit
 from typing import List, Tuple
@@ -19,7 +18,6 @@ from pypython import windutil
 from pypython import util
 from pypython import plotutil
 from pypython.error import EXIT_FAIL
-
 
 plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15
@@ -85,8 +83,7 @@ def plot_wind(
     panel_dims: Tuple[int, int] = (4, 2), figure_size: Tuple[int, int] = (10, 15), title: str = None,
     file_ext: str = "png"
 ) -> Tuple[plt.Figure, plt.Axes]:
-    """
-    The purpose of this function is to oversee the creation of the different
+    """The purpose of this function is to oversee the creation of the different
     possible wind plots.
 
     Parameters
@@ -126,8 +123,7 @@ def plot_wind(
     fig: plt.Figure
         The matplotlib Figure object for the created plot.
     ax: plt.Axes
-        The matplotlib Axes objects for the plot panels.
-    """
+        The matplotlib Axes objects for the plot panels."""
 
     # Check the same amount of wind variables and their types have been passed
 
@@ -253,7 +249,7 @@ def main(
 
     dims = [(2, 2), (1, 2), (2, 2), (3, 2), (4, 2), (4, 2), (5, 3)]
     size = [(15, 10), (15, 5), (15, 10), (15, 15), (15, 20), (15, 20), (22.5, 25)]
-    elements = ["KeyIons", "H", "He", "C", "N", "O", "Si"]
+    elements = ["key", "H", "He", "C", "N", "O", "Si"]
     ions = [
         ["H_i01", "Si_i04", "N_i05", "C_i04"],
         ["H_i01", "H_i02"],

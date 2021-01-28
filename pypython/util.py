@@ -437,7 +437,8 @@ def create_slurm_file(
     else:
         split = ""
 
-    slurm = textwrap.dedent("""#!/bin/bash
+    slurm = textwrap.dedent("""\
+        #!/bin/bash
         #SBATCH --mail-user=ejp1n17@soton.ac.uk
         #SBATCH --mail-type=ALL
         #SBATCH --ntasks={}
@@ -447,12 +448,13 @@ def create_slurm_file(
         module load conda/py3-latest
         source activate pypython
         python /home/ejp1n17/PythonScripts/py_run.py -n {} {} -f="{}"
-        """.format(n_cores, n_hours, n_minutes, n_cores, split, flags, root))
+        """.format(n_cores, n_hours, n_minutes, n_cores, split, flags, root)
+    )
 
     if wd[-1] != "/":
         wd += "/"
-    fname = wd + name + ".slurm"
-    with open(fname, "w") as f:
+    file_name = wd + name + ".slurm"
+    with open(file_name, "w") as f:
         f.write("{}".format(slurm))
 
     return
