@@ -23,8 +23,7 @@ import textwrap
 def get_array_index(
     x: np.ndarray, target: float
 ) -> int:
-    """
-    Return the index for a given value in an array.
+    """Return the index for a given value in an array.
 
     This function is fairly limited in that it can't deal with arrays with
     duplicate values. It will always return the first value which is closest
@@ -39,8 +38,7 @@ def get_array_index(
 
     Returns
     -------
-    The index for the target value in the array x.
-    """
+    The index for the target value in the array x."""
 
     if target < np.min(x):
         return 0
@@ -55,8 +53,7 @@ def get_array_index(
 def smooth_array(
     array: Union[np.ndarray, List[Union[float, int]]], width: Union[int, float]
 ) -> np.ndarray:
-    """
-    Smooth a 1D array of data using a boxcar filter.
+    """Smooth a 1D array of data using a boxcar filter.
 
     Parameters
     ----------
@@ -68,8 +65,7 @@ def smooth_array(
     Returns
     -------
     smoothed: np.ndarray
-        The smoothed array
-    """
+        The smoothed array"""
 
     # If smooth_amount is None or 1, then the user has indicated they didn't
     # actually want to use any smoothing, so return the original array
@@ -95,8 +91,7 @@ def smooth_array(
 def get_file_len(
     filename: str
 ) -> int:
-    """
-    Slowly count the number of lines in a file.
+    """Slowly count the number of lines in a file.
 
     TODO update to jit_open or some other more efficient method
 
@@ -107,8 +102,7 @@ def get_file_len(
 
     Returns
     -------
-    The number of lines in the file.
-    """
+    The number of lines in the file."""
 
     with open(filename, "r") as f:
         for i, l in enumerate(f):
@@ -120,14 +114,11 @@ def get_file_len(
 def clean_up_data_sym_links(
     wd: str = ".", verbose: bool = False
 ):
-    """
-    Search recursively from the specified directory for symbolic links named
+    """Search recursively from the specified directory for symbolic links named
     data.
-
     This script will only work on Unix systems where the find command is
     available.
-
-    TODO update to a system agnostic method to find symbolic links like pathlib
+    todo: update to a system agnostic method to find symbolic links like pathlib
 
     Parameters
     ----------
@@ -139,8 +130,7 @@ def clean_up_data_sym_links(
     Returns
     -------
     n_del: int
-        The number of symbolic links deleted
-    """
+        The number of symbolic links deleted"""
 
     n_del = 0
 
@@ -186,8 +176,7 @@ def clean_up_data_sym_links(
 def get_root_from_filepath(
     path: str, return_cd: bool = True
 ) -> Union[str, Tuple[str, str]]:
-    """
-    Get the root name of a Python simulation, extracting it from a file path.
+    """Get the root name of a Python simulation, extracting it from a file path.
 
     Parameters
     ----------
@@ -201,8 +190,7 @@ def get_root_from_filepath(
     root: str
         The root name of the Python simulation
     cd: str
-        The directory path containing the provided Python .pf file
-    """
+        The directory path containing the provided Python .pf file"""
 
     if type(path) is not str:
         raise TypeError("expected string as input, not whatever you put")
@@ -234,8 +222,7 @@ def get_root_from_filepath(
 def get_parameter_files(
     root: str = None, cd: str = "."
 ) -> List[str]:
-    """
-    Search recursively for Python .pf files. This function will ignore
+    """Search recursively for Python .pf files. This function will ignore
     py_wind.pf parameter files, as well as any root.out.pf files.
 
     Parameters
@@ -248,8 +235,7 @@ def get_parameter_files(
     Returns
     -------
     parameter_files: List[str]
-        The file path for any Python pf files founds
-    """
+        The file path for any Python pf files founds"""
 
     parameter_files = []
 
@@ -274,8 +260,7 @@ def get_parameter_files(
 def get_cpu_count(
     enable_smt: bool = False
 ):
-    """
-    Return the number of CPU cores which can be used when running a Python
+    """Return the number of CPU cores which can be used when running a Python
     simulation. By default, this will only return the number of physical cores
     and will ignore logical threads, i.e. in Intel terms, it will not count the
     hyperthreads.
@@ -289,17 +274,14 @@ def get_cpu_count(
     Returns
     -------
     n_cores: int
-        The number of available CPU cores
-    """
-
-    n = get_cpu_count.__name__
+        The number of available CPU cores"""
 
     n_cores = 0
 
     try:
         n_cores = cpu_count(logical=enable_smt)
     except NotImplementedError:
-        print("{}: unable to determine number of CPU cores, psutil.cpu_count not implemented for your system".format(n))
+        print("unable to determine number of CPU cores, psutil.cpu_count not implemented for your system")
 
     return n_cores
 
@@ -307,8 +289,7 @@ def get_cpu_count(
 def create_wind_save_table(
     root: str, wd: str = ".", ion_density: bool = False, no_all_complete: bool = False, verbose: bool = False
 ) -> None:
-    """
-    Run windsave2table in a directory to create the standard data tables. The
+    """Run windsave2table in a directory to create the standard data tables. The
     function can also create a root.all.complete.txt file which merges all the
     data tables together into one (a little big) file.
 
@@ -324,8 +305,7 @@ def create_wind_save_table(
         Return from this function before a root.all.complete.txt file is
         created.
     verbose: bool [optional]
-        Enable verbose output
-    """
+        Enable verbose output"""
 
     in_path = which("windsave2table")
     if not in_path:
@@ -396,8 +376,7 @@ def create_wind_save_table(
 def run_py_wind_commands(
     root: str, commands: List[str], wd: str = "."
 ) -> List[str]:
-    """
-    Run py_wind with the provided commands.
+    """Run py_wind with the provided commands.
 
     Parameters
     ----------
@@ -411,8 +390,7 @@ def run_py_wind_commands(
     Returns
     -------
     output: list[str]
-        The stdout output from py_wind.
-    """
+        The stdout output from py_wind."""
 
     cmd_file = "{}/.tmpcmds.txt".format(wd)
 
@@ -433,8 +411,7 @@ def run_py_wind_commands(
 def create_slurm_file(
     name: str, n_cores: int, split_cycle: bool, n_hours: int, n_minutes: int, root: str, flags: str, wd: str = "."
 ) -> None:
-    """
-    Create a slurm file in the directory wd with the name root.slurm. All
+    """Create a slurm file in the directory wd with the name root.slurm. All
     of the script flags are passed using the flags variable.
 
     Parameters
@@ -454,8 +431,7 @@ def create_slurm_file(
     root: str
         The root name of the model
     wd: str
-        The directory to write the file to
-    """
+        The directory to write the file to"""
 
     if split_cycle:
         split = "-sc"
@@ -484,15 +460,13 @@ def create_slurm_file(
 
 
 def create_run_script(commands: List[str]):
-    """
-    Create a shell run script given a list of commands to do. This assumes that
+    """Create a shell run script given a list of commands to do. This assumes that
     you want to use a bash interpreter.
 
     Parameters
     ----------
     commands: List[str]
-        The commands which are going to be run.
-    """
+        The commands which are going to be run."""
 
     directories = []
     pfs = get_parameter_files()

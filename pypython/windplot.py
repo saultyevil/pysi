@@ -9,7 +9,6 @@ user can then add axes labels and etc themselves.
 
 from .windutil import sightline_coords
 from .error import InvalidParameter
-
 import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.colors as colors
@@ -25,8 +24,7 @@ def plot_spherical_wind(
     r: np.ndarray, w: np.ndarray, w_name: str, w_type: str, fig: plt.Figure = None, ax: plt.Axes = None, i: int = None,
     j: int = None, scale: str = "loglog", figsize: Tuple[float, float] = (5, 5)
 ) -> Tuple[plt.Figure, plt.Axes]:
-    """
-    Plot a spherically symmetric 1d wind.
+    """Plot a spherically symmetric 1d wind.
 
     Parameters
     ----------
@@ -57,10 +55,8 @@ def plot_spherical_wind(
     fig: plt.Figure
         The Figure object.
     ax: plt.Axes
-        The Axes object.
-    """
+        The Axes object."""
 
-    n = plot_spherical_wind.__name__
 
     if fig is None and ax is None:
         i = 0
@@ -68,13 +64,13 @@ def plot_spherical_wind(
         fig, ax = plt.subplots(1, 1, figsize=figsize, squeeze=False)
     else:
         if fig is None:
-            raise InvalidParameter("{}: fig was not provided when it was expected".format(n))
+            raise InvalidParameter("fig was not provided when it was expected")
         if ax is None:
-            raise InvalidParameter("{}: ax was not provided when it was expected".format(n))
+            raise InvalidParameter("ax was not provided when it was expected")
         if i is None:
-            raise InvalidParameter("{}: fig was not provided when it was expected".format(n))
+            raise InvalidParameter("fig was not provided when it was expected")
         if j is None:
-            raise InvalidParameter("{}: fig was not provided when it was expected".format(n))
+            raise InvalidParameter("fig was not provided when it was expected")
 
     with np.errstate(divide="ignore"):
         if w_name == "converge" or w_name == "convergence" or w_name == "converging":
@@ -82,7 +78,7 @@ def plot_spherical_wind(
         elif w_type == "ion" or w_type == "wind" or w_type == "ion_density":
             ax[i, j].plot(r, np.log10(w))
         else:
-            raise InvalidParameter("{}: unknown wind variable type {}".format(n, w_type))
+            raise InvalidParameter("unknown wind variable type {}".format(w_type))
 
     if w_name == "converge" or w_name == "convergence" or w_name == "converging":
         ax[i, j].set_title(w_name)
@@ -103,8 +99,7 @@ def plot_rectilinear_wind(
     x: np.ndarray, z: np.ndarray, w: np.ndarray, w_name: str, w_type: str, fig: plt.Figure = None, ax: plt.Axes = None,
     i: int = None, j: int = None, scale: str = "loglog", obs_los: List[float] = None, figsize: Tuple[int, int] = (5, 5)
 ) -> Tuple[plt.Figure, plt.Axes]:
-    """
-    Creates a wind plot in rectilinear coordinates. If fig or ax is supplied,
+    """Creates a wind plot in rectilinear coordinates. If fig or ax is supplied,
     then fig, ax, i and j must also be supplied. Note that ax should also be a
     2d numpy array, i.e. squeeze = False.
 
@@ -141,10 +136,7 @@ def plot_rectilinear_wind(
     fig: plt.Figure
         The plt.Figure object.
     ax: plt.Axes
-        The plt.Axes object.
-    """
-
-    n = plot_rectilinear_wind.__name__
+        The plt.Axes object."""
 
     if fig is None and ax is None:
         i = 0
@@ -152,13 +144,13 @@ def plot_rectilinear_wind(
         fig, ax = plt.subplots(1, 1, figsize=figsize, squeeze=False)
     else:
         if fig is None:
-            raise InvalidParameter("{}: fig was not provided when it was expected".format(n))
+            raise InvalidParameter("fig was not provided when it was expected")
         if ax is None:
-            raise InvalidParameter("{}: ax was not provided when it was expected".format(n))
+            raise InvalidParameter("ax was not provided when it was expected")
         if i is None:
-            raise InvalidParameter("{}: fig was not provided when it was expected".format(n))
+            raise InvalidParameter("fig was not provided when it was expected")
         if j is None:
-            raise InvalidParameter("{}: fig was not provided when it was expected".format(n))
+            raise InvalidParameter("fig was not provided when it was expected")
 
     with np.errstate(divide="ignore"):
         if w_name == "converge" or w_name == "convergence" or w_name == "converging":
@@ -173,7 +165,7 @@ def plot_rectilinear_wind(
         elif w_type == "wind":
             im = ax[i, j].pcolormesh(x, z, np.log10(w), shading="auto")
         else:
-            raise InvalidParameter("{}: unknown wind variable type {}".format(n, w_type))
+            raise InvalidParameter("unknown wind variable type {}".format(w_type))
 
     if obs_los:
         xsight = np.linspace(0, np.max(x), int(1e5))
@@ -206,8 +198,7 @@ def plot_polar_wind(
     r: np.ndarray, theta: np.ndarray, w: np.ndarray, w_name: str, w_type: str, ax: plt.Axes = None, index: int = None,
     obs_los: List[float] = None, scale: str = "log"
 ) -> plt.Axes:
-    """
-    Creates a wind plot in polar coordinates. If ax is supplied then index must
+    """Creates a wind plot in polar coordinates. If ax is supplied then index must
     also be supplied. Note that ax should also be single plt.Axes object.
 
     Parameters
@@ -237,14 +228,13 @@ def plot_polar_wind(
     Returns
     -------
     ax: plt.Axes
-        The plt.Axes object.
-    """
+        The plt.Axes object."""
 
     n = plot_polar_wind.__name__
 
     if ax:
         if index is None:
-            raise InvalidParameter("{}: index was expected by not provided".format(n))
+            raise InvalidParameter("index was expected by not provided")
     else:
         ax = plt.subplot(1, 1, 1, projection="polar")
 
@@ -264,7 +254,7 @@ def plot_polar_wind(
         elif w_type == "ion":
             im = ax.pcolormesh(theta, r, np.log10(w), norm=colors.Normalize(vmin=-10, vmax=0), shading="auto")
         else:
-            raise InvalidParameter("{}: unknown wind variable type {}".format(n, w_type))
+            raise InvalidParameter("unknown wind variable type {}".format(w_type))
 
     if obs_los:
         xsight = np.linspace(0, np.max(r), int(1e5))

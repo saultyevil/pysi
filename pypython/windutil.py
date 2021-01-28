@@ -8,7 +8,6 @@ make plotting the wind easier.
 
 
 from .error import CoordError, InvalidParameter
-
 import os
 from typing import Tuple, Union
 import numpy as np
@@ -21,8 +20,7 @@ def get_wind_variable(
     root: str, v: str, vtype: str, path: str = ".", coord: str = "rectilinear", input_dataframe: pd.DataFrame = None,
     input_fname: str = None, return_indices: bool = False
 ) -> Tuple[np.array, np.array, np.array]:
-    """
-    Read in a given variable for a model in Python. For this to work, the user
+    """Read in a given variable for a model in Python. For this to work, the user
     needs to have used windsave2table to have generated the tables. Ideally,
     the user needs to have used pythonUtil.windsave2table to create the
     .all.complete file.
@@ -56,8 +54,7 @@ def get_wind_variable(
     z: np.array[float]
         The z coordinates of the wind in the Python simulation
     var_mask: np.array[float]
-        A numpy masked array for the quantity defined in var
-    """
+        A numpy masked array for the quantity defined in var"""
 
     n = get_wind_variable.__name__
 
@@ -164,8 +161,7 @@ def get_wind_variable(
 def get_wind_elem_number(
     nx: int, nz: int, i: int, j: int
 ) -> int:
-    """
-    Return the wind element number for the given grid indices (i, j) for a grid
+    """Return the wind element number for the given grid indices (i, j) for a grid
     of size (nx, nz).
 
     Parameters
@@ -182,8 +178,7 @@ def get_wind_elem_number(
     Returns
     -------
     elem: int
-        The element number in the wind array
-    """
+        The element number in the wind array"""
 
     return nz * i + j
 
@@ -191,8 +186,7 @@ def get_wind_elem_number(
 def sightline_coords(
     x: np.ndarray, theta: float
 ):
-    """
-    Return the vertical coordinates for a sight line given the x coordinates
+    """Return the vertical coordinates for a sight line given the x coordinates
     and the inclination of the sight line.
 
     Parameters
@@ -205,8 +199,7 @@ def sightline_coords(
     Returns
     -------
     z: np.ndarray[float]
-        The z-coordinates of the sight line
-    """
+        The z-coordinates of the sight line"""
 
     return x * np.tan(np.pi / 2 - np.deg2rad(theta))
 
@@ -214,8 +207,7 @@ def sightline_coords(
 def extract_variable_along_sightline(
     inclination: float, variable: str, root: str = None, wd: str = ".", grid: Table = None, legacy: bool = False
 ) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]]:
-    """
-    Extract a wind variable along a given sight line.
+    """Extract a wind variable along a given sight line.
 
     Parameters
     ----------
@@ -241,8 +233,7 @@ def extract_variable_along_sightline(
     zcoords: np.ndarray
         The z coordinates along the inclination.
     extracted: np.ndarray
-        The extracted variable along the inclination.
-    """
+        The extracted variable along the inclination."""
 
     n = extract_variable_along_sightline.__name__
 

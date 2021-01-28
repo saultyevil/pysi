@@ -51,7 +51,7 @@ def subplot_dims(
 
 def remove_extra_axes(
     fig: plt.Figure, ax: Union[plt.Axes, np.ndarray], n_wanted: int, n_panel: int
-):
+) -> Tuple[plt.Figure, Union[plt.Axes, np.ndarray]]:
     """
     Remove additional axes which are included in a plot. This can be used if you
     have 4 x 2 = 8 panels but only want to use 7 of tha panels. The 8th panel

@@ -27,7 +27,7 @@ class Spectrum:
     The PYTHON spectrum is read in and stored within a dict, where each column
     name is a key and the data is stored as a numpy array.
     """
-    def __init__(self, root: str, cd: str = ".", logspec: bool = False, customtype: str = None):
+    def __init__(self, root: str, cd: str = ".", logspec: bool = False, spectype: str = None):
         """Initialise a Spectrum object. This method will construct the file path
         of the spectrum file given the root, containing directory and whether
         the logarithmic spectrum is used or not. The spectrum is then read in.
@@ -40,7 +40,7 @@ class Spectrum:
             The directory containing the model.
         logspec: bool [optional]
             Read in the logarithmic spectrum.
-        customtype: str [optional]
+        spectype: str [optional]
             Read in a spectrum with the given type name."""
 
         self.root = root
@@ -51,18 +51,19 @@ class Spectrum:
         self.filepath = cd + root
         if self.logspec:
             self.filepath += ".log_"
-        if customtype:
+        if spectype:
             allowed = ["spec", "spec_tot", "spec_tot_wind", "spec_wind", "spec_tau"]
-            if customtype not in allowed:
-                print("{} is an unknown type of spectrum".format(customtype))
+            if spectype not in allowed:
+                print("{} is an unknown type of spectrum".format(spectype))
                 exit(1)  # todo: error code
-            self.filepath += "." + customtype
+            self.filepath += "." + spectype
         else:
             self.filepath += ".spec"
 
         self.spectrum = {}
         self.columns = []
         self.inclinations = []
+        self.n_inclinations = 0
         self.units = "unknown"
 
         # self.unsmoothed is a variable which keeps a copy of the spectrum for
@@ -141,6 +142,7 @@ class Spectrum:
                 self.inclinations.append(col)
         self.columns = tuple(self.columns)
         self.inclinations = tuple(self.inclinations)
+        self.n_inclinations = len(self.inclinations)
 
     def smooth(self, width: int = 5, to_smooth: Union[List[str], Tuple[str], str] = None):
         """
