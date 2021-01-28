@@ -12,19 +12,16 @@ from tqdm import tqdm
 
 
 def setup_script():
-    """
-    Parse arguments from the command line.
-    """
+    """Parse arguments from the command line."""
 
     p = ap.ArgumentParser(description=__doc__)
 
-    p.add_argument("root",
-                   help="The root name of the Python simulation.")
-
-    p.add_argument("-wd",
-                   "--working_directory",
-                   default=".",
-                   help="The directory containing the Python simulation.")
+    p.add_argument(
+        "root", help="The root name of the Python simulation."
+    )
+    p.add_argument(
+        "-wd", "--working_directory", default=".", help="The directory containing the Python simulation."
+    )
 
     args = p.parse_args()
 
@@ -36,9 +33,16 @@ def setup_script():
     return setup
 
 
-def read_diag(sinks: tuple, fname: str) -> tuple:
-    """
-    Read the provided diag file for the sinks of luminosity.
+def read_diag(
+    sinks: tuple, fname: str
+) -> tuple:
+    """Read the provided diag file for the sinks of luminosity.
+    todo: finish documentation
+
+    Parameters
+    ----------
+    sinks: tuple
+    fname: str
     """
 
     try:
@@ -69,9 +73,7 @@ def read_diag(sinks: tuple, fname: str) -> tuple:
 
 
 def main():
-    """
-    Main function of the script.
-    """
+    """Main function of the script."""
 
     sinks = {
         "ncycles": 0,

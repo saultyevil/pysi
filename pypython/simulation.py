@@ -13,7 +13,7 @@ from glob import glob
 
 def check_model_convergence(
     root: str, wd: str = ".", return_per_cycle: bool = False, return_converging: bool = False
-) -> Union[float, list]:
+) -> Union[float, list, List[float]]:
     """Check the convergence of a Python simulation by parsing the
     !!Check_convergence line in the Python diag file.
 

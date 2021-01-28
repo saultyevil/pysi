@@ -6,14 +6,11 @@ The purpose of this script is to determine if a simulation has converged or not,
 and to create any plots which are related to the convergence of a simulation.
 """
 
-
 import numpy as np
 from matplotlib import pyplot as plt
 from pypython import simulation
 from pypython import util
-from pypython import quotes
 from typing import List, Union
-
 
 COL_WIDTH = 80
 
@@ -22,8 +19,7 @@ def plot_convergence(
     root: str, convergence: List[float], converging: List[float] = None, tr: List[float] = None,
     te: List[float] = None, te_max: List[float] = None, hc: List[float] = None, wd: str = "."
 ):
-    """
-    Create a detailed plot of the convergence of a Python simulation, including,
+    """Create a detailed plot of the convergence of a Python simulation, including,
     if provided, a breakdown of the different convergence criteria.
 
     Parameters
@@ -43,13 +39,12 @@ def plot_convergence(
     hc: List[float] [optional]
         The fraction of cells which have converged heating and cooling rates.
     wd: str [optional]
-        The directory containing the Python simulation.
-    """
+        The directory containing the Python simulation."""
 
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
-    ncycles = len(convergence)
-    cycles = np.arange(1, ncycles + 1, 1)
-    ax.set_xlim(1, ncycles)
+    n_cycles = len(convergence)
+    cycles = np.arange(1, n_cycles + 1, 1)
+    ax.set_xlim(1, n_cycles)
     ax.set_ylim(0, 1)
     ax.set_xticks(cycles[::2])
 
@@ -81,10 +76,9 @@ def plot_convergence(
 
 
 def get_convergence(
-        root: str, wd: str = "./"
+    root: str, wd: str = "./"
 ) -> None:
-    """
-    Print out the convergence of a Python simulation and then create a detailed
+    """Print out the convergence of a Python simulation and then create a detailed
     plot of the convergence and convergence break down of the simulation.
 
     Parameters
@@ -92,21 +86,20 @@ def get_convergence(
     root: str
         The root name of the Python simulation.
     wd: str [optional]
-        The directory containing the Python simulation.
-    """
+        The directory containing the Python simulation."""
 
     convergence = simulation.check_model_convergence(root, wd, return_per_cycle=True)
     converging = simulation.check_model_convergence(root, wd, return_per_cycle=True, return_converging=True)
     tr, te, te_max, hc = simulation.model_convergence_components(root, wd)
 
-    ncycles = len(convergence)
-    if ncycles == 0:
+    n_cycles = len(convergence)
+    if n_cycles == 0:
         print("Unable to find any convergence information for this model :-(\n")
         return
 
-    for i in range(ncycles):
+    for i in range(n_cycles):
         print("Cycle {:2d} / {:2d}: {:5.2f}% of cells converged and {:5.2f}% of cells are still converging"
-              .format(i + 1, ncycles, convergence[i] * 100, converging[i] * 100))
+              .format(i + 1, n_cycles, convergence[i] * 100, converging[i] * 100))
     print("")
 
     try:
@@ -120,22 +113,18 @@ def get_convergence(
 
 
 def main():
-    """
-    Main function of the script.
-    """
+    """Main function of the script."""
 
     print("-" * COL_WIDTH, "\n")
 
-    quotes.random_quote()
-
-    pfs = util.find_parameter_files()
-    for i in range(len(pfs)):
-        root, wd = util.get_root(pfs[i])
-        if wd.find("continuum") != -1:
+    parameter_files = util.get_parameter_files()
+    for pf in parameter_files:
+        root, cd = util.get_root_from_filepath(pf)
+        if cd.find("continuum") != -1:
             continue
         print("-" * COL_WIDTH)
-        print("\nGetting the convergence for {} in directory {}\n".format(root, wd[:-1]))
-        get_convergence(root, wd)
+        print("\nGetting the convergence for {} in directory {}\n".format(root, cd[:-1]))
+        get_convergence(root, cd)
 
     print("-" * COL_WIDTH)
 

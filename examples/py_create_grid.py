@@ -23,10 +23,10 @@ from typing import List
 # from iridis_create_slurm_file import write_slurm_file
 
 
-def create_grid(pf: str, parameter: str, grid: List[str], ncores: int, thours: int, names: List[str],
-                flags: str) -> List[str]:
-    """
-    The purpose of this function is to use a base parameter file and to create
+def create_grid(
+    pf: str, parameter: str, grid: List[str], ncores: int, thours: int, names: List[str], flags: str
+) -> List[str]:
+    """The purpose of this function is to use a base parameter file and to create
     directories containing parameter files with a different value to the given
     parameter. These values are given in grid.
 
@@ -37,13 +37,12 @@ def create_grid(pf: str, parameter: str, grid: List[str], ncores: int, thours: i
 
     Parameters
     ----------
-    pf              str
-                    Path to the base Python pf
-    parameter       str
-                    The name of the parameter for which a grid will be created
-    grid            List[str]
-                    The values of the parameter to make a grid with
-
+    pf: str
+        Path to the base Python pf
+    parameter: str
+        The name of the parameter for which a grid will be created
+    grid: List[str]
+        The values of the parameter to make a grid with
     name: str
         The name of the slurm file
     root: str
@@ -57,16 +56,15 @@ def create_grid(pf: str, parameter: str, grid: List[str], ncores: int, thours: i
 
     Returns
     -------
-    pfs             List[str]
-                    A list containing the file paths to the newly created pfs.
-    """
+    pfs: List[str]
+        A list containing the file paths to the newly created pfs."""
 
     if pf.find(".pf") == -1:
         pf += ".pf"
 
     sl = 0
     for i, line in enumerate(pf):  # This iterates over the pf file path
-        if line == "/":  # TODO: rfind exists u nonce
+        if line == "/":  # todo: switch to using rfind
             sl = i  # This will find the index of the final /
     pl = pf.find(".pf")
     root = pf[sl:pl]  # Now we can extract just the root name from the file path
@@ -102,6 +100,7 @@ def create_grid(pf: str, parameter: str, grid: List[str], ncores: int, thours: i
             for par, val in new_pf:
                 f.write("{}\t\t{}\n".format(par, val))
 
+        # todo: fix this, it's a bit fucked up
         # the_name = names[i][names[i].rfind("/")+1:]
         # write_slurm_file(the_name, ncores, thours, 0, grid[i], flags)
 
@@ -109,13 +108,7 @@ def create_grid(pf: str, parameter: str, grid: List[str], ncores: int, thours: i
 
 
 def run_grid() -> List[str]:
-    """
-    Main controlling function of the script.
-
-    Returns
-    -------
-    None
-    """
+    """Main controlling function of the script."""
 
     # This is the parameter which will be changed
     root = "../../tde_uv.pf"

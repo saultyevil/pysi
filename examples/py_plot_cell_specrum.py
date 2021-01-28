@@ -11,7 +11,7 @@ matrix_pow ionisation solver.
 import argparse as ap
 from pypython import windutil
 from pypython import util
-from pypython.spectrumutil import smooth
+from pypython.util import smooth_array
 from subprocess import Popen, PIPE
 import numpy as np
 from matplotlib import pyplot as plt
@@ -24,9 +24,10 @@ plt.rcParams['ytick.labelsize'] = 15
 plt.rcParams['axes.labelsize'] = 15
 
 
-def get_spec_model(root: str, nx: int, nz: int, i: int, j: int, nbands: int = 4) -> List[str]:
-    """
-    Get the spectral model for a specific cell from py_wind
+def get_spec_model(
+    root: str, nx: int, nz: int, i: int, j: int, nbands: int = 4
+) -> List[str]:
+    """Get the spectral model for a specific cell from py_wind
 
     Parameters
     ----------
@@ -46,12 +47,14 @@ def get_spec_model(root: str, nx: int, nz: int, i: int, j: int, nbands: int = 4)
     Returns
     -------
     spectral_model_bands: List[str]
-        A list containing the spectral model bands output from py_wind.
-    """
+        A list containing the spectral model bands output from py_wind."""
 
-    everything_output = py_wind(root, nx, nz, i, j).split("\n")
-    for i in range(len(everything_output)):
-        line = everything_output[i]
+    everything_output = get_py_wind_everything_output(root, nx, nz, i, j).split("\n")
+
+    # Find where the spectra model bands are and extract those lines from the
+    # py_wind output
+
+    for i, line in enumerate(everything_output):
         if line == "Spectral model details:":
             break
     i += 1
@@ -60,9 +63,10 @@ def get_spec_model(root: str, nx: int, nz: int, i: int, j: int, nbands: int = 4)
     return spectral_models_bands
 
 
-def py_wind(root: str, nx: int, nz: int, i: int, j: int):
-    """
-    Run py_wind to get the "everything" output to be able to parse out the
+def get_py_wind_everything_output(
+    root: str, nx: int, nz: int, i: int, j: int
+) -> str:
+    """Run py_wind to get the "everything" output to be able to parse out the
     spectral model bands.
 
     Parameters
@@ -81,8 +85,7 @@ def py_wind(root: str, nx: int, nz: int, i: int, j: int):
     Returns
     -------
     stdout: str
-        The screen output from py_wind.
-    """
+        The screen output from py_wind."""
 
     elem = windutil.get_wind_elem_number(nx, nz, i, j)
     cmds = np.array(["1", "e", str(elem)])
@@ -90,17 +93,19 @@ def py_wind(root: str, nx: int, nz: int, i: int, j: int):
     sh = Popen("Setup_Py_Dir; py_wind {} < .tmpcmd.txt".format(root), stdout=PIPE, stderr=PIPE, shell=True)
     stdout, stderr = sh.communicate()
 
+    # todo: print stderr, but ignore if it's as expected since it seems to print to stderr for some reason
     # if stderr:
     #     print(stderr.decode("utf-8"))
 
-    util.remove_data_sym_links(".")
+    util.clean_up_data_sym_links(".")
 
     return stdout.decode("utf-8")
 
 
-def plot_cell_sed(model_bands: List[str], filename: str, icell: int, jcell: int, smooth_amount: int = 30) -> None:
-    """
-    Create a plot of a cell SED given the model bands.
+def plot_cell_sed(
+    model_bands: List[str], filename: str, icell: int, jcell: int, smooth_amount: int = 1
+) -> None:
+    """Create a plot of a cell SED given the model bands. Provided by Nick :-).
 
     Parameters
     ----------
@@ -108,7 +113,12 @@ def plot_cell_sed(model_bands: List[str], filename: str, icell: int, jcell: int,
         A list containing the spectral model bands output from py_wind.
     filename: str
         The file name of the plot.
-    """
+    icell: int
+        The i-th index of the cell to plot, used for the title and output name.
+    jcell: int
+        The j-th index of the cell to plot, used for the title and output name.
+    smooth_amount: int [optional]
+        The width of the boxcar smoothing filter."""
 
     numin = []
     bandmin = []
@@ -161,7 +171,7 @@ def plot_cell_sed(model_bands: List[str], filename: str, icell: int, jcell: int,
     fig, ax = plt.subplots(1, 1, figsize=(8, 6))
 
     ax.loglog(freq, f_nu, "k-", linewidth=3)
-    ax.loglog(freq, smooth(np.array(f_nu, dtype=np.float64), smooth_amount), "r-", label="smoothed")
+    ax.loglog(freq, smooth_array(np.array(f_nu, dtype=np.float64), smooth_amount), "r-", label="smoothed")
     ax.set_xlim(np.min(freq), np.max(freq))
     ax.set_xlabel(r"Frequency, $\nu$")
     ax.set_ylabel(r"$J_{\nu}$ in cell (ergs s$^{-1}$ cm$^{-3}$ Sr$^{-1}$ Hz$^{-1}$)")
@@ -169,6 +179,7 @@ def plot_cell_sed(model_bands: List[str], filename: str, icell: int, jcell: int,
     ax.legend(loc="lower left")
 
     # Add axes labels for photon energy
+
     axx = ax.twiny()
     mn, mx = ax.get_xlim()
     hztoenergy = consts.h.value / consts.e.value
@@ -184,30 +195,25 @@ def plot_cell_sed(model_bands: List[str], filename: str, icell: int, jcell: int,
 
 
 def main() -> None:
-    """
-    Main function of the script. Parses arguments from the command line.
-    """
+    """Main function of the script. Parses arguments from the command line."""
 
     p = ap.ArgumentParser(description=__doc__)
 
-    p.add_argument("root",
-                   help="The root name of the Python simulation")
-
-    p.add_argument("nx",
-                   type=int,
-                   help="The number of cells in the i-direction")
-
-    p.add_argument("nz",
-                   type=int,
-                   help="The number of cells in the j-direction")
-
-    p.add_argument("i",
-                   type=int,
-                   help="The i index of the cell")
-
-    p.add_argument("j",
-                   type=int,
-                   help="The j index of the cell")
+    p.add_argument(
+        "root", help="The root name of the Python simulation"
+    )
+    p.add_argument(
+        "nx", type=int, help="The number of cells in the i-direction"
+    )
+    p.add_argument(
+        "nz", type=int, help="The number of cells in the j-direction"
+    )
+    p.add_argument(
+        "i", type=int, help="The i index of the cell"
+    )
+    p.add_argument(
+        "j", type=int, help="The j index of the cell"
+    )
 
     args = p.parse_args()
 

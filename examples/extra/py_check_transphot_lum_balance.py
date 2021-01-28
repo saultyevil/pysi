@@ -15,18 +15,17 @@ PLOT FOR EACH PROCESS.
 import numpy as np
 import argparse as ap
 from matplotlib import pyplot as plt
-from pypython.util import find_parameter_files, get_root
+from pypython.util import get_parameter_files, get_root_from_filepath
 from pypython.simulation import check_model_convergence
 
 
 def get_input():
-    """
+    """Description of the function.
 
     Returns
     -------
     args.root: str
-        The root name of the Python simulation.
-    """
+        The root name of the Python simulation."""
 
     p = ap.ArgumentParser(description=__doc__)
     p.add_argument("root", help="The root name of the simulation to check")
@@ -35,9 +34,10 @@ def get_input():
     return args.root
 
 
-def check_luminosity_balance(root: str, wd: str = "./"):
-    """
-    Check the luminosity before and after trans_phot for a Python simulation.
+def check_luminosity_balance(
+    root: str, wd: str = "./"
+):
+    """Check the luminosity before and after trans_phot for a Python simulation.
     This function will also create a plot of the relative change.
 
     Parameters
@@ -45,8 +45,7 @@ def check_luminosity_balance(root: str, wd: str = "./"):
     root: str
         The root name of the Python simulation.
     wd: str [optional]
-        The directory containing the Python simulation.
-    """
+        The directory containing the Python simulation."""
 
     luminosity_before = []
     luminosity_after = []
@@ -84,7 +83,7 @@ def check_luminosity_balance(root: str, wd: str = "./"):
     print()
 
     cycles = np.arange(1, len(luminosity_after) + 1)
-    # TODO assumes luminosity is always the same before, when in simple atom it probably isn't
+    # todo: assumes luminosity is always the same before, when in simple atom it probably isn't
     plt.plot(cycles, np.array(luminosity_after) / luminosity_before[0], label="After / Before", linewidth=3)
     plt.axhline(1, color="k", linestyle="--", label="No Change", linewidth=3)
     plt.xlim(1, len(luminosity_after) + 1)
@@ -98,15 +97,13 @@ def check_luminosity_balance(root: str, wd: str = "./"):
 
 
 def main():
-    """
-    Main function of the script.
-    """
+    """Main function of the script."""
 
-    pfs = find_parameter_files()
+    pfs = get_parameter_files()
     for pf in pfs:
         if pf.find("continuum") != -1:
             continue
-        root, wd = get_root(pf)
+        root, wd = get_root_from_filepath(pf)
         print(pf, root, wd)
         check_luminosity_balance(root, wd)
 

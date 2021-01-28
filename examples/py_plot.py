@@ -9,21 +9,17 @@ parameters to keep this script simple. If you want more flexible options,
 use (or edit) the other plotting scripts to fit your needs appropriately.
 """
 
-
 import py_plot_wind
 import py_plot_spectrum
 import py_plot_velocity
 import py_plot_optical_depth
 import py_plot_spectrum_components
-
 import argparse as ap
-from pypython.util import remove_data_sym_links
+from pypython.util import clean_up_data_sym_links
 
 
-def setup_script() \
-        -> tuple:
-    """
-    Parse the different modes this script can be run from the command line.
+def setup_script() -> tuple:
+    """Parse the different modes this script can be run from the command line.
 
     Returns
     -------
@@ -40,61 +36,37 @@ def setup_script() \
             smooth_amount,
             file_ext,
             display
-        )
-    """
+        )"""
 
     p = ap.ArgumentParser(description=__doc__)
 
-    # Required arguments
-    p.add_argument("root",
-                   type=str,
-                   help="The root name of the simulation.")
-
-    # Supplementary arguments
-    p.add_argument("-wd",
-                   "--working_directory",
-                   default=".",
-                   help="The directory containing the simulation.")
-
-    p.add_argument("-xl",
-                   "--xmin",
-                   type=float,
-                   default=None,
-                   help="The lower x-axis boundary to display.")
-
-    p.add_argument("-xu",
-                   "--xmax",
-                   type=float,
-                   default=None,
-                   help="The upper x-axis boundary to display.")
-
-    p.add_argument("-f",
-                   "--frequency_space",
-                   action="store_true",
-                   default=False,
-                   help="Create the figure in frequency space.")
-
-    p.add_argument("-p",
-                   "--polar",
-                   action="store_true",
-                   default=False,
-                   help="Plot using polar projection.")
-
-    p.add_argument("-sm",
-                   "--smooth_amount",
-                   type=int,
-                   default=5,
-                   help="The size of the boxcar smoothing filter.")
-
-    p.add_argument("-e",
-                   "--ext",
-                   default="png",
-                   help="The file extension for the output figure.")
-
-    p.add_argument("--display",
-                   action="store_true",
-                   default=False,
-                   help="Display the plot before exiting the script.")
+    p.add_argument(
+        "root", type=str, help="The root name of the simulation."
+    )
+    p.add_argument(
+        "-wd", "--working_directory", default=".", help="The directory containing the simulation."
+    )
+    p.add_argument(
+        "-xl", "--xmin", type=float, default=None, help="The lower x-axis boundary to display."
+    )
+    p.add_argument(
+        "-xu", "--xmax", type=float, default=None, help="The upper x-axis boundary to display."
+    )
+    p.add_argument(
+        "-f", "--frequency_space", action="store_true", default=False, help="Create the figure in frequency space."
+    )
+    p.add_argument(
+        "-p", "--polar", action="store_true", default=False, help="Plot using polar projection."
+    )
+    p.add_argument(
+        "-sm", "--smooth_amount", type=int, default=5, help="The size of the boxcar smoothing filter."
+    )
+    p.add_argument(
+        "-e", "--ext", default="png", help="The file extension for the output figure."
+    )
+    p.add_argument(
+        "--display", action="store_true", default=False, help="Display the plot before exiting the script."
+    )
 
     args = p.parse_args()
 
@@ -114,8 +86,7 @@ def setup_script() \
 
 
 def plot(setup: tuple = None):
-    """
-    Creates a bunch of plots using some parameters which can be controlled at
+    """Creates a bunch of plots using some parameters which can be controlled at
     run time, but also assumes a few default parameters. Refer to the
     documentation for the script for more detail.
 
@@ -133,36 +104,45 @@ def plot(setup: tuple = None):
     fig: plt.Figure
         The matplotlib Figure object for the created plot.
     ax: plt.Axes
-        The matplotlib Axes objects for the plot panels.
-    """
+        The matplotlib Axes objects for the plot panels."""
 
     if setup:
         root, wd, xmin, xmax, frequency_space, projection, smooth_amount, file_ext, display = setup
     else:
         root, wd, xmin, xmax, frequency_space, projection, smooth_amount, file_ext, display = setup_script()
 
-    # Create plots for the wind - only create velocity plots for rectilinear
-    # at the moment - and remove the data folder afterwards
+    # todo: why did I write this? i am very confused :-(
+    # Oh it's because projection was a string, I think, but I should still change
+    # this garbage bit of code
 
-    # TODO why did I write this? :-(
-    # Oh it's because projection was a string
     if projection:
         projection = True
     else:
         projection = False
 
-    py_plot_wind.main((root, wd, projection, False, "loglog", False, file_ext, display))
+    # Create plots for the wind - only create velocity plots for rectilinear
+    # at the moment - and remove the data folder afterwards
+
+    py_plot_wind.main(
+        (root, wd, projection, False, "loglog", False, file_ext, display)
+    )
     if projection == "rectilinear":  # Because it doesn't work for polar grids yet
-        py_plot_velocity.main((root, wd, "c", "loglog", False, file_ext, display))
-    remove_data_sym_links(wd)
+        py_plot_velocity.main(
+            (root, wd, "c", "loglog", False, file_ext, display)
+        )
+    clean_up_data_sym_links(wd)
 
     # Create plots for the different spectra
 
-    py_plot_optical_depth.main((root, wd, xmin, xmax, False, True, "loglog", file_ext, display))
-    py_plot_spectrum_components.main((root, wd, None, None, smooth_amount, True, False, "loglog",
-                                      file_ext, display))
-    py_plot_spectrum.main((root, wd, xmin, xmax, frequency_space, True, "logy", smooth_amount, file_ext,
-                           display))
+    py_plot_optical_depth.main(
+        (root, wd, xmin, xmax, False, True, "loglog", file_ext, display)
+    )
+    py_plot_spectrum_components.main(
+        (root, wd, None, None, smooth_amount, True, False, "loglog", file_ext, display)
+    )
+    py_plot_spectrum.main(
+        (root, wd, xmin, xmax, frequency_space, True, "logy", smooth_amount, file_ext, display)
+    )
 
     return
 
