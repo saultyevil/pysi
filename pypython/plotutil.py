@@ -8,7 +8,6 @@ Functions for helping plotting with matplotlib.
 import numpy as np
 from typing import List, Union, Tuple
 from matplotlib import pyplot as plt
-
 from physics.constants import C, ANGSTROM
 from .error import DimensionError
 
@@ -16,8 +15,7 @@ from .error import DimensionError
 def subplot_dims(
     n_plots: int
 ) -> Tuple[int, int]:
-    """
-    Return the dimensions for a plot with multiple subplot panels.
+    """Return the dimensions for a plot with multiple subplot panels.
     todo: include more plot subdivisions
 
     Parameters
@@ -28,8 +26,7 @@ def subplot_dims(
     Returns
     -------
     dims: Tuple[int, int]
-        The dimensions of the subplots returned as (nrows, ncols)
-    """
+        The dimensions of the subplots returned as (nrows, ncols)"""
 
     n_rows = n_cols = 1
 
@@ -52,8 +49,7 @@ def subplot_dims(
 def remove_extra_axes(
     fig: plt.Figure, ax: Union[plt.Axes, np.ndarray], n_wanted: int, n_panel: int
 ) -> Tuple[plt.Figure, Union[plt.Axes, np.ndarray]]:
-    """
-    Remove additional axes which are included in a plot. This can be used if you
+    """Remove additional axes which are included in a plot. This can be used if you
     have 4 x 2 = 8 panels but only want to use 7 of tha panels. The 8th panel
     will be removed.
 
@@ -73,8 +69,7 @@ def remove_extra_axes(
     fig: plt.Figure
         The modified Figure.
     ax: plt.Axes
-        The modified Axes.
-    """
+        The modified Axes."""
 
     if type(ax) != np.ndarray:
         return fig, ax
@@ -100,8 +95,7 @@ def remove_extra_axes(
 def get_y_lims_for_x_lims(
     x: np.array, y: np.array, xmin: float, xmax: float, scale: float = 10
 ) -> Union[Tuple[float, float], Tuple[None, None]]:
-    """
-    Determine the lower and upper y limits for a matplotlib plot given a
+    """Determine the lower and upper y limits for a matplotlib plot given a
     restricted x range, since matplotlib doesn't do this automatically.
 
 
@@ -123,8 +117,7 @@ def get_y_lims_for_x_lims(
     ymin: float
         The lowest y value.
     ymax: float
-        The highest y value.
-    """
+        The highest y value."""
 
     n = get_y_lims_for_x_lims.__name__
 
@@ -158,8 +151,7 @@ def get_y_lims_for_x_lims(
 def common_lines(
     freq: bool = False
 ) -> list:
-    """
-    Return a list containing the names of line transitions and the
+    """Return a list containing the names of line transitions and the
     wavelength of the transition in Angstroms. Instead of returning the
     wavelength, the frequency can be returned instead. It is also possible to
     return in log space.
@@ -173,8 +165,8 @@ def common_lines(
     -------
     line: List[List[str, float]]
         A list of lists where each element of the list is the name of the
-        transition/edge and the rest wavelength of that transition in Angstroms.
-    """
+        transition/edge and the rest wavelength of that transition in
+        Angstroms."""
 
     lines = [
         ["N III/O III", 305],
@@ -213,8 +205,7 @@ def common_lines(
 def photoionization_edges(
     freq: bool = False
 ) -> list:
-    """
-    Return a list containing the names of line transitions and the
+    """Return a list containing the names of line transitions and the
     wavelength of the transition in Angstroms. Instead of returning the
     wavelength, the frequency can be returned instead. It is also possible to
     return in log space.
@@ -228,8 +219,8 @@ def photoionization_edges(
     -------
     edges: List[List[str, float]]
         A list of lists where each element of the list is the name of the
-        transition/edge and the rest wavelength of that transition in Angstroms.
-    """
+        transition/edge and the rest wavelength of that transition in
+        Angstroms."""
 
     edges = [
         ["He II", 229],
@@ -252,8 +243,7 @@ def ax_add_line_ids(
     ax: plt.Axes, lines: list, linestyle: str = "dashed", ynorm: float = 0.90, logx: bool = False, offset: float = 25,
     rotation: str = "vertical", fontsize: int = 10
 ) -> plt.Axes:
-    """
-    Add labels for line transitions or other regions of interest onto a
+    """Add labels for line transitions or other regions of interest onto a
     matplotlib figure. Labels are placed at the top of the panel and dashed
     lines, with zorder = 0, are drawn from top to bottom.
 
@@ -281,8 +271,7 @@ def ax_add_line_ids(
     Returns
     -------
     ax: plt.Axes
-        The plot object now with lines IDs :-)
-    """
+        The plot object now with lines IDs :-)"""
 
     nlines = len(lines)
     xlims = ax.get_xlim()

@@ -6,18 +6,15 @@ The point of this part of pypython is to manipulating the atomic data used in
 Python, to i.e. remove various transitions from the data..
 """
 
-
 from sys import exit
 from os import getenv
-
 from .error import EXIT_FAIL
 
 
 def remove_photoionization_edge(
     data: str, atomic_number: int, ionization_state: int, new_value: float = 9e99
-):
-    """
-    Remove a transition or element from some atomic data. Creates a new atomic
+) -> None:
+    """Remove a transition or element from some atomic data. Creates a new atomic
     data file which is placed in the current working or given directory.
 
     To remove a photionization edge from the data, the frequency threshold is,
@@ -34,8 +31,7 @@ def remove_photoionization_edge(
     ionization_state: int
         The ionization state corresponding to the edge to be removed.
     new_value: [optional] float
-        The value of the new frequency threshold for the edge.
-    """
+        The value of the new frequency threshold for the edge."""
 
     data = data.lower()
     allowed_data = [
@@ -96,9 +92,8 @@ def remove_photoionization_edge(
 
 def remove_bound_bound_transitions_ion(
     atomic_number: int, ionization_state: int
-):
-    """
-    Remove all bound-bound transitions for a single ion from the atomic data.
+) -> None:
+    """Remove all bound-bound transitions for a single ion from the atomic data.
     This is achieved by setting the oscillator strengths of the transition, f,
     to f = 0, effectively removing the transition.
 
@@ -107,8 +102,7 @@ def remove_bound_bound_transitions_ion(
     atomic_number: int
         The atomic number for the ion/atom the line is associated with.
     ionization_state: int
-        The ionization state of the ion/atom the line is associated with.
-    """
+        The ionization state of the ion/atom the line is associated with."""
 
     filename = getenv("PYTHON") + "/xdata/atomic/lines_linked_ver_2.dat"
 
@@ -128,4 +122,3 @@ def remove_bound_bound_transitions_ion(
         f.writelines(lines)
 
     return
-

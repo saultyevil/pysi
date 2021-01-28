@@ -7,7 +7,6 @@ some long program. Requires access to the mcrtpythonupdates@gmail.com Gmail API.
 Currently access to this API is limited.
 """
 
-
 import pickle
 import os
 import base64
@@ -21,8 +20,7 @@ from google.auth.transport.requests import Request
 def create_email_message(
     sender: str, to: str, subject: str, message: str
 ) -> dict:
-    """
-    Create an email message and encode it.
+    """Create an email message and encode it.
 
     Parameters
     ----------
@@ -38,8 +36,7 @@ def create_email_message(
     Returns
     -------
     message: dict
-        The created email message
-    """
+        The created email message"""
 
     message = MIMEText(message)
     message["to"] = to
@@ -53,8 +50,7 @@ def create_email_message(
 def send_email_message(
     service: Resource, msg: dict, user: str
 ) -> Union[None, dict]:
-    """
-    Send an email message using the API service.
+    """Send an email message using the API service.
 
     Parameters
     ----------
@@ -68,15 +64,13 @@ def send_email_message(
     Returns
     -------
     msg: dict
-        The email message sent
-    """
-    n = send_email_message.__name__
+        The email message sent"""
 
     try:
         msg = service.users().messages().send(userId=user, body=msg).execute()
         return msg
     except Exception as e:
-        print("{}: Unable to send email message".format(n))
+        print("Unable to send email message")
         print(e)
 
     return
@@ -85,8 +79,7 @@ def send_email_message(
 def send_notification(
     to: str, subject: str, notification: str, sender: str = "mcrtpythonupdates@gmail.com"
 ) -> dict:
-    """
-    Send a notification email to the user. Requires access to the Gmail API.
+    """Send a notification email to the user. Requires access to the Gmail API.
 
     Parameters
     ----------
@@ -102,8 +95,7 @@ def send_notification(
     Returns
     -------
     message: dict
-        The message sent
-    """
+        The message sent"""
 
     credentials = None
     scope = ["https://www.googleapis.com/auth/gmail.compose"]
@@ -138,5 +130,5 @@ def send_notification(
         message = send_email_message(service, message, sender)
         return message
     except Exception as e:
-        print(e)
+        print("Cant send email for some reason, token probably expired")
         return {}

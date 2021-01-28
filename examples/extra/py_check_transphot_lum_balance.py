@@ -16,7 +16,7 @@ import numpy as np
 import argparse as ap
 from matplotlib import pyplot as plt
 from pypython.util import find_parameter_files, get_root
-from pypython.simulation import check_convergence
+from pypython.simulation import check_model_convergence
 
 
 def get_input():
@@ -76,7 +76,7 @@ def check_luminosity_balance(root: str, wd: str = "./"):
         return
 
     print("Root                  = ", root)
-    print("Convergence           = ", check_convergence(root, wd))
+    print("Convergence           = ", check_model_convergence(root, wd))
     print("Luminosity before     = ", luminosity_before[-1])
     print("Luminosity after      = ", luminosity_after[-1])
     print("Absorbed/lost         = ", absorbed_lost[-1])

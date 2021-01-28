@@ -313,7 +313,7 @@ def convergence_check(
         If the simulation has converged, True is returned."""
 
     converged = False
-    model_convergence = simulation.check_convergence(root, cd)
+    model_convergence = simulation.check_model_convergence(root, cd)
     if type(model_convergence) == list:
         model_convergence = model_convergence[-1]
 
@@ -561,7 +561,7 @@ def run_all_models(
 
         # Print the error report and the convergence
 
-        errors = simulation.error_summary(root, wd, N_CORES)
+        errors = simulation.model_error_summary(root, wd, N_CORES)
         b_converged, convergence = convergence_check(root, wd)
         print_errors(errors, root)
         log("\nModel convergence ........... {}".format(convergence))
@@ -585,7 +585,7 @@ def run_all_models(
                 root, wd, use_mpi, n_cores, resume_model=True, restart_from_spec_cycles=True, split_cycles=True
             )
             return_codes[i] = rc
-            errors = simulation.error_summary(root, wd, N_CORES)
+            errors = simulation.model_error_summary(root, wd, N_CORES)
             print_errors(errors, root)
         elif SPLIT_CYCLES and not b_converged:
             log("The model has not converged to the set convergence limit of {}.".format(CONVERGENCE_LOWER_LIMIT))

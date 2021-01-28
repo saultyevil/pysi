@@ -95,9 +95,9 @@ def get_convergence(
         The directory containing the Python simulation.
     """
 
-    convergence = simulation.check_convergence(root, wd, return_per_cycle=True)
-    converging = simulation.check_convergence(root, wd, return_per_cycle=True, return_converging=True)
-    tr, te, te_max, hc = simulation.check_convergence_breakdown(root, wd)
+    convergence = simulation.check_model_convergence(root, wd, return_per_cycle=True)
+    converging = simulation.check_model_convergence(root, wd, return_per_cycle=True, return_converging=True)
+    tr, te, te_max, hc = simulation.model_convergence_components(root, wd)
 
     ncycles = len(convergence)
     if ncycles == 0:

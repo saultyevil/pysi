@@ -9,7 +9,7 @@ TODO: this will only work for a simulation which didn't crash
 
 
 from pypython.util import find_parameter_files, get_root
-from pypython.simulation import error_summary
+from pypython.simulation import model_error_summary
 
 
 COL_LEN = 80
@@ -25,7 +25,7 @@ def main():
         root, wd = get_root(pfs[i])
         if wd.find("continuum") != -1:
             continue
-        errors = error_summary(root, wd, print_errors=True)
+        errors = model_error_summary(root, wd, print_errors=True)
 
         print("-" * COL_LEN)
 
