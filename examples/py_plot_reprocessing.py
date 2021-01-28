@@ -95,7 +95,10 @@ def get_continuum(
 
     name = "{}/continuum/{}_cont.spec".format(wd, root)
     if Path(name).is_file():
-        t = Spectrum(root, wd)
+        # todo: this is not what god intended, there must be a better way...
+        if wd == ".":
+            wd += "/"
+        t = Spectrum(root + "_cont", wd + "continuum")
         return t
 
     print("Unable to find {}\nRunning Python to create continuum spectrum".format(name))
@@ -140,7 +143,7 @@ def get_continuum(
 
 
 def create_plot(
-    root: str, spectrum: Spectrum, optical_depth_spectrum: Spectrum, cont_spectrum: Spectrum, sm: int = 50,
+    root: str, spectrum: Spectrum, optical_depth_spectrum: Spectrum, cont_spectrum: Spectrum, sm: int = 1,
     bgalpha: float = 0.50, display: bool = False
 ) -> Tuple[plt.Figure, plt.Axes, plt.Axes]:
     """Create a figure to show how the underlying continuum is being reprocessed.
@@ -187,7 +190,7 @@ def create_plot(
 
     # Plot the optical depths, again as a function of frequency
     for sl in sightlines:
-        od = optical_depth_spectrum[sl].values
+        od = optical_depth_spectrum[sl]
         if np.count_nonzero(od) != len(od):
             # I think this is to check that we're not going to plot a sightline
             # which has no optical depth values
