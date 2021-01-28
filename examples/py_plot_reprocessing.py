@@ -10,7 +10,6 @@ Both are plotted as a function of frequency.
 from shutil import copy
 from os import mkdir
 from sys import exit
-import pandas as pd
 from pathlib import Path
 from subprocess import Popen, PIPE
 import numpy as np
@@ -18,15 +17,15 @@ from typing import Tuple
 from matplotlib import pyplot as plt
 import argparse as ap
 
-from pypython.constants import PI, PARSEC
-from pypython import spectrumutil
+from pypython.physics.constants import PI, PARSEC
 from pypython.grid import update_single_parameter
-from pypython.util import remove_data_sym_links, get_cpu_count
+from pypython import plotutil
+from pypython.spectrum import Spectrum
+from pypython.util import clean_up_data_sym_links, get_cpu_count, smooth_array
 
 
 def setup_script() -> tuple:
-    """
-    Setup the script.
+    """Setup the script.
 
     Returns
     -------
@@ -39,35 +38,26 @@ def setup_script() -> tuple:
                 args.ncores,
                 args.smooth_amount,
                 args.display
-            )
-    """
+            )"""
 
     p = ap.ArgumentParser(description=__doc__)
 
-    p.add_argument("root",
-                   help="The root name of simulation.")
-
-    p.add_argument("-wd",
-                   "--working_directory",
-                   default=".",
-                   help="The directory containing the simulation.")
-
-    p.add_argument("-n",
-                   "--ncores",
-                   type=int,
-                   default=0,
-                   help="The number of cores to use to create the continuum spectrum if required.")
-
-    p.add_argument("-sm",
-                   "--smooth_amount",
-                   type=int,
-                   default=50,
-                   help="The amount of smoothing to use on the spectra.")
-
-    p.add_argument("--display",
-                   action="store_true",
-                   default=False,
-                   help="Display the figure.")
+    p.add_argument(
+        "root", help="The root name of simulation."
+    )
+    p.add_argument(
+        "-wd", "--working_directory", default=".", help="The directory containing the simulation."
+    )
+    p.add_argument(
+        "-n", "--ncores", type=int, default=0,
+        help="The number of cores to use to create the continuum spectrum if required."
+    )
+    p.add_argument(
+        "-sm", "--smooth_amount", type=int, default=50, help="The amount of smoothing to use on the spectra."
+    )
+    p.add_argument(
+        "--display", action="store_true", default=False, help="Display the figure."
+    )
 
     args = p.parse_args()
 
@@ -84,9 +74,8 @@ def setup_script() -> tuple:
 
 def get_continuum(
     root: str, wd: str = ".", ncores: int = 1
-) -> pd.DataFrame:
-    """
-    Get the data for the underlying continuum spectrum. The script will attempt
+) -> Spectrum:
+    """Get the data for the underlying continuum spectrum. The script will attempt
     to read the file in from continuum/root_cont.spec, otherwise it will create
     a continuum model to run in Python.
 
@@ -101,13 +90,12 @@ def get_continuum(
 
     Returns
     -------
-    t: pd.DataFrame
-        The continuum spectrum.
-    """
+    t: Spectrum
+        The continuum spectrum."""
 
     name = "{}/continuum/{}_cont.spec".format(wd, root)
     if Path(name).is_file():
-        t = spectrumutil.read_spectrum(name)
+        t = Spectrum(root, wd)
         return t
 
     print("Unable to find {}\nRunning Python to create continuum spectrum".format(name))
@@ -136,7 +124,7 @@ def get_continuum(
     print(command)
     sh = Popen(command, shell=True, stdout=PIPE, stderr=PIPE)
     stdout, stderr = sh.communicate()
-    ndel = remove_data_sym_links()
+    ndel = clean_up_data_sym_links()
 
     if stderr:
         print("There was a problem running Python to generate the continuum spectrum:\n")
@@ -144,58 +132,56 @@ def get_continuum(
         exit(1)
 
     if ndel == 0:
-        print("There was a problem deleteing the atomic data")
+        print("There was a problem deleting the atomic data")
 
-    t = spectrumutil.read_spectrum("continuum/{}_cont.spec".format(root))
+    t = Spectrum(root, wd)
 
     return t
 
 
 def create_plot(
-    root: str, spectrum: pd.DataFrame, optical_depth_spectrum: pd.DataFrame, cont_spectrum: pd.DataFrame,
-    sm: int = 50, bgalpha: float = 0.50, display: bool = False
+    root: str, spectrum: Spectrum, optical_depth_spectrum: Spectrum, cont_spectrum: Spectrum, sm: int = 50,
+    bgalpha: float = 0.50, display: bool = False
 ) -> Tuple[plt.Figure, plt.Axes, plt.Axes]:
-    """
-    Create a figure to show how the underlying continuum is being reprocessed.
+    """Create a figure to show how the underlying continuum is being reprocessed.
 
     Parameters
     ----------
     root: str
         The root name of the simulation.
-    spectrum: pd.DataFrame
+    spectrum: Spectrum
         The spectrum file for the complete simulation.
-    optical_depth_spectrum: pd.DataFrame
+    optical_depth_spectrum: Spectrum
         The optical depth spectrum for the simulation.
-    cont_spectrum: pd.DataFrame
+    cont_spectrum: Spectrum
         The spectrum for the continuum only model.
     sm: int [optional]
         The amount of smoothing to be used for the spectra.
     bgalpha: float [optional]
         The transparency of the spectra.
     display: bool [optional]
-        If True, the plot will be shown to screen.
-    """
+        If True, the plot will be shown to screen."""
 
-    # Find the various sightlines of the optical depth spectra
-    sightlines = spectrumutil.get_spectrum_inclinations(optical_depth_spectrum)
-    optical_depth_freq = optical_depth_spectrum["Freq."].values
+    # Find the various sight lines of the optical depth spectra
+    sightlines = optical_depth_spectrum.inclinations
+    optical_depth_freq = optical_depth_spectrum["Freq."]
 
     # Extract the two spectrum components of interest from the spectra files and
     # convert flux to nu Lnu
-    emerg_spec_freq = spectrum["Freq."].values
-    emerg_spec_flux = spectrum["Emitted"].values * 4 * PI * (100 * PARSEC) ** 2 * spectrum["Lambda"].values
-    cont_spec_freq = cont_spectrum["Freq."].values
-    cont_spec_flux = cont_spectrum["Emitted"].values * 4 * PI * (100 * PARSEC) ** 2 * cont_spectrum["Lambda"].values
+    emerg_spec_freq = spectrum["Freq."]
+    emerg_spec_flux = spectrum["Emitted"] * 4 * PI * (100 * PARSEC) ** 2 * spectrum["Lambda"]
+    cont_spec_freq = cont_spectrum["Freq."]
+    cont_spec_flux = cont_spectrum["Emitted"] * 4 * PI * (100 * PARSEC) ** 2 * cont_spectrum["Lambda"]
 
     # Plot the spectra, these spectra are plotted on ax2 to have a separates y
     # axis on loglog scale
-    fig, ax = plt.subplots(figsize=(13, 7))
+    fig, ax = plt.subplots(figsize=(12, 7))
     ax2 = ax.twinx()
     ax2.loglog(
-        cont_spec_freq, spectrumutil.smooth(cont_spec_flux, sm), "k--", zorder=0, alpha=bgalpha
+        cont_spec_freq, smooth_array(cont_spec_flux, sm), "k--", zorder=0, alpha=bgalpha
     )
     ax2.loglog(
-        emerg_spec_freq, spectrumutil.smooth(emerg_spec_flux, sm), "k-", zorder=1, alpha=bgalpha
+        emerg_spec_freq, smooth_array(emerg_spec_flux, sm), "k-", zorder=1, alpha=bgalpha
     )
     ax2.set_ylabel(r"$\nu L_{\nu}$ [ergs s$^{-1}$]")
 
@@ -218,10 +204,10 @@ def create_plot(
     ax.set_xlim(np.min(optical_depth_freq), np.max(optical_depth_freq))
     ax.set_zorder(ax2.get_zorder() + 1)
     ax.patch.set_visible(False)
-    ax = spectrumutil.add_line_id(ax, spectrumutil.photo_edges_list(True), logx=True)
+    ax = plotutil.ax_add_line_ids(ax, plotutil.photoionization_edges(True), logx=True)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
-    fig.savefig("{}_reprocess.png".format(root), dpi=300)
+    fig.savefig("{}_reprocessing.png".format(root), dpi=300)
 
     if display:
         plt.show()
@@ -232,8 +218,7 @@ def create_plot(
 
 
 def main(setup: tuple = None):
-    """
-    Main function of the script.
+    """Main function of the script.
 
     Parameters
     ----------
@@ -246,17 +231,16 @@ def main(setup: tuple = None):
                 ncores,
                 smooth_amount,
                 display
-            )
-    """
+            )"""
 
     if setup:
-        root, wd, ncores, sm, display = setup
+        root, wd, n_cores, sm, display = setup
     else:
-        root, wd, ncores, sm, display = setup_script()
+        root, wd, n_cores, sm, display = setup_script()
 
-    continuum_spectrum = get_continuum(root, wd, ncores)
-    full_spectrum = spectrumutil.read_spectrum("{}.spec".format(root))
-    optical_depth = spectrumutil.read_spectrum("diag_{}/{}.tau_spec.diag".format(root, root))
+    continuum_spectrum = get_continuum(root, wd, n_cores)
+    full_spectrum = Spectrum(root, wd)
+    optical_depth = Spectrum(root, wd, spectype="spec_tau")
     create_plot(root, full_spectrum, optical_depth, continuum_spectrum, sm=sm, display=display)
 
     return
