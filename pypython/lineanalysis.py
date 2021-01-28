@@ -9,7 +9,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from .error import EXIT_FAIL
-from .pythonutil import get_array_index
+from .util import get_array_index
 from .spectrumutil import calculate_axis_y_limits, ax_add_line_id, common_lines_list
 
 
