@@ -7,6 +7,7 @@ Description of file.
 
 import os
 import numpy as np
+from typing import List, Union, Tuple
 from .util import create_wind_save_table
 from .physics.constants import PI
 
@@ -14,7 +15,7 @@ from .physics.constants import PI
 class Wind:
     """A class to store PYTHON wind_save in memory. Contains methods to extract
     variables, as well as convert various indices into other indices."""
-    def __init__(self, root: str, cd: str, tabletype: str = None, delim: str = None):
+    def __init__(self, root: str, cd: str, projection: str = "rectilinear", tabletype: str = None, delim: str = None):
         """Initialize a Wind object...
 
         Parameters
@@ -26,6 +27,7 @@ class Wind:
 
         self.root = root
         self.cd = cd
+        self.projection = projection
 
         if self.cd[-1] != "/":
             self.cd += "/"
@@ -35,6 +37,7 @@ class Wind:
             if tabletype not in allowed:
                 print("{} is an unknown type of table".format(tabletype))
                 print("allowed: ", allowed)
+                exit(1)  # todo: error code
             self.filepath += tabletype
         else:
             self.filepath += "all.complete"
@@ -47,7 +50,6 @@ class Wind:
         self.z_coords = ()
         self.x_cen_coords = ()
         self.z_cen_coords = ()
-        self.projection = ""
         self.columns = ()
         self.variables = {}
 
@@ -55,9 +57,11 @@ class Wind:
         # members
 
         self.read_wind(delim)
+        self.created_masked_arrays()
 
     def read_wind(self, delim: str = None):
-        """Read in a wind_save table."""
+        """Read in a wind_save table.
+        todo: add support for polar and spherical winds"""
 
         if os.path.exists(self.filepath):
             wind_file = open(self.filepath, "r")
@@ -88,21 +92,42 @@ class Wind:
         else:
             self.columns = tuple(np.arange(len(wind[0]), dtype=np.str))
         wind = np.array(wind[1:], dtype=np.float)
+        i_col = self.columns.index("i")
+        self.nx = int(np.max(wind[:, i_col]) + 1)
+        if "j" in self.columns:
+            j_col = self.columns.index("j")
+            self.nz = int(np.max(wind[:, j_col]) + 1)
+        self.nelem = int(self.nx * self.nz)  # the int() is for safety
         for index, col in enumerate(self.columns):
-            self.variables[col] = wind[:, index]
+            self.variables[col] = wind[:, index].reshape(self.nx, self.nz)
 
         # Now try to determine the rest of the member variables
         # todo: try to figure out how this works for a 1d system too
 
-        self.nx = np.max(self.variables["nx"]) + 1
-        try:
-            self.nz = np.max(self.variables["nz"] + 1)
-        except KeyError:
-            self.nz = 0
-        self.nelem = self.nx * self.nz
+        self.x_coords = tuple(np.unique(self.variables["x"]))
+        self.x_cen_coords = tuple(np.unique(self.variables["xcen"]))
+        if "z" in self.columns:
+            self.z_coords = tuple(np.unique(self.variables["z"]))
+            self.z_cen_coords = tuple(np.unique(self.variables["zcen"]))
 
-    def get_variable(self, thing: str, thing_type: str):
-        raise NotImplementedError
+    def created_masked_arrays(self, to_mask: Union[str, List[str], Tuple[str]] = None):
+        """Convert each array into a masked array, where the mask is defined by
+        the inwind variable."""
+
+        if to_mask is None:
+            to_mask = list(self.columns)
+            for item_to_remove in ["x", "z", "xcen", "zcen", "i", "j", "inwind"]:
+                try:
+                    to_mask.remove(item_to_remove)
+                except ValueError:
+                    continue
+        else:
+            if type(to_mask) not in [str, list, tuple]:
+                print("to_mask should be a tuple/list of strings or a string")
+                exit(1)
+        to_mask = tuple(to_mask)
+        for col in to_mask:
+            self.variables[col] = np.ma.masked_where(self.variables["inwind"] < 0, self.variables[col])
 
     def get_variable_along_sightline(self):
         raise NotImplementedError
@@ -126,7 +151,10 @@ class Wind:
 
     def __getitem__(self, key):
         """Return an array in the variables dictionary when indexing."""
-        return self.variables[key]
+        if self.projection == "rectilinear":
+            return self.variables[key].reshape(self.nx, self.nz)
+        else:
+            return self.variables[key]
 
     def __setitem__(self, key, value):
         """Set an array in the variables dictionary."""
@@ -134,4 +162,4 @@ class Wind:
 
     def __str__(self):
         """Print basic details about the wind."""
-        return "NotImplemented"
+        return "NotImplementedYet:-)"
