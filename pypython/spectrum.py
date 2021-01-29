@@ -5,15 +5,13 @@
 Spectrum object
 """
 
-
+from .util import get_root_from_filepath
 from scipy.signal import convolve, boxcar
 import numpy as np
 from pathlib import Path
 from typing import List, Union, Tuple
 import textwrap
 import copy
-from .util import get_root_from_filepath
-
 
 UNITS_LNU = "erg/s/Hz"
 UNITS_FNU = "erg/s/cm^-2/Hz"
@@ -21,12 +19,10 @@ UNITS_FLAMBDA = "erg/s/cm^-2/A"
 
 
 class Spectrum:
-    """
-    A class to store PYTHON .spec and .log_spec files.
+    """A class to store PYTHON .spec and .log_spec files.
     The PYTHON spectrum is read in and stored within a dict, where each column
-    name is a key and the data is stored as a numpy array.
-    """
-    def __init__(self, root: str, cd: str = ".", logspec: bool = False, spectype: str = None):
+    name is a key and the data is stored as a numpy array."""
+    def __init__(self, root: str, cd: str = ".", logspec: bool = False, spectype: str = None, delim: str = None):
         """Initialise a Spectrum object. This method will construct the file path
         of the spectrum file given the root, containing directory and whether
         the logarithmic spectrum is used or not. The spectrum is then read in.
@@ -43,11 +39,12 @@ class Spectrum:
             Read in a spectrum with the given type name."""
 
         self.root = root
+        self.cd = cd
         self.logspec = logspec
 
-        if cd[-1] != "/":
-            cd += "/"
-        self.filepath = cd + root
+        if self.cd[-1] != "/":
+            self.cd += "/"
+        self.filepath = self.cd + self.root
         if self.logspec:
             self.filepath += ".log_"
         else:
@@ -56,6 +53,7 @@ class Spectrum:
             allowed = ["spec", "spec_tot", "spec_tot_wind", "spec_wind", "spec_tau"]
             if spectype not in allowed:
                 print("{} is an unknown type of spectrum".format(spectype))
+                print("allowed: {}".format(allowed))
                 exit(1)  # todo: error code
             self.filepath += spectype
         else:
@@ -75,11 +73,10 @@ class Spectrum:
         # The next method call reads in the spectrum and initializes the above
         # member variables.
 
-        self.read_spectrum()
+        self.read_spectrum(delim)
 
     def read_spectrum(self, delim: str = None):
-        """
-        Read in a spectrum file given in self.filepath. The spectrum is stored
+        """Read in a spectrum file given in self.filepath. The spectrum is stored
         as a dictionary in self.spectrum where each key is the name of the
         columns.
 
@@ -87,14 +84,14 @@ class Spectrum:
         ----------
         delim: str [optional]
             A custom delimiter, useful for reading in files which have sometimes
-            between delimited with commas instead of spaces.
-        """
+            between delimited with commas instead of spaces."""
 
         with open(self.filepath, "r") as f:
             spectrum_file = f.readlines()
 
         # Read in the spectrum file, ignoring empty lines and lines which have
         # been commented out by # at the beginning
+        # todo: need some method to detect incorrect syntax
 
         spectrum = []
 
@@ -142,16 +139,14 @@ class Spectrum:
         self.n_inclinations = len(self.inclinations)
 
     def smooth(self, width: int = 5, to_smooth: Union[List[str], Tuple[str], str] = None):
-        """
-        Smooth the spectrum flux/luminosity bins.
+        """Smooth the spectrum flux/luminosity bins.
 
         Parameters
         ----------
         width: int [optional]
             The width of the boxcar filter (in bins).
         to_smooth: list or tuple of strings [optional]
-            A list or tuple
-        """
+            A list or tuple"""
 
         if type(width) is not int:
             try:
@@ -206,8 +201,7 @@ class Spectrum:
 def get_spectrum_files(
     this_root: str = None, cd: str = ".", ignore_delay_dump_spec: bool = True
 ) -> List[str]:
-    """
-    Find root.spec files recursively in the provided directory.
+    """Find root.spec files recursively in the provided directory.
 
     Parameters
     ----------
@@ -222,8 +216,7 @@ def get_spectrum_files(
     Returns
     -------
     spec_files: List[str]
-        The file paths of various .spec files
-    """
+        The file paths of various .spec files"""
 
     spec_files = []
 
