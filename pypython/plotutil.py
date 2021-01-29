@@ -9,7 +9,7 @@ import numpy as np
 from typing import List, Union, Tuple
 from matplotlib import pyplot as plt
 from .physics.constants import C, ANGSTROM
-from .error import DimensionError
+from .extrautil.error import DimensionError
 
 
 def subplot_dims(

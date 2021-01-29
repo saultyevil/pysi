@@ -8,7 +8,7 @@ Functions to analyse spectral lines.
 import numpy as np
 from matplotlib import pyplot as plt
 from typing import Union, Tuple
-from .error import EXIT_FAIL
+from .extrautil.error import EXIT_FAIL
 from .util import get_array_index
 from .plotutil import get_y_lims_for_x_lims, ax_add_line_ids, common_lines
 

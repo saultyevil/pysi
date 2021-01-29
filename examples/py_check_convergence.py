@@ -10,7 +10,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from pypython import simulation
 from pypython import util
-from typing import List, Union
+from typing import List
 
 COL_WIDTH = 80
 

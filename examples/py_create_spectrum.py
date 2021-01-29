@@ -12,7 +12,7 @@ from pypython import plotutil
 from pypython import util
 from pypython.spectrum import Spectrum
 from pypython import spectrumcreate
-from pypython import conversion
+from physics import convert
 
 plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15
@@ -315,9 +315,9 @@ def main(setup: tuple = None):
     xmin = w_xmin
     xmax = w_xmax
     if w_xmax and frequency_space:
-        xmin = conversion.angstrom_to_hz(w_xmax)
+        xmin = convert.angstrom_to_hz(w_xmax)
     if w_xmin and frequency_space:
-        xmax = conversion.angstrom_to_hz(w_xmin)
+        xmax = convert.angstrom_to_hz(w_xmin)
 
     if mode == "create":
         spectrumcreate.create_spectrum(

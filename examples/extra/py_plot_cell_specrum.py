@@ -10,7 +10,7 @@ matrix_pow ionisation solver.
 
 import argparse as ap
 from pypython import windutil
-from pypython import util
+from pypython import extrautil
 from pypython.util import smooth_array
 from subprocess import Popen, PIPE
 import numpy as np
@@ -97,7 +97,7 @@ def get_py_wind_everything_output(
     # if stderr:
     #     print(stderr.decode("utf-8"))
 
-    util.clean_up_data_sym_links(".")
+    extrautil.clean_up_data_sym_links(".")
 
     return stdout.decode("utf-8")
 

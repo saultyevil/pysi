@@ -14,7 +14,7 @@ from .plotutil import get_y_lims_for_x_lims
 from .plotutil import subplot_dims, remove_extra_axes
 from .spectrum import Spectrum, UNITS_FLAMBDA, UNITS_FNU, UNITS_LNU
 from .util import smooth_array, get_root_from_filepath
-from .error import InvalidParameter, EXIT_FAIL
+from .extrautil.error import InvalidParameter
 import pandas as pd
 import numpy as np
 from typing import List, Tuple, Union

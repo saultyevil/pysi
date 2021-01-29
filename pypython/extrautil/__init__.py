@@ -1,8 +1,6 @@
-import sys
 import automodinit
 
-name = "pypython"
-sys.path.append("physics")
+name = "extrautil"
 
 # Import all files using automodinit
 

@@ -8,9 +8,9 @@ files. If a root name is provided, however, then the script will only operate
 on pf files which have the same root name.
 """
 
-import argpase as ap
+import argparse as ap
 from typing import List
-from pypython import util as Utils
+from pypython import util
 from pypython import grid
 
 
@@ -38,7 +38,7 @@ def add_parameter(filepaths: List[str], parameter: str, value: str):
 def main():
     """Main function."""
 
-    p = ap.ArgumentParser(desc=__doc__)
+    p = ap.ArgumentParser(description=__doc__)
 
     p.add_argument(
         "parameter", help="Name of the parameter to add."
@@ -52,7 +52,7 @@ def main():
 
     args = p.parse_args()
 
-    add_parameter(Utils.get_parameter_files(args.root), args.parameter, args.value)
+    add_parameter(util.get_parameter_files(args.root), args.parameter, args.value)
 
     return
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from socket import gethostname
-from pypython import mailnotifs
+from extrautil import mailnotifs
 
 print("Setting up email notifications by sending a message...")
 

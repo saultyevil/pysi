@@ -50,16 +50,16 @@ class Spectrum:
         self.filepath = cd + root
         if self.logspec:
             self.filepath += ".log_"
+        else:
+            self.filepath += "."
         if spectype:
             allowed = ["spec", "spec_tot", "spec_tot_wind", "spec_wind", "spec_tau"]
             if spectype not in allowed:
                 print("{} is an unknown type of spectrum".format(spectype))
                 exit(1)  # todo: error code
-            if not logspec:
-                self.filepath += "."
             self.filepath += spectype
         else:
-            self.filepath += ".spec"
+            self.filepath += "spec"
 
         self.spectrum = self.values = {}
         self.columns = []

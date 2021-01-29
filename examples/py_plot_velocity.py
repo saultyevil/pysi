@@ -17,7 +17,7 @@ from pypython import windplot
 from pypython import windutil
 from pypython import util
 from pypython.physics.constants import CMS_TO_KMS, VLIGHT
-from pypython.error import EXIT_FAIL
+from pypython.extrautil.error import EXIT_FAIL
 
 
 plt.rcParams['xtick.labelsize'] = 15

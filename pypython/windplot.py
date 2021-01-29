@@ -8,7 +8,7 @@ user can then add axes labels and etc themselves.
 """
 
 from .windutil import sightline_coords
-from .error import InvalidParameter
+from .extrautil.error import InvalidParameter
 import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.colors as colors

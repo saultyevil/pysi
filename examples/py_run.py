@@ -22,9 +22,9 @@ from socket import gethostname
 from pypython import grid
 from pypython import simulation
 from pypython import util
-from pypython.log import log, log_silent, init_logfile, close_logfile
-from pypython.error import EXIT_FAIL
-from pypython.mailnotifs import send_notification
+from pypython.extrautil.log import log, log_silent, init_logfile, close_logfile
+from pypython.extrautil.error import EXIT_FAIL
+from pypython.extrautil.mailnotifs import send_notification
 
 
 CONVERGED = \

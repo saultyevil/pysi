@@ -7,13 +7,12 @@ mapping part of Python. It seems to mostly house functions designed to create
 a spectrum from the delay_dump output.
 """
 
-from .error import EXIT_FAIL
+from .extrautil.error import EXIT_FAIL
 from .physics.constants import PARSEC, C
-from .conversion import hz_to_angstrom
+from .physics.convert import hz_to_angstrom
 from .util import get_file_len
-from .spectrumutil import read_spectrum, get_spectrum_inclinations
-from .conversion import angstrom_to_hz
-
+from .physics.convert import angstrom_to_hz
+from .spectrum import Spectrum
 import pandas as pd
 from copy import deepcopy
 import numpy as np
@@ -80,8 +79,8 @@ def write_delay_dump_spectrum_to_file(
     f.write("# Flux Flambda [erg / s / cm^2 / A at {} pc\n".format(d_norm_pc))
 
     try:
-        full_spec = read_spectrum("{}/{}.spec".format(wd, root))
-        inclinations = get_spectrum_inclinations(full_spec)
+        full_spec = Spectrum(root, wd)
+        inclinations = full_spec.inclinations
     except IOError:
         inclinations = np.arange(0, n_spec)
 
@@ -554,7 +553,7 @@ def create_spectrum_process_breakdown(
         ex = spectrum_columns_dict_nres
 
     df = read_delay_dump(root, ex, wd=wd)
-    s = read_spectrum(wd + "/" + root + ".spec")
+    s = Spectrum(root, wd)
 
     # create dataframes for each physical process, what you can actually get
     # depends on mode_line_res, i.e. if LineRes. is included or not. Store these

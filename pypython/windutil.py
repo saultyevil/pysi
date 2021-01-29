@@ -7,7 +7,7 @@ make plotting the wind easier.
 """
 
 
-from .error import CoordError, InvalidParameter
+from .extrautil.error import CoordError, InvalidParameter
 import os
 from typing import Tuple, Union
 import numpy as np
