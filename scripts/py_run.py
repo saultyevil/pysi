@@ -22,7 +22,7 @@ from socket import gethostname
 from pypython import grid
 from pypython import simulation
 from pypython import util
-from pypython.extrautil.log import log, log_silent, init_logfile, close_logfile
+from pypython.extrautil.logging import log, logsilent, init_logfile, close_logfile
 from pypython.extrautil.error import EXIT_FAIL
 from pypython.extrautil.mailnotifs import send_notification
 
@@ -630,7 +630,7 @@ def main(
     setup_script()
     init_logfile("Log.txt")
     log("------------------------\n")
-    log_silent("{}".format(datetime.datetime.now()))
+    logsilent("{}".format(datetime.datetime.now()))
 
     # Find models to run by searching recursively from the calling directory
     # for .pf files
