@@ -317,7 +317,7 @@ def main(
 
     # First, we probably need to run windsave2table
 
-    util.create_wind_save_table(root, cd)
+    util.create_wind_save_tables(root, cd)
 
     # Now we can plot the stuff
 

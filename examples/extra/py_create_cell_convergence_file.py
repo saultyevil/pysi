@@ -14,7 +14,7 @@ converging output as well.
 
 import argparse as ap
 import pandas as pd
-from pypython.util import create_wind_save_table
+from pypython.util import create_wind_save_tables
 from typing import Union
 
 
@@ -64,7 +64,7 @@ def main():
     try:
         master = pd.read_csv(input_file, delim_whitespace=True)
     except IOError:
-        create_wind_save_table(root, "./", no_all_complete=True)
+        create_wind_save_tables(root, "./")
         master = pd.read_csv(input_file, delim_whitespace=True)
 
     master = master[master["inwind"] == 0]

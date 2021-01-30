@@ -8,7 +8,6 @@ Description of file.
 import os
 import numpy as np
 from typing import List, Union, Tuple
-from .util import create_wind_save_table
 from .physics.constants import PI
 
 

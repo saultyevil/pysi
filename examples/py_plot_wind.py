@@ -231,7 +231,7 @@ def main(
 
     # First, we probably need to run windsave2table
 
-    util.create_wind_save_table(root, wd, ion_density=use_ion_density)
+    util.create_wind_save_tables(root, wd, ion_density=use_ion_density)
 
     # Plot the wind quantities first
 

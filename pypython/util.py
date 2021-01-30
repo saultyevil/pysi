@@ -284,7 +284,7 @@ def get_cpu_count(
     return n_cores
 
 
-def create_wind_save_table(
+def create_wind_save_tables(
     root: str, wd: str = ".", ion_density: bool = False, verbose: bool = False
 ) -> None:
     """Run windsave2table in a directory to create the standard data tables. The
