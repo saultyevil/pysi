@@ -9,13 +9,14 @@ import os
 import numpy as np
 from typing import List, Union, Tuple
 from .physics.constants import PI
+from .util import get_array_index
 
 
 class Wind:
     """A class to store PYTHON wind_save in memory. Contains methods to extract
     variables, as well as convert various indices into other indices."""
     def __init__(
-        self, root: str, cd: str, projection: str = "rectilinear", mask_arrays: bool = False, delim: str = None
+        self, root: str, cd: str, projection: str = "rectilinear", mask_cells: bool = True, delim: str = None
     ):
         """Initialize a Wind object...
 
@@ -47,8 +48,8 @@ class Wind:
 
         self.read_wind(delim)
         self.read_ions(delim)
-        if mask_arrays:
-            self.switch_to_masked_arrays()
+        if mask_cells:
+            self.mask_non_inwind_cells()
         self.columns = self.wind_parameters + self.wind_elements
 
     def read_wind(self, delim: str = None):
@@ -209,7 +210,7 @@ class Wind:
             print("Unable to open any wind save tables, try running windsave2table...")
             exit(1)
 
-    def switch_to_masked_arrays(self):
+    def mask_non_inwind_cells(self):
         """Convert each array into a masked array, where the mask is defined by
         the inwind variable."""
 
@@ -243,9 +244,6 @@ class Wind:
                         self.variables["inwind"] < 0, self.variables[element][ion_type][ion]
                     )
 
-    def get_variable_along_sightline(self):
-        raise NotImplementedError
-
     def get_sightline_coordinates(self, theta: float):
         """Get the vertical z coordinates for a given set of x coordinates and
         inclination angle.
@@ -254,14 +252,33 @@ class Wind:
         ----------
         theta: float
             The angle of the sight line to extract from. Given in degrees."""
-        raise self.x_coords * np.tan(PI / 2 - np.deg2rad(theta))
+        return np.array(self.x_coords, dtype=np.float) * np.tan(PI / 2 - np.deg2rad(theta))
+
+    def get_variable_along_sightline(self, theta: float, parameter: str):
+        """Extract a variable along a given sight line."""
+
+        if type(theta) is not float:
+            theta = float(theta)
+        z_array = np.array(self.z_coords, dtype=np.float)
+        z_coords = self.get_sightline_coordinates(theta)
+
+        values = []
+
+        for x_index, z in enumerate(z_coords):
+            z_index = get_array_index(z_array, z)
+            value = self.variables[parameter][x_index, z_index]
+            values.append(value)
+
+        return np.array(self.x_coords), z_array, np.array(values, dtype=np.float)
 
     def get_elem_number_from_ij(self, i: int, j: int):
         """Get the wind element number for a given i and j index."""
         raise self.nz * i + j
 
-    def get_ij_from_elem_number(self):
-        raise NotImplementedError
+    def get_ij_from_elem_number(self, elem: int):
+        """Get the i and j index for a given wind element number.
+        todo: check that this is row or column major in Python"""
+        return np.unravel_index(elem, (self.nx, self.nz))
 
     def __getitem__(self, key):
         """Return an array in the variables dictionary when indexing."""
