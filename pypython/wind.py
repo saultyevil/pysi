@@ -40,7 +40,6 @@ class Wind:
         self.z_coords = ()
         self.x_cen_coords = ()
         self.z_cen_coords = ()
-        self.columns = ()
         self.wind_parameters = ()
         self.wind_ions = ()
         self.variables = {}
@@ -52,6 +51,7 @@ class Wind:
         self.read_ions(delim)
         if mask_arrays:
             self.created_masked_arrays()
+        self.columns = self.wind_parameters + self.wind_ions
 
     def read_wind(self, delim: str = None):
         """Read in the wind parameters.
@@ -127,22 +127,22 @@ class Wind:
             if col in self.variables.keys():
                 continue
             self.variables[col] = wind_all[:, index].reshape(self.nx, self.nz)
-            self.columns += col,
+            self.wind_parameters += col,
 
         self.x_coords = tuple(np.unique(self.variables["x"]))
         self.x_cen_coords = tuple(np.unique(self.variables["xcen"]))
-        if "z" in self.columns:
+        if "z" in self.wind_parameters:
             self.z_coords = tuple(np.unique(self.variables["z"]))
             self.z_cen_coords = tuple(np.unique(self.variables["zcen"]))
 
-    def read_ions(self, delim: str = None, ions_to_get: Union[List[str], Tuple[str], str] = None):
+    def read_ions(self, delim: str = None, elements_to_get: Union[List[str], Tuple[str], str] = None):
         """Read in the ion parameters.
         todo: add way to load in either densities or fractions"""
 
-        if ions_to_get is None:
-            ions_to_get = ("H", "He", "C", "N", "O", "Si", "Fe")
+        if elements_to_get is None:
+            elements_to_get = ("H", "He", "C", "N", "O", "Si", "Fe")
         else:
-            if type(ions_to_get) not in [str, list, tuple]:
+            if type(elements_to_get) not in [str, list, tuple]:
                 print("ions_to_get should be a tuple/list of strings or a string")
                 exit(1)  # todo: error code
 
@@ -153,55 +153,64 @@ class Wind:
         # in this dict will be the values of that ion
         # todo: way to handle frac or dens
 
-        for ion in ions_to_get:
-            ion = ion.capitalize()  # for safety...
-            with open(self.cd + self.root + "." + ion + ".frac" + ".txt") as f:
-                ion_file = f.readlines()
+        ion_types_to_get = ["frac", "den"]
+        ion_types_index_names = ["fraction", "density"]
 
-            self.wind_ions += (ion,)
-            self.variables[ion] = {}
+        for element in elements_to_get:
+            element = element.capitalize()  # for safety...
+            self.wind_ions += element,
 
-            # Read in ion densities/fractions.. this can be done in a list
-            # comprehension, I think, but I want to skip commented out lines
-            # and I think it's better(?) to do it this way
+            # Each element will have a dict of two keys, either frac or den.
+            # Inside each dict with be more dicts of keys where the values are
+            # arrays of the
 
-            wind = []
+            self.variables[element] = {}
 
-            for line in ion_file:
-                if delim:
-                    line = line.split(delim)
-                else:
-                    line = line.split()
-                if len(line) == 0 or line[0] == "#":
+            for ion_type, ion_type_index_name in zip(ion_types_to_get, ion_types_index_names):
+                file = self.cd + self.root + "." + element + "." + ion_type + ".txt"
+                if not os.path.exists(file):
                     continue
-                wind.append(line)
 
-            # Now construct the tables, how this is done is described in some
-            # of the comments above
-            # todo: I should check if the header exists first
+                with open(file, "r") as f:
+                    ion_file = f.readlines()
 
-            if wind[0][0].isdigit() is False:
-                columns = tuple(wind[0])
-                index = columns.index("i01")
-            else:
-                columns = tuple(np.arrange(len(wind[0]), dtype=np.str))
-                index = 0
-            columns = columns[index:]
-            wind = np.array(wind[1:], dtype=np.float64)
-            wind = wind[:, index:]
-            for index, col in enumerate(columns):
-                self.variables[ion][col] = wind[:, index].reshape(self.nx, self.nz)
+                # Read in ion the ion file. this can be done in a list
+                # comprehension, I think, but I want to skip commented out lines
+                # and I think it's better(?) to do it this way
 
-    def join_windsave_tables(self):
-        """Join wind save tables together to create an all.complete.txt file."""
-        raise NotImplementedError
+                wind = []
+
+                for line in ion_file:
+                    if delim:
+                        line = line.split(delim)
+                    else:
+                        line = line.split()
+                    if len(line) == 0 or line[0] == "#":
+                        continue
+                    wind.append(line)
+
+                # Now construct the tables, how this is done is described in
+                # some of the comments above
+
+                if wind[0][0].isdigit() is False:
+                    columns = tuple(wind[0])
+                    index = columns.index("i01")
+                else:
+                    columns = tuple(np.arrange(len(wind[0]), dtype=np.str))
+                    index = 0
+                columns = columns[index:]
+                wind = np.array(wind[1:], dtype=np.float64)[:, index:]
+
+                self.variables[element][ion_type_index_name] = {}
+                for index, col in enumerate(columns):
+                    self.variables[element][ion_type_index_name][col] = wind[:, index].reshape(self.nx, self.nz)
 
     def created_masked_arrays(self, to_mask: Union[str, List[str], Tuple[str]] = None):
         """Convert each array into a masked array, where the mask is defined by
         the inwind variable."""
 
         if to_mask is None:
-            to_mask = list(self.columns)
+            to_mask = list(self.wind_parameters)
             for item_to_remove in ["x", "z", "xcen", "zcen", "i", "j", "inwind"]:
                 try:
                     to_mask.remove(item_to_remove)
