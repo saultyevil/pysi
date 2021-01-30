@@ -16,7 +16,7 @@ class Wind:
     """A class to store PYTHON wind_save in memory. Contains methods to extract
     variables, as well as convert various indices into other indices."""
     def __init__(
-        self, root: str, cd: str, projection: str = "rectilinear", tabletype: str = None, mask_arrays: bool = False,
+        self, root: str, cd: str, projection: str = "rectilinear", mask_arrays: bool = True,
         delim: str = None
     ):
         """Initialize a Wind object...
@@ -31,26 +31,11 @@ class Wind:
         self.root = root
         self.cd = cd
         self.projection = projection
-
-        # todo: instead of .all.complete.txt, actually just read in each file on a file by file basis
-        # todo: so self.filepath will be redundant, we'll just need self.cd
         if self.cd[-1] != "/":
             self.cd += "/"
-        self.filepath = self.cd + self.root + "."
-        if tabletype:
-            allowed = ["master", "heat", "gradient", "converge", "spec"]
-            if tabletype not in allowed:
-                print("{} is an unknown type of table".format(tabletype))
-                print("allowed: ", allowed)
-                exit(1)  # todo: error code
-            self.filepath += tabletype
-        else:
-            self.filepath += "all.complete"
-        self.filepath += ".txt"
-
-        self.nx = 0
-        self.nz = 0
-        self.nelem = 0
+        self.nx = 1
+        self.nz = 1
+        self.nelem = 1
         self.x_coords = ()
         self.z_coords = ()
         self.x_cen_coords = ()
@@ -72,45 +57,77 @@ class Wind:
         """Read in the wind parameters.
         todo: add support for polar and spherical winds"""
 
-        if not os.path.exists(self.filepath):
-            create_wind_save_table(self.root, self.cd)
-        with open(self.filepath, "r") as f:
-            wind_file = f.readlines()
+        wind_all = []
+        wind_columns = []
 
-        # Read in the wind_save table, ignoring empty lines and comments
-        # todo: need some method to detect incorrect syntax
+        # Read in each file, one by one, if they exist. Note that this makes
+        # the assumption that all the tables are the same size.
 
-        wind = []
+        n_read = 0
+        files_to_read = ["master", "heat", "gradient", "converge", "spec"]
 
-        for line in wind_file:
-            line = line.strip()
-            if delim:
-                line = line.split(delim)
-            else:
-                line = line.split()
-            if len(line) == 0 or line[0] == "#":
+        for file in files_to_read:
+            file = self.cd + self.root + "." + file + ".txt"
+            if not os.path.exists(file):
+                # todo: throw some kinda warning, I guess?
                 continue
-            wind.append(line)
+            n_read += 1
 
-        # Now construct the table, extract the column names first. If there is
-        # no header for some reason, then just number the columns instead
+            with open(file, "r") as f:
+                wind_file = f.readlines()
 
-        if wind[0][0].isdigit() is False:
-            self.wind_parameters = self.columns = tuple(wind[0])
-        else:
-            self.wind_parameters = self.columns = tuple(np.arange(len(wind[0]), dtype=np.str))
-        wind = np.array(wind[1:], dtype=np.float)
-        i_col = self.columns.index("i")
-        self.nx = int(np.max(wind[:, i_col]) + 1)
-        if "j" in self.columns:
-            j_col = self.columns.index("j")
-            self.nz = int(np.max(wind[:, j_col]) + 1)
+            # Read in the wind_save table, ignoring empty lines and comments.
+            # Each file is stored as a list of lines within a list, so a list
+            # of lists.
+            # todo: need some method to detect incorrect syntax
+
+            wind_list = []
+
+            for line in wind_file:
+                line = line.strip()
+                if delim:
+                    line = line.split(delim)
+                else:
+                    line = line.split()
+                if len(line) == 0 or line[0] == "#":
+                    continue
+                wind_list.append(line)
+
+            # Keep track of each file header and add the wind lines for the
+            # current file into wind_all, the list of lists, the master list
+
+            if wind_list[0][0].isdigit() is False:
+                wind_columns += wind_list[0]
+            else:
+                wind_columns += list(np.arrange(len(wind_list[0]), dtype=np.str))
+
+            wind_all.append(np.array(wind_list[1:], dtype=np.float))
+
+        if n_read == 0:
+            print("Unable to open any wind save tables, try running windsave2table...")
+            exit(1)  # todo: error code
+
+        # Determine the number of nx and nz elements. There is a basic check to
+        # only check for nz if a j column exists, i.e. if it is a 2d model.
+
+        i_col = wind_columns.index("i")
+        self.nx = int(np.max(wind_all[0][:, i_col]) + 1)
+        if "j" in wind_columns:
+            j_col = wind_columns.index("j")
+            self.nz = int(np.max(wind_all[0][:, j_col]) + 1)
         self.nelem = int(self.nx * self.nz)  # the int() is for safety
-        for index, col in enumerate(self.columns):
-            self.variables[col] = wind[:, index].reshape(self.nx, self.nz)
 
-        # Now fill in the rest of the member variables
-        # todo: try to figure out how this works for a 1d system too
+        wind_all = np.hstack(wind_all)
+
+        # Assign each column header to a key in the dictionary, ignoring any
+        # column which is already in the dict and extract the x and z
+        # coordinates
+
+        for index, col in enumerate(wind_columns):
+            if col in self.variables.keys():
+                continue
+            self.variables[col] = wind_all[:, index].reshape(self.nx, self.nz)
+            self.columns += col,
 
         self.x_coords = tuple(np.unique(self.variables["x"]))
         self.x_cen_coords = tuple(np.unique(self.variables["xcen"]))
