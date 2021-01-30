@@ -16,8 +16,7 @@ class Wind:
     """A class to store PYTHON wind_save in memory. Contains methods to extract
     variables, as well as convert various indices into other indices."""
     def __init__(
-        self, root: str, cd: str, projection: str = "rectilinear", mask_arrays: bool = True,
-        delim: str = None
+        self, root: str, cd: str, projection: str = "rectilinear", mask_arrays: bool = False, delim: str = None
     ):
         """Initialize a Wind object...
 
@@ -41,7 +40,7 @@ class Wind:
         self.x_cen_coords = ()
         self.z_cen_coords = ()
         self.wind_parameters = ()
-        self.wind_ions = ()
+        self.wind_elements = ()
         self.variables = {}
 
         # The next method reads in the wind and (probably) initializes the above
@@ -50,8 +49,8 @@ class Wind:
         self.read_wind(delim)
         self.read_ions(delim)
         if mask_arrays:
-            self.created_masked_arrays()
-        self.columns = self.wind_parameters + self.wind_ions
+            self.switch_to_masked_arrays()
+        self.columns = self.wind_parameters + self.wind_elements
 
     def read_wind(self, delim: str = None):
         """Read in the wind parameters.
@@ -156,9 +155,11 @@ class Wind:
         ion_types_to_get = ["frac", "den"]
         ion_types_index_names = ["fraction", "density"]
 
+        n_elements_read = 0
+
         for element in elements_to_get:
             element = element.capitalize()  # for safety...
-            self.wind_ions += element,
+            self.wind_elements += element,
 
             # Each element will have a dict of two keys, either frac or den.
             # Inside each dict with be more dicts of keys where the values are
@@ -170,7 +171,7 @@ class Wind:
                 file = self.cd + self.root + "." + element + "." + ion_type + ".txt"
                 if not os.path.exists(file):
                     continue
-
+                n_elements_read += 1
                 with open(file, "r") as f:
                     ion_file = f.readlines()
 
@@ -205,24 +206,43 @@ class Wind:
                 for index, col in enumerate(columns):
                     self.variables[element][ion_type_index_name][col] = wind[:, index].reshape(self.nx, self.nz)
 
-    def created_masked_arrays(self, to_mask: Union[str, List[str], Tuple[str]] = None):
+        if n_elements_read == 0:
+            print("Unable to open any wind save tables, try running windsave2table...")
+            exit(1)
+
+    def switch_to_masked_arrays(self):
         """Convert each array into a masked array, where the mask is defined by
         the inwind variable."""
 
-        if to_mask is None:
-            to_mask = list(self.wind_parameters)
-            for item_to_remove in ["x", "z", "xcen", "zcen", "i", "j", "inwind"]:
-                try:
-                    to_mask.remove(item_to_remove)
-                except ValueError:
-                    continue
-        else:
-            if type(to_mask) not in [str, list, tuple]:
-                print("to_mask should be a tuple/list of strings or a string")
-                exit(1)  # todo: error code
-        to_mask = tuple(to_mask)
-        for col in to_mask:
+        to_mask_wind = list(self.wind_parameters)
+
+        # Remove some of the columns, as these shouldn't be masked because
+        # weird things will happen when creating a plot. This doesn't need to
+        # be done for the wind ions as they don't have the below items in their
+        # data structures
+
+        for item_to_remove in ["x", "z", "xcen", "zcen", "i", "j", "inwind"]:
+            try:
+                to_mask_wind.remove(item_to_remove)
+            except ValueError:
+                continue
+
+        # First, create masked arrays for the wind parameters which is simple
+        # enough.
+
+        for col in to_mask_wind:
             self.variables[col] = np.ma.masked_where(self.variables["inwind"] < 0, self.variables[col])
+
+        # Now, create masked arrays for the wind ions. Have to do it for each
+        # element and each ion type and each ion. This is probably slow :)
+
+        for element in self.wind_elements:
+            for ion_type in self.variables[element].keys():
+                for ion in self.variables[element][ion_type].keys():
+                    print("c", ion)
+                    self.variables[element][ion_type][ion] = np.ma.masked_where(
+                        self.variables["inwind"] < 0, self.variables[element][ion_type][ion]
+                    )
 
     def get_variable_along_sightline(self):
         raise NotImplementedError
