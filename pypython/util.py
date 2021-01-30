@@ -9,7 +9,6 @@ trying to do computational astrophysics.
 
 from os import remove
 from pathlib import Path
-import pandas as pd
 from subprocess import Popen, PIPE
 from platform import system
 from shutil import which
@@ -286,7 +285,7 @@ def get_cpu_count(
 
 
 def create_wind_save_table(
-    root: str, wd: str = ".", ion_density: bool = False, no_all_complete: bool = False, verbose: bool = False
+    root: str, wd: str = ".", ion_density: bool = False, verbose: bool = False
 ) -> None:
     """Run windsave2table in a directory to create the standard data tables. The
     function can also create a root.all.complete.txt file which merges all the
@@ -300,9 +299,6 @@ def create_wind_save_table(
         The directory where windsave2table will run
     ion_density: bool [optional]
         Use windsave2table in the ion density version instead of ion fractions
-    no_all_complete: bool [optional]
-        Return from this function before a root.all.complete.txt file is
-        created.
     verbose: bool [optional]
         Enable verbose output"""
 
@@ -323,51 +319,6 @@ def create_wind_save_table(
     if stderr:
         print("the following was sent to stderr:")
         print(stderr.decode("utf-8"))
-
-    if no_all_complete:
-        return
-
-    # Now create a "complete" file which includes all the "wind" files, excluding
-    # the ion files, created by windsave2table. It attempts to remove duplicate
-    # columns, but I could have made a mistake
-
-    include_files = [
-        "heat", "gradient", "converge", "spec"
-    ]
-
-    include_files_index = [  # This is which column to index from to include as to avoid duplicate columns
-        14, 9, 26, 8
-    ]
-
-    # Read in the master file first...
-
-    mdf = pd.read_csv("{}/{}.master.txt".format(wd, root), delim_whitespace=True)
-
-    # Now append all the other tables onto the end, to create one big thing
-
-    for i, file in enumerate(include_files):
-        fname = "{}/{}.{}.txt".format(wd, root, file)
-        try:
-            df = pd.read_csv(fname, delim_whitespace=True)
-        except IOError:
-            print("unable to append {}.{}.txt table to {}.all.complete.txt file".format(file, root, root))
-            continue
-
-        columns_to_add = df.columns.values[include_files_index[i]:]
-
-        for new_column in columns_to_add:
-            mdf[new_column] = pd.Series(df[new_column])
-
-    if verbose:
-        print(mdf)
-
-    # Use numpy to write it as a fixed width file. Need to add the headings
-    # at the top
-
-    shape = mdf.values.shape
-    marr = mdf.columns.values
-    marr = np.reshape(np.append(marr, mdf.values), (shape[0] + 1, shape[1]))
-    np.savetxt("{}/{}.all.complete.txt".format(wd, root), marr, fmt="%25s")
 
     return
 
