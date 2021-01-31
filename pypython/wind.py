@@ -255,7 +255,8 @@ class Wind:
         return np.array(self.x_coords, dtype=np.float) * np.tan(PI / 2 - np.deg2rad(theta))
 
     def get_variable_along_sightline(self, theta: float, parameter: str):
-        """Extract a variable along a given sight line."""
+        """Extract a variable along a given sight line.
+        todo: get this to work with ions..."""
 
         if type(theta) is not float:
             theta = float(theta)
