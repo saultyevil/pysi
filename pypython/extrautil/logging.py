@@ -85,7 +85,7 @@ def log(
     return
 
 
-def log_silent(
+def logsilent(
     message: str, logfile=None
 ) -> None:
     """Log a message to the logfile, but do not print it to the screen.
