@@ -8,7 +8,7 @@ ionisation state, and set the oscillator strength of the transition to 0.
 """
 
 import argparse as ap
-from pypython.util import remove_bound_lines_for_ion
+from pypython.atomicdata import remove_bound_bound_transitions_ion
 
 
 def setup_script():
@@ -35,7 +35,7 @@ def main():
     """
 
     z, istate = setup_script()
-    remove_bound_lines_for_ion(z, istate)
+    remove_bound_bound_transitions_ion(z, istate)
 
     return
 

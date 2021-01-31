@@ -7,7 +7,7 @@ often tedious to remove a single transition from the photoionization data.
 """
 
 import argparse as ap
-from pypython.util import remove_photoion_transition_from_data
+from pypython.atomicdata import remove_photoionization_edge
 
 
 def command_line():
@@ -36,7 +36,7 @@ def main():
     """Main function of script"""
 
     data, atomic_number, ionisation_state = command_line()
-    remove_photoion_transition_from_data(data, atomic_number, ionisation_state)
+    remove_photoionization_edge(data, atomic_number, ionisation_state)
 
     return
 
