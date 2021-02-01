@@ -10,5 +10,5 @@ for job in job_ids:
     sh = "scancel " + job
     stdout, stderr = Popen(sh, stdout=PIPE, stderr=PIPE, shell=True).communicate()
     if stderr:
-        print(stderr.decode("utf-8")
+        print(stderr.decode("utf-8"))
 
