@@ -101,10 +101,14 @@ def main(
     # Read in the wind, set the wing parameters we want to plot, as well as the
     # elements of the ions we want to plot and the number of ions.
 
-    wind = Wind2D(root, cd, coordinate_system, True)
+    wind = Wind2D(root, cd, coordinate_system, "kms", True)
 
     wind_parameters = [
         "t_e", "t_r", "ne", "rho", "c4", "ip"
+    ]
+
+    wind_velocities = [
+        "v_x", "v_y", "v_z", "v_l", "v_rot", "v_r"
     ]
 
     # (element, n_ions)
@@ -147,6 +151,37 @@ def main(
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
     fig.savefig(cd + "/" + root + "_wind_parameters.png", dpi=300)
+
+    if display:
+        plt.show()
+    else:
+        plt.close()
+
+    # Next, plot the wind velocities
+
+    n_rows, n_cols = plotutil.subplot_dims(len(wind_velocities))
+    fig, ax = plt.subplots(
+        n_rows, n_cols, figsize=(13, 14), squeeze=False, sharex="col", sharey="row", subplot_kw=subplot_kw
+    )
+
+    logplot = True  # todo: make variable input
+
+    wind_index = 0
+    for i in range(n_rows):
+        for j in range(n_cols):
+            if logplot:  # todo: ignore division warning
+                toplot = np.log10(wind[wind_velocities[wind_index]])
+                ax[i, j].set_title("log(" + wind_velocities[wind_index] + ")" + " [" + wind.velocity_units + "]")
+            else:
+                toplot = wind[wind_velocities[wind_index]]
+                ax[i, j].set_title(wind_velocities[wind_index] + " [" + wind.velocity_units + "]")
+            fig, ax = windplot.plot_2d_wind(
+                wind["x"], wind["z"], toplot, coordinate_system, None, axes_scales, None, None, fig, ax, i, j
+            )
+            wind_index += 1
+
+    fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+    fig.savefig(cd + "/" + root + "_wind_velocities.png", dpi=300)
 
     if display:
         plt.show()

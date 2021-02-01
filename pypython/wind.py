@@ -8,8 +8,9 @@ Description of file.
 import os
 import numpy as np
 from typing import List, Union, Tuple
-from .physics.constants import PI
+from .physics.constants import PI, CMS_TO_KMS, C
 from .util import get_array_index
+from .extrautil import vector
 
 
 class Wind1D:
@@ -23,7 +24,8 @@ class Wind2D:
     """A class to store a 2D Python wind tables. Contains methods to extract
     variables, as well as convert various indices into other indices."""
     def __init__(
-        self, root: str, cd: str, coordinate_system: str = "rectilinear", mask_cells: bool = True, delim: str = None
+        self, root: str, cd: str, coordinate_system: str = "rectilinear", velocity_units: str = "kms",
+        mask_cells: bool = True, delim: str = None
     ):
         """Description of function.
 
@@ -56,14 +58,40 @@ class Wind2D:
         self.wind_elements = ()
         self.variables = {}
 
+        # Set up the velocity units and conversion factors
+
+        if velocity_units not in ["cms", "kms", "c"]:
+            print("unknown units: " + velocity_units)
+            print("allowed: ['kms', 'cms', 'c']")
+            exit(1)  # todo: error code
+        self.velocity_units = velocity_units
+        if velocity_units == "kms":
+            self.velocity_conversion_factor = CMS_TO_KMS
+        elif velocity_units == "cms":
+            self.velocity_conversion_factor = 1
+        else:
+            self.velocity_conversion_factor = 1 / C
+
         # The next method reads in the wind and (probably) initializes the above
         # members
 
         self.read_in_wind_parameters(delim)
         self.read_in_wind_ions(delim)
+        self.columns = self.wind_parameters + self.wind_elements
+
+        # Convert velocity into desired units and also calculate the cylindrical
+        # velocities
+
+        self.project_cartesian_velocity_to_cylindrical()
+        self.variables["v_x"] *= self.velocity_conversion_factor
+        self.variables["v_y"] *= self.velocity_conversion_factor
+        self.variables["v_z"] *= self.velocity_conversion_factor
+
+        # Create masked cells, if that's the users deepest desire for their
+        # data
+
         if mask_cells:
             self.mask_non_inwind_cells()
-        self.columns = self.wind_parameters + self.wind_elements
 
     def read_in_wind_parameters(self, delim: str = None):
         """Read in the wind parameters.
@@ -222,6 +250,40 @@ class Wind2D:
         if n_elements_read == 0:
             print("Unable to open any wind save tables, try running windsave2table...")
             exit(1)
+
+    def project_cartesian_velocity_to_cylindrical(self):
+        """Project the cartesian velocities of the wind into cylindrical coordinates."""
+
+        v_l = np.zeros_like(self.variables["v_x"])
+        v_rot = np.zeros_like(v_l)
+        v_r = np.zeros_like(v_l)
+        n1, n2 = v_l.shape
+
+        for i in range(n1):
+            for j in range(n2):
+                cart_point = [self.variables["x"][i, j], 0, self.variables["z"][i, j]]
+                # todo: don't think I need to do this check anymore
+                if self.variables["inwind"][i, j] < 0:
+                    v_l[i, j] = 0
+                    v_rot[i, j] = 0
+                    v_r[i, j] = 0
+                else:
+                    cart_velocity_vector = [
+                        self.variables["v_x"][i, j], self.variables["v_y"][i, j], self.variables["v_z"][i, j]
+                    ]
+                    cyl_velocity_vector = vector.project_cartesian_to_cylindrical_coordinates(
+                        cart_point, cart_velocity_vector
+                    )
+                    if type(cyl_velocity_vector) is int:
+                        # todo: some error has happened, print a warning...
+                        continue
+                    v_l[i, j] = np.sqrt(cyl_velocity_vector[0] ** 2 + cyl_velocity_vector[2] ** 2)
+                    v_rot[i, j] = cyl_velocity_vector[1]
+                    v_r[i, j] = cyl_velocity_vector[0]
+
+        self.variables["v_l"] = v_l * self.velocity_conversion_factor
+        self.variables["v_rot"] = v_rot * self.velocity_conversion_factor
+        self.variables["v_r"] = v_r * self.velocity_conversion_factor
 
     def mask_non_inwind_cells(self):
         """Convert each array into a masked array, where the mask is defined by
