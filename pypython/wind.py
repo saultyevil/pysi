@@ -12,24 +12,37 @@ from .physics.constants import PI
 from .util import get_array_index
 
 
-class Wind:
-    """A class to store PYTHON wind_save in memory. Contains methods to extract
+class Wind1D:
+    """A class to store a 1D Python wind_save file. Contains methods to extract
+    variables, etc."""
+    def __str__(self):
+        raise NotImplementedError
+
+
+class Wind2D:
+    """A class to store a 2D Python wind tables. Contains methods to extract
     variables, as well as convert various indices into other indices."""
     def __init__(
-        self, root: str, cd: str, projection: str = "rectilinear", mask_cells: bool = True, delim: str = None
+        self, root: str, cd: str, coordinate_system: str = "rectilinear", mask_cells: bool = True, delim: str = None
     ):
-        """Initialize a Wind object...
+        """Description of function.
 
         Parameters
         ----------
         root: str
             The root name of the Python simulation.
         cd: str
-            The directory containing the model."""
+            The directory containing the model.
+        coordinate_system: str [optional]
+            The coordinate system of the wind: rectilinear or polar.
+        mask_cells: bool [optional]
+            Store the wind parameters as masked arrays.
+        delim: str [optional]
+            The delimiter used in the wind table files."""
 
         self.root = root
         self.cd = cd
-        self.projection = projection
+        self.projection = coordinate_system
         if self.cd[-1] != "/":
             self.cd += "/"
         self.nx = 1
@@ -46,13 +59,13 @@ class Wind:
         # The next method reads in the wind and (probably) initializes the above
         # members
 
-        self.read_wind(delim)
-        self.read_ions(delim)
+        self.read_in_wind_parameters(delim)
+        self.read_in_wind_ions(delim)
         if mask_cells:
             self.mask_non_inwind_cells()
         self.columns = self.wind_parameters + self.wind_elements
 
-    def read_wind(self, delim: str = None):
+    def read_in_wind_parameters(self, delim: str = None):
         """Read in the wind parameters.
         todo: add support for polar and spherical winds"""
 
@@ -134,7 +147,7 @@ class Wind:
             self.z_coords = tuple(np.unique(self.variables["z"]))
             self.z_cen_coords = tuple(np.unique(self.variables["zcen"]))
 
-    def read_ions(self, delim: str = None, elements_to_get: Union[List[str], Tuple[str], str] = None):
+    def read_in_wind_ions(self, delim: str = None, elements_to_get: Union[List[str], Tuple[str], str] = None):
         """Read in the ion parameters.
         todo: add way to load in either densities or fractions"""
 
@@ -239,7 +252,6 @@ class Wind:
         for element in self.wind_elements:
             for ion_type in self.variables[element].keys():
                 for ion in self.variables[element][ion_type].keys():
-                    print("c", ion)
                     self.variables[element][ion_type][ion] = np.ma.masked_where(
                         self.variables["inwind"] < 0, self.variables[element][ion_type][ion]
                     )
@@ -256,7 +268,8 @@ class Wind:
 
     def get_variable_along_sightline(self, theta: float, parameter: str):
         """Extract a variable along a given sight line.
-        todo: get this to work with ions..."""
+        todo: i think this only works with rectilinear grids, not polar
+        todo: get this to work with ions"""
 
         if type(theta) is not float:
             theta = float(theta)
