@@ -11,7 +11,7 @@ from matplotlib import pyplot as plt
 from pypython import plotutil
 from pypython import util
 from pypython.spectrum import Spectrum
-from pypython import spectrumcreate
+from pypython import createspectrum
 from physics import convert
 
 plt.rcParams['xtick.labelsize'] = 15
@@ -56,7 +56,7 @@ def setup_script() -> tuple:
         "-xu", "--xmax", type=float, default=None, help="The upper x-axis boundary to display."
     )
     create_p.add_argument(
-        "-el", "--extract_line", nargs="+", type=int, default=(spectrumcreate.UNFILTERED_SPECTRUM,),
+        "-el", "--extract_line", nargs="+", type=int, default=(createspectrum.UNFILTERED_SPECTRUM,),
         help="The line number to only extract."
     )
     create_p.add_argument(
@@ -86,7 +86,7 @@ def setup_script() -> tuple:
         "-wd", "--working_directory", default=".", help="The directory containing the simulation."
     )
     plot_p.add_argument(
-        "-el", "--extract_line", nargs="+", type=int, default=(spectrumcreate.UNFILTERED_SPECTRUM,),
+        "-el", "--extract_line", nargs="+", type=int, default=(createspectrum.UNFILTERED_SPECTRUM,),
         help="The line number to only extract."
     )
     plot_p.add_argument(
@@ -249,7 +249,7 @@ def plot(
 
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 
-        if extract_line[0] != spectrumcreate.UNFILTERED_SPECTRUM:
+        if extract_line[0] != createspectrum.UNFILTERED_SPECTRUM:
             name = "{}/{}_line".format(wd, root)
             for line in extract_line:
                 name += "_{}".format(line)
@@ -320,12 +320,12 @@ def main(setup: tuple = None):
         xmax = convert.angstrom_to_hz(w_xmin)
 
     if mode == "create":
-        spectrumcreate.create_spectrum(
+        createspectrum.create_spectrum(
             root, wd, extract_nres, freq_min=xmin, freq_max=xmax, n_bins=n_bins, d_norm_pc=d_norm_pc,
             spec_cycle_norm=spec_cycle_norm, n_cores_norm=n_cores_norm
         )
     else:
-        if extract_nres[0] != spectrumcreate.UNFILTERED_SPECTRUM:
+        if extract_nres[0] != createspectrum.UNFILTERED_SPECTRUM:
             name = "{}/{}_line".format(wd, root)
             for line in extract_nres:
                 name += "_{}".format(line)
