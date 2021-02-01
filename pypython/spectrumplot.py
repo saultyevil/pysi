@@ -2,10 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-This file contains functions which can be used to plot the various different
-output files from Python. The general design of the functions is to return
-figure and axes objects, just in case anything else wants to be changed before
-being saved to disk or displayed.
+Description of file.
 """
 
 from .physics.constants import PARSEC
@@ -20,11 +17,9 @@ import numpy as np
 from typing import List, Tuple, Union
 from matplotlib import pyplot as plt
 
-
-plt.rcParams["xtick.labelsize"] = 15
-plt.rcParams["ytick.labelsize"] = 15
-plt.rcParams["axes.labelsize"] = 15
-
+plt.rcParams["xtick.labelsize"] = 14
+plt.rcParams["ytick.labelsize"] = 14
+plt.rcParams["axes.labelsize"] = 14
 
 MIN_SPEC_COMP_FLUX = 1e-15
 DEFAULT_PYTHON_DISTANCE = 100 * PARSEC

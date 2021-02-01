@@ -73,9 +73,9 @@ class Spectrum:
         # The next method call reads in the spectrum and initializes the above
         # member variables.
 
-        self.read_spectrum(delim)
+        self.read_in_spectrum(delim)
 
-    def read_spectrum(self, delim: str = None):
+    def read_in_spectrum(self, delim: str = None):
         """Read in a spectrum file given in self.filepath. The spectrum is stored
         as a dictionary in self.spectrum where each key is the name of the
         columns.
