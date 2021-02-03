@@ -93,7 +93,9 @@ class Wind2D:
         if mask_cells:
             self.mask_non_inwind_cells()
 
-    def read_in_wind_parameters(self, delim: str = None):
+    def read_in_wind_parameters(
+        self, delim: str = None
+    ):
         """Read in the wind parameters.
         todo: add support for polar and spherical winds"""
 
@@ -175,7 +177,9 @@ class Wind2D:
             self.z_coords = tuple(np.unique(self.variables["z"]))
             self.z_cen_coords = tuple(np.unique(self.variables["zcen"]))
 
-    def read_in_wind_ions(self, delim: str = None, elements_to_get: Union[List[str], Tuple[str], str] = None):
+    def read_in_wind_ions(
+        self, delim: str = None, elements_to_get: Union[List[str], Tuple[str], str] = None
+    ):
         """Read in the ion parameters.
         todo: add way to load in either densities or fractions"""
 
@@ -191,7 +195,6 @@ class Wind2D:
         # key = ion name
         # values = dict of ion keys, i.e. i_01, i_02, etc, and the values
         # in this dict will be the values of that ion
-        # todo: way to handle frac or dens
 
         ion_types_to_get = ["frac", "den"]
         ion_types_index_names = ["fraction", "density"]
@@ -251,7 +254,9 @@ class Wind2D:
             print("Unable to open any wind save tables, try running windsave2table...")
             exit(1)
 
-    def project_cartesian_velocity_to_cylindrical(self):
+    def project_cartesian_velocity_to_cylindrical(
+        self
+    ):
         """Project the cartesian velocities of the wind into cylindrical coordinates."""
 
         v_l = np.zeros_like(self.variables["v_x"])
@@ -285,7 +290,9 @@ class Wind2D:
         self.variables["v_rot"] = v_rot * self.velocity_conversion_factor
         self.variables["v_r"] = v_r * self.velocity_conversion_factor
 
-    def mask_non_inwind_cells(self):
+    def mask_non_inwind_cells(
+        self
+    ):
         """Convert each array into a masked array, where the mask is defined by
         the inwind variable."""
 
@@ -318,7 +325,9 @@ class Wind2D:
                         self.variables["inwind"] < 0, self.variables[element][ion_type][ion]
                     )
 
-    def get_sightline_coordinates(self, theta: float):
+    def get_sightline_coordinates(
+        self, theta: float
+    ):
         """Get the vertical z coordinates for a given set of x coordinates and
         inclination angle.
 
@@ -347,23 +356,33 @@ class Wind2D:
 
         return np.array(self.x_coords), z_array, np.array(values, dtype=np.float)
 
-    def get_elem_number_from_ij(self, i: int, j: int):
+    def get_elem_number_from_ij(
+        self, i: int, j: int
+    ):
         """Get the wind element number for a given i and j index."""
         raise self.nz * i + j
 
-    def get_ij_from_elem_number(self, elem: int):
+    def get_ij_from_elem_number(
+        self, elem: int
+    ):
         """Get the i and j index for a given wind element number.
         todo: check that this is row or column major in Python"""
         return np.unravel_index(elem, (self.nx, self.nz))
 
-    def __getitem__(self, key):
+    def __getitem__(
+        self, key
+    ):
         """Return an array in the variables dictionary when indexing."""
         return self.variables[key]
 
-    def __setitem__(self, key, value):
+    def __setitem__(
+        self, key, value
+    ):
         """Set an array in the variables dictionary."""
         self.variables[key] = value
 
-    def __str__(self):
+    def __str__(
+        self
+    ):
         """Print basic details about the wind."""
         return "NotImplementedYet:-)"

@@ -11,11 +11,8 @@ use (or edit) the other plotting scripts to fit your needs appropriately.
 
 import py_plot_wind
 import py_plot_spectrum
-import py_plot_velocity
 import py_plot_optical_depth
-import py_plot_spectrum_components
 import argparse as ap
-from pypython.util import clean_up_data_sym_links
 
 
 def setup_script() -> tuple:
@@ -85,7 +82,9 @@ def setup_script() -> tuple:
     return setup
 
 
-def plot(setup: tuple = None):
+def plot(
+    setup: tuple = None
+):
     """Creates a bunch of plots using some parameters which can be controlled at
     run time, but also assumes a few default parameters. Refer to the
     documentation for the script for more detail.
@@ -107,30 +106,25 @@ def plot(setup: tuple = None):
         The matplotlib Axes objects for the plot panels."""
 
     if setup:
-        root, wd, xmin, xmax, frequency_space, projection, smooth_amount, file_ext, display = setup
+        root, wd, xmin, xmax, frequency_space, polar_coords, smooth_amount, file_ext, display = setup
     else:
-        root, wd, xmin, xmax, frequency_space, projection, smooth_amount, file_ext, display = setup_script()
+        root, wd, xmin, xmax, frequency_space, polar_coords, smooth_amount, file_ext, display = setup_script()
 
     # todo: why did I write this? i am very confused :-(
     # Oh it's because projection was a string, I think, but I should still change
     # this garbage bit of code
 
-    if projection:
-        projection = True
-    else:
-        projection = False
+    # if polar_coords:
+    #     polar_coords = True
+    # else:
+    #     polar_coords = False
 
     # Create plots for the wind - only create velocity plots for rectilinear
     # at the moment - and remove the data folder afterwards
 
     py_plot_wind.main(
-        (root, wd, projection, False, "loglog", False, file_ext, display)
+        (root, wd, polar_coords, False, "loglog", False, file_ext, display)
     )
-    if projection == "rectilinear":  # Because it doesn't work for polar grids yet
-        py_plot_velocity.main(
-            (root, wd, "c", "loglog", False, file_ext, display)
-        )
-    clean_up_data_sym_links(wd)
 
     # Create plots for the different spectra
 
@@ -139,9 +133,6 @@ def plot(setup: tuple = None):
     )
     py_plot_optical_depth.main(
         (root, wd, xmin, xmax, False, True, "loglog", file_ext, display)
-    )
-    py_plot_spectrum_components.main(
-        (root, wd, None, None, smooth_amount, True, False, "loglog", file_ext, display)
     )
 
     return

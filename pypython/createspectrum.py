@@ -36,8 +36,7 @@ def write_delay_dump_spectrum_to_file(
     root: str, wd: str, spectrum: np.ndarray, extract_nres: tuple, n_spec: int, n_bins: int, d_norm_pc: float,
     return_inclinations: bool = False
 ) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
-    """
-    Write the generated delay dump spectrum to file
+    """Write the generated delay dump spectrum to file
 
     Parameters
     ----------
@@ -63,8 +62,7 @@ def write_delay_dump_spectrum_to_file(
     spectrum: np.ndarray
         The delay dump spectrum.
     inclinations: [optional] np.ndarray
-        An array of the inclination angles of the spectrum.
-    """
+        An array of the inclination angles of the spectrum."""
 
     if extract_nres[0] != UNFILTERED_SPECTRUM:
         fname = "{}/{}_line".format(wd, root)
@@ -131,8 +129,7 @@ def write_delay_dump_spectrum_to_file(
 def read_delay_dump(
     root: str, column_names: dict, wd: str = ".", mode_line_res: bool = True
 ) -> pd.DataFrame:
-    """
-    Process the photons which have been dumped to the delay_dump file. tqdm is
+    """Process the photons which have been dumped to the delay_dump file. tqdm is
     used to display a progress bar of the current progress.
 
     Parameters
@@ -151,8 +148,7 @@ def read_delay_dump(
     -------
     dumped_photons: pd.DataFrame
         An array containing the dumped photons with the quantities specified
-        by the extract dict.
-    """
+        by the extract dict."""
 
     n = read_delay_dump.__name__
 
@@ -199,8 +195,7 @@ def read_delay_dump(
 def convert_weight_to_flux(
     spectrum: np.ndarray, spec_cycle_norm: float, d_norm_pc: float
 ):
-    """
-    Re-normalize the photon weight bins into a Flux per unit wavelength.
+    """Re-normalize the photon weight bins into a Flux per unit wavelength.
 
     spec_cycle_norm fixes the case where less than the specified number of
     spectral cycles were run, which would mean not all of the flux has been
@@ -219,8 +214,7 @@ def convert_weight_to_flux(
     Returns
     -------
     spectrum: np.ndarray
-        The renormalized spectrum.
-    """
+        The renormalized spectrum."""
 
     n_bins = spectrum.shape[0]
     n_spec = spectrum.shape[1] - 1
@@ -242,8 +236,7 @@ def bin_photon_weights(
     spectrum: np.ndarray, freq_min: float, freq_max: float, photon_freqs: np.ndarray, photon_weights: np.ndarray,
     photon_spc_i: np.ndarray, photon_nres: np.ndarray, photon_line_nres: np.ndarray, extract_nres: tuple, logbins: bool
 ):
-    """
-    Bin the photons into frequency bins using jit to attempt to speed everything
+    """Bin the photons into frequency bins using jit to attempt to speed everything
     up.
 
     BOUND_FREE_NRES = NLINES = 20000 has been hardcoded. Any values of nres
@@ -276,8 +269,7 @@ def bin_photon_weights(
     Returns
     -------
     spectrum: np.ndarray
-        The spectrum where photon weights have been binned.
-    """
+        The spectrum where photon weights have been binned."""
 
     n_extract = len(extract_nres)
     n_photons = photon_freqs.shape[0]
@@ -329,8 +321,7 @@ def construct_spectrum_from_weights(
     delay_dump_photons: pd.DataFrame, spectrum: np.ndarray, n_cores_norm: int,
     extract_nres: tuple = (UNFILTERED_SPECTRUM,), logbins: bool = True
 ) -> np.ndarray:
-    """
-    Construct a spectrum from the weights of the provided photons. If nphotons,
+    """Construct a spectrum from the weights of the provided photons. If nphotons,
     then the function will automatically detect what this should be (I hope).
     There should be no NaN values in any of the arrays which are provided.
 
@@ -357,8 +348,7 @@ def construct_spectrum_from_weights(
     Returns
     -------
     spectrum: np.ndarray (nbins, nspec)
-        The constructed spectrum in units of F_lambda erg/s/cm/cm/A.
-    """
+        The constructed spectrum in units of F_lambda erg/s/cm/cm/A."""
 
     freq_min = np.min(spectrum[:, 0])
     freq_max = np.max(spectrum[:, 0])
@@ -387,8 +377,7 @@ def create_spectrum(
     d_norm_pc: float = 100, spec_cycle_norm: float = 1, n_cores_norm: int = 1, logbins: bool = True,
     mode_line_res: bool = True, output_numpy: bool = False
 ) -> Union[np.ndarray, pd.DataFrame]:
-    """
-    Create a spectrum for each inclination angle using the photons which have
+    """Create a spectrum for each inclination angle using the photons which have
     been dumped to the root.delay_dump file.
 
     Spectrum frequency bins are rounded to 7 significant figures as this makes
@@ -432,8 +421,7 @@ def create_spectrum(
     -------
     filtered_spectrum: np.ndarray or pd.DataFrame
         A 2D array containing the frequency in the first column and the
-        fluxes for each inclination angle in the other columns.
-    """
+        fluxes for each inclination angle in the other columns."""
 
     n = create_spectrum.__name__
 
@@ -513,8 +501,7 @@ def create_spectrum_process_breakdown(
     root: str, wl_min: float, wl_max: float, n_cores_norm: int = 1, spec_cycle_norm: float = 1, wd: str = ".",
     nres: int = None, mode_line_res: bool = True
 ) -> dict:
-    """
-    Get the spectra for the different physical processes which contribute to a
+    """Get the spectra for the different physical processes which contribute to a
     spectrum. If nres is provided, then only a specific interaction will be
     extracted, otherwise all resonance interactions will.
 
@@ -544,8 +531,7 @@ def create_spectrum_process_breakdown(
     -------
     spectra: dict
         A dictionary where the keys are the name of the spectra and the values
-        are pd.DataFrames of that corresponding spectrum.
-    """
+        are pd.DataFrames of that corresponding spectrum."""
 
     if mode_line_res:
         ex = spectrum_columns_dict_line_res

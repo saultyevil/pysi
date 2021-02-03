@@ -256,7 +256,7 @@ def get_parameter_files(
 
 
 def get_cpu_count(
-    enable_smt: bool = False
+    enablesmt: bool = False
 ):
     """Return the number of CPU cores which can be used when running a Python
     simulation. By default, this will only return the number of physical cores
@@ -265,7 +265,7 @@ def get_cpu_count(
 
     Parameters
     ----------
-    enable_smt: [optional] bool
+    enablesmt: [optional] bool
         Return the number of logical cores, which includes both physical and
         logical (SMT/hyperthreads) threads.
 
@@ -277,7 +277,7 @@ def get_cpu_count(
     n_cores = 0
 
     try:
-        n_cores = cpu_count(logical=enable_smt)
+        n_cores = cpu_count(logical=enablesmt)
     except NotImplementedError:
         print("unable to determine number of CPU cores, psutil.cpu_count not implemented for your system")
 
@@ -411,7 +411,9 @@ def create_slurm_file(
     return
 
 
-def create_run_script(commands: List[str]):
+def create_run_script(
+    commands: List[str]
+) -> None:
     """Create a shell run script given a list of commands to do. This assumes that
     you want to use a bash interpreter.
 

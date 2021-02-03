@@ -71,7 +71,7 @@ def send_email_message(
         return msg
     except Exception as e:
         print("Unable to send email message")
-        print(e)
+        # print(e)
 
     return
 

@@ -350,6 +350,30 @@ def main(
         root, cd, xmin, xmax, smooth_amount, frequency_space, axes_scales, file_ext
     )
 
+    # Spectrum Components - extracted spectrum
+
+    alpha = 0.75
+
+    fig, ax = spectrumplot.plot_spectrum_components(
+        root, cd, False, False, xmin, xmax, smooth_amount, axes_scales, alpha, frequency_space, display
+    )
+    fig.savefig("{}/{}_spectrum_components.{}".format(cd, root, file_ext))
+
+    # log_spec_tot - all photons
+
+    fig, ax = spectrumplot.plot_spectrum_components(
+        root, cd, True, False, xmin, xmax, smooth_amount, axes_scales, alpha, frequency_space, display
+    )
+    fig.savefig("{}/{}_spec_tot.{}".format(cd, root, file_ext))
+
+    # log_spec_tot_wind - anything which is "inwind"
+
+    fig, ax = spectrumplot.plot_spectrum_components(
+        root, cd, False, True, xmin, xmax, smooth_amount, axes_scales, alpha, frequency_space, display
+    )
+    fig.savefig("{}/{}_spec_tot_wind.{}".format(cd, root, file_ext))
+
+
     if display:
         plt.show()
 

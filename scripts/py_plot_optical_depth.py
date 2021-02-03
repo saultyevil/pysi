@@ -12,7 +12,6 @@ from typing import Tuple
 from matplotlib import pyplot as plt
 from pypython import spectrumplot
 
-
 plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15
 plt.rcParams['axes.labelsize'] = 15

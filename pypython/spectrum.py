@@ -22,7 +22,9 @@ class Spectrum:
     """A class to store PYTHON .spec and .log_spec files.
     The PYTHON spectrum is read in and stored within a dict, where each column
     name is a key and the data is stored as a numpy array."""
-    def __init__(self, root: str, cd: str = ".", logspec: bool = False, spectype: str = None, delim: str = None):
+    def __init__(
+        self, root: str, cd: str = ".", logspec: bool = False, spectype: str = None, delim: str = None
+    ):
         """Initialise a Spectrum object. This method will construct the file path
         of the spectrum file given the root, containing directory and whether
         the logarithmic spectrum is used or not. The spectrum is then read in.
@@ -75,7 +77,9 @@ class Spectrum:
 
         self.read_in_spectrum(delim)
 
-    def read_in_spectrum(self, delim: str = None):
+    def read_in_spectrum(
+        self, delim: str = None
+    ):
         """Read in a spectrum file given in self.filepath. The spectrum is stored
         as a dictionary in self.spectrum where each key is the name of the
         columns.
@@ -138,7 +142,9 @@ class Spectrum:
         self.inclinations = tuple(self.inclinations)
         self.n_inclinations = len(self.inclinations)
 
-    def smooth(self, width: int = 5, to_smooth: Union[List[str], Tuple[str], str] = None):
+    def smooth(
+        self, width: int = 5, to_smooth: Union[List[str], Tuple[str], str] = None
+    ):
         """Smooth the spectrum flux/luminosity bins.
 
         Parameters
@@ -178,19 +184,27 @@ class Spectrum:
             except KeyError:
                 continue
 
-    def unsmooth(self):
+    def unsmooth(
+        self
+    ):
         """Restore the spectrum to its unsmoothed form."""
         self.spectrum = copy.deepcopy(self.unsmoothed)
 
-    def __getitem__(self, key):
+    def __getitem__(
+        self, key
+    ):
         """Return an array in the spectrum dictionary when indexing."""
         return self.spectrum[key]
 
-    def __setitem__(self, key, value):
+    def __setitem__(
+        self, key, value
+    ):
         """Allows to modify the arrays in the spectrum dictionary."""
         self.spectrum[key] = value
 
-    def __str__(self):
+    def __str__(
+        self
+    ):
         """Print the basic details about the spectrum."""
         return textwrap.dedent("""\
             PYTHON spectrum for model {}

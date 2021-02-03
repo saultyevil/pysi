@@ -245,7 +245,7 @@ def plot(
                 logx = True
             else:
                 logx = False
-            ax = plotutil.ax_add_line_ids(ax, plotutil.common_lines(freq=frequency_space), logx)
+            ax = plotutil.ax_add_line_ids(ax, plotutil.common_lines(freq=frequency_space), logx=logx)
 
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 
@@ -267,7 +267,9 @@ def plot(
     return
 
 
-def main(setup: tuple = None):
+def main(
+    setup: tuple = None
+):
     """
     Main function of the script.
 

@@ -26,7 +26,9 @@ def get_input() -> Tuple[str, int, str]:
     return args.mode, args.wcycle, args.extract
 
 
-def read_photon_file(fname: str = "python.ext_0.txt", myheader: List[str] = None) -> pd.DataFrame:
+def read_photon_file(
+    fname: str = "python.ext_0.txt", myheader: List[str] = None
+) -> pd.DataFrame:
     """Read in the Python photon extra diagnostic file."""
 
     header = ["PHOTON", "wcycle", "np", "freq", "w", "x", "y", "z", "nx", "ny", "nz", "grid", "istat", "origin",
@@ -39,7 +41,9 @@ def read_photon_file(fname: str = "python.ext_0.txt", myheader: List[str] = None
     return df
 
 
-def extract_photons(df: pd.DataFrame, wcycle: int, column: str, extract: Union[str, int, float]) -> pd.DataFrame:
+def extract_photons(
+    df: pd.DataFrame, wcycle: int, column: str, extract: Union[str, int, float]
+) -> pd.DataFrame:
     """Extract photons from a certain cycle and with a certain comment and
     change the data type to numeric."""
 
@@ -66,7 +70,9 @@ def extract_photons(df: pd.DataFrame, wcycle: int, column: str, extract: Union[s
     return df
 
 
-def bin_photon_weights_in_frequency(freq: np.ndarray, w: np.ndarray, nbins: int = 100) -> np.ndarray:
+def bin_photon_weights_in_frequency(
+    freq: np.ndarray, w: np.ndarray, nbins: int = 100
+) -> np.ndarray:
     """Bin the photon weights into frequency bins."""
 
     freq_min = freq.min()
@@ -207,7 +213,9 @@ def plot_weight_hist():
     return
 
 
-def extract_scattered_photons(wcycle: int, nscats: str):
+def extract_scattered_photons(
+    wcycle: int, nscats: str
+):
     """Extract a photon which has scattered nscats time from the ionisation
     cycle wcycle."""
 

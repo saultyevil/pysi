@@ -7,21 +7,15 @@ and emitted spectrum from model. The continuum optical depths are plotted as wel
 Both are plotted as a function of frequency.
 """
 
-from shutil import copy
-from os import mkdir
-from sys import exit
-from pathlib import Path
-from subprocess import Popen, PIPE
 import numpy as np
 from typing import Tuple
 from matplotlib import pyplot as plt
 import argparse as ap
 
 from pypython.physics.constants import PI, PARSEC
-from pypython.grid import update_single_parameter
 from pypython import plotutil
 from pypython.spectrum import Spectrum
-from pypython.util import clean_up_data_sym_links, get_cpu_count, smooth_array
+from pypython.util import get_cpu_count, smooth_array
 
 
 def setup_script() -> tuple:
@@ -72,79 +66,9 @@ def setup_script() -> tuple:
     return setup
 
 
-def get_continuum(
-    root: str, wd: str = ".", ncores: int = 1
-) -> Spectrum:
-    """Get the data for the underlying continuum spectrum. The script will attempt
-    to read the file in from continuum/root_cont.spec, otherwise it will create
-    a continuum model to run in Python.
-
-    Parameters
-    ----------
-    root: str
-        The root name of the simulation.
-    wd: str [optional]
-        The directory containing the simulation.
-    ncores: int [optional]
-        The number of cores to use to create the continuum spectrum if required.
-
-    Returns
-    -------
-    t: Spectrum
-        The continuum spectrum."""
-
-    name = "{}/continuum/{}_cont.spec".format(wd, root)
-    if Path(name).is_file():
-        # todo: this is not what god intended, there must be a better way...
-        if wd == ".":
-            wd += "/"
-        t = Spectrum(root + "_cont", wd + "continuum")
-        return t
-
-    print("Unable to find {}\nRunning Python to create continuum spectrum".format(name))
-
-    # Now we have to run Python to get the continuum, to do this we will only
-    # run spectral cycles, make the wind very diffuse and turn the temperature
-    # up to ensure the wind is fully ionized. This is done by making a copy of
-    # the final parameter file and using change_parameter to change the various
-    # parameters.
-
-    try:
-        mkdir("continuum")
-    except FileExistsError:  # I don't think this is the intended method, but oh well
-        pass
-
-    name = "{}/continuum/{}_cont.pf".format(wd, root)
-    copy("{}/{}.pf".format(wd, root), name)
-    update_single_parameter(name, "Ionization_cycles", "0", backup=False)
-    update_single_parameter(name, "Spectrum_cycles", "5", backup=False)
-    update_single_parameter(name, "Photons_per_cycle", "1e6", backup=False)
-    update_single_parameter(name, "Wind.mdot(msol/yr)", "1e-20", backup=False)
-    update_single_parameter(name, "Wind.t.init", "1e8", backup=False)
-    update_single_parameter(name, "Reverb.type(none,photon,wind,matom)", "none", backup=False)
-
-    command = "cd {}; cd continuum; Setup_Py_Dir; mpirun -n {} py -gamma {}_cont.pf".format(wd, ncores, root)
-    print(command)
-    sh = Popen(command, shell=True, stdout=PIPE, stderr=PIPE)
-    stdout, stderr = sh.communicate()
-    ndel = clean_up_data_sym_links()
-
-    if stderr:
-        print("There was a problem running Python to generate the continuum spectrum:\n")
-        print(stderr.decode("utf-8"))
-        exit(1)
-
-    if ndel == 0:
-        print("There was a problem deleting the atomic data")
-
-    t = Spectrum(root, wd)
-
-    return t
-
-
 def create_plot(
-    root: str, spectrum: Spectrum, optical_depth_spectrum: Spectrum, cont_spectrum: Spectrum, sm: int = 1,
-    bgalpha: float = 0.50, display: bool = False
+    root: str, spectrum: Spectrum, optical_depth_spectrum: Spectrum, sm: int = 1, bgalpha: float = 0.50,
+    display: bool = False
 ) -> Tuple[plt.Figure, plt.Axes, plt.Axes]:
     """Create a figure to show how the underlying continuum is being reprocessed.
 
@@ -166,18 +90,22 @@ def create_plot(
         If True, the plot will be shown to screen."""
 
     # Find the various sight lines of the optical depth spectra
+
     sightlines = optical_depth_spectrum.inclinations
     optical_depth_freq = optical_depth_spectrum["Freq."]
 
     # Extract the two spectrum components of interest from the spectra files and
     # convert flux to nu Lnu
+    # todo: check units of spectrum before doing this
+
     emerg_spec_freq = spectrum["Freq."]
     emerg_spec_flux = spectrum["Emitted"] * 4 * PI * (100 * PARSEC) ** 2 * spectrum["Lambda"]
-    cont_spec_freq = cont_spectrum["Freq."]
-    cont_spec_flux = cont_spectrum["Emitted"] * 4 * PI * (100 * PARSEC) ** 2 * cont_spectrum["Lambda"]
+    cont_spec_freq = spectrum["Freq."]
+    cont_spec_flux = spectrum["Created"] * 4 * PI * (100 * PARSEC) ** 2 * spectrum["Lambda"]
 
     # Plot the spectra, these spectra are plotted on ax2 to have a separates y
     # axis on loglog scale
+
     fig, ax = plt.subplots(figsize=(12, 7))
     ax2 = ax.twinx()
     ax2.loglog(
@@ -189,6 +117,7 @@ def create_plot(
     ax2.set_ylabel(r"$\nu L_{\nu}$ [ergs s$^{-1}$]")
 
     # Plot the optical depths, again as a function of frequency
+
     for sl in sightlines:
         od = optical_depth_spectrum[sl]
         if np.count_nonzero(od) != len(od):
@@ -220,7 +149,9 @@ def create_plot(
     return fig, ax, ax2
 
 
-def main(setup: tuple = None):
+def main(
+    setup: tuple = None
+):
     """Main function of the script.
 
     Parameters
@@ -241,10 +172,9 @@ def main(setup: tuple = None):
     else:
         root, wd, n_cores, sm, display = setup_script()
 
-    continuum_spectrum = get_continuum(root, wd, n_cores)
     full_spectrum = Spectrum(root, wd)
     optical_depth = Spectrum(root, wd, spectype="spec_tau")
-    create_plot(root, full_spectrum, optical_depth, continuum_spectrum, sm=sm, display=display)
+    create_plot(root, full_spectrum, optical_depth, sm=sm, display=display)
 
     return
 
