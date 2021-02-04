@@ -6,25 +6,23 @@ Utility functions to ease the pain of using Python or a Unix environment whilst
 trying to do computational astrophysics.
 """
 
-from .constants import LOG_BASE_10_OF_TWO
 
 from os import remove
 from pathlib import Path
-import pandas as pd
 from subprocess import Popen, PIPE
 from platform import system
 from shutil import which
+from scipy.signal import convolve, boxcar
 from typing import Tuple, List, Union
 from psutil import cpu_count
 import numpy as np
-from matplotlib import pyplot as plt
+import textwrap
 
 
 def get_array_index(
     x: np.ndarray, target: float
 ) -> int:
-    """
-    Return the index for a given value in an array.
+    """Return the index for a given value in an array.
 
     This function is fairly limited in that it can't deal with arrays with
     duplicate values. It will always return the first value which is closest
@@ -39,8 +37,7 @@ def get_array_index(
 
     Returns
     -------
-    The index for the target value in the array x.
-    """
+    The index for the target value in the array x."""
 
     if target < np.min(x):
         return 0
@@ -52,81 +49,74 @@ def get_array_index(
     return index
 
 
-def round_to_sig_figs(
-    x: np.ndarray, n_sig: int
-):
-    """
-    Truncate values in a numpy array to some given number of significant
-    figures. This wasw ritten by some maniac on Stack Overflow at the following
-    URL,
-
-    https://stackoverflow.com/questions/18915378/rounding-to-significant-figures-in-numpy
+def smooth_array(
+    array: Union[np.ndarray, List[Union[float, int]]], width: Union[int, float]
+) -> np.ndarray:
+    """Smooth a 1D array of data using a boxcar filter.
 
     Parameters
     ----------
-    x: np.ndarray
-        The array of values.
-    n_sig: int
-        The number of significant figures.
+    array: np.array[float]
+        The array to be smoothed.
+    width: int
+        The size of the boxcar filter.
 
     Returns
     -------
-    x: np.ndarray
-        The array rounded to the required number of significant figures.
-    """
+    smoothed: np.ndarray
+        The smoothed array"""
 
-    xsgn = np.sign(x)
-    absx = xsgn * x
-    mantissa, binaryExponent = np.frexp(absx)
+    # If smooth_amount is None or 1, then the user has indicated they didn't
+    # actually want to use any smoothing, so return the original array
 
-    decimalExponent = LOG_BASE_10_OF_TWO * binaryExponent
-    omag = np.floor(decimalExponent)
+    if width is None or width == 0:
+        return array
 
-    mantissa *= 10.0 ** (decimalExponent - omag)
+    if type(width) is not int:
+        try:
+            width = int(width)
+        except ValueError:
+            print("Unable to cast {} into an int".format(width))
+            return array
 
-    if mantissa.any() < 1.0:
-        mantissa *= 10.0
-        omag -= 1.0
+    if type(array) is not np.ndarray:
+        array = np.array(array)
 
-    return xsgn * np.around(mantissa, decimals=n_sig - 1) * 10.0 ** omag
+    array = np.reshape(array, (len(array),))  # todo: why do I have to do this? safety probably
+
+    return convolve(array, boxcar(width) / float(width), mode="same")
 
 
-def file_len(
-    fname: str
+def get_file_len(
+    filename: str
 ) -> int:
-    """
-    Count the number of lines in a file.
-
-    TODO update to jit_open or some other more efficient method
+    """Slowly count the number of lines in a file.
+    todo: update to jit_open or some other more efficient method
 
     Parameters
     ----------
-    fname: str
+    filename: str
         The file name and path of the file to count the lines of.
 
     Returns
     -------
-    The number of lines in the file.
-    """
+    The number of lines in the file."""
 
-    with open(fname, "r") as f:
+    with open(filename, "r") as f:
         for i, l in enumerate(f):
             pass
 
     return i + 1
 
 
-def remove_data_sym_links(
+def clean_up_data_sym_links(
     wd: str = ".", verbose: bool = False
 ):
-    """
-    Search recursively from the specified directory for symbolic links named
+    """Search recursively from the specified directory for symbolic links named
     data.
-
     This script will only work on Unix systems where the find command is
     available.
-
-    TODO update to a system agnostic method to find symbolic links like pathlib
+    todo: update to a system agnostic method to find symbolic links like pathlib
 
     Parameters
     ----------
@@ -138,15 +128,13 @@ def remove_data_sym_links(
     Returns
     -------
     n_del: int
-        The number of symbolic links deleted
-    """
+        The number of symbolic links deleted"""
 
-    n = remove_data_sym_links.__name__
     n_del = 0
 
     os = system().lower()
     if os != "darwin" and os != "linux":
-        print("{}: system {} unavailable", n, os)
+        print("your system does not work with this function", os)
         return n_del
 
     # - type l will only search for symbolic links
@@ -156,14 +144,13 @@ def remove_data_sym_links(
     stderr = stderr.decode("utf-8")
 
     if stderr:
-        print("{}: stderr".format(n))
+        print("sent from stderr")
         print(stderr)
 
     if stdout and verbose:
-        print("{}: deleting data symbolic links in the following directories:\n\n{}".format(n, stdout[:-1]))
+        print("deleting data symbolic links in the following directories:\n\n{}".format(stdout[:-1]))
     else:
-        if verbose:
-            print("{}: no data symlinks to delete".format(n))
+        print("no data symlinks to delete")
         return n_del
 
     directories = stdout.split()
@@ -184,36 +171,32 @@ def remove_data_sym_links(
     return n_del
 
 
-def get_root(
-    path: str, return_wd: bool = True
-) -> Tuple[str, str]:
-    """
-    Get the root name of a Python simulation, extracting it from a file path.
+def get_root_from_filepath(
+    path: str, return_cd: bool = True
+) -> Union[str, Tuple[str, str]]:
+    """Get the root name of a Python simulation, extracting it from a file path.
 
     Parameters
     ----------
     path: str
         The directory path to a Python .pf file
-    return_wd: str
+    return_cd: str
         Returns the directory containing the .pf file.
 
     Returns
     -------
     root: str
         The root name of the Python simulation
-    wd: str
-        The directory path containing the provided Python .pf file
-    """
+    cd: str
+        The directory path containing the provided Python .pf file"""
 
-    n = get_root.__name__
-
-    if type(path) != str:
-        raise TypeError("{}: expected string as input".format(n))
+    if type(path) is not str:
+        raise TypeError("expected string as input, not whatever you put")
 
     dot = 0
     slash = 0
 
-    # TODO use find or rfind instead
+    # todo: use find or rfind instead to avoid this mess
 
     for i in range(len(path)):
         letter = path[i]
@@ -223,54 +206,49 @@ def get_root(
             slash = i + 1
 
     root = path[slash:dot]
-    wd = path[:slash]
+    cd = path[:slash]
 
-    if wd == "":
-        wd = "."
+    if cd == "":
+        cd = "."
 
-    if return_wd:
-        return root, wd
+    if return_cd:
+        return root, cd
     else:
         return root
 
 
-def find_parameter_files(
-    root: str = None, path: str = "."
+def get_parameter_files(
+    root: str = None, cd: str = "."
 ) -> List[str]:
-    """
-    Search recursively for Python .pf files. This function will ignore
+    """Search recursively for Python .pf files. This function will ignore
     py_wind.pf parameter files, as well as any root.out.pf files.
 
     Parameters
     ----------
     root: str [optional]
         If given, only .pf files with the given root will be returned.
-    path: str [optional]
+    cd: str [optional]
         The directory to search for Python .pf files from
 
     Returns
     -------
     parameter_files: List[str]
-        The file path for any Python pf files founds
-    """
+        The file path for any Python pf files founds"""
 
     parameter_files = []
 
-    for filename in Path(path).glob("**/*.pf"):
-        file = str(filename)
-
-        if file.find(".out.pf") != -1:
+    for filepath in Path(cd).glob("**/*.pf"):
+        str_filepath = str(filepath)
+        if str_filepath.find(".out.pf") != -1:
             continue
-        elif file.find("py_wind.pf") != -1:
+        elif str_filepath.find("py_wind.pf") != -1:
             continue
-        elif file[0] == "/":
-            file = "." + file
-
-        t_root, wd = get_root(file)
+        elif str_filepath[0] == "/":
+            str_filepath = "." + str_filepath
+        t_root, wd = get_root_from_filepath(str_filepath)
         if root and t_root != root:
             continue
-
-        parameter_files.append(file)
+        parameter_files.append(str_filepath)
 
     parameter_files = sorted(parameter_files, key=str.lower)
 
@@ -278,97 +256,38 @@ def find_parameter_files(
 
 
 def get_cpu_count(
-    enable_smt: bool = False
+    enablesmt: bool = False
 ):
-    """
-    Return the number of CPU cores which can be used when running a Python
+    """Return the number of CPU cores which can be used when running a Python
     simulation. By default, this will only return the number of physical cores
     and will ignore logical threads, i.e. in Intel terms, it will not count the
-    "hyperthreads".
+    hyperthreads.
 
     Parameters
     ----------
-    enable_smt: [optional] bool
+    enablesmt: [optional] bool
         Return the number of logical cores, which includes both physical and
         logical (SMT/hyperthreads) threads.
 
     Returns
     -------
     n_cores: int
-        The number of available CPU cores
-    """
-
-    n = get_cpu_count.__name__
+        The number of available CPU cores"""
 
     n_cores = 0
 
     try:
-        n_cores = cpu_count(logical=enable_smt)
+        n_cores = cpu_count(logical=enablesmt)
     except NotImplementedError:
-        print("{}: unable to determine number of CPU cores, psutil.cpu_count not implemented".format(n))
+        print("unable to determine number of CPU cores, psutil.cpu_count not implemented for your system")
 
     return n_cores
 
 
-def get_python_version(
-    executable: str = "py", verbose: bool = False
-) -> Tuple[str, str]:
-    """
-    Get the Python version and commit hash for the provided Python binary.
-    This should also work with windsave2table.
-
-    Parameters
-    ----------
-    executable: str, optional
-        The name of the Python executable in $PATH whose version will be queried
-    verbose: bool, optional
-        Enable verbose logging
-
-    Returns
-    --------
-    version: str
-        The version number of Python
-    hash: str
-        The commit hash of Python
-    """
-
-    n = get_python_version.__name__
-    version = ""
-    hash = ""
-
-    path = which(executable)
-    if not path:
-        raise OSError("{}: {} is not in $PATH".format(n, executable))
-
-    command = "{} --version".format(executable)
-    cmd = Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
-    stdout, stderr = cmd.communicate()
-    out = stdout.decode("utf-8").split()
-    err = stderr.decode("utf-8")
-
-    if err:
-        print(stderr)
-        return "N/A", "N/A"
-
-    for i in range(len(out)):
-        if out[i] == "Version":
-            version = out[i + 1]
-        if out[i] == "hash":
-            hash = out[i + 1]
-
-    if verbose:
-        print("{} version {}".format(executable, version))
-        print("Git hash   {}".format(hash))
-        print("Short hash {}".format(hash[:7]))
-
-    return version, hash
-
-
-def windsave2table(
-    root: str, wd: str = ".", ion_density: bool = False, no_all_complete: bool = False, verbose: bool = False
+def create_wind_save_tables(
+    root: str, wd: str = ".", ion_density: bool = False, verbose: bool = False
 ) -> None:
-    """
-    Run windsave2table in a directory to create the standard data tables. The
+    """Run windsave2table in a directory to create the standard data tables. The
     function can also create a root.all.complete.txt file which merges all the
     data tables together into one (a little big) file.
 
@@ -380,31 +299,12 @@ def windsave2table(
         The directory where windsave2table will run
     ion_density: bool [optional]
         Use windsave2table in the ion density version instead of ion fractions
-    no_all_complete: bool [optional]
-        Return from this function before a root.all.complete.txt file is
-        created.
     verbose: bool [optional]
-        Enable verbose output
-    """
-
-    n = windsave2table.__name__
-
-    version, hash = get_python_version("windsave2table", verbose)
-
-    try:
-        with open(".py_version", "r") as f:
-            lines = f.readlines()
-        c_version = lines[0]
-        c_hash = lines[1]
-        if c_version != version or c_hash != hash:
-            print("{}: windsave2table and wind_save versions are different: be careful!".format(n))
-    except IOError:
-        if verbose:
-            print("{}: unable to determine wind_save version: be careful!".format(n))
+        Enable verbose output"""
 
     in_path = which("windsave2table")
     if not in_path:
-        raise OSError("{}: windsave2table not in $PATH and executable".format(n))
+        raise OSError("windsave2table not in $PATH and executable")
 
     command = "cd {}; Setup_Py_Dir; windsave2table".format(wd)
     if ion_density:
@@ -417,62 +317,16 @@ def windsave2table(
     if verbose:
         print(stdout.decode("utf-8"))
     if stderr:
-        print("{}: the following was sent to stderr:".format(n))
+        print("the following was sent to stderr:")
         print(stderr.decode("utf-8"))
-
-    if no_all_complete:
-        return
-
-    # Now create a "complete" file which includes all the "wind" files, excluding
-    # the ion files, created by windsave2table. It attempts to remove duplicate
-    # columns, but I could have made a mistake
-
-    include_files = [
-        "heat", "gradient", "converge", "spec"
-    ]
-
-    include_files_index = [  # This is which column to index from to include as to avoid duplicate columns
-        14, 9, 26, 8
-    ]
-
-    # Read in the master file first...
-
-    mdf = pd.read_csv("{}/{}.master.txt".format(wd, root), delim_whitespace=True)
-
-    # Now append all the other tables onto the end, to create one big thing
-
-    for i, file in enumerate(include_files):
-        fname = "{}/{}.{}.txt".format(wd, root, file)
-        try:
-            df = pd.read_csv(fname, delim_whitespace=True)
-        except IOError:
-            print("{}: warning: unable to append {}.{}.txt table to {}.all.complete.txt file".format(n, file, root, root))
-            continue
-
-        columns_to_add = df.columns.values[include_files_index[i]:]
-
-        for new_column in columns_to_add:
-            mdf[new_column] = pd.Series(df[new_column])
-
-    if verbose:
-        print(mdf)
-
-    # Use numpy to write it as a fixed width file. Need to add the headings
-    # at the top
-
-    shape = mdf.values.shape
-    marr = mdf.columns.values
-    marr = np.reshape(np.append(marr, mdf.values), (shape[0] + 1, shape[1]))
-    np.savetxt("{}/{}.all.complete.txt".format(wd, root), marr, fmt="%25s")
 
     return
 
 
-def py_wind(
+def run_py_wind_commands(
     root: str, commands: List[str], wd: str = "."
 ) -> List[str]:
-    """
-    Run py_wind with the provided commands.
+    """Run py_wind with the provided commands.
 
     Parameters
     ----------
@@ -486,10 +340,7 @@ def py_wind(
     Returns
     -------
     output: list[str]
-        The stdout output from py_wind.
-    """
-
-    n = py_wind.__name__
+        The stdout output from py_wind."""
 
     cmd_file = "{}/.tmpcmds.txt".format(wd)
 
@@ -507,109 +358,74 @@ def py_wind(
     return stdout.decode("utf-8").split("\n")
 
 
-def subplot_dims(
-    n_plots: int
-) -> Tuple[int, int]:
-    """
-    Return the dimensions for a plot with multiple subplot panels. A design
-    of two of three columns of subplot panels will always be used, until I
-    program something more sensible or intelligent, like using the catography
-    thing in MPI.
-
-    TODO update for more plots to divide into more sensible sub-panels
+def create_slurm_file(
+    name: str, n_cores: int, split_cycle: bool, n_hours: int, n_minutes: int, root: str, flags: str, wd: str = "."
+) -> None:
+    """Create a slurm file in the directory wd with the name root.slurm. All
+    of the script flags are passed using the flags variable.
 
     Parameters
     ----------
-    n_plots: int
-        The number of subplots which will be plotted
+    name: str
+        The name of the slurm file
+    n_cores: int
+        The number of cores which to use
+    n_hours: int
+        The number of hours to allow
+    n_minutes: int
+        The number of minutes to allow
+    split_cycle: bool
+        If True, then py_run will use the split_cycle method
+    flags: str
+        The run-time flags of which to execute Python with
+    root: str
+        The root name of the model
+    wd: str
+        The directory to write the file to"""
 
-    Returns
-    -------
-    dims: Tuple[int, int]
-        The dimensions of the subplots returned as (nrows, ncols)
-    """
-
-    n = subplot_dims.__name__
-
-    if n_plots < 1 or type(n_plots) != int:
-        raise ValueError("{}: n_plots should be a non-zero, positive and an integer".format(n))
-
-    if n_plots > 2:
-        n_cols = 2
-        n_rows = (1 + n_plots) // n_cols
-    elif n_plots > 9:
-        n_cols = 3
-        n_rows = (1 + n_plots) // n_cols
+    if split_cycle:
+        split = "-sc"
     else:
-        n_cols = 1
-        n_rows = n_plots
+        split = ""
 
-    return n_rows, n_cols
+    slurm = textwrap.dedent("""\
+        #!/bin/bash
+        #SBATCH --mail-user=ejp1n17@soton.ac.uk
+        #SBATCH --mail-type=ALL
+        #SBATCH --ntasks={}
+        #SBATCH --time={}:{}:00
+        #SBATCH --partition=batch
+        module load openmpi/3.0.0/gcc
+        module load conda/py3-latest
+        source activate pypython
+        python /home/ejp1n17/PythonScripts/py_run.py -n {} {} -f="{}"
+        """.format(n_cores, n_hours, n_minutes, n_cores, split, flags, root)
+    )
 
+    if wd[-1] != "/":
+        wd += "/"
+    file_name = wd + name + ".slurm"
+    with open(file_name, "w") as f:
+        f.write("{}".format(slurm))
 
-def remove_extra_axes(
-    fig: plt.Figure, ax: Union[plt.Axes, np.ndarray], n_wanted: int, n_panel: int
-):
-    """
-    Remove additional axes which are included in a plot. This can be used if you
-    have 4 x 2 = 8 panels but only want to use 7 of tha panels. The 8th panel
-    will be removed.
-
-    Parameters
-    ----------
-    fig: plt.Figure
-        The Figure object to modify.
-    ax: plt.Axes
-        The Axes objects to modify.
-    n_wanted: int
-        The actual number of plots/panels which are wanted.
-    n_panel: int
-        The number of panels which are currently in the Figure and Axes objects.
-
-    Returns
-    -------
-    fig: plt.Figure
-        The modified Figure.
-    ax: plt.Axes
-        The modified Axes.
-    """
-
-    if type(ax) != np.ndarray:
-        return fig, ax
-    elif len(ax) == 1:
-        return fig, ax
-
-    # Flatten the axes array to make life easier with indexing
-
-    shape = ax.shape
-    ax = ax.flatten()
-
-    if n_panel > n_wanted:
-        for i in range(n_wanted, n_panel):
-            fig.delaxes(ax[i])
-
-    # Return ax to the shape it was passed as
-
-    ax = np.reshape(ax, (shape[0], shape[1]))
-
-    return fig, ax
+    return
 
 
-def create_run_script(commands: List[str]):
-    """
-    Create a shell run script given a list of commands to do. This assumes that
+def create_run_script(
+    commands: List[str]
+) -> None:
+    """Create a shell run script given a list of commands to do. This assumes that
     you want to use a bash interpreter.
 
     Parameters
     ----------
     commands: List[str]
-        The commands which are going to be run.
-    """
+        The commands which are going to be run."""
 
     directories = []
-    pfs = find_parameter_files()
+    pfs = get_parameter_files()
     for pf in pfs:
-        root, directory = get_root(pf)
+        root, directory = get_root_from_filepath(pf)
         directories.append(directory)
 
     file = "#!/bin/bash\n\ndeclare -a directories=(\n"

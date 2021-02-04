@@ -11,11 +11,10 @@ from typing import Tuple, Union, List
 from glob import glob
 
 
-def check_convergence(
-    root: str, wd: str = "./", return_per_cycle: bool = False, return_converging: bool = False
-) -> Union[float, list]:
-    """
-    Check the convergence of a Python simulation by parsing the
+def check_model_convergence(
+    root: str, wd: str = ".", return_per_cycle: bool = False, return_converging: bool = False
+) -> Union[float, list, List[float]]:
+    """Check the convergence of a Python simulation by parsing the
     !!Check_convergence line in the Python diag file.
 
     Parameters
@@ -34,16 +33,12 @@ def check_convergence(
     -------
     convergence: float or int
         The convergence fraction in the final cycle of the simulation. If this
-        is -1, then a convergence fraction was not found.
-    """
-
-    n = check_convergence.__name__
+        is -1, then a convergence fraction was not found."""
 
     brief_summary_len = 9
     convergence = [-1]
     converging = [-1]
 
-    # use glob to find the first diag file
     diag_path = "{}/diag_{}/{}_0.diag".format(wd, root, root)
     try:
         with open(diag_path, "r") as f:
@@ -54,7 +49,7 @@ def check_convergence(
             with open(diag_path, "r") as f:
                 diag = f.readlines()
         except IOError:
-            print("{}: unable to find {}_0.diag file".format(n, root))
+            print("unable to find {}_0.diag file".format(root))
             return convergence
 
     prev = ""
@@ -97,11 +92,10 @@ def check_convergence(
     return convergence
 
 
-def check_convergence_breakdown(
-    root: str, wd: str = "./"
+def model_convergence_components(
+    root: str, wd: str = "."
 ) -> Tuple[List[float], List[float], List[float], List[float]]:
-    """
-    Returns a break down in terms of the number of cells which have passed
+    """Returns a break down in terms of the number of cells which have passed
     the convergence checks on radiation temperature, electron temperature and
     heating and cooling balance.
 
@@ -125,10 +119,8 @@ def check_convergence_breakdown(
         temperature.
     n_hc: List[float]
         The fraction of cells which have passed the heating/cooling
-        convergence test.
-    """
+        convergence test."""
 
-    n = check_convergence_breakdown.__name__
     brief_summary_len = 7
     n_tr = []
     n_te = []
@@ -136,7 +128,6 @@ def check_convergence_breakdown(
     n_te_max = []
     file_found = False
 
-    # use glob to find the first diag file
     diag_path = "{}/diag_{}/{}_0.diag".format(wd, root, root)
     try:
         with open(diag_path, "r") as f:
@@ -146,7 +137,7 @@ def check_convergence_breakdown(
         pass
 
     if not file_found:
-        print("{}: unable to find {}_0.diag file".format(n, root))
+        print("unable to find {}_0.diag file".format(root))
         return n_tr, n_te, n_hc, n_te_max
 
     for i in range(len(diag)):
@@ -159,11 +150,11 @@ def check_convergence_breakdown(
             line = line.split()
 
             try:
-                ncells = int(diag[i - 1].split()[9])
-                n_tr.append(int(line[2]) / ncells)
-                n_te.append(int(line[4]) / ncells)
-                n_te_max.append(int(line[6]) / ncells)
-                n_hc.append(int(line[8]) / ncells)
+                n_cells = int(diag[i - 1].split()[9])
+                n_tr.append(int(line[2]) / n_cells)
+                n_te.append(int(line[4]) / n_cells)
+                n_te_max.append(int(line[6]) / n_cells)
+                n_hc.append(int(line[8]) / n_cells)
             except ValueError:
                 n_tr.append(-1)
                 n_te.append(-1)
@@ -173,14 +164,12 @@ def check_convergence_breakdown(
     return n_tr, n_te, n_te_max, n_hc
 
 
-def error_summary(
-    root: str, wd: str = "./", n_cores: int = -1, print_errors: bool = False
+def model_error_summary(
+    root: str, wd: str = ".", n_cores: int = -1, print_errors: bool = False
 ) -> dict:
-    """
-    Return a dictionary containing each error found in the error summary for
+    """Return a dictionary containing each error found in the error summary for
     each processor for a Python simulation.
-
-    TODO make a dict for each process
+    todo: create a mode where a dict is returned for each MPI process
 
     Parameters
     ----------
@@ -199,10 +188,7 @@ def error_summary(
     total_errors: dict
         A dictionary containing the total errors over all processors. The keys
         are the error messages and the values are the number of times that
-        error occurred.
-    """
-
-    n = error_summary.__name__
+        error occurred."""
 
     total_errors = {}
 
@@ -210,23 +196,22 @@ def error_summary(
     diag_files = glob(glob_directory)
 
     if n_cores > 0:
-        ndiag = n_cores
+        n_diag_files = n_cores
     else:
-        ndiag = len(diag_files)
+        n_diag_files = len(diag_files)
 
-    if ndiag == 0:
-        print("{}: no diag files found in path {}".format(n, glob_directory))
+    if n_diag_files == 0:
+        print("no diag files found in path {}".format(glob_directory))
         return total_errors
 
-    broken_diag = []
+    broken_diag_files = []
 
-    for i in range(ndiag):
-        diag = diag_files[i]
+    for diag in diag_files:
         try:
             with open(diag, "r") as f:
                 lines = f.readlines()
         except IOError:
-            broken_diag.append(i)
+            broken_diag_files.append(diag)
             continue
 
         # Find the final error summary: look over the lines list in reverse
@@ -245,7 +230,7 @@ def error_summary(
                         break
 
                 if error_start == -1 or error_end == -1:
-                    print("{}: unable to find error summary, returning empty dict ".format(n))
+                    print("unable to find error summary, returning empty dict ")
                     return total_errors
 
                 # Extract the errors from the diag file
@@ -259,9 +244,8 @@ def error_summary(
                     try:
                         error_count = error_words[0]
                     except IndexError:
-                        print("{}: index error when trying to process line '{}' for {}"
-                              .format(n, " ".join(error_words), diag_files[i]))
-                        broken_diag.append(i)
+                        print("index error when trying to process line '{}' for {}".format(" ".join(error_words), diag))
+                        broken_diag_files.append(diag)
                         break
 
                     if error_count.isdigit():
@@ -275,18 +259,18 @@ def error_summary(
                         except KeyError:
                             total_errors[error_message] = error_count
 
-    if len(broken_diag) > 0:
-        print("{}: unable to find error summaries for the following diag files".format(n))
-        for k in range(len(broken_diag)):
-            print("  {}_{}.diag".format(root, broken_diag[k]))
+    if len(broken_diag_files) > 0:
+        print("unable to find error summaries for the following diag files")
+        for k in range(len(broken_diag_files)):
+            print("  {}_{}.diag".format(root, broken_diag_files[k]))
 
     if print_errors:
-        nreported = len(diag_files) - len(broken_diag)
-        print("Total errors reported from {} processors per process for {}:\n".format(nreported, wd + root))
+        n_reported = len(diag_files) - len(broken_diag_files)
+        print("Total errors reported from {} processors per process for {}:\n".format(n_reported, wd + root))
         for key in total_errors.keys():
-            nerror = int(total_errors[key]) // nreported
-            if nerror < 1:
-                nerror = 1
-            print("  {:6d} -- {}".format(nerror, key))
+            n_error = int(total_errors[key]) // n_reported
+            if n_error < 1:
+                n_error = 1
+            print("  {:6d} -- {}".format(n_error, key))
 
     return total_errors

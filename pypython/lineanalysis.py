@@ -7,10 +7,10 @@ Functions to analyse spectral lines.
 
 import numpy as np
 from matplotlib import pyplot as plt
-
-from .error import EXIT_FAIL
+from typing import Union, Tuple
+from .extrautil.error import EXIT_FAIL
 from .util import get_array_index
-from .spectrumutil import calculate_axis_y_limits, ax_add_line_id, common_lines_list
+from .plotutil import get_y_lims_for_x_lims, ax_add_line_ids, common_lines
 
 
 def fit_gaussian():
@@ -19,10 +19,9 @@ def fit_gaussian():
 
 
 def measure_equivalent_width(
-    wavelength: np.ndarray, flux: np.ndarray, display_xmin: float, display_xmax: float
-) -> float:
-    """
-    Measure the equivalent width for an emission or absorption line. A matplotlib
+    wavelength: np.ndarray, flux: np.ndarray, display_xmin: float, display_xmax: float, ret_fit: bool = False
+) -> Union[float, Tuple[float, np.poly1d]]:
+    """Measure the equivalent width for an emission or absorption line. A matplotlib
     window will pop up, allowing the user to click on either side of the line
     feature where it ends. A continuum is then fit using a linear fit.
 
@@ -32,14 +31,12 @@ def measure_equivalent_width(
     flux
     display_xmin
     display_xmax
+    ret_fit
 
     Returns
     -------
     w: float
-        The absolute value of the equivalent width in Angstroms.
-    """
-
-    n = measure_equivalent_width.__name__
+        The absolute value of the equivalent width in Angstroms."""
 
     coords = []
 
@@ -70,7 +67,7 @@ def measure_equivalent_width(
 
     is_increasing = np.all(np.diff(wavelength) > 0)
     if not is_increasing:
-        raise ValueError("{}: the values for the wavelength bins provided are not increasing".format(n))
+        raise ValueError("the values for the wavelength bins provided are not increasing")
 
     # Plot the spectrum, then allow the user to click on the edges of the line
     # to label where it starts and stops
@@ -78,10 +75,10 @@ def measure_equivalent_width(
     fig, ax = plt.subplots(figsize=(12, 5))
     ax.loglog(wavelength, flux, linewidth=2, label="Spectrum")
     ax.set_xlim(display_xmin, display_xmax)
-    ax.set_ylim(calculate_axis_y_limits(wavelength, flux, display_xmin, display_xmax))
+    ax.set_ylim(get_y_lims_for_x_lims(wavelength, flux, display_xmin, display_xmax))
     ax.set_xlabel("Wavelength")
     ax.set_ylabel("Flux")
-    ax = ax_add_line_id(ax, common_lines_list(), logx=True)
+    ax = ax_add_line_ids(ax, common_lines(), logx=True)
     ax.set_title("Mark the blue and then red end of the line")
     cid = fig.canvas.mpl_connect("button_press_event", onclick)
     plt.show()
@@ -119,7 +116,7 @@ def measure_equivalent_width(
     ax.plot(a, b, linewidth=2, label="Extracted bit")
     ax.plot(a, fit(a), label="Linear fit")
     ax.set_xlim(display_xmin, display_xmax)
-    ax.set_ylim(calculate_axis_y_limits(wavelength, flux, display_xmin, display_xmax))
+    ax.set_ylim(get_y_lims_for_x_lims(wavelength, flux, display_xmin, display_xmax))
     ax.legend()
     ax.set_xlabel("Wavelength")
     ax.set_ylabel("Flux")
@@ -152,7 +149,10 @@ def measure_equivalent_width(
 
     w = np.abs(w)
 
-    return w
+    if ret_fit:
+        return w, fit
+    else:
+        return w
 
 
 def full_width_half_maximum():
