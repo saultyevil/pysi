@@ -580,14 +580,14 @@ def create_spectrum_process_breakdown(
         contributions.append(df[df["LineRes."] == -1])
         contributions.append(df[df["LineRes."] == -2])
         contributions.append(df[df["LineRes."] > 20000])
-        contribution_names.append("ES")
-        contribution_names.append("FF")
-        contribution_names.append("BF")
+        contribution_names.append("ES only")
+        contribution_names.append("FF only")
+        contribution_names.append("BF only")
     else:
         contributions.append(df[df["Res."] == -2])
         contributions.append(df[df["Res."] > 20000])
-        contribution_names.append("FF")
-        contribution_names.append("BF")
+        contribution_names.append("FF only")
+        contribution_names.append("BF only")
 
     # Create each individual spectrum
 

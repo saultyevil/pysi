@@ -53,7 +53,7 @@ def setup_script() -> tuple:
     )
     p.add_argument(
         "-s", "--scales", default="logy", choices=["logx", "logy", "loglog", "linlin"],
-        elp="The axes scaling to use: logx, logy, loglog, linlin."
+        help="The axes scaling to use: logx, logy, loglog, linlin."
     )
     p.add_argument(
         "-a", "--absorption_edges", action="store_true", default=False,

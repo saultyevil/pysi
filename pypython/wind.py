@@ -24,7 +24,7 @@ class Wind2D:
     """A class to store a 2D Python wind tables. Contains methods to extract
     variables, as well as convert various indices into other indices."""
     def __init__(
-        self, root: str, cd: str, coordinate_system: str = "rectilinear", velocity_units: str = "kms",
+        self, root: str, cd: str = ".", coordinate_system: str = "rectilinear", velocity_units: str = "kms",
         mask_cells: bool = True, delim: str = None
     ):
         """Description of function.
