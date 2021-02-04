@@ -78,7 +78,7 @@ def write_delay_dump_spectrum_to_file(
 
     try:
         full_spec = Spectrum(root, wd)
-        inclinations = full_spec.inclinations
+        inclinations = list(full_spec.inclinations)
     except IOError:
         inclinations = np.arange(0, n_spec)
 
