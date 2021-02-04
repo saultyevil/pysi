@@ -6,7 +6,7 @@ from setuptools import setup
 setup(
       name="pypython",
       python_requires='>=3.5',
-      version="2.0a",
+      version="2.0",
       description="A Python package to make using Python a wee bit easier.",
       url="https://github.com/saultyevil/pyPython",
       author="Edward J. Parkinson",
