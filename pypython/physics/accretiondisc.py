@@ -11,7 +11,7 @@ Eddington luminosity or to create a simple accretion disc spectrum.
 from typing import Union
 import numpy as np
 import pandas as pd
-from .blackhole import gravitational_radius, innermost_stable_orbit
+from .blackhole import gravitational_radius, innermost_stable_circular_orbit
 from .blackbody import planck_lambda, planck_nu
 from .constants import STEFAN_BOLTZMANN, C, MPROT, THOMPSON, G, PI, MSOL, MSOL_PER_YEAR
 
@@ -68,7 +68,7 @@ def modified_eddigton_alpha_disc_effective_temperature(
     teff: np.ndarray or float
         The effective temperature at the provided radius or radii."""
 
-    risco = innermost_stable_orbit(m_co)
+    risco = innermost_stable_circular_orbit(m_co)
     rg = gravitational_radius(m_co)
     ledd = eddington_luminosity_limit(m_co)
 

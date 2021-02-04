@@ -8,22 +8,6 @@ Calculate various parameters relating to black holes.
 from .constants import MSOL, GRAV, VLIGHT
 
 
-def schwarzchild_radius(
-    m_bh: float
-) -> float:
-    """Calculate the Schwarzschild radius of a black hole of given mass Mbh.
-
-    Parameters
-    ----------
-    m_bh: float
-        The mass of the black hole."""
-
-    m_bh *= MSOL
-    r_s = 2 * GRAV * m_bh / VLIGHT ** 2
-
-    return r_s
-
-
 def gravitational_radius(
     m_bh: float
 ) -> float:
@@ -32,27 +16,45 @@ def gravitational_radius(
     Parameters
     ----------
     m_bh: float
-        The mass of the black hole."""
+        The mass of the black hole.
 
-    m_bh *= MSOL
-    r_g = GRAV * m_bh / VLIGHT ** 2
+    Returns
+    -------
+    The gravitational radius in cm."""
 
-    return r_g
+    return GRAV * m_bh * MSOL / VLIGHT ** 2
 
 
-def innermost_stable_orbit(
+def schwarzschild_radius(
+    m_bh: float
+) -> float:
+    """Calculate the Schwarzschild radius of a black hole of given mass Mbh.
+
+    Parameters
+    ----------
+    m_bh: float
+        The mass of the black hole.
+
+    Returns
+    -------
+    The Schwarzschild radius in cm."""
+
+    return 2 * gravitational_radius(m_bh)
+
+
+def innermost_stable_circular_orbit(
     m_bh: float
 ) -> float:
     """Calculate the radius of the innermost stable circular orbit of a
     black hole of given mass Mbh.
 
-
     Parameters
     ----------
     m_bh: float
-        The mass of the black hole."""
+        The mass of the black hole.
 
-    r_s = schwarzchild_radius(m_bh)
-    r_isco = 3 * r_s
+    Returns
+    -------
+    The radius of the innermost stable circular orbit in cm."""
 
-    return r_isco
+    return 3 * schwarzschild_radius(m_bh)

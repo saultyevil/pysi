@@ -373,9 +373,10 @@ def main(
     )
     fig.savefig("{}/{}_spec_tot_wind.{}".format(cd, root, file_ext))
 
-
     if display:
         plt.show()
+    else:
+        plt.close()
 
     return fig, ax
 
