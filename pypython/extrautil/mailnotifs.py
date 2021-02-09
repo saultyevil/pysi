@@ -71,9 +71,8 @@ def send_email_message(
         return msg
     except Exception as e:
         print("Unable to send email message")
-        # print(e)
 
-    return
+    return {}
 
 
 def send_notification(
@@ -104,31 +103,28 @@ def send_notification(
     # Store the users access in token.pickle. It is created automatically when
     # the authorization flow completes for the first time.
 
-    token_path = os.path.expanduser("~/.mcrtpythonupdate_token.pickle")
+    token_path = os.path.expanduser("~/.pypythonmailnotifs_token.pickle")
 
     if os.path.exists(token_path):
         with open(token_path, "rb") as token:
             credentials = pickle.load(token)
 
     # If there are no (valid) credentials available, let the user log in
+    # using the OAuth thingy
 
-    try:
-        if not credentials or not credentials.valid:
+    if not credentials or not credentials.valid:
+        if credentials and credentials.expired and credentials.refresh_token:
+            credentials.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file("credentials.json", scope)
+            credentials = flow.run_local_server(port=0)
 
-            if credentials and credentials.expired and credentials.refresh_token:
-                credentials.refresh(Request())
-            else:
-                flow = InstalledAppFlow.from_client_secrets_file("credentials.json", scope)
-                credentials = flow.run_local_server(port=0)
+        # Save the credentials for next time
 
-            # Save the credentials for next time
+        with open(token_path, "wb") as token:
+            pickle.dump(credentials, token)
 
-            with open(token_path, "wb") as token:
-                pickle.dump(credentials, token)
+    service = build('gmail', 'v1', credentials=credentials)
+    message = send_email_message(service, message, sender)
 
-        service = build('gmail', 'v1', credentials=credentials)
-        message = send_email_message(service, message, sender)
-        return message
-    except Exception as e:
-        print("Cant send email for some reason, token probably expired")
-        return {}
+    return message
