@@ -77,7 +77,7 @@ AUTOMATIC_RESTART_OVERRIDE = False
 CONVERGENCE_LOWER_LIMIT = 0.80
 SPLIT_CYCLES = False
 DRY_RUN = False
-sendnotif = False
+SEND_NOTIFS = False
 
 # Verbosity levels of Python output
 
@@ -102,7 +102,7 @@ def setup_script(
     global CONVERGENCE_LOWER_LIMIT
     global DRY_RUN
     global N_CORES
-    global sendnotif
+    global SEND_NOTIFS
 
     p = ap.ArgumentParser(description=__doc__)
 
@@ -139,7 +139,7 @@ def setup_script(
         "-d", "--dry_run", action="store_true", default=DRY_RUN, help="Print the models found to screen and then exit."
     )
     p.add_argument(
-        "-n", "--notifs", action="store_true", default=False, type=bool, help="Enable email notifactions"
+        "-n", "--notifs", action="store_true", default=False, help="Enable email notifications"
     )
 
     args = p.parse_args()
@@ -152,7 +152,7 @@ def setup_script(
     CONVERGENCE_LOWER_LIMIT = args.convergence_limit
     DRY_RUN = args.dry_run
     N_CORES = args.n_cores
-    sendnotif = args.nofis
+    SEND_NOTIFS = args.nofis
 
     msg = textwrap.dedent("""\
         Python  .......................... {}
@@ -521,15 +521,15 @@ def run_all_models(
     the_rc: List[int]
         The return codes of the Python models"""
 
-    global sendnotif
+    global SEND_NOTIFS
     host = gethostname()
     n_models = len(parameter_files)
     return_codes = []
 
-    if sendnotif:
+    if SEND_NOTIFS:
         # if send_notification returns an empty dict, then the rest of the mails
         # will not be sent
-        sendnotif = send_notification(
+        SEND_NOTIFS = send_notification(
             "ejp1n17@soton.ac.uk", "{}: Starting models".format(host), ""
         )
 
@@ -538,11 +538,11 @@ def run_all_models(
         root, wd = util.get_root_from_filepath(filepath)
         msg = textwrap.dedent("""\
             ------------------------
-            
+
              Model {}/{}
-            
+
             ------------------------
-            
+
             Root ...................... {}
             Directory ................. {}
             """.format(i + 1, n_models, root, wd)
@@ -550,7 +550,7 @@ def run_all_models(
 
         log(msg)
 
-        if sendnotif:
+        if SEND_NOTIFS:
             send_notification(
                 "ejp1n17@soton.ac.uk", "{}: Model {}/{} has started running".format(host, i + 1, n_models),
                 "The model {} has started running on {}".format(filepath, host)
@@ -564,7 +564,7 @@ def run_all_models(
         return_codes.append(rc)
         if rc != 0:
             log("Python exited for error code {}".format(rc))
-            if sendnotif:
+            if SEND_NOTIFS:
                 send_notification(
                     "ejp1n17@soton.ac.uk", "{}: Model {}/{} failed".format(host, i + 1, n_models),
                     "The model {} has failed\nReturn code {}".format(filepath, host, rc)
@@ -583,7 +583,7 @@ def run_all_models(
 
         if rc != 0:
             log("Python exited with return code {}.".format(rc))
-            if sendnotif:
+            if SEND_NOTIFS:
                 send_notification(
                     "ejp1n17@soton.ac.uk", "{}: Model {}/{} failed".format(host, i + 1, n_models),
                     "The model {} has failed on {}\nReturn code {}".format(filepath, host, rc)
@@ -602,7 +602,7 @@ def run_all_models(
             print_errors(errors, root)
         elif SPLIT_CYCLES and not b_converged:
             log("The model has not converged to the set convergence limit of {}.".format(CONVERGENCE_LOWER_LIMIT))
-            if sendnotif:
+            if SEND_NOTIFS:
                 send_notification(
                     "ejp1n17@soton.ac.uk", "{}: Model {}/{} failed".format(host, i + 1, n_models),
                     "The model {} has failed on {}\nReturn code {}".format(filepath, host, rc)
@@ -612,14 +612,14 @@ def run_all_models(
 
         if rc != 0:
             log("Python exited for error code {} after spectral cycles.".format(rc))
-            if sendnotif:
+            if SEND_NOTIFS:
                 send_notification(
                     "ejp1n17@soton.ac.uk", "{}: Model {}/{} spectral cycles failed".format(host, i + 1, n_models),
                     "The model {} has failed during spectral cycles on {}\nReturn code {}".format(filepath, host, rc)
                 )
             continue
         else:
-            if sendnotif:
+            if SEND_NOTIFS:
                 send_notification(
                     "ejp1n17@soton.ac.uk", "{}: Model {}/{} finished".format(host, i + 1, n_models),
                     "The model {} has finished running on {}\nReturn code {}\nConvergence {}".format(filepath, host, rc,
@@ -628,7 +628,7 @@ def run_all_models(
 
         log("")
 
-    if sendnotif:
+    if SEND_NOTIFS:
         send_notification(
             "ejp1n17@soton.ac.uk", "{}: All models completed".format(host), ""
         )

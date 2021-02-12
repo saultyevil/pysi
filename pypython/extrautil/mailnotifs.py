@@ -116,7 +116,14 @@ def send_notification(
         if credentials and credentials.expired and credentials.refresh_token:
             credentials.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file("credentials.json", scope)
+            try:
+                flow = InstalledAppFlow.from_client_secrets_file("credentials.json", scope)
+            except FileNotFoundError:
+                try:
+                    flow = InstalledAppFlow.from_client_secrets_file(os.path.expanduser("~/credentials.json"), scope)
+                except FileNotFoundError:
+                    return {}
+
             credentials = flow.run_local_server(port=0)
 
         # Save the credentials for next time
