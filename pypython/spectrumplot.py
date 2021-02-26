@@ -12,7 +12,6 @@ from .plotutil import subplot_dims, remove_extra_axes
 from .spectrum import Spectrum, UNITS_FLAMBDA, UNITS_FNU, UNITS_LNU
 from .util import smooth_array, get_root_from_filepath
 from .extrautil.error import InvalidParameter
-import pandas as pd
 import numpy as np
 from typing import List, Tuple, Union
 from matplotlib import pyplot as plt
@@ -27,7 +26,8 @@ DEFAULT_PYTHON_DISTANCE = 100 * PARSEC
 
 def _plot_panel_subplot(
     ax: plt.Axes, x_values: np.ndarray, spectrum: Spectrum, units: str, things_to_plot: Union[List[str], str],
-    xlims: Tuple[float, float], sm: int, alpha: float, scale: str, frequency_space: bool, skip_sparse: bool
+    xlims: Tuple[Union[float, int, None], Union[float, int, None]], sm: int, alpha: float, scale: str,
+    frequency_space: bool, skip_sparse: bool
 ) -> plt.Axes:
     """Create a subplot panel for a figure given the spectrum components names
     in the list dname.
@@ -67,7 +67,6 @@ def _plot_panel_subplot(
     if type(things_to_plot) == str:
         things_to_plot = [things_to_plot]
     for thing in things_to_plot:
-
         try:
             fl = smooth_array(spectrum[thing], sm)
         except KeyError:
@@ -96,6 +95,8 @@ def _plot_panel_subplot(
             ax.set_xscale("log")
         if scale == "logy" or scale == "loglog":
             ax.set_yscale("log")
+
+
 
     ax.set_xlim(xlims[0], xlims[1])
     if frequency_space:
@@ -440,12 +441,7 @@ def plot_spectrum_components(
         x = spectrum["Freq."]
     else:
         x = spectrum["Lambda"]
-    xlims = [x.min(), x.max()]
-    if not xmin:
-        xmin = xlims[0]
-    if not xmax:
-        xmax = xlims[1]
-    xlims = (xmin, xmax)
+    xlims = (None, None)
 
     ax[0] = _plot_panel_subplot(
         ax[0], x, spectrum, spectrum.units, ["Created", "WCreated", "Emitted"], xlims, smooth_amount, alpha, scale,
@@ -641,6 +637,7 @@ def plot_multiple_model_spectra(
 ) -> Tuple[plt.Figure, plt.Axes]:
     """Plot multiple spectra, from multiple models, given in the list of spectra
     provided.
+    todo: when using "all", create separate plot for each inclination
 
     Parameters
     ----------
@@ -704,6 +701,7 @@ def plot_multiple_model_spectra(
     y_max = -1e99
 
     for i, inclination in enumerate(inclinations):
+
         for spectrum in spectrum_objects:
 
             # Ignore spectra which are from continuum only models...
@@ -722,6 +720,7 @@ def plot_multiple_model_spectra(
                     y = spectrum[inclination]
             except KeyError:
                 continue
+
             ax[i].plot(x, y, label=spectrum.filepath, alpha=0.75)
 
             # Calculate the y-axis limits to keep all spectra within the
@@ -743,6 +742,7 @@ def plot_multiple_model_spectra(
             y_max = None
 
         ax[i].set_title(r"$i$ " + "= {}".format(inclinations[i]) + r"$^{\circ}$")
+
         x_lims = list(ax[i].get_xlim())
         if not x_min:
             x_min = x_lims[0]
@@ -750,16 +750,19 @@ def plot_multiple_model_spectra(
             x_max = x_lims[1]
         ax[i].set_xlim(x_min, x_max)
         ax[i].set_ylim(y_min, y_max)
+
         if axes_scales == "loglog" or axes_scales == "logx":
             ax[i].set_xscale("log")
         if axes_scales == "loglog" or axes_scales == "logy":
             ax[i].set_yscale("log")
+
         if frequency_space:
             ax[i].set_xlabel(r"Frequency [Hz]")
             ax[i].set_ylabel(r"$\nu F_{\nu}$ (erg s$^{-1}$ cm$^{-2}$")
         else:
             ax[i].set_xlabel(r"Wavelength [$\AA$]")
             ax[i].set_ylabel(r"$F_{\lambda}$ (erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)")
+
         if plot_common_lines:
             if axes_scales == "logx" or axes_scales == "loglog":
                 logx = True
@@ -767,7 +770,7 @@ def plot_multiple_model_spectra(
                 logx = False
             ax[i] = ax_add_line_ids(ax[i], common_lines(), logx=logx)
 
-    ax[0].legend(loc="lower left")
+    ax[0].legend(loc="upper left")
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 
     if inclination_angle != "all":

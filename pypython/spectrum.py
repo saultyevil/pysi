@@ -22,13 +22,14 @@ class Spectrum:
     """A class to store PYTHON .spec and .log_spec files.
     The PYTHON spectrum is read in and stored within a dict, where each column
     name is a key and the data is stored as a numpy array."""
+
     def __init__(
         self, root: str, cd: str = ".", logspec: bool = False, spectype: str = None, delim: str = None
     ):
         """Initialise a Spectrum object. This method will construct the file path
         of the spectrum file given the root, containing directory and whether
         the logarithmic spectrum is used or not. The spectrum is then read in.
-         
+
         Parameters
         ----------
         root: str
@@ -190,6 +191,11 @@ class Spectrum:
         """Restore the spectrum to its unsmoothed form."""
         self.spectrum = copy.deepcopy(self.unsmoothed)
 
+    def quickplot(self):
+        """Plot the spectrum or a single component in a single figure. Useful
+        for when in an interactive session."""
+        raise NotImplementedError
+
     def __getitem__(
         self, key
     ):
@@ -240,9 +246,7 @@ def get_spectrum_files(
             continue
         if this_root:
             root, cd = get_root_from_filepath(str_filepath)
-            if root == this_root:
-                spec_files.append(str_filepath)
-            else:
+            if root != this_root:
                 continue
         spec_files.append(str_filepath)
 

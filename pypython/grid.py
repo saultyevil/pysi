@@ -55,10 +55,8 @@ def update_single_parameter(
 
     if old and new:
         if verbose:
-            print("changed parameter {} from {} to {}".format(
-                    parameter_name, old.replace("\n", ""), new.replace("\n", "")
-                )
-            )
+            print("changed parameter {} from {} to {}".format(parameter_name, old.replace("\n", ""),
+                                                              new.replace("\n", "")))
     else:
         print("unable to update: could not find parameter {} in file {}".format(parameter_name, path))
         return

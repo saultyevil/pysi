@@ -155,14 +155,10 @@ def clean_up_data_sym_links(
 
     directories = stdout.split()
 
-    for i in range(len(directories)):
-        current = wd + directories[i][1:]
+    for directory in directories:
+        current = wd + directory[1:]
         cmd = "rm {}".format(current)
         stdout, stderr = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
-
-        if verbose:
-            print(stdout.decode("utf-8"))
-
         if stderr:
             print(stderr.decode("utf-8"))
         else:

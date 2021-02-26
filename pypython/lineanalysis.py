@@ -23,20 +23,7 @@ def measure_equivalent_width(
 ) -> Union[float, Tuple[float, np.poly1d]]:
     """Measure the equivalent width for an emission or absorption line. A matplotlib
     window will pop up, allowing the user to click on either side of the line
-    feature where it ends. A continuum is then fit using a linear fit.
-
-    Parameters
-    ----------
-    wavelength
-    flux
-    display_xmin
-    display_xmax
-    ret_fit
-
-    Returns
-    -------
-    w: float
-        The absolute value of the equivalent width in Angstroms."""
+    feature where it ends. A continuum is then fit using a linear fit."""
 
     coords = []
 
@@ -88,7 +75,7 @@ def measure_equivalent_width(
     # continuum
 
     if len(coords) == 0:
-        print("{}: you didn't click on anything!".format(n))
+        print("you didn't click on anything!")
         exit(EXIT_FAIL)
 
     if coords[0] > coords[1]:

@@ -16,6 +16,10 @@ from .extrautil import vector
 class Wind1D:
     """A class to store a 1D Python wind_save file. Contains methods to extract
     variables, etc."""
+
+    def __init__(self):
+        raise NotImplementedError
+
     def __str__(self):
         raise NotImplementedError
 
@@ -23,6 +27,7 @@ class Wind1D:
 class Wind2D:
     """A class to store a 2D Python wind tables. Contains methods to extract
     variables, as well as convert various indices into other indices."""
+
     def __init__(
         self, root: str, cd: str = ".", coordinate_system: str = "rectilinear", velocity_units: str = "kms",
         mask_cells: bool = True, delim: str = None
@@ -106,7 +111,7 @@ class Wind2D:
         # the assumption that all the tables are the same size.
 
         n_read = 0
-        files_to_read = ["master", "heat", "gradient", "converge", "spec"]
+        files_to_read = ["master", "heat", "gradient", "converge"]
 
         for file in files_to_read:
             file = self.cd + self.root + "." + file + ".txt"
