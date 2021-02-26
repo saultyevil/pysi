@@ -7,127 +7,115 @@ personal viewing pleasure.
 .. contents::
     :depth: 3
 
-accretionDisc
+accretiondisc
 -------------
 
-.. automodule:: pyPython.accretionDisc
+.. automodule:: pypython.physics.accretiondisc
     :members:
 
-atomicData
+atomicdata
 ----------
 
-.. automodule:: pyPython.atomicData
+.. automodule:: pypython.atomicdata
     :members:
 
 blackbody
 ---------
 
-.. automodule:: pyPython.blackbody
+.. automodule:: pypython.physics.blackbody
     :members:
 
 blackhole
 ---------
 
-.. automodule:: pyPython.blackhole
+.. automodule:: pypython.physics/blackhole
     :members:
 
 constants
 ---------
 
-.. automodule:: pyPython.constants
+.. automodule:: pypython.physics/constants
     :members:
 
-conversion
-----------
-.. automodule:: pyPython.conversion
+convert
+-------
+.. automodule:: pypython.physics.convert
     :members:
 
 error
 -----
 
-.. automodule:: pyPython.error
+.. automodule:: pypython.extrautil.error
     :members:
 
 grid
 ----
 
-.. automodule:: pyPython.grid
-    :members:
-
-hpc
----
-
-.. automodule:: pyPython.hpc
+.. automodule:: pypython.grid
     :members:
 
 ionization
 ----------
 
-.. automodule:: pyPython.ionization
+.. automodule:: pypython.physics.ionization
     :members:
 
 log
 ---
 
-.. automodule:: pyPython.log
+.. automodule:: pypython.extrautil.logging
     :members:
 
-mailNotifications
------------------
-
-.. automodule:: pyPython.mailNotifications
-    :members:
-
-pythonUtil
+mailnotifs
 ----------
 
-.. automodule:: pyPython.pythonUtil
+.. automodule:: pypython.extrautil.mailnotifs
     :members:
 
-quotes
-------
+util
+----
 
-.. automodule:: pyPython.quotes
+.. automodule:: pypython.util
     :members:
 
 simulation
 ----------
 
-.. automodule:: pyPython.simulation
+.. automodule:: pypython.simulation
     :members:
 
-spectrumCreate
+createspectrum
 --------------
 
-.. automodule:: pyPython.spectrumCreate
+.. automodule:: pypython.createspectrum
     :members:
 
-spectrumPlot
+spectrumplot
 ------------
 
-.. automodule:: pyPython.spectrumPlot
+.. automodule:: pypython.spectrumplot
     :members:
 
-spectrumUtil
-------------
-
-.. automodule:: pyPython.spectrumUtil
-    :members:
-
-windModels
-----------
-
-.. automodule:: pyPython.windModels
-    :members:
-
-windPlot
+spectrum
 --------
 
-.. automodule:: pyPython.windPlot
+.. automodule:: pypython.spectrum
     :members:
 
-windUtil
+plotutil
 --------
 
-.. automodule:: pyPython.windUtil
+.. automodule:: pypython.plotutil
+    :members:
+
+windplot
+--------
+
+.. automodule:: pypython.windplot
+    :members:
+
+wind
+----
+
+.. automodule:: pypython.wind
     :members:
