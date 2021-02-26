@@ -9,6 +9,8 @@ the electron temperature and density, as well figures for the ion fractions
 for H, He, C, N, O and Si.
 """
 
+import os
+import pypython
 import argparse as ap
 import numpy as np
 from typing import Tuple
@@ -42,6 +44,9 @@ def setup_script() -> tuple:
         "-p", "--polar_coords", action="store_true", default=False, help="Plot using polar projection."
     )
     p.add_argument(
+        "-u", "--velocity_units", default="kms", choices=["kms", "cms", "c"], help="The velocity units."
+    )
+    p.add_argument(
         "-s", "--scale", default="loglog", choices=["logx", "logy", "loglog", "linlin"],
         help="The axes scaling to use."
     )
@@ -62,6 +67,7 @@ def setup_script() -> tuple:
         args.working_directory,
         args.polar_coords,
         args.ion_density,
+        args.velocity_units,
         args.scale,
         args.cells,
         args.ext,
@@ -83,9 +89,9 @@ def main(
     -------"""
 
     if setup:
-        root, cd, polar_coords, use_ion_density, axes_scales, use_cell_indices, file_ext, display = setup
+        root, cd, polar_coords, use_ion_density, velocity_units, axes_scales, use_cell_indices, file_ext, display = setup
     else:
-        root, cd, polar_coords, use_ion_density, axes_scales, use_cell_indices, file_ext, display = setup_script()
+        root, cd, polar_coords, use_ion_density, velocity_units, axes_scales, use_cell_indices, file_ext, display = setup_script()
 
     if polar_coords:
         coordinate_system = "polar"
@@ -94,10 +100,14 @@ def main(
         coordinate_system = "rectilinear"
         subplot_kw = {}
 
+    if not os.path.isfile("{}.master.txt".format(root)):
+        pypython.util.create_wind_save_tables(root, cd, False)
+        pypython.util.create_wind_save_tables(root, cd, True)
+
     # Read in the wind, set the wing parameters we want to plot, as well as the
     # elements of the ions we want to plot and the number of ions.
 
-    wind = Wind2D(root, cd, coordinate_system, "kms", True)
+    wind = Wind2D(root, cd, coordinate_system, velocity_units, True)
 
     wind_parameters = [
         "t_e", "t_r", "ne", "rho", "c4", "ip"
@@ -135,7 +145,8 @@ def main(
     for i in range(n_rows):
         for j in range(n_cols):
             if logplot:  # todo: ignore division warning
-                toplot = np.log10(wind[wind_parameters[wind_index]])
+                with np.errstate(divide="ignore"):
+                    toplot = np.log10(wind[wind_parameters[wind_index]])
                 ax[i, j].set_title("log(" + wind_parameters[wind_index] + ")")
             else:
                 toplot = wind[wind_parameters[wind_index]]
@@ -160,13 +171,17 @@ def main(
         n_rows, n_cols, figsize=(13, 14), squeeze=False, sharex="col", sharey="row", subplot_kw=subplot_kw
     )
 
-    logplot = True  # todo: make variable input
+    if velocity_units == "c":
+        logplot = True
+    else:
+        logplot = True
 
     wind_index = 0
     for i in range(n_rows):
         for j in range(n_cols):
             if logplot:  # todo: ignore division warning
-                toplot = np.log10(wind[wind_velocities[wind_index]])
+                with np.errstate(divide="ignore"):
+                    toplot = np.log10(wind[wind_velocities[wind_index]])
                 ax[i, j].set_title("log(" + wind_velocities[wind_index] + ")" + " [" + wind.velocity_units + "]")
             else:
                 toplot = wind[wind_velocities[wind_index]]
@@ -206,10 +221,11 @@ def main(
         for i in range(n_rows):
             for j in range(n_cols):
                 ion_key = "i{:02d}".format(ion_index)
-                fig, ax = windplot.plot_2d_wind(
-                    wind["x"], wind["z"], np.log10(wind[element][ion_type_key][ion_key]), coordinate_system, None,
-                    axes_scales, vmin, vmax, fig, ax, i, j
-                )
+                with np.errstate(divide="ignore"):
+                    fig, ax = windplot.plot_2d_wind(
+                        wind["x"], wind["z"], np.log10(wind[element][ion_type_key][ion_key]), coordinate_system, None,
+                        axes_scales, vmin, vmax, fig, ax, i, j
+                    )
                 ax[i, j].set_title("log(" + element + ion_key + ")")
                 ion_index += 1
                 if ion_index > n_ions:

@@ -7,7 +7,7 @@ Contains functions for calculating the properties of a blackbody.
 
 import numpy as np
 from typing import Union
-from .constants import BOLTZMANN, H, VLIGHT, ANGSTROM
+from .constants import BOLTZMANN, H, VLIGHT, ANGSTROM, WIEN_FREQUENCY, WIEN_WAVELENGTH
 
 
 def planck_nu(
@@ -62,3 +62,24 @@ def planck_lambda(
         b_lamda = y / (np.exp(x) - 1)
 
     return b_lamda
+
+
+def wein_law(temperature: float, freq_space: bool = False):
+    """Calculate the peak wavelength of a blackbody curve.
+
+    Parameters
+    ----------
+    temperature: float
+        The temperature of the blackbody.
+    freq_space: bool [optional]
+        Return the peak in frequency space.
+
+    Returns
+    -------
+    The wavelength (in Angstrom) or frequency where the blackbody curve is
+    at maximum."""
+
+    if freq_space:
+        return WIEN_FREQUENCY * temperature
+    else:
+        return WIEN_WAVELENGTH / temperature / 1e-10

@@ -43,7 +43,7 @@ def setup_script():
         "-xl", "--xmin", type=float, default=None, help="The lower x-axis boundary to display."
     )
     p.add_argument(
-        "-xu", "--xmax", type=float,default=None, help="The upper x-axis boundary to display."
+        "-xu", "--xmax", type=float, default=None, help="The upper x-axis boundary to display."
     )
     p.add_argument(
         "-s", "--scales", default="loglog", choices=["logx", "logy", "loglog", "linlin"],
@@ -118,9 +118,11 @@ def main(
                 spectra_root.append(s)
         spectra = spectra_root
 
+    print(spectra)
+
     fig, ax = spectrumplot.plot_multiple_model_spectra(
         output_name, spectra, inclination, wd, x_min, x_max, frequency_space, axes_scales, smooth_amount, common_lines,
-        file_extension, display 
+        file_extension, display
     )
 
     return fig, ax

@@ -9,6 +9,8 @@ parameters to keep this script simple. If you want more flexible options,
 use (or edit) the other plotting scripts to fit your needs appropriately.
 """
 
+import os
+import pypython
 import py_plot_wind
 import py_plot_spectrum
 import py_plot_optical_depth
@@ -119,21 +121,37 @@ def plot(
     # else:
     #     polar_coords = False
 
+    if not os.path.isfile("{}.master.txt".format(root)):
+        pypython.util.create_wind_save_tables(root, wd, False)
+        pypython.util.create_wind_save_tables(root, wd, True)
+
     # Create plots for the wind - only create velocity plots for rectilinear
     # at the moment - and remove the data folder afterwards
 
-    py_plot_wind.main(
-        (root, wd, polar_coords, False, "loglog", False, file_ext, display)
-    )
+    try:
+        py_plot_wind.main(
+            (root, wd, polar_coords, False, "loglog", False, file_ext, display)
+        )
+    except Exception as e:
+        print("Problem when plotting model wind")
+        print(e)
 
     # Create plots for the different spectra
+    try:
+        py_plot_spectrum.main(
+            (root, wd, xmin, xmax, frequency_space, True, "logy", smooth_amount, file_ext, display)
+        )
+    except Exception as e:
+        print("Problem when plotting model spectra")
+        print(e)
 
-    py_plot_spectrum.main(
-        (root, wd, xmin, xmax, frequency_space, True, "logy", smooth_amount, file_ext, display)
-    )
-    py_plot_optical_depth.main(
-        (root, wd, xmin, xmax, False, True, "loglog", file_ext, display)
-    )
+    try:
+        py_plot_optical_depth.main(
+            (root, wd, xmin, xmax, False, True, "loglog", file_ext, display)
+        )
+    except Exception as e:
+        print("Problem with plotting optical depth spectrum")
+        print(e)
 
     return
 
