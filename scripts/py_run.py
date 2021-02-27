@@ -152,7 +152,7 @@ def setup_script(
     CONVERGENCE_LOWER_LIMIT = args.convergence_limit
     DRY_RUN = args.dry_run
     N_CORES = args.n_cores
-    SEND_NOTIFS = args.nofis
+    SEND_NOTIFS = args.notifs
 
     msg = textwrap.dedent("""\
         Python  .......................... {}
