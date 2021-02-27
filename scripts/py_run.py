@@ -139,7 +139,7 @@ def setup_script(
         "-d", "--dry_run", action="store_true", default=DRY_RUN, help="Print the models found to screen and then exit."
     )
     p.add_argument(
-        "-n", "--notifs", action="store_true", default=False, help="Enable email notifications"
+        "--notifs", action="store_true", default=False, help="Enable email notifications"
     )
 
     args = p.parse_args()
