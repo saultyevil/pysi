@@ -519,7 +519,7 @@ def create_spectrum(
     logbins: [optional] bool
         If True, the frequency bins are spaced equally in log space. Otherwise
         the bins are in linear space.
-    mode_line_res: bool [optional]
+    mode_dev: bool [optional]
         If True, then LineRes. and Np will NOT be included when being read in
     output_numpy: [optional] bool
         If True, the spectrum will be a numpy array instead of a pandas data
@@ -549,6 +549,11 @@ def create_spectrum(
     if dumped_photons is None:
         dumped_photons = read_delay_dump(root, wd, mode_dev)
 
+    if mode_dev:
+        line_res = deepcopy(dumped_photons["Res."].values.astype(int))
+    else:
+        line_res = dumped_photons["LineRes."].values.astype(int)
+
     n_spec = int(np.max(dumped_photons["Spec."].values)) + 1
     spectrum = np.zeros((n_bins, 1 + n_spec))
 
@@ -573,7 +578,7 @@ def create_spectrum(
     spectrum = bin_photon_weights(
         spectrum, freq_min, freq_max, dumped_photons["Freq."].values, dumped_photons["Weight"].values,
         dumped_photons["Spec."].values.astype(int) + 1, dumped_photons["Res."].values.astype(int),
-        dumped_photons["LineRes."].values.astype(int), extract_nres, logbins
+        line_res, extract_nres, logbins
     )
 
     spectrum[:, 1:] /= n_cores_norm
