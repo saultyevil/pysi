@@ -284,7 +284,7 @@ def bin_photon_weights(
                     break
                 # Or if it's "belongs" to the nres we want and it's last interaction
                 # was a continuum scatter, then extract
-                elif photon_line_nres[p] == extract_nres[i] and photon_nres[p] < 0 or photon_nres[p] > BOUND_FREE_NRES:
+                elif photon_line_nres[p] == extract_nres[i]:
                     spectrum[k, photon_spc_i[p]] += photon_weights[p]
                     break
         else:
