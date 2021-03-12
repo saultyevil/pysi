@@ -113,14 +113,16 @@ class Wind2D:
         n_read = 0
         files_to_read = ["master", "heat", "gradient", "converge"]
 
-        for file in files_to_read:
-            file = self.cd + self.root + "." + file + ".txt"
-            if not os.path.exists(file):
-                # todo: throw some kinda warning, I guess?
-                continue
+        for table in files_to_read:
+            fpath = self.cd + self.root + "." + table + ".txt"
+            if not os.path.exists(fpath):
+                fpath = self.cd + "tables/" + self.root + "." + table + ".txt"
+                if not os.path.exists(fpath):
+                    # todo: throw some kinda warning, I guess?
+                    continue
             n_read += 1
 
-            with open(file, "r") as f:
+            with open(fpath, "r") as f:
                 wind_file = f.readlines()
 
             # Read in the wind_save table, ignoring empty lines and comments.
@@ -217,11 +219,13 @@ class Wind2D:
             self.variables[element] = {}
 
             for ion_type, ion_type_index_name in zip(ion_types_to_get, ion_types_index_names):
-                file = self.cd + self.root + "." + element + "." + ion_type + ".txt"
-                if not os.path.exists(file):
-                    continue
+                fpath = self.cd + self.root + "." + element + "." + ion_type + ".txt"
+                if not os.path.exists(fpath):
+                    fpath = self.cd + "tables/" + self.root + "." + element + "." + ion_type + ".txt"
+                    if not os.path.exists(fpath):
+                        continue
                 n_elements_read += 1
-                with open(file, "r") as f:
+                with open(fpath, "r") as f:
                     ion_file = f.readlines()
 
                 # Read in ion the ion file. this can be done in a list
@@ -256,7 +260,7 @@ class Wind2D:
                     self.variables[element][ion_type_index_name][col] = wind[:, index].reshape(self.nx, self.nz)
 
         if n_elements_read == 0:
-            print("Unable to open any wind save tables, try running windsave2table...")
+            print("Unable to open any ion tables, try running windsave2table...")
             exit(1)
 
     def project_cartesian_velocity_to_cylindrical(
