@@ -314,6 +314,9 @@ def _plot_panel_subplot(
 
     if type(things_to_plot) == str:
         things_to_plot = [things_to_plot]
+
+    n_skip = 0
+
     for thing in things_to_plot:
         try:
             fl = smooth_array(spectrum[thing], sm)
@@ -324,6 +327,7 @@ def _plot_panel_subplot(
         # Skip sparse spec components to make prettier plot
 
         if skip_sparse and len(fl[fl < MIN_SPEC_COMP_FLUX]) > 0.7 * len(fl):
+            n_skip += 1
             continue
 
         # If plotting in frequency space, of if the units then the flux needs
@@ -338,13 +342,16 @@ def _plot_panel_subplot(
 
         if units == UNITS_LNU:
             fl *= spectrum["Freq."]
+
         ax.plot(x_values, fl, label=thing, alpha=alpha)
+
         if scale == "logx" or scale == "loglog":
             ax.set_xscale("log")
         if scale == "logy" or scale == "loglog":
             ax.set_yscale("log")
 
-
+    if n_skip == len(things_to_plot):
+        return ax
 
     ax.set_xlim(xlims[0], xlims[1])
     if frequency_space:
@@ -459,8 +466,8 @@ def plot(
 
 
 def plot_optical_depth(
-    root: str, wd: str, inclinations: List[str] = "all", xmin: float = None, xmax: float = None, scale: str = "loglog",
-    show_absorption_edge_labels: bool = True, frequency_space: bool = True, axes_label_fontsize: float = 15,
+    root: str, wd: str, inclinations: List[str] = "all", xmin: float = None, xmax: float = None,
+    scale: str = "loglog", show_absorption_edge_labels: bool = True, frequency_space: bool = True,
     display: bool = False
 ) -> Tuple[plt.Figure, plt.Axes]:
     """Create an optical depth spectrum for a given Python simulation. This figure
@@ -488,8 +495,6 @@ def plot_optical_depth(
         Label common absorption edges of interest onto the figure
     frequency_space: bool [optional]
         Create the figure in frequency space instead of wavelength space
-    axes_label_fontsize: float [optional]
-        The fontsize for labels on the plot
     display: bool [optional]
         Display the final plot if True.
 
@@ -551,11 +556,11 @@ def plot_optical_depth(
         if scale == "logy" or scale == "loglog":
             ax.set_yscale("log")
 
-    ax.set_ylabel(r"Optical Depth, $\tau$", fontsize=axes_label_fontsize)
+    ax.set_ylabel(r"Optical Depth, $\tau$")
     if frequency_space:
-        ax.set_xlabel(r"Frequency, [Hz]", fontsize=axes_label_fontsize)
+        ax.set_xlabel(r"Frequency, [Hz]")
     else:
-        ax.set_xlabel(r"Wavelength, [$\AA$]", fontsize=axes_label_fontsize)
+        ax.set_xlabel(r"Wavelength, [$\AA$]")
     ax.set_xlim(xmin, xmax)
     ax.legend(loc="lower left")
 
@@ -564,7 +569,7 @@ def plot_optical_depth(
             logx = True
         else:
             logx = False
-        ax_add_line_ids(ax, photoionization_edges(frequency_space), logx=logx, fontsize=15)
+        ax_add_line_ids(ax, photoionization_edges(frequency_space), logx=logx)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 
@@ -607,15 +612,15 @@ def plot_spectrum_physics_process_contributions(
         ax.set_yscale("log")
     ax.set_xlim(xmin, xmax)
     ax.set_ylim(ymin, ymax)
-    ax.legend(loc="upper center", fontsize=15, ncol=len(contribution_spectra))
-    ax.set_xlabel(r"Wavelength [$\AA$]", fontsize=13)
-    ax.set_ylabel(r"Flux F$_{\lambda}$ [erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$]", fontsize=15)
+    ax.legend(loc="upper center", ncol=len(contribution_spectra))
+    ax.set_xlabel(r"Wavelength [$\AA$]")
+    ax.set_ylabel(r"Flux F$_{\lambda}$ [erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$]")
     if line_labels:
         if scale == "logx" or scale == "loglog":
             logx = True
         else:
             logx = False
-        ax = ax_add_line_ids(ax, common_lines(), logx=logx, fontsize=15)
+        ax = ax_add_line_ids(ax, common_lines(), logx=logx)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
     fig.savefig("{}/{}_spec_processes.{}".format(wd, root, file_ext), dpi=300)
@@ -743,8 +748,6 @@ def plot_spectrum_inclinations_in_subpanels(
         Create the figure in frequency space instead of wavelength space
     scale: bool [optional]
         Set the scales for the axes in the plot
-    axes_label_fontsize: float [optional]
-        The fontsize for labels on the plot
     figsize: Tuple[float, float] [optional]
         The size of the Figure in matplotlib units (inches?)
     display: bool [optional]

@@ -99,9 +99,8 @@ def plot_optical_depth_spectrum(
     Returns
     -------"""
 
-    fig, ax = spectrumplot.plot_optical_depth(
-        root, wd, ["all"], xmin, xmax, scale, show_absorption_edges, frequency_space, display=display
-    )
+    fig, ax = spectrumplot.plot_optical_depth(root, wd, ["all"], xmin, xmax, scale, show_absorption_edges,
+                                              frequency_space, display=display)
 
     fig.savefig("{}/{}_optical_depth.{}".format(wd, root, file_ext))
 

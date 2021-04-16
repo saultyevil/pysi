@@ -339,7 +339,7 @@ def main(
     root = root.replace("/", "")
 
     try:
-        fig, ax = plot_all_spectrum_inclinations_in_one_panel(
+        plot_all_spectrum_inclinations_in_one_panel(
             root, cd, xmin, xmax, smooth_amount, frequency_space, axes_scales, common_lines, file_ext
         )
     except IOError:
@@ -348,7 +348,7 @@ def main(
         print(e)
 
     try:
-        fig, ax = plot_spectrum_inclinations_on_one_figure_in_subpanels(
+        plot_spectrum_inclinations_on_one_figure_in_subpanels(
             root, cd, xmin, xmax, smooth_amount, frequency_space, axes_scales, False, file_ext
         )
     except IOError:
