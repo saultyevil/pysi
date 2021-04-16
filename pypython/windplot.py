@@ -5,11 +5,14 @@
 Description of file.
 """
 
-from .physics.constants import PI
+from sys import exit
+from typing import List, Tuple, Union
+
 import numpy as np
 from matplotlib import pyplot as plt
-from typing import List, Tuple
 
+from .physics.constants import PI
+from .plotutil import normalize_figure_style
 
 plt.rcParams['xtick.labelsize'] = 14
 plt.rcParams['ytick.labelsize'] = 14
@@ -22,17 +25,17 @@ def plot_1d_wind():
 
 
 def plot_2d_wind(
-    n_points: np.ndarray, m_points: np.ndarray, parameter_points: np.ndarray, coordinate_system: str = "rectilinear",
+    m_points: np.ndarray, n_points: np.ndarray, parameter_points: np.ndarray, coordinate_system: str = "rectilinear",
     inclinations_to_plot: List[str] = None, scale: str = "loglog", vmin: float = None, vmax: float = None,
     fig: plt.Figure = None, ax: plt.Axes = None, i: int = 0, j: int = 0
-) -> Tuple[plt.Figure, np.ndarray]:
+) -> Tuple[plt.Figure, Union[np.ndarray, plt.Axes]]:
     """Description of function.
 
     Parameters
     ----------
-    n_points: np.ndarray
-        The 1st axis points, either x or angular (in degrees) bins.
     m_points: np.ndarray
+        The 1st axis points, either x or angular (in degrees) bins.
+    n_points: np.ndarray
         The 2nd axis points, either z or radial bins.
     parameter_points: np.ndarray
         The wind parameter to be plotted, in the same shape as the n_points and
@@ -64,11 +67,13 @@ def plot_2d_wind(
     ax: plt.Axes
         The (updated) axes array for the plot."""
 
+    normalize_figure_style()
+
     if fig is None or ax is None:
         if coordinate_system == "rectilinear":
-            fig, ax = plt.subplots(figsize=(5, 5), squeeze=False)
+            fig, ax = plt.subplots(figsize=(7, 5), squeeze=False)
         elif coordinate_system == "polar":
-            fig, ax = plt.subplots(figsize=(5, 5), squeeze=False, subplot_kw={"projection": "polar"})
+            fig, ax = plt.subplots(figsize=(7, 5), squeeze=False, subplot_kw={"projection": "polar"})
         else:
             print("unknown wind projection", coordinate_system)
             print("allowed: ['rectilinear', 'polar']")
@@ -79,15 +84,15 @@ def plot_2d_wind(
         print("allwoed:", ["logx", "logy", "loglog", "linlin"])
         exit(1)  # todo: error code
 
-    im = ax[i, j].pcolormesh(n_points, m_points, parameter_points, shading="auto", vmin=vmin, vmax=vmax)
+    im = ax[i, j].pcolormesh(m_points, n_points, parameter_points, shading="auto", vmin=vmin, vmax=vmax)
 
     if inclinations_to_plot:
-        n_coords = np.unique(n_points)
+        n_coords = np.unique(m_points)
         for inclination in inclinations_to_plot:
             if coordinate_system == "rectilinear":
                 m_coords = n_coords * np.tan(0.5 * PI - np.deg2rad(float(inclination)))
             else:
-                x_coords = np.logspace(np.log10(0), np.max(m_points))
+                x_coords = np.logspace(np.log10(0), np.max(n_points))
                 m_coords = x_coords * np.tan(0.5 * PI - np.deg2rad(90 - float(inclination)))
                 m_coords = np.sqrt(x_coords ** 2 + m_coords ** 2)
             ax[0, 0].plot(n_coords, m_coords, label=inclination + r"$^{\circ}$")
@@ -95,9 +100,9 @@ def plot_2d_wind(
 
     fig.colorbar(im, ax=ax[i, j])
     if coordinate_system == "rectilinear":
-        ax[i, j].set_xlabel("x [cm]")
-        ax[i, j].set_ylabel("z [cm]")
-        ax[i, j].set_xlim(np.min(n_points[n_points > 0]), np.max(n_points))
+        ax[i, j].set_xlabel(r"$x$ [cm]")
+        ax[i, j].set_ylabel(r"$z$ [cm]")
+        ax[i, j].set_xlim(np.min(m_points[m_points > 0]), np.max(m_points))
         if scale == "loglog" or scale == "logx":
             ax[i, j].set_xscale("log")
         if scale == "loglog" or scale == "logy":
@@ -108,7 +113,9 @@ def plot_2d_wind(
         ax[i, j].set_thetamin(0)
         ax[i, j].set_thetamax(90)
         ax[i, j].set_rlabel_position(90)
-        ax[i, j].set_ylabel("R [cm]")
-    ax[i, j].set_ylim(np.min(m_points[m_points > 0]), np.max(m_points))
+        ax[i, j].set_ylabel(r"$\log_{10}(R)$ [cm]")
+
+    ax[i, j].set_ylim(np.min(n_points[n_points > 0]), np.max(n_points))
+    fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 
     return fig, ax

@@ -6,11 +6,16 @@ Description of file.
 """
 
 import os
+from sys import exit
+from typing import List, Tuple, Union
+
 import numpy as np
-from typing import List, Union, Tuple
-from .physics.constants import PI, CMS_TO_KMS, C
-from .util import get_array_index
+from matplotlib import pyplot as plt
+
 from .extrautil import vector
+from .physics.constants import CMS_TO_KMS, PI, C
+from .util import get_array_index
+from .windplot import plot_2d_wind
 
 
 class Wind1D:
@@ -26,11 +31,11 @@ class Wind1D:
 
 class Wind2D:
     """A class to store a 2D Python wind tables. Contains methods to extract
-    variables, as well as convert various indices into other indices."""
+    variables, as well as convert various indices into other indices.
+    todo: add dot notation for accessing dictionaries"""
 
     def __init__(
-        self, root: str, cd: str = ".", coordinate_system: str = "rectilinear", velocity_units: str = "kms",
-        mask_cells: bool = True, delim: str = None
+        self, root: str, cd: str = ".", velocity_units: str = "kms", mask_cells: bool = True, delim: str = None
     ):
         """Description of function.
 
@@ -40,8 +45,6 @@ class Wind2D:
             The root name of the Python simulation.
         cd: str
             The directory containing the model.
-        coordinate_system: str [optional]
-            The coordinate system of the wind: rectilinear or polar.
         mask_cells: bool [optional]
             Store the wind parameters as masked arrays.
         delim: str [optional]
@@ -49,7 +52,6 @@ class Wind2D:
 
         self.root = root
         self.cd = cd
-        self.projection = coordinate_system
         if self.cd[-1] != "/":
             self.cd += "/"
         self.nx = 1
@@ -84,10 +86,20 @@ class Wind2D:
         self.read_in_wind_ions(delim)
         self.columns = self.wind_parameters + self.wind_elements
 
+        # Record the coordinate system and possible axes labels
+
+        if "r" in self.wind_parameters and "theta" in self.wind_parameters:
+            self.coord_system = "polar"
+            self.axes = ["r", "theta", "r_cen", "theta_cen"]
+        else:
+            self.coord_system = "rectilinear"
+            self.axes = ["x", "z", "x_cen", "z_cen"]
+
         # Convert velocity into desired units and also calculate the cylindrical
         # velocities
 
-        self.project_cartesian_velocity_to_cylindrical()
+        if self.coord_system != "polar":
+            self.project_cartesian_velocity_to_cylindrical()
         self.variables["v_x"] *= self.velocity_conversion_factor
         self.variables["v_y"] *= self.velocity_conversion_factor
         self.variables["v_z"] *= self.velocity_conversion_factor
@@ -150,7 +162,7 @@ class Wind2D:
             else:
                 wind_columns += list(np.arrange(len(wind_list[0]), dtype=np.str))
 
-            wind_all.append(np.array(wind_list[1:], dtype=np.float))
+            wind_all.append(np.array(wind_list[1:], dtype=np.float64))
 
         if n_read == 0:
             print("Unable to open any wind save tables, try running windsave2table...")
@@ -312,7 +324,7 @@ class Wind2D:
         # be done for the wind ions as they don't have the below items in their
         # data structures
 
-        for item_to_remove in ["x", "z", "xcen", "zcen", "i", "j", "inwind"]:
+        for item_to_remove in ["x", "z", "r", "theta", "xcen", "zcen", "rcen", "theta_cen", "i", "j", "inwind"]:
             try:
                 to_mask_wind.remove(item_to_remove)
             except ValueError:
@@ -344,31 +356,38 @@ class Wind2D:
         ----------
         theta: float
             The angle of the sight line to extract from. Given in degrees."""
-        return np.array(self.x_coords, dtype=np.float) * np.tan(PI / 2 - np.deg2rad(theta))
 
-    def get_variable_along_sightline(self, theta: float, parameter: str):
+        return np.array(self.x_coords, dtype=np.float64) * np.tan(PI / 2 - np.deg2rad(theta))
+
+    def get_variable_along_sightline(
+        self, theta: float, parameter: str, fraction: bool = False
+    ):
         """Extract a variable along a given sight line.
         todo: i think this only works with rectilinear grids, not polar
         todo: get this to work with ions"""
-
+        
+        if self.coord_system == "polar":
+            raise NotImplementedError()
+        
         if type(theta) is not float:
             theta = float(theta)
-        z_array = np.array(self.z_coords, dtype=np.float)
+        
+        z_array = np.array(self.z_coords, dtype=np.float64)
         z_coords = self.get_sightline_coordinates(theta)
 
-        values = []
+        values = np.zeros_like(z_coords, dtype=np.float64)
 
         for x_index, z in enumerate(z_coords):
             z_index = get_array_index(z_array, z)
-            value = self.variables[parameter][x_index, z_index]
-            values.append(value)
+            values[x_index] = self.variables[parameter][x_index, z_index]
 
-        return np.array(self.x_coords), z_array, np.array(values, dtype=np.float)
+        return np.array(self.x_coords), z_array, values
 
     def get_elem_number_from_ij(
         self, i: int, j: int
     ):
         """Get the wind element number for a given i and j index."""
+
         raise self.nz * i + j
 
     def get_ij_from_elem_number(
@@ -376,7 +395,61 @@ class Wind2D:
     ):
         """Get the i and j index for a given wind element number.
         todo: check that this is row or column major in Python"""
+
         return np.unravel_index(elem, (self.nx, self.nz))
+
+    def plot(
+        self, variable_name: str, fraction: bool = False, log_variable: bool = True
+     ):
+        """Create a plot of the wind for the given variable.
+        Parameters
+        ----------
+        variable_name: str
+            The name of the variable to plot. Ions are accessed as, i.e.,
+            H_i01, He_i02, etc.
+        fraction: bool [optional]
+            Plot ion fractions instead of density
+        log_variable: bool [optional
+            Plot the log10 of the variable."""
+
+        if self.coord_system == "rectilinear":
+            m_points = self.variables["x"]
+            n_points = self.variables["z"]
+        else:
+            n_points = np.log10(self.variables["r"])
+            m_points = np.deg2rad(self.variables["theta"])
+
+        element_check = variable_name[:2].replace("_", "")
+        ion_check = variable_name[2:].replace("_", "")
+        if element_check in self.wind_elements:
+            if fraction:
+                variable = self.variables[element_check]["fraction"][ion_check]
+            else:
+                variable = self.variables[element_check]["density"][ion_check]
+        else:
+            variable = self.variables[variable_name]
+
+        if log_variable:
+            variable = np.log10(variable)
+
+        fig, ax = plot_2d_wind(m_points, n_points, variable, self.coord_system)
+        if len(ax) == 1:
+            title = f"{variable_name}".replace("_", " ")
+            if log_variable:
+                title = r"$\log_{10}($" + title + r"$)$"
+
+            print(title)
+
+            ax[0, 0].set_title(title)
+
+        return fig, ax
+
+    def show(
+        self
+    ):
+        """Show a plot which has been created."""
+
+        plt.show()
 
     def __getitem__(
         self, key
