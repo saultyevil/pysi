@@ -6,8 +6,9 @@ The point of this part of pypython is to manipulating the atomic data used in
 Python, to i.e. remove various transitions from the data..
 """
 
-from sys import exit
 from os import getenv
+from sys import exit
+
 from .extrautil.error import EXIT_FAIL
 
 

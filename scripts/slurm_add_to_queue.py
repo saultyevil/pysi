@@ -6,9 +6,9 @@ Search recursively for .slurm files and add them to the slurm queue.
 """
 
 import argparse as ap
-from subprocess import Popen, PIPE
-from typing import List, Tuple
 from pathlib import Path
+from subprocess import PIPE, Popen
+from typing import List, Tuple
 
 
 def split_path_and_filename(

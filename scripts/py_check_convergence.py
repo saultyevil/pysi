@@ -6,13 +6,11 @@ The purpose of this script is to determine if a simulation has converged or not,
 and to create any plots which are related to the convergence of a simulation.
 """
 
-import numpy as np
-from matplotlib import pyplot as plt
-from pypython import simulation
-from pypython import util
-from pypython import plotutil
 from typing import List
 
+import numpy as np
+from matplotlib import pyplot as plt
+from pypython import plotutil, simulation, util
 
 COL_WIDTH = 80
 

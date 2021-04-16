@@ -5,8 +5,10 @@
 Description of file.
 """
 
+from typing import List, Union
+
 import numpy as np
-from typing import Union, List
+
 from .error import EXIT_FAIL
 
 

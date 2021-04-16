@@ -5,13 +5,15 @@
 Spectrum object
 """
 
-from .util import get_root_from_filepath
-from scipy.signal import convolve, boxcar
-import numpy as np
-from pathlib import Path
-from typing import List, Union, Tuple
-import textwrap
 import copy
+import textwrap
+from pathlib import Path
+from typing import List, Tuple, Union
+
+import numpy as np
+from scipy.signal import boxcar, convolve
+
+from .util import get_root_from_filepath
 
 UNITS_LNU = "erg/s/Hz"
 UNITS_FNU = "erg/s/cm^-2/Hz"

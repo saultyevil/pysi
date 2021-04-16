@@ -6,13 +6,12 @@ simulation and to transform that into a spectrum.
 """
 
 import argparse as ap
+
 import numpy as np
 from matplotlib import pyplot as plt
-from pypython import plotutil
-from pypython import util
-from pypython.spectrum import Spectrum
-from pypython import createspectrum
 from physics import convert
+from pypython import createspectrum, plotutil, util
+from pypython.spectrum import Spectrum
 
 plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15

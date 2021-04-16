@@ -9,12 +9,14 @@ parameters to keep this script simple. If you want more flexible options,
 use (or edit) the other plotting scripts to fit your needs appropriately.
 """
 
-import os
-import pypython
-import py_plot_wind
-import py_plot_spectrum
-import py_plot_optical_depth
 import argparse as ap
+import os
+
+import pypython
+
+import py_plot_optical_depth
+import py_plot_spectrum
+import py_plot_wind
 
 
 def setup_script() -> tuple:

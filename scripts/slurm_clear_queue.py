@@ -5,7 +5,7 @@
 Description of file.
 """
 
-from subprocess import Popen, PIPE
+from subprocess import PIPE, Popen
 
 
 def clear_jobs():

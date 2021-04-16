@@ -7,8 +7,8 @@ simulation, as well as (in the future) other helpful little things.
 """
 
 from copy import copy
-from typing import Tuple, Union, List
 from glob import glob
+from typing import List, Tuple, Union
 
 
 def check_model_convergence(

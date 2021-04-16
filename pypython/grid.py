@@ -6,8 +6,8 @@ Functions used to create a grid of parameter files or to edit a grid of
 parameter files.
 """
 
-from typing import List
 from shutil import copyfile
+from typing import List
 
 
 def update_single_parameter(

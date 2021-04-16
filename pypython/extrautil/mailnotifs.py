@@ -7,14 +7,15 @@ some long program. Requires access to the mcrtpythonupdates@gmail.com Gmail API.
 Currently access to this API is limited.
 """
 
-import pickle
-import os
 import base64
-from typing import Union
+import os
+import pickle
 from email.mime.text import MIMEText
-from googleapiclient.discovery import build, Resource
-from google_auth_oauthlib.flow import InstalledAppFlow
+from typing import Union
+
 from google.auth.transport.requests import Request
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import Resource, build
 
 
 def create_email_message(

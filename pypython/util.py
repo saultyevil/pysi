@@ -7,16 +7,17 @@ trying to do computational astrophysics.
 """
 
 
+import textwrap
 from os import remove
 from pathlib import Path
-from subprocess import Popen, PIPE
 from platform import system
 from shutil import which
-from scipy.signal import convolve, boxcar
-from typing import Tuple, List, Union
-from psutil import cpu_count
+from subprocess import PIPE, Popen
+from typing import List, Tuple, Union
+
 import numpy as np
-import textwrap
+from psutil import cpu_count
+from scipy.signal import boxcar, convolve
 
 
 def get_array_index(

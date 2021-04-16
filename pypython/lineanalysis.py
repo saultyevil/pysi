@@ -5,12 +5,14 @@
 Functions to analyse spectral lines.
 """
 
+from typing import Tuple, Union
+
 import numpy as np
 from matplotlib import pyplot as plt
-from typing import Union, Tuple
+
 from .extrautil.error import EXIT_FAIL
+from .plotutil import ax_add_line_ids, common_lines, get_y_lims_for_x_lims
 from .util import get_array_index
-from .plotutil import get_y_lims_for_x_lims, ax_add_line_ids, common_lines
 
 
 def fit_gaussian():

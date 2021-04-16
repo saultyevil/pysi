@@ -7,7 +7,8 @@ for two atomic levels.
 """
 
 import numpy as np
-from .constants import PI, MELEC, BOLTZMANN, H
+
+from .constants import BOLTZMANN, MELEC, PI, H
 
 
 def saha_population_ratio(

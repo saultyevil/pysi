@@ -9,14 +9,14 @@ the electron temperature and density, as well figures for the ion fractions
 for H, He, C, N, O and Si.
 """
 
-import os
-import pypython
 import argparse as ap
-import numpy as np
+import os
 from typing import Tuple
+
+import numpy as np
+import pypython
 from matplotlib import pyplot as plt
-from pypython import windplot
-from pypython import plotutil
+from pypython import plotutil, windplot
 from pypython.wind import Wind2D
 
 

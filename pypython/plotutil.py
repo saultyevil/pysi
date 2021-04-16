@@ -5,11 +5,13 @@
 Functions for helping plotting with matplotlib.
 """
 
+from typing import List, Tuple, Union
+
 import numpy as np
-from typing import List, Union, Tuple
 from matplotlib import pyplot as plt
-from .physics.constants import C, ANGSTROM
+
 from .extrautil.error import DimensionError
+from .physics.constants import ANGSTROM, C
 
 
 def normalize_figure_style():

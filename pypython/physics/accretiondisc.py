@@ -9,11 +9,14 @@ Eddington luminosity or to create a simple accretion disc spectrum.
 """
 
 from typing import Union
+
 import numpy as np
 import pandas as pd
-from .blackhole import gravitational_radius, innermost_stable_circular_orbit
+
 from .blackbody import planck_lambda, planck_nu
-from .constants import STEFAN_BOLTZMANN, C, MPROT, THOMPSON, G, PI, MSOL, MSOL_PER_YEAR
+from .blackhole import gravitational_radius, innermost_stable_circular_orbit
+from .constants import (MPROT, MSOL, MSOL_PER_YEAR, PI, STEFAN_BOLTZMANN,
+                        THOMPSON, C, G)
 
 
 def alpha_disc_effective_temperature(

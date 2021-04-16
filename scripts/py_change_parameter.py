@@ -9,9 +9,9 @@ files. If a root name is provided, however, then the script will only operate
 """
 
 import argparse as ap
-from pypython import grid
-from pypython import util
 from typing import List
+
+from pypython import grid, util
 
 
 def change_pfs(

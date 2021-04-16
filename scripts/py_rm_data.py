@@ -13,8 +13,8 @@ Usage:
 """
 
 from sys import argv, exit
-from pypython.util import clean_up_data_sym_links
 
+from pypython.util import clean_up_data_sym_links
 
 if len(argv) == 1:
     clean_up_data_sym_links("~/PySims", verbose=True)

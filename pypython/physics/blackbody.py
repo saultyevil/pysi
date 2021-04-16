@@ -5,9 +5,12 @@
 Contains functions for calculating the properties of a blackbody.
 """
 
-import numpy as np
 from typing import Union
-from .constants import BOLTZMANN, H, VLIGHT, ANGSTROM, WIEN_FREQUENCY, WIEN_WAVELENGTH
+
+import numpy as np
+
+from .constants import (ANGSTROM, BOLTZMANN, VLIGHT, WIEN_FREQUENCY,
+                        WIEN_WAVELENGTH, H)
 
 
 def planck_nu(

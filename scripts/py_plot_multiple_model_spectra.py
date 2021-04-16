@@ -9,9 +9,9 @@ calling directory.
 
 import argparse as ap
 from typing import Tuple
+
 from matplotlib import pyplot as plt
-from pypython import spectrum
-from pypython import spectrumplot
+from pypython import spectrum, spectrumplot
 from pypython.extrautil.error import EXIT_FAIL
 
 

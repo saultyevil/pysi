@@ -11,10 +11,10 @@ It creates the following figures:
 
 import argparse as ap
 from typing import Tuple
+
 from matplotlib import pyplot as plt
-from pypython import plotutil
+from pypython import plotutil, spectrumplot
 from pypython.spectrum import Spectrum
-from pypython import spectrumplot
 
 plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15

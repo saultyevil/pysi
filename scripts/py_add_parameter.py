@@ -10,8 +10,8 @@ on pf files which have the same root name.
 
 import argparse as ap
 from typing import List
-from pypython import util
-from pypython import grid
+
+from pypython import grid, util
 
 
 def add_parameter(

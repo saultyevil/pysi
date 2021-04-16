@@ -5,7 +5,7 @@
 Calculate various parameters relating to black holes.
 """
 
-from .constants import MSOL, GRAV, VLIGHT
+from .constants import GRAV, MSOL, VLIGHT
 
 
 def gravitational_radius(

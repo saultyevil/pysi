@@ -7,25 +7,24 @@ files and executes a number of commands, most importantly running the model,
 depending on what is requested by the user using a number of runtime flags.
 """
 
-import textwrap
-import atexit
-from os import path
 import argparse as ap
-import time
+import atexit
 import datetime
+import textwrap
+import time
 from copy import copy
-from sys import exit
+from os import path
 from shutil import copyfile
-from typing import List, Tuple
-from subprocess import Popen, PIPE
 from socket import gethostname
-from pypython import grid
-from pypython import simulation
-from pypython import util
-from pypython.extrautil.logging import log, logsilent, init_logfile, close_logfile
-from pypython.extrautil.error import EXIT_FAIL
-from pypython.extrautil.mailnotifs import send_notification
+from subprocess import PIPE, Popen
+from sys import exit
+from typing import List, Tuple
 
+from pypython import grid, simulation, util
+from pypython.extrautil.error import EXIT_FAIL
+from pypython.extrautil.logging import (close_logfile, init_logfile, log,
+                                        logsilent)
+from pypython.extrautil.mailnotifs import send_notification
 
 CONVERGED = \
     r"""

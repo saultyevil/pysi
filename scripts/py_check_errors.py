@@ -8,9 +8,8 @@ todo: this will only work for a simulation which didn't crash.......... accordin
 """
 
 
-from pypython.util import get_parameter_files, get_root_from_filepath
 from pypython.simulation import model_error_summary
-
+from pypython.util import get_parameter_files, get_root_from_filepath
 
 COL_LEN = 80
 

@@ -7,23 +7,23 @@ mapping part of Python. It seems to mostly house functions designed to create
 a spectrum from the delay_dump output.
 """
 
-from .extrautil.error import EXIT_FAIL
-from .physics.constants import PARSEC, C
-from .physics.convert import hz_to_angstrom
-from .physics.convert import angstrom_to_hz
-from .spectrum import Spectrum
-from .wind import Wind2D
-import pandas as pd
 from copy import deepcopy
+from typing import Tuple, Union
+
 import numpy as np
-from numba import jit
-from typing import Union, Tuple
+import pandas as pd
 import sqlalchemy
-from sqlalchemy.orm import sessionmaker
+from numba import jit
+from sqlalchemy import Column, Float, Integer
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, Float
+from sqlalchemy.orm import sessionmaker
 
+from .extrautil.error import EXIT_FAIL
+from .physics.constants import PARSEC, C
+from .physics.convert import angstrom_to_hz, hz_to_angstrom
+from .spectrum import Spectrum
+from .wind import Wind2D
 
 BOUND_FREE_NRES = 20000
 UNFILTERED_SPECTRUM = -999

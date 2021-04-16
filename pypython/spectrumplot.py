@@ -5,16 +5,18 @@
 Description of file.
 """
 
-from .physics.constants import PARSEC
-from .plotutil import photoionization_edges, common_lines, ax_add_line_ids
-from .plotutil import get_y_lims_for_x_lims
-from .plotutil import subplot_dims, remove_extra_axes, normalize_figure_style
-from .spectrum import Spectrum, UNITS_FLAMBDA, UNITS_FNU, UNITS_LNU
-from .util import smooth_array, get_root_from_filepath
-from .extrautil.error import InvalidParameter
-import numpy as np
 from typing import List, Tuple, Union
+
+import numpy as np
 from matplotlib import pyplot as plt
+
+from .extrautil.error import InvalidParameter
+from .physics.constants import PARSEC
+from .plotutil import (ax_add_line_ids, common_lines, get_y_lims_for_x_lims,
+                       normalize_figure_style, photoionization_edges,
+                       remove_extra_axes, subplot_dims)
+from .spectrum import UNITS_FLAMBDA, UNITS_FNU, UNITS_LNU, Spectrum
+from .util import get_root_from_filepath, smooth_array
 
 plt.rcParams["xtick.labelsize"] = 14
 plt.rcParams["ytick.labelsize"] = 14

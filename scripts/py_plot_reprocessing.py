@@ -7,13 +7,13 @@ and emitted spectrum from model. The continuum optical depths are plotted as wel
 Both are plotted as a function of frequency.
 """
 
-import numpy as np
-from typing import Tuple
-from matplotlib import pyplot as plt
 import argparse as ap
+from typing import Tuple
 
-from pypython.physics.constants import PI, PARSEC
+import numpy as np
+from matplotlib import pyplot as plt
 from pypython import plotutil
+from pypython.physics.constants import PARSEC, PI
 from pypython.spectrum import Spectrum
 from pypython.util import get_cpu_count, smooth_array
 
