@@ -437,9 +437,6 @@ class Wind2D:
             title = f"{variable_name}".replace("_", " ")
             if log_variable:
                 title = r"$\log_{10}($" + title + r"$)$"
-
-            print(title)
-
             ax[0, 0].set_title(title)
 
         return fig, ax
