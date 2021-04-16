@@ -8,7 +8,7 @@ Description of file.
 from .physics.constants import PARSEC
 from .plotutil import photoionization_edges, common_lines, ax_add_line_ids
 from .plotutil import get_y_lims_for_x_lims
-from .plotutil import subplot_dims, remove_extra_axes
+from .plotutil import subplot_dims, remove_extra_axes, normalize_figure_style
 from .spectrum import Spectrum, UNITS_FLAMBDA, UNITS_FNU, UNITS_LNU
 from .util import smooth_array, get_root_from_filepath
 from .extrautil.error import InvalidParameter
@@ -160,6 +160,8 @@ def plot(
     # It doesn't make sense to provide only fig and not ax, or ax and not fig
     # so at this point we will throw an error message and return
 
+    normalize_figure_style()
+
     if fig and not ax:
         raise InvalidParameter("fig has been provided, but ax has not. Both are required.")
     if not fig and ax:
@@ -249,6 +251,8 @@ def plot_optical_depth(
         The pyplot.Figure object for the created figure
     ax: pyplot.Axes
         The pyplot.Axes object for the created figure"""
+
+    normalize_figure_style()
 
     fig, ax = plt.subplots(1, 1, figsize=(12, 9))
     if type(inclinations) == str:
@@ -342,6 +346,8 @@ def plot_spectrum_physics_process_contributions(
     ax: plt.Axes
         The plt.Axes object for the created figure"""
 
+    normalize_figure_style()
+
     fig, ax = plt.subplots(figsize=(12, 8))
 
     for name, spectrum in contribution_spectra.items():
@@ -417,6 +423,8 @@ def plot_spectrum_components(
         The pyplot.Figure object for the created figure
     ax: pyplot.Axes
         The pyplot.Axes object for the created figure"""
+
+    normalize_figure_style()
 
     fig, ax = plt.subplots(2, 1, figsize=(12, 10))
 
@@ -512,6 +520,8 @@ def plot_spectrum_inclinations_in_subpanels(
     else:
         size = (12, 10)
 
+    normalize_figure_style()
+
     fig, ax = plt.subplots(plot_dimensions[0], plot_dimensions[1], figsize=size, squeeze=False)
     fig, ax = remove_extra_axes(fig, ax, n_inclinations, plot_dimensions[0] * plot_dimensions[1])
 
@@ -591,6 +601,8 @@ def plot_single_spectrum_inclination(
         The pyplot.Figure object for the created figure
     ax: pyplot.Axes
         The pyplot.Axes object for the created figure"""
+
+    normalize_figure_style()
 
     s = Spectrum(root, wd).smooth(smooth_amount)
 
@@ -672,6 +684,8 @@ def plot_multiple_model_spectra(
         Figure object.
     ax: plt.Axes
         Axes object."""
+
+    normalize_figure_style()
 
     spectrum_objects = []
     for spectrum in spectra_filepaths:

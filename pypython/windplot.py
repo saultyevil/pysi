@@ -106,7 +106,7 @@ def plot_2d_wind(
         ax[i, j].set_theta_zero_location("N")
         ax[i, j].set_theta_direction(-1)
         ax[i, j].set_thetamin(0)
-        ax[i, j].set_thatmax(90)
+        ax[i, j].set_thetamax(90)
         ax[i, j].set_rlabel_position(90)
         ax[i, j].set_ylabel("R [cm]")
     ax[i, j].set_ylim(np.min(m_points[m_points > 0]), np.max(m_points))
