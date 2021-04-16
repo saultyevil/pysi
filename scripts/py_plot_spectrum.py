@@ -338,48 +338,60 @@ def main(
 
     root = root.replace("/", "")
 
-    fig, ax = plot_all_spectrum_inclinations_in_one_panel(
-        root, cd, xmin, xmax, smooth_amount, frequency_space, axes_scales, common_lines, file_ext
-    )
+    try:
+        fig, ax = plot_all_spectrum_inclinations_in_one_panel(
+            root, cd, xmin, xmax, smooth_amount, frequency_space, axes_scales, common_lines, file_ext
+        )
+    except Exception as e:
+        print(e)
 
-    fig, ax = plot_spectrum_inclinations_on_one_figure_in_subpanels(
-        root, cd, xmin, xmax, smooth_amount, frequency_space, axes_scales, False, file_ext
-    )
+    try:
+        fig, ax = plot_spectrum_inclinations_on_one_figure_in_subpanels(
+            root, cd, xmin, xmax, smooth_amount, frequency_space, axes_scales, False, file_ext
+        )
+    except Exception as e:
+        print(e)
 
-    plot_spectrum_inclination_in_individual_figures(
-        root, cd, xmin, xmax, smooth_amount, frequency_space, axes_scales, file_ext
-    )
+    try:
+        plot_spectrum_inclination_in_individual_figures(
+            root, cd, xmin, xmax, smooth_amount, frequency_space, axes_scales, file_ext
+        )
+    except Exception as e:
+        print(e)
 
     # Spectrum Components - extracted spectrum
 
     alpha = 0.75
-
-    fig, ax = spectrumplot.plot_spectrum_components(
-        root, cd, False, False, xmin, xmax, smooth_amount, axes_scales, alpha, frequency_space, display
-    )
-    fig.savefig("{}/{}_spectrum_components.{}".format(cd, root, file_ext))
+    try:
+        fig, ax = spectrumplot.plot_spectrum_components(
+            root, cd, False, False, xmin, xmax, smooth_amount, axes_scales, alpha, frequency_space, display
+        )
+        fig.savefig("{}/{}_spectrum_components.{}".format(cd, root, file_ext))
+    except Exception as e:
+        print(e)
 
     # log_spec_tot - all photons
-
-    fig, ax = spectrumplot.plot_spectrum_components(
-        root, cd, True, False, xmin, xmax, smooth_amount, axes_scales, alpha, frequency_space, display
-    )
-    fig.savefig("{}/{}_spec_tot.{}".format(cd, root, file_ext))
+    try:
+        fig, ax = spectrumplot.plot_spectrum_components(
+            root, cd, True, False, xmin, xmax, smooth_amount, axes_scales, alpha, frequency_space, display
+        )
+        fig.savefig("{}/{}_spec_tot.{}".format(cd, root, file_ext))
+    except Exception as e:
+        print(e)
 
     # log_spec_tot_wind - anything which is "inwind"
-
-    fig, ax = spectrumplot.plot_spectrum_components(
-        root, cd, False, True, xmin, xmax, smooth_amount, axes_scales, alpha, frequency_space, display
-    )
-    fig.savefig("{}/{}_spec_tot_wind.{}".format(cd, root, file_ext))
+    try:
+        fig, ax = spectrumplot.plot_spectrum_components(
+            root, cd, False, True, xmin, xmax, smooth_amount, axes_scales, alpha, frequency_space, display
+        )
+        fig.savefig("{}/{}_spec_tot_wind.{}".format(cd, root, file_ext))
+    except Exception as e:
+        print(e)
 
     if display:
         plt.show()
     else:
         plt.close()
 
-    return fig, ax
-
-
 if __name__ == "__main__":
-    fig, ax = main()
+    main()
