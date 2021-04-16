@@ -10,7 +10,9 @@ import numpy as np
 from matplotlib import pyplot as plt
 from pypython import simulation
 from pypython import util
+from pypython import plotutil
 from typing import List
+
 
 COL_WIDTH = 80
 
@@ -41,12 +43,12 @@ def plot_convergence(
     wd: str [optional]
         The directory containing the Python simulation."""
 
+    plotutil.normalize_figure_style()
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     n_cycles = len(convergence)
     cycles = np.arange(1, n_cycles + 1, 1)
     ax.set_xlim(1, n_cycles)
     ax.set_ylim(0, 1)
-    ax.set_xticks(cycles[::2])
 
     ax.plot(cycles, convergence, label="Convergence")
 
@@ -56,13 +58,13 @@ def plot_convergence(
     if converging:
         ax.plot(cycles, converging, label="Converging")
     if tr:
-        ax.plot(cycles, tr, "--", label="Radiation temperature")
+        ax.plot(cycles, tr, "--", label="Radiation temperature", alpha=0.65)
     if te:
-        ax.plot(cycles, te, "--", label="Electron temperature")
+        ax.plot(cycles, te, "--", label="Electron temperature", alpha=0.65)
     if te_max:
-        ax.plot(cycles, te_max, "--", label="Electron temperature max")
+        ax.plot(cycles, te_max, "--", label="Electron temperature max", alpha=0.65)
     if hc:
-        ax.plot(cycles, hc, "--", label="Heating/Cooling")
+        ax.plot(cycles, hc, "--", label="Heating/Cooling", alpha=0.65)
 
     ax.legend()
     ax.set_xlabel("Cycle")
