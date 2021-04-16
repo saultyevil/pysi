@@ -365,8 +365,7 @@ class Wind:
         self, theta: float, parameter: str, fraction: bool = False
     ):
         """Extract a variable along a given sight line.
-        todo: i think this only works with rectilinear grids, not polar
-        todo: get this to work with ions"""
+        todo: i think this only works with rectilinear grids, not polar"""
         
         if self.coord_system == "polar":
             raise NotImplementedError()
@@ -376,12 +375,26 @@ class Wind:
         
         z_array = np.array(self.n_coords, dtype=np.float64)
         z_coords = self.get_sightline_coordinates(theta)
-
         values = np.zeros_like(z_coords, dtype=np.float64)
+
+        # Get the variable before hand, so we can deal with getting elements
+        # out due to their stupid layout in memory
+
+        element_check = parameter[:2].replace("_", "")
+        ion_check = parameter[2:].replace("_", "")
+        if element_check in self.elements:
+            if fraction:
+                variable = self.variables[element_check]["fraction"][ion_check]
+            else:
+                variable = self.variables[element_check]["density"][ion_check]
+        else:
+            variable = self.variables[parameter]
+
+        # This is the actual work which extracts along a sight line
 
         for x_index, z in enumerate(z_coords):
             z_index = get_array_index(z_array, z)
-            values[x_index] = self.variables[parameter][x_index, z_index]
+            values[x_index] = variable[x_index, z_index]
 
         return np.array(self.m_coords), z_array, values
 
@@ -399,12 +412,8 @@ class Wind:
         log_variable: bool [optional
             Plot the log10 of the variable."""
 
-        if self.coord_system == "rectilinear":
-            m_points = self.variables["x"]
-            n_points = self.variables["z"]
-        else:
-            n_points = np.log10(self.variables["r"])
-            m_points = np.deg2rad(self.variables["theta"])
+        # First, we need to get the variable. If we want to include ions, then
+        # we need to do a bit of messing around
 
         element_check = variable_name[:2].replace("_", "")
         ion_check = variable_name[2:].replace("_", "")
@@ -419,12 +428,32 @@ class Wind:
         if log_variable:
             variable = np.log10(variable)
 
-        fig, ax = plot_2d_wind(m_points, n_points, variable, self.coord_system)
+        # Next, we have to make sure we get the correct coordinates
+
+        if self.coord_system == "spherical":
+            m_points = self.variables["r"]
+        elif self.coord_system == "rectilinear":
+            m_points = self.variables["x"]
+            n_points = self.variables["z"]
+        else:
+            n_points = np.log10(self.variables["r"])
+            m_points = np.deg2rad(self.variables["theta"])
+
+        if self.coord_system == "spherical":
+            fig, ax = plot_1d_wind(m_points, variable)
+        else:
+            fig, ax = plot_2d_wind(m_points, n_points, variable, self.coord_system)
+
+        # Finally, label the axes with what we actually plotted
+
         if len(ax) == 1:
             title = f"{variable_name}".replace("_", " ")
             if log_variable:
                 title = r"$\log_{10}($" + title + r"$)$"
-            ax[0, 0].set_title(title)
+            if self.coord_system == "spherical":
+                ax[0, 0].set_ylabel(title)
+            else:
+                ax[0, 0].set_title(title)
 
         return fig, ax
 
@@ -472,9 +501,59 @@ class Wind:
 # Plotting functions -----------------------------------------------------------
 
 
-def plot_1d_wind():
-    """Description of function."""
-    raise NotImplementedError
+def plot_1d_wind(
+    m_points: np.ndarray, parameter_points: np.ndarray, scale: str = "loglog", fig: plt.Figure = None,
+     ax: plt.Axes = None, i: int = 0, j: int = 0
+) -> Tuple[plt.Figure, Union[np.ndarray, plt.Axes]]:
+    """Plot a 1D wind.
+
+    Parameters
+    ----------
+    m_points: np.ndarray
+        The 1st axis points, which are the r bins.
+    parameter_points: np.ndarray
+        The wind parameter to be plotted, in the same shape as the n_points and
+        m_points arrays.
+    scale: str [optional]
+        The scaling of the axes: [logx, logy, loglog, linlin]
+    fig: plt.Figure [optional]
+        A Figure object to update, otherwise a new one will be created.
+    ax: plt.Axes [optional]
+        An axes array to update, otherwise a new one will be created.
+    i: int [optional]
+        The i index for the sub panel to plot onto.
+    j: int [optional]
+        The j index for the sub panel to plot onto.
+
+    Returns
+    -------
+    fig: plt.Figure
+        The (updated) Figure object for the plot.
+    ax: plt.Axes
+        The (updated) axes array for the plot."""
+
+    normalize_figure_style()
+
+    if fig is None or ax is None:
+        fig, ax = plt.subplots(figsize=(7, 5), squeeze=False)
+
+    if scale not in ["logx", "logy", "loglog", "linlin"]:
+        print("unknown axes scaling", scale)
+        print("allwoed:", ["logx", "logy", "loglog", "linlin"])
+        exit(1)  # todo: error code
+
+    ax[i, j].plot(m_points, parameter_points)
+
+    ax[i, j].set_xlabel(r"$r$ [cm]")
+    ax[i, j].set_xlim(np.min(m_points[m_points > 0]), np.max(m_points))
+    if scale == "loglog" or scale == "logx":
+        ax[i, j].set_xscale("log")
+    if scale == "loglog" or scale == "logy":
+        ax[i, j].set_yscale("log")
+
+    fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+
+    return fig, ax
 
 
 def plot_2d_wind(
@@ -482,7 +561,7 @@ def plot_2d_wind(
     inclinations_to_plot: List[str] = None, scale: str = "loglog", vmin: float = None, vmax: float = None,
     fig: plt.Figure = None, ax: plt.Axes = None, i: int = 0, j: int = 0
 ) -> Tuple[plt.Figure, Union[np.ndarray, plt.Axes]]:
-    """Description of function.
+    """Plot a 2D wind using a contour plot.
 
     Parameters
     ----------
