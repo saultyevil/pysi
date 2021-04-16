@@ -639,9 +639,10 @@ def main(
 ) -> None:
     """Main function of the script."""
 
-    atexit.register(
-        send_notification, "ejp1n17@soton.ac.uk", "{}: py_run has exited unexpectedly".format(gethostname()), ""
-    )
+    if SEND_NOTIFS:
+        atexit.register(
+            send_notification, "ejp1n17@soton.ac.uk", "{}: py_run has exited unexpectedly".format(gethostname()), ""
+        )
 
     setup_script()
     init_logfile("Log.txt")

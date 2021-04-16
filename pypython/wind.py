@@ -473,11 +473,11 @@ class Wind:
         return np.unravel_index(elem, (self.nx, self.nz))
 
     def show(
-        self
+        self, block=False
     ):
         """Show a plot which has been created."""
 
-        plt.show()
+        plt.show(block)
 
     def __getitem__(
         self, key
