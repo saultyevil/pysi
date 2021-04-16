@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-Description of file.
+Contains the Wind object for reading in a 1D and 2D wind. Also includes plotting
+functions.
 """
 
 import os
@@ -14,31 +15,19 @@ from matplotlib import pyplot as plt
 
 from .extrautil import vector
 from .physics.constants import CMS_TO_KMS, PI, C
+from .plotutil import normalize_figure_style
 from .util import get_array_index
-from .windplot import plot_2d_wind
 
 
-class Wind1D:
-    """A class to store a 1D Python wind_save file. Contains methods to extract
-    variables, etc."""
-
-    def __init__(self):
-        raise NotImplementedError
-
-    def __str__(self):
-        raise NotImplementedError
-
-
-class Wind2D:
-    """A class to store a 2D Python wind tables. Contains methods to extract
-    variables, as well as convert various indices into other indices.
+class Wind:
+    """A class to store 1D and 2D Python wind tables. Contains methods to
+    extract variables, as well as convert various indices into other indices.
     todo: add dot notation for accessing dictionaries"""
 
     def __init__(
         self, root: str, cd: str = ".", velocity_units: str = "kms", mask_cells: bool = True, delim: str = None
     ):
-        """Description of function.
-
+        """Initialize the object.
         Parameters
         ----------
         root: str
@@ -56,13 +45,13 @@ class Wind2D:
             self.cd += "/"
         self.nx = 1
         self.nz = 1
-        self.nelem = 1
-        self.x_coords = ()
-        self.z_coords = ()
-        self.x_cen_coords = ()
-        self.z_cen_coords = ()
-        self.wind_parameters = ()
-        self.wind_elements = ()
+        self.n_elem = 1
+        self.m_coords = ()
+        self.n_coords = ()
+        self.m_cen_coords = ()
+        self.n_cem_coords = ()
+        self.parameters = ()
+        self.elements = ()
         self.variables = {}
 
         # Set up the velocity units and conversion factors
@@ -84,11 +73,14 @@ class Wind2D:
 
         self.read_in_wind_parameters(delim)
         self.read_in_wind_ions(delim)
-        self.columns = self.wind_parameters + self.wind_elements
+        self.columns = self.parameters + self.elements
 
         # Record the coordinate system and possible axes labels
 
-        if "r" in self.wind_parameters and "theta" in self.wind_parameters:
+        if self.nz == 1:
+            self.coord_system = "spherical"
+            self.axes = ["r", "r_cen"]
+        elif "r" in self.parameters and "theta" in self.parameters:
             self.coord_system = "polar"
             self.axes = ["r", "theta", "r_cen", "theta_cen"]
         else:
@@ -96,9 +88,10 @@ class Wind2D:
             self.axes = ["x", "z", "x_cen", "z_cen"]
 
         # Convert velocity into desired units and also calculate the cylindrical
-        # velocities
+        # velocities. This doesn't work for polar or spherical coordinates as
+        # they will not have these velocities
 
-        if self.coord_system != "polar":
+        if self.coord_system == "rectilinear":
             self.project_cartesian_velocity_to_cylindrical()
         self.variables["v_x"] *= self.velocity_conversion_factor
         self.variables["v_y"] *= self.velocity_conversion_factor
@@ -176,7 +169,7 @@ class Wind2D:
         if "j" in wind_columns:
             j_col = wind_columns.index("j")
             self.nz = int(np.max(wind_all[0][:, j_col]) + 1)
-        self.nelem = int(self.nx * self.nz)  # the int() is for safety
+        self.n_elem = int(self.nx * self.nz)  # the int() is for safety
 
         wind_all = np.hstack(wind_all)
 
@@ -188,13 +181,22 @@ class Wind2D:
             if col in self.variables.keys():
                 continue
             self.variables[col] = wind_all[:, index].reshape(self.nx, self.nz)
-            self.wind_parameters += col,
+            self.parameters += col,
 
-        self.x_coords = tuple(np.unique(self.variables["x"]))
-        self.x_cen_coords = tuple(np.unique(self.variables["xcen"]))
-        if "z" in self.wind_parameters:
-            self.z_coords = tuple(np.unique(self.variables["z"]))
-            self.z_cen_coords = tuple(np.unique(self.variables["zcen"]))
+        # Get the x/r coordinates
+
+        if "x" in self.parameters:
+            self.m_coords = tuple(np.unique(self.variables["x"]))
+            self.m_cen_coords = tuple(np.unique(self.variables["xcen"]))
+        else:
+            self.m_coords = tuple(np.unique(self.variables["r"]))
+            self.m_cen_coords = tuple(np.unique(self.variables["rcen"]))
+
+        # Get the z coordinates
+
+        if "z" in self.parameters:
+            self.n_coords = tuple(np.unique(self.variables["z"]))
+            self.n_cen_coords = tuple(np.unique(self.variables["zcen"]))
 
     def read_in_wind_ions(
         self, delim: str = None, elements_to_get: Union[List[str], Tuple[str], str] = None
@@ -222,7 +224,7 @@ class Wind2D:
 
         for element in elements_to_get:
             element = element.capitalize()  # for safety...
-            self.wind_elements += element,
+            self.elements += element,
 
             # Each element will have a dict of two keys, either frac or den.
             # Inside each dict with be more dicts of keys where the values are
@@ -317,7 +319,7 @@ class Wind2D:
         """Convert each array into a masked array, where the mask is defined by
         the inwind variable."""
 
-        to_mask_wind = list(self.wind_parameters)
+        to_mask_wind = list(self.parameters)
 
         # Remove some of the columns, as these shouldn't be masked because
         # weird things will happen when creating a plot. This doesn't need to
@@ -339,7 +341,7 @@ class Wind2D:
         # Now, create masked arrays for the wind ions. Have to do it for each
         # element and each ion type and each ion. This is probably slow :)
 
-        for element in self.wind_elements:
+        for element in self.elements:
             for ion_type in self.variables[element].keys():
                 for ion in self.variables[element][ion_type].keys():
                     self.variables[element][ion_type][ion] = np.ma.masked_where(
@@ -357,7 +359,7 @@ class Wind2D:
         theta: float
             The angle of the sight line to extract from. Given in degrees."""
 
-        return np.array(self.x_coords, dtype=np.float64) * np.tan(PI / 2 - np.deg2rad(theta))
+        return np.array(self.m_coords, dtype=np.float64) * np.tan(PI / 2 - np.deg2rad(theta))
 
     def get_variable_along_sightline(
         self, theta: float, parameter: str, fraction: bool = False
@@ -372,7 +374,7 @@ class Wind2D:
         if type(theta) is not float:
             theta = float(theta)
         
-        z_array = np.array(self.z_coords, dtype=np.float64)
+        z_array = np.array(self.n_coords, dtype=np.float64)
         z_coords = self.get_sightline_coordinates(theta)
 
         values = np.zeros_like(z_coords, dtype=np.float64)
@@ -381,22 +383,7 @@ class Wind2D:
             z_index = get_array_index(z_array, z)
             values[x_index] = self.variables[parameter][x_index, z_index]
 
-        return np.array(self.x_coords), z_array, values
-
-    def get_elem_number_from_ij(
-        self, i: int, j: int
-    ):
-        """Get the wind element number for a given i and j index."""
-
-        raise self.nz * i + j
-
-    def get_ij_from_elem_number(
-        self, elem: int
-    ):
-        """Get the i and j index for a given wind element number.
-        todo: check that this is row or column major in Python"""
-
-        return np.unravel_index(elem, (self.nx, self.nz))
+        return np.array(self.m_coords), z_array, values
 
     def plot(
         self, variable_name: str, fraction: bool = False, log_variable: bool = True
@@ -421,7 +408,7 @@ class Wind2D:
 
         element_check = variable_name[:2].replace("_", "")
         ion_check = variable_name[2:].replace("_", "")
-        if element_check in self.wind_elements:
+        if element_check in self.elements:
             if fraction:
                 variable = self.variables[element_check]["fraction"][ion_check]
             else:
@@ -440,6 +427,21 @@ class Wind2D:
             ax[0, 0].set_title(title)
 
         return fig, ax
+
+    def get_elem_number_from_ij(
+        self, i: int, j: int
+    ):
+        """Get the wind element number for a given i and j index."""
+
+        raise self.nz * i + j
+
+    def get_ij_from_elem_number(
+        self, elem: int
+    ):
+        """Get the i and j index for a given wind element number.
+        todo: check that this is row or column major in Python"""
+
+        return np.unravel_index(elem, (self.nx, self.nz))
 
     def show(
         self
@@ -465,3 +467,109 @@ class Wind2D:
     ):
         """Print basic details about the wind."""
         return "NotImplementedYet:-)"
+
+
+# Plotting functions -----------------------------------------------------------
+
+
+def plot_1d_wind():
+    """Description of function."""
+    raise NotImplementedError
+
+
+def plot_2d_wind(
+    m_points: np.ndarray, n_points: np.ndarray, parameter_points: np.ndarray, coordinate_system: str = "rectilinear",
+    inclinations_to_plot: List[str] = None, scale: str = "loglog", vmin: float = None, vmax: float = None,
+    fig: plt.Figure = None, ax: plt.Axes = None, i: int = 0, j: int = 0
+) -> Tuple[plt.Figure, Union[np.ndarray, plt.Axes]]:
+    """Description of function.
+
+    Parameters
+    ----------
+    m_points: np.ndarray
+        The 1st axis points, either x or angular (in degrees) bins.
+    n_points: np.ndarray
+        The 2nd axis points, either z or radial bins.
+    parameter_points: np.ndarray
+        The wind parameter to be plotted, in the same shape as the n_points and
+        m_points arrays.
+    coordinate_system: str [optional]
+        The coordinate system in use, either rectilinear or polar.
+    inclinations_to_plot: List[str] [optional]
+        A list of inclination angles to plot onto the ax[0, 0] sub panel. Must
+        be strings and 0 < inclination < 90.
+    scale: str [optional]
+        The scaling of the axes: [logx, logy, loglog, linlin]
+    vmin: float [optional]
+        The minimum value to plot.
+    vmax: float [optional]
+        The maximum value to plot.
+    fig: plt.Figure [optional]
+        A Figure object to update, otherwise a new one will be created.
+    ax: plt.Axes [optional]
+        An axes array to update, otherwise a new one will be created.
+    i: int [optional]
+        The i index for the sub panel to plot onto.
+    j: int [optional]
+        The j index for the sub panel to plot onto.
+
+    Returns
+    -------
+    fig: plt.Figure
+        The (updated) Figure object for the plot.
+    ax: plt.Axes
+        The (updated) axes array for the plot."""
+
+    normalize_figure_style()
+
+    if fig is None or ax is None:
+        if coordinate_system == "rectilinear":
+            fig, ax = plt.subplots(figsize=(7, 5), squeeze=False)
+        elif coordinate_system == "polar":
+            fig, ax = plt.subplots(figsize=(7, 5), squeeze=False, subplot_kw={"projection": "polar"})
+        else:
+            print("unknown wind projection", coordinate_system)
+            print("allowed: ['rectilinear', 'polar']")
+            exit(1)  # todo: error code
+
+    if scale not in ["logx", "logy", "loglog", "linlin"]:
+        print("unknown axes scaling", scale)
+        print("allwoed:", ["logx", "logy", "loglog", "linlin"])
+        exit(1)  # todo: error code
+
+    im = ax[i, j].pcolormesh(m_points, n_points, parameter_points, shading="auto", vmin=vmin, vmax=vmax)
+
+    if inclinations_to_plot:
+        n_coords = np.unique(m_points)
+        for inclination in inclinations_to_plot:
+            if coordinate_system == "rectilinear":
+                m_coords = n_coords * np.tan(0.5 * PI - np.deg2rad(float(inclination)))
+            else:
+                x_coords = np.logspace(np.log10(0), np.max(n_points))
+                m_coords = x_coords * np.tan(0.5 * PI - np.deg2rad(90 - float(inclination)))
+                m_coords = np.sqrt(x_coords ** 2 + m_coords ** 2)
+            ax[0, 0].plot(n_coords, m_coords, label=inclination + r"$^{\circ}$")
+        ax[0, 0].legend(loc="lower left")
+
+    fig.colorbar(im, ax=ax[i, j])
+    if coordinate_system == "rectilinear":
+        ax[i, j].set_xlabel(r"$x$ [cm]")
+        ax[i, j].set_ylabel(r"$z$ [cm]")
+        ax[i, j].set_xlim(np.min(m_points[m_points > 0]), np.max(m_points))
+        if scale == "loglog" or scale == "logx":
+            ax[i, j].set_xscale("log")
+        if scale == "loglog" or scale == "logy":
+            ax[i, j].set_yscale("log")
+    else:
+        ax[i, j].set_theta_zero_location("N")
+        ax[i, j].set_theta_direction(-1)
+        ax[i, j].set_thetamin(0)
+        ax[i, j].set_thetamax(90)
+        ax[i, j].set_rlabel_position(90)
+        ax[i, j].set_ylabel(r"$\log_{10}(R)$ [cm]")
+
+    ax[i, j].set_ylim(np.min(n_points[n_points > 0]), np.max(n_points))
+    fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+
+    return fig, ax
+

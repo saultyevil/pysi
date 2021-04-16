@@ -14,10 +14,9 @@ import os
 from typing import Tuple
 
 import numpy as np
-import pypython
 from matplotlib import pyplot as plt
-from pypython import plotutil, windplot
-from pypython.wind import Wind2D
+from pypython import plotutil, util
+from pypython import wind
 
 
 def setup_script() -> tuple:
@@ -101,13 +100,13 @@ def main(
         subplot_kw = {}
 
     if not os.path.isfile("{}.master.txt".format(root)):
-        pypython.util.create_wind_save_tables(root, cd, False)
-        pypython.util.create_wind_save_tables(root, cd, True)
+        util.create_wind_save_tables(root, cd, False)
+        util.create_wind_save_tables(root, cd, True)
 
     # Read in the wind, set the wing parameters we want to plot, as well as the
     # elements of the ions we want to plot and the number of ions.
 
-    wind = Wind2D(root, cd, coordinate_system, velocity_units, True)
+    w = wind.Wind(root, cd, velocity_units, True)
 
     wind_parameters = [
         "t_e", "t_r", "ne", "rho", "c4", "ip"
@@ -146,13 +145,13 @@ def main(
         for j in range(n_cols):
             if logplot:  # todo: ignore division warning
                 with np.errstate(divide="ignore"):
-                    toplot = np.log10(wind[wind_parameters[wind_index]])
+                    toplot = np.log10(w[wind_parameters[wind_index]])
                 ax[i, j].set_title("log(" + wind_parameters[wind_index] + ")")
             else:
-                toplot = wind[wind_parameters[wind_index]]
+                toplot = w[wind_parameters[wind_index]]
                 ax[i, j].set_title(wind_parameters[wind_index])
-            fig, ax = windplot.plot_2d_wind(
-                wind["x"], wind["z"], toplot, coordinate_system, None, axes_scales, None, None, fig, ax, i, j
+            fig, ax = wind.plot_2d_wind(
+                w["x"], w["z"], toplot, coordinate_system, None, axes_scales, None, None, fig, ax, i, j
             )
             wind_index += 1
 
@@ -181,13 +180,13 @@ def main(
         for j in range(n_cols):
             if logplot:  # todo: ignore division warning
                 with np.errstate(divide="ignore"):
-                    toplot = np.log10(wind[wind_velocities[wind_index]])
-                ax[i, j].set_title("log(" + wind_velocities[wind_index] + ")" + " [" + wind.velocity_units + "]")
+                    toplot = np.log10(w[wind_velocities[wind_index]])
+                ax[i, j].set_title("log(" + wind_velocities[wind_index] + ")" + " [" + w.velocity_units + "]")
             else:
-                toplot = wind[wind_velocities[wind_index]]
-                ax[i, j].set_title(wind_velocities[wind_index] + " [" + wind.velocity_units + "]")
-            fig, ax = windplot.plot_2d_wind(
-                wind["x"], wind["z"], toplot, coordinate_system, None, axes_scales, None, None, fig, ax, i, j
+                toplot = w[wind_velocities[wind_index]]
+                ax[i, j].set_title(wind_velocities[wind_index] + " [" + w.velocity_units + "]")
+            fig, ax = wind.plot_2d_wind(
+                w["x"], w["z"], toplot, coordinate_system, None, axes_scales, None, None, fig, ax, i, j
             )
             wind_index += 1
 
@@ -222,8 +221,8 @@ def main(
             for j in range(n_cols):
                 ion_key = "i{:02d}".format(ion_index)
                 with np.errstate(divide="ignore"):
-                    fig, ax = windplot.plot_2d_wind(
-                        wind["x"], wind["z"], np.log10(wind[element][ion_type_key][ion_key]), coordinate_system, None,
+                    fig, ax = wind.plot_2d_wind(
+                        w["x"], w["z"], np.log10(w[element][ion_type_key][ion_key]), coordinate_system, None,
                         axes_scales, vmin, vmax, fig, ax, i, j
                     )
                 ax[i, j].set_title("log(" + element + ion_key + ")")

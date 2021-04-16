@@ -23,7 +23,7 @@ from .extrautil.error import EXIT_FAIL
 from .physics.constants import PARSEC, C
 from .physics.convert import angstrom_to_hz, hz_to_angstrom
 from .spectrum import Spectrum
-from .wind import Wind2D
+from .wind import Wind
 
 BOUND_FREE_NRES = 20000
 UNFILTERED_SPECTRUM = -999
@@ -456,9 +456,9 @@ def wind_bin_interaction_weight(
         the grid.
     """
 
-    w = Wind2D(root, cd, mask_cells=False)
-    x_points = np.array(w.x_coords)
-    z_points = np.array(w.z_coords)
+    w = Wind(root, cd, mask_cells=False)
+    x_points = np.array(w.m_coords)
+    z_points = np.array(w.n_coords)
 
     photons = read_delay_dump(root, cd, False)
     if photons.empty:

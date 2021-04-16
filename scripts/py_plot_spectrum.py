@@ -13,8 +13,8 @@ import argparse as ap
 from typing import Tuple
 
 from matplotlib import pyplot as plt
-from pypython import plotutil, spectrumplot
-from pypython.spectrum import Spectrum
+from pypython import plotutil
+from pypython import spectrum as pysp
 
 plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15
@@ -119,7 +119,7 @@ def plot_all_spectrum_inclinations_in_one_panel(
         The matplotlib Axes objects for the plot panels."""
 
     alpha = 0.75
-    spectrum = Spectrum(root, cd)
+    spectrum = pysp.Spectrum(root, cd)
     spectrum.smooth(smooth_amount)
     spectrum_inclinations = spectrum.inclinations
 
@@ -163,7 +163,7 @@ def plot_all_spectrum_inclinations_in_one_panel(
         if frequency_space:
             y *= spectrum["Lambda"]
 
-        fig, ax = spectrumplot.plot(
+        fig, ax = pysp.plot(
             x, y, xmin, xmax, xlabel, ylabel, axes_scales, fig, ax, label=str(inclination) + r"$^{\circ}$", alpha=alpha
         )
 
@@ -218,7 +218,7 @@ def plot_spectrum_inclinations_on_one_figure_in_subpanels(
     ax: plt.Axes
         The matplotlib Axes objects for the plot panels."""
 
-    fig, ax = spectrumplot.plot_spectrum_inclinations_in_subpanels(
+    fig, ax = pysp.plot_spectrum_inclinations_in_subpanels(
         root, cd, xmin, xmax, smooth_amount, common_lines, frequency_space, axes_scales
     )
     fig.savefig("{}/{}_spectra.{}".format(cd, root, file_ext))
@@ -260,7 +260,7 @@ def plot_spectrum_inclination_in_individual_figures(
         The matplotlib Axes objects for the plot panels."""
 
     alpha = 0.75
-    spectrum = Spectrum(root, cd)
+    spectrum = pysp.Spectrum(root, cd)
     spectrum.smooth(smooth_amount)
     spectrum_inclinations = spectrum.inclinations
 
@@ -285,7 +285,7 @@ def plot_spectrum_inclination_in_individual_figures(
         # Convert into lambda F_lambda which is (I hope) the same as nu F_nu
         if frequency_space:
             y *= spectrum["Lambda"]
-        fig, ax = spectrumplot.plot(x, y, xmin, xmax, xlabel, ylabel, axes_scales, alpha=alpha)
+        fig, ax = pysp.plot(x, y, xmin, xmax, xlabel, ylabel, axes_scales, alpha=alpha)
         if axes_scales == "loglog" or axes_scales == "logx":
             logx = True
         else:
@@ -342,6 +342,8 @@ def main(
         fig, ax = plot_all_spectrum_inclinations_in_one_panel(
             root, cd, xmin, xmax, smooth_amount, frequency_space, axes_scales, common_lines, file_ext
         )
+    except IOError:
+        pass
     except Exception as e:
         print(e)
 
@@ -349,6 +351,8 @@ def main(
         fig, ax = plot_spectrum_inclinations_on_one_figure_in_subpanels(
             root, cd, xmin, xmax, smooth_amount, frequency_space, axes_scales, False, file_ext
         )
+    except IOError:
+        pass
     except Exception as e:
         print(e)
 
@@ -356,6 +360,8 @@ def main(
         plot_spectrum_inclination_in_individual_figures(
             root, cd, xmin, xmax, smooth_amount, frequency_space, axes_scales, file_ext
         )
+    except IOError:
+        pass
     except Exception as e:
         print(e)
 
@@ -363,28 +369,34 @@ def main(
 
     alpha = 0.75
     try:
-        fig, ax = spectrumplot.plot_spectrum_components(
+        fig, ax = pysp.plot_spectrum_components(
             root, cd, False, False, xmin, xmax, smooth_amount, axes_scales, alpha, frequency_space, display
         )
         fig.savefig("{}/{}_spectrum_components.{}".format(cd, root, file_ext))
+    except IOError:
+        pass
     except Exception as e:
         print(e)
 
     # log_spec_tot - all photons
     try:
-        fig, ax = spectrumplot.plot_spectrum_components(
+        fig, ax = pysp.plot_spectrum_components(
             root, cd, True, False, xmin, xmax, smooth_amount, axes_scales, alpha, frequency_space, display
         )
         fig.savefig("{}/{}_spec_tot.{}".format(cd, root, file_ext))
+    except IOError:
+        pass
     except Exception as e:
         print(e)
 
     # log_spec_tot_wind - anything which is "inwind"
     try:
-        fig, ax = spectrumplot.plot_spectrum_components(
+        fig, ax = pysp.plot_spectrum_components(
             root, cd, False, True, xmin, xmax, smooth_amount, axes_scales, alpha, frequency_space, display
         )
         fig.savefig("{}/{}_spec_tot_wind.{}".format(cd, root, file_ext))
+    except IOError:
+        pass
     except Exception as e:
         print(e)
 
@@ -392,6 +404,7 @@ def main(
         plt.show()
     else:
         plt.close()
+
 
 if __name__ == "__main__":
     main()
