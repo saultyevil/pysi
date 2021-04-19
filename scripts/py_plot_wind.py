@@ -40,9 +40,6 @@ def setup_script() -> tuple:
         "-d", "--ion_density", action="store_true", default=False, help="Use ion densities instead of ion fractions."
     )
     p.add_argument(
-        "-p", "--polar_coords", action="store_true", default=False, help="Plot using polar projection."
-    )
-    p.add_argument(
         "-u", "--velocity_units", default="kms", choices=["kms", "cms", "c"], help="The velocity units."
     )
     p.add_argument(
@@ -53,9 +50,6 @@ def setup_script() -> tuple:
         "-c", "--cells", action="store_true", default=False, help="Plot using cell indices rather than spatial scales."
     )
     p.add_argument(
-        "-e", "--ext", default="png", help="The file extension for the output figure."
-    )
-    p.add_argument(
         "--display", action="store_true", default=False, help="Display the plot before exiting the script."
     )
 
@@ -64,12 +58,10 @@ def setup_script() -> tuple:
     setup = (
         args.root,
         args.working_directory,
-        args.polar_coords,
         args.ion_density,
         args.velocity_units,
         args.scale,
         args.cells,
-        args.ext,
         args.display
     )
 
@@ -77,26 +69,11 @@ def setup_script() -> tuple:
 
 
 def main(
-    setup: tuple = None
+
 ) -> Tuple[plt.Figure, plt.Axes]:
-    """The main function of the script.
+    """The main function of the script."""
 
-    Parameters
-    ----------
-
-    Returns
-    -------"""
-
-    if setup:
-        root, cd, polar_coords, use_ion_density, velocity_units, axes_scales, use_cell_indices, file_ext, display = \
-            setup
-    else:
-        root, cd, polar_coords, use_ion_density, velocity_units, axes_scales, use_cell_indices, file_ext, display = \
-            setup_script()
-
-    if not os.path.isfile("{}.master.txt".format(root)):
-        util.create_wind_save_tables(root, cd, False)
-        util.create_wind_save_tables(root, cd, True)
+    root, cd, use_ion_density, velocity_units, axes_scales, use_cell_indices, display = setup_script()
 
     # Read in the wind, set the wing parameters we want to plot, as well as the
     # elements of the ions we want to plot and the number of ions.
@@ -247,6 +224,18 @@ def main(
             plt.close()
 
     return fig, ax
+
+
+def plot_wind_parameters():
+    return
+
+
+def plot_wind_velocity():
+    return
+
+
+def plot_wind_ions():
+    return
 
 
 if __name__ == "__main__":

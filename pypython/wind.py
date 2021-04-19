@@ -16,7 +16,7 @@ from matplotlib import pyplot as plt
 from .extrautil import vector
 from .physics.constants import CMS_TO_KMS, PI, C
 from .plotutil import normalize_figure_style
-from .util import get_array_index
+from .util import get_array_index, create_wind_save_tables
 
 
 class Wind:
@@ -49,17 +49,19 @@ class Wind:
         self.m_coords = ()
         self.n_coords = ()
         self.m_cen_coords = ()
-        self.n_cem_coords = ()
+        self.n_cen_coords = ()
+        self.axes = ()
         self.parameters = ()
         self.elements = ()
         self.variables = {}
+        self.coord_system = "unknown"
 
         # Set up the velocity units and conversion factors
 
         if velocity_units not in ["cms", "kms", "c"]:
-            print("unknown units: " + velocity_units)
-            print("allowed: ['kms', 'cms', 'c']")
+            print(f"unknown velocity units {velocity_units}. Allowed units [kms, cms, c]")
             exit(1)  # todo: error code
+
         self.velocity_units = velocity_units
         if velocity_units == "kms":
             self.velocity_conversion_factor = CMS_TO_KMS
@@ -68,24 +70,20 @@ class Wind:
         else:
             self.velocity_conversion_factor = 1 / C
 
-        # The next method reads in the wind and (probably) initializes the above
-        # members
+        # The next method reads in the wind and initializes the above members.
+        # If no wind tables can be found in read_in_wind_parameters, an IOError
+        # is raised. If raised, try to create the wind table and read the
+        # wind parameters again
 
-        self.read_in_wind_parameters(delim)
+        try:
+            self.read_in_wind_parameters(delim)
+        except IOError:
+            print("trying to run windsave2table to generate wind tables")
+            create_wind_save_tables(self.root, self.cd, ion_density=True)
+            create_wind_save_tables(self.root, self.cd, ion_density=False)
+            self.read_in_wind_parameters(delim)
         self.read_in_wind_ions(delim)
         self.columns = self.parameters + self.elements
-
-        # Record the coordinate system and possible axes labels
-
-        if self.nz == 1:
-            self.coord_system = "spherical"
-            self.axes = ["r", "r_cen"]
-        elif "r" in self.parameters and "theta" in self.parameters:
-            self.coord_system = "polar"
-            self.axes = ["r", "theta", "r_cen", "theta_cen"]
-        else:
-            self.coord_system = "rectilinear"
-            self.axes = ["x", "z", "x_cen", "z_cen"]
 
         # Convert velocity into desired units and also calculate the cylindrical
         # velocities. This doesn't work for polar or spherical coordinates as
@@ -93,6 +91,7 @@ class Wind:
 
         if self.coord_system == "rectilinear":
             self.project_cartesian_velocity_to_cylindrical()
+
         self.variables["v_x"] *= self.velocity_conversion_factor
         self.variables["v_y"] *= self.velocity_conversion_factor
         self.variables["v_z"] *= self.velocity_conversion_factor
@@ -107,7 +106,10 @@ class Wind:
         self, delim: str = None
     ):
         """Read in the wind parameters.
-        todo: add support for polar and spherical winds"""
+        Parameters
+        ----------
+        delim: str [optional]
+            The deliminator in the wind table files."""
 
         wind_all = []
         wind_columns = []
@@ -123,7 +125,6 @@ class Wind:
             if not os.path.exists(fpath):
                 fpath = self.cd + "tables/" + self.root + "." + table + ".txt"
                 if not os.path.exists(fpath):
-                    # todo: throw some kinda warning, I guess?
                     continue
             n_read += 1
 
@@ -158,8 +159,7 @@ class Wind:
             wind_all.append(np.array(wind_list[1:], dtype=np.float64))
 
         if n_read == 0:
-            print("Unable to open any wind save tables, try running windsave2table...")
-            exit(1)  # todo: error code
+            raise IOError("Unable to open any wind tables. Have you run windsave2table?")
 
         # Determine the number of nx and nz elements. There is a basic check to
         # only check for nz if a j column exists, i.e. if it is a 2d model.
@@ -192,11 +192,26 @@ class Wind:
             self.m_coords = tuple(np.unique(self.variables["r"]))
             self.m_cen_coords = tuple(np.unique(self.variables["rcen"]))
 
-        # Get the z coordinates
+        # Get the z/theta coordinates
 
         if "z" in self.parameters:
             self.n_coords = tuple(np.unique(self.variables["z"]))
             self.n_cen_coords = tuple(np.unique(self.variables["zcen"]))
+        else:
+            self.n_coords = tuple(np.unique(self.variables["theta"]))
+            self.n_cen_coords = tuple(np.unique(self.variables["theta_cen"]))
+
+        # Record the coordinate system and the axes labels
+
+        if self.nz == 1:
+            self.coord_system = "spherical"
+            self.axes = ["r", "r_cen"]
+        elif "r" in self.parameters and "theta" in self.parameters:
+            self.coord_system = "polar"
+            self.axes = ["r", "theta", "r_cen", "theta_cen"]
+        else:
+            self.coord_system = "rectilinear"
+            self.axes = ["x", "z", "x_cen", "z_cen"]
 
     def read_in_wind_ions(
         self, delim: str = None, elements_to_get: Union[List[str], Tuple[str], str] = None
@@ -209,7 +224,7 @@ class Wind:
         else:
             if type(elements_to_get) not in [str, list, tuple]:
                 print("ions_to_get should be a tuple/list of strings or a string")
-                exit(1)  # todo: error code
+                exit(1)
 
         # Read in each ion file, one by one. The ions will be stored in the
         # self.variables dict as,
@@ -280,7 +295,9 @@ class Wind:
     def project_cartesian_velocity_to_cylindrical(
         self
     ):
-        """Project the cartesian velocities of the wind into cylindrical coordinates."""
+        """Project the cartesian velocities of the wind into cylindrical
+         coordinates.
+         todo: this doesn't work for polar coordinates, renorm errors"""
 
         v_l = np.zeros_like(self.variables["v_x"])
         v_rot = np.zeros_like(v_l)
@@ -348,6 +365,31 @@ class Wind:
                         self.variables["inwind"] < 0, self.variables[element][ion_type][ion]
                     )
 
+    def get(
+        self, parameter: str, fraction: bool = True
+    ) -> Union[np.ndarray, np.ma.masked.array]:
+        """Get a parameter array. This is just another way to access the
+        dictionary self.variables.
+        Parameters
+        ----------
+        parameter: str
+            The name of the parameter to get.
+        fraction: bool [optional]
+            Return an ion fraction or density.
+        """
+
+        element_check = parameter[:2].replace("_", "")
+        ion_check = parameter[2:].replace("_", "")
+        if element_check in self.elements:
+            if fraction:
+                variable = self.variables[element_check]["fraction"][ion_check]
+            else:
+                variable = self.variables[element_check]["density"][ion_check]
+        else:
+            variable = self.variables[parameter]
+
+        return variable
+
     def get_sightline_coordinates(
         self, theta: float
     ):
@@ -376,25 +418,13 @@ class Wind:
         z_array = np.array(self.n_coords, dtype=np.float64)
         z_coords = self.get_sightline_coordinates(theta)
         values = np.zeros_like(z_coords, dtype=np.float64)
-
-        # Get the variable before hand, so we can deal with getting elements
-        # out due to their stupid layout in memory
-
-        element_check = parameter[:2].replace("_", "")
-        ion_check = parameter[2:].replace("_", "")
-        if element_check in self.elements:
-            if fraction:
-                variable = self.variables[element_check]["fraction"][ion_check]
-            else:
-                variable = self.variables[element_check]["density"][ion_check]
-        else:
-            variable = self.variables[parameter]
+        w_array = self.get(parameter, fraction)
 
         # This is the actual work which extracts along a sight line
 
         for x_index, z in enumerate(z_coords):
             z_index = get_array_index(z_array, z)
-            values[x_index] = variable[x_index, z_index]
+            values[x_index] = w_array[x_index, z_index]
 
         return np.array(self.m_coords), z_array, values
 
@@ -415,16 +445,7 @@ class Wind:
         # First, we need to get the variable. If we want to include ions, then
         # we need to do a bit of messing around
 
-        element_check = variable_name[:2].replace("_", "")
-        ion_check = variable_name[2:].replace("_", "")
-        if element_check in self.elements:
-            if fraction:
-                variable = self.variables[element_check]["fraction"][ion_check]
-            else:
-                variable = self.variables[element_check]["density"][ion_check]
-        else:
-            variable = self.variables[variable_name]
-
+        variable = self.get(variable_name, fraction)
         if log_variable:
             variable = np.log10(variable)
 
@@ -483,19 +504,26 @@ class Wind:
         self, key
     ):
         """Return an array in the variables dictionary when indexing."""
+
         return self.variables[key]
 
     def __setitem__(
         self, key, value
     ):
         """Set an array in the variables dictionary."""
+
         self.variables[key] = value
 
     def __str__(
         self
     ):
         """Print basic details about the wind."""
-        return "NotImplementedYet:-)"
+
+        txt = "root: {}\nfilepath: {}\ncoordinate system:{}\nparameters: {}\nelements: {}\n".format(
+            self.root, self.cd, self.coord_system, self.parameters, self.elements
+        )
+
+        return txt
 
 
 # Plotting functions -----------------------------------------------------------
@@ -515,6 +543,10 @@ def plot_wind(
     parameter: np.ndarray
         The wind parameter to be plotted, in the same shape as the coordinate
         arrays. Can also be the name of the variable.
+    log_parameter: bool [optional]
+        Plot the wind parameter as log_10(parameters).
+    ion_fraction: bool [optional]
+        Plot ions as a fraction [True] or a density.
     inclinations_to_plot: List[str] [optional]
         A list of inclination angles to plot onto the ax[0, 0] sub panel. Must
         be strings and 0 < inclination < 90.
@@ -542,18 +574,9 @@ def plot_wind(
     """
 
     # If the parameter is not an array, then get the variable from the wind
-    # todo: put first branch into a function
 
     if type(parameter) is str:
-        element_check = parameter[:2].replace("_", "")
-        ion_check = parameter[2:].replace("_", "")
-        if element_check in wind.elements:
-            if ion_fraction:
-                parameter_points = wind.variables[element_check]["fraction"][ion_check]
-            else:
-                parameter_points = wind.variables[element_check]["density"][ion_check]
-        else:
-            parameter_points = wind.variables[parameter]
+        parameter_points = wind.get(parameter, ion_fraction)
         if log_parameter:
             parameter_points = np.log10(parameter_points)
     elif type(parameter) in [np.ndarray, np.ma.core.MaskedArray]:
@@ -561,6 +584,8 @@ def plot_wind(
     else:
         print(f"Incompatible type {type(parameter)} for parameter")
         return fig, ax
+
+    # Finally plot the variable depending on the coordinate type
 
     if wind.coord_system == "spherical":
         fig, ax = plot_1d_wind(
@@ -581,7 +606,7 @@ def plot_wind(
 
 
 def plot_1d_wind(
-    m_points: np.ndarray, parameter_points: np.ndarray, scale: str = "loglog", fig: plt.Figure = None,
+    m_points: np.ndarray, parameter_points: np.ndarray, scale: str = "logx", fig: plt.Figure = None,
      ax: plt.Axes = None, i: int = 0, j: int = 0
 ) -> Tuple[plt.Figure, Union[np.ndarray, plt.Axes]]:
     """Plot a 1D wind.
@@ -617,9 +642,8 @@ def plot_1d_wind(
         fig, ax = plt.subplots(figsize=(7, 5), squeeze=False)
 
     if scale not in ["logx", "logy", "loglog", "linlin"]:
-        print("unknown axes scaling", scale)
-        print("allwoed:", ["logx", "logy", "loglog", "linlin"])
-        exit(1)  # todo: error code
+        print(f"unknown axes scaling {scale}. Allowed: [logx, logy, loglog, linlin]")
+        exit(1)
 
     ax[i, j].plot(m_points, parameter_points)
 
@@ -686,16 +710,18 @@ def plot_2d_wind(
         elif coordinate_system == "polar":
             fig, ax = plt.subplots(figsize=(7, 5), squeeze=False, subplot_kw={"projection": "polar"})
         else:
-            print("unknown wind projection", coordinate_system)
-            print("allowed: ['rectilinear', 'polar']")
-            exit(1)  # todo: error code
+            print(f"unknown wind projection {coordinate_system}. Expected rectilinear or polar")
+            exit(1)
 
     if scale not in ["logx", "logy", "loglog", "linlin"]:
-        print("unknown axes scaling", scale)
-        print("allwoed:", ["logx", "logy", "loglog", "linlin"])
-        exit(1)  # todo: error code
+        print(f"unknown axes scaling {scale}. Allowed: [logx, logy, loglog, linlin]")
+        exit(1)
 
     im = ax[i, j].pcolormesh(m_points, n_points, parameter_points, shading="auto", vmin=vmin, vmax=vmax)
+    fig.colorbar(im, ax=ax[i, j])
+
+    # this plots lines representing sight lines for different observers of
+    # different inclinations
 
     if inclinations_to_plot:
         n_coords = np.unique(m_points)
@@ -709,7 +735,7 @@ def plot_2d_wind(
             ax[0, 0].plot(n_coords, m_coords, label=inclination + r"$^{\circ}$")
         ax[0, 0].legend(loc="lower left")
 
-    fig.colorbar(im, ax=ax[i, j])
+    # Clean up the axes with labs and set up scales, limits etc
 
     if coordinate_system == "rectilinear":
         ax[i, j].set_xlabel(r"$x$ [cm]")
