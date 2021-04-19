@@ -8,7 +8,7 @@ trying to do computational astrophysics.
 
 
 import textwrap
-from os import remove
+from os import remove, listdir
 from pathlib import Path
 from platform import system
 from shutil import which
@@ -303,6 +303,8 @@ def create_wind_save_tables(
     if not in_path:
         raise OSError("windsave2table not in $PATH and executable")
 
+    files_before = listdir(wd)
+
     command = "cd {}; Setup_Py_Dir; windsave2table".format(wd)
     if ion_density:
         command += " -d"
@@ -311,11 +313,21 @@ def create_wind_save_tables(
     cmd = Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
     stdout, stderr = cmd.communicate()
 
+    files_after = listdir(wd)
+
     if verbose:
         print(stdout.decode("utf-8"))
     if stderr:
         print("the following was sent to stderr:")
         print(stderr.decode("utf-8"))
+
+    # Move the new files in wd/tables
+
+    s = set(files_before)
+    new_files = [x for x in files_after if x not in s]
+    Path(f"{wd}/tables").mkdir(exist_ok=True)
+    for new in new_files:
+        Path(f"{wd}/{new}").rename(f"{wd}/tables/{new}")
 
     return
 

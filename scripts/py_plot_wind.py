@@ -10,13 +10,33 @@ for H, He, C, N, O and Si.
 """
 
 import argparse as ap
-import os
-from typing import Tuple
+from typing import List, Tuple, Union
 
 import numpy as np
 from matplotlib import pyplot as plt
-from pypython import plotutil, util
+from pypython import plotutil
 from pypython import wind
+
+
+default_wind_parameters = (
+    "t_e", "t_r", "ne", "rho", "c4", "ip"
+)
+
+default_wind_velocities = (
+    "v_x", "v_y", "v_z", "v_l", "v_rot", "v_r"
+)
+
+default_wind_ions = (
+    ["H", 2], ["He", 3], ["C", 6], ["N", 8], ["O", 9], ["Si", 15],
+)
+
+default_ion_fig_dims = (
+    (1, 2), (1, 3), (3, 2), (4, 2), (4, 2), (5, 3)
+)
+
+default_ion_figsize = (
+    (7.5, 6.46), (19.25, 6.46), (13, 14.01), (13, 18.68), (13, 18.68), (19.25, 23.25)
+)
 
 
 def setup_script() -> tuple:
@@ -68,9 +88,7 @@ def setup_script() -> tuple:
     return setup
 
 
-def main(
-
-) -> Tuple[plt.Figure, plt.Axes]:
+def main():
     """The main function of the script."""
 
     root, cd, use_ion_density, velocity_units, axes_scales, use_cell_indices, display = setup_script()
@@ -85,48 +103,99 @@ def main(
     else:
         subplot_kw = {}
 
-    wind_parameters = [
-        "t_e", "t_r", "ne", "rho", "c4", "ip"
-    ]
-
-    wind_velocities = [
-        "v_x", "v_y", "v_z", "v_l", "v_rot", "v_r"
-    ]
-
-    # (element, n_ions)
-    wind_ions = [
-        ["H", 2], ["He", 3], ["C", 6], ["N", 8], ["O", 9], ["Si", 15],
-    ]
-
-    # (n_rows, n_cols)
-    wind_ion_dims = [
-        (1, 2), (1, 3), (3, 2), (4, 2), (4, 2), (5, 3)
-    ]
-
-    # (width, height)
-    wind_ion_size = [
-        (7.5, 3.67), (19.25, 6.46), (13, 14.01), (13, 18.68), (13, 18.68), (19.25, 23.25)
-    ]
-
     # First, plot the wind parameters
 
-    n_rows, n_cols = plotutil.subplot_dims(len(wind_parameters))
+    plot_wind_parameters(w, default_wind_parameters, axes_scales=axes_scales, display=display)
+
+    # Next, plot the wind velocities, if the grid is rectilinear
+
+    if w.coord_system == "rectilinear":
+        plot_wind_velocity(w, default_wind_velocities, velocity_units, subplot_kw, axes_scales, display)
+
+    # Now, plot the wind ions. This is a bit messier...
+
+    fig, ax = plot_wind_ions(
+        w, default_wind_ions, default_ion_fig_dims, default_ion_figsize, use_ion_density, axes_scales, subplot_kw,
+        display
+    )
+
+    return
+
+
+def plot_wind_parameters(
+    w: wind.Wind, parameters_to_plot: Tuple[str] = default_wind_parameters,
+    axes_scales: str = "loglog", subplot_kw: dict = None, display: bool = False
+) -> Tuple[plt.Figure, plt.Axes]:
+    """Plot the parameters for the wind.
+    Parameters
+    ----------
+    todo"""
+
+    n_rows, n_cols = plotutil.subplot_dims(len(parameters_to_plot))
+
     fig, ax = plt.subplots(
         n_rows, n_cols, figsize=(13, 14), squeeze=False, sharex="col", sharey="row", subplot_kw=subplot_kw
     )
 
-    logplot = True  # todo: make variable input
+    log_plot = True
+    wind_index = 0
+
+    for i in range(n_rows):
+        for j in range(n_cols):
+            if log_plot:
+                with np.errstate(divide="ignore"):
+                    to_plot = np.log10(w[parameters_to_plot[wind_index]])
+                ax[i, j].set_title("log(" + parameters_to_plot[wind_index] + ")")
+            else:
+                to_plot = w[parameters_to_plot[wind_index]]
+                ax[i, j].set_title(parameters_to_plot[wind_index])
+
+            fig, ax = wind.plot_wind(
+                w, to_plot, False, False, None, axes_scales, None, None, fig, ax, i, j
+            )
+
+            wind_index += 1
+
+    fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+    fig.savefig(w.cd + "/" + w.root + "_wind_parameters.png", dpi=300)
+
+    if display:
+        plt.show()
+    else:
+        plt.close()
+
+    return fig, ax
+
+
+def plot_wind_velocity(
+    w: wind.Wind, wind_velocities_to_plot: Tuple[str], velocity_units: str, subplot_kw: dict = None,
+    axes_scales: str = "loglog", display: bool = False
+) -> Tuple[plt.Figure, plt.Axes]:
+    """Plot the velocity for the wind.
+    Parameters
+    ----------
+    todo"""
+
+    n_rows, n_cols = plotutil.subplot_dims(len(wind_velocities_to_plot))
+    fig, ax = plt.subplots(
+        n_rows, n_cols, figsize=(13, 14), squeeze=False, sharex="col", sharey="row", subplot_kw=subplot_kw
+    )
+
+    if velocity_units == "c":
+        logplot = True
+    else:
+        logplot = True
 
     wind_index = 0
     for i in range(n_rows):
         for j in range(n_cols):
-            if logplot:
+            if logplot:  # todo: ignore division warning
                 with np.errstate(divide="ignore"):
-                    toplot = np.log10(w[wind_parameters[wind_index]])
-                ax[i, j].set_title("log(" + wind_parameters[wind_index] + ")")
+                    toplot = np.log10(w[wind_velocities_to_plot[wind_index]])
+                ax[i, j].set_title("log(" + wind_velocities_to_plot[wind_index] + ")" + " [" + w.velocity_units + "]")
             else:
-                toplot = w[wind_parameters[wind_index]]
-                ax[i, j].set_title(wind_parameters[wind_index])
+                toplot = w[wind_velocities_to_plot[wind_index]]
+                ax[i, j].set_title(wind_velocities_to_plot[wind_index] + " [" + w.velocity_units + "]")
 
             fig, ax = wind.plot_wind(
                 w, toplot, False, False, None, axes_scales, None, None, fig, ax, i, j
@@ -135,52 +204,24 @@ def main(
             wind_index += 1
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
-    fig.savefig(cd + "/" + root + "_wind_parameters.png", dpi=300)
+    fig.savefig(w.cd + "/" + w.root + "_wind_velocities.png", dpi=300)
 
     if display:
         plt.show()
     else:
         plt.close()
 
-    # Next, plot the wind velocities, if the grid is rectilinear
+    return fig, ax
 
-    if w.coord_system == "rectilinear":
-        n_rows, n_cols = plotutil.subplot_dims(len(wind_velocities))
-        fig, ax = plt.subplots(
-            n_rows, n_cols, figsize=(13, 14), squeeze=False, sharex="col", sharey="row", subplot_kw=subplot_kw
-        )
 
-        if velocity_units == "c":
-            logplot = True
-        else:
-            logplot = True
-
-        wind_index = 0
-        for i in range(n_rows):
-            for j in range(n_cols):
-                if logplot:  # todo: ignore division warning
-                    with np.errstate(divide="ignore"):
-                        toplot = np.log10(w[wind_velocities[wind_index]])
-                    ax[i, j].set_title("log(" + wind_velocities[wind_index] + ")" + " [" + w.velocity_units + "]")
-                else:
-                    toplot = w[wind_velocities[wind_index]]
-                    ax[i, j].set_title(wind_velocities[wind_index] + " [" + w.velocity_units + "]")
-
-                fig, ax = wind.plot_wind(
-                    w, toplot, False, False, None, axes_scales, None, None, fig, ax, i, j
-                )
-
-                wind_index += 1
-
-        fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
-        fig.savefig(cd + "/" + root + "_wind_velocities.png", dpi=300)
-
-        if display:
-            plt.show()
-        else:
-            plt.close()
-
-    # Now, plot the wind ions. This is a bit messier...
+def plot_wind_ions(
+    w: wind.Wind, ions_to_plot: Tuple[str], wind_ion_dims: Tuple[List[int]], wind_ion_size: Tuple[List[int]],
+    use_ion_density: bool = False, axes_scales: str = "loglog", subplot_kw: dict = None, display: bool = False
+) -> Tuple[plt.Figure, plt.Axes]:
+    """Plot the ions for the wind
+    Parameters
+    ----------
+    todo"""
 
     if use_ion_density:
         title = "Ion Densities"
@@ -192,7 +233,8 @@ def main(
         vmin = -20
         vmax = 0
 
-    for (element, n_ions), (n_rows, n_cols), (width, height) in zip(wind_ions, wind_ion_dims, wind_ion_size):
+    for (element, n_ions), (n_rows, n_cols), (width, height) in zip(ions_to_plot, wind_ion_dims, wind_ion_size):
+
         fig, ax = plt.subplots(
             n_rows, n_cols, figsize=(width, height), squeeze=False, sharex="col", sharey="row", subplot_kw=subplot_kw
         )
@@ -216,7 +258,7 @@ def main(
 
         fig.suptitle(title)
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
-        fig.savefig(cd + "/" + root + "_" + element + "_ions.png", dpi=300)
+        fig.savefig(w.cd + "/" + w.root + "_" + element + "_ions.png", dpi=300)
 
         if display:
             plt.show()
@@ -226,17 +268,5 @@ def main(
     return fig, ax
 
 
-def plot_wind_parameters():
-    return
-
-
-def plot_wind_velocity():
-    return
-
-
-def plot_wind_ions():
-    return
-
-
 if __name__ == "__main__":
-    fig, ax = main()
+    main()
