@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """
@@ -159,7 +159,7 @@ class Wind:
             wind_all.append(np.array(wind_list[1:], dtype=np.float64))
 
         if n_read == 0:
-            raise IOError("Unable to open any wind tables. Have you run windsave2table?")
+            raise IOError("Unable to open any wind tables. Try re-compiling windsave2table and regenerating tables")
 
         # Determine the number of nx and nz elements. There is a basic check to
         # only check for nz if a j column exists, i.e. if it is a 2d model.
@@ -197,7 +197,7 @@ class Wind:
         if "z" in self.parameters:
             self.n_coords = tuple(np.unique(self.variables["z"]))
             self.n_cen_coords = tuple(np.unique(self.variables["zcen"]))
-        else:
+        elif "theta" in self.parameters:
             self.n_coords = tuple(np.unique(self.variables["theta"]))
             self.n_cen_coords = tuple(np.unique(self.variables["theta_cen"]))
 
@@ -367,7 +367,7 @@ class Wind:
 
     def get(
         self, parameter: str, fraction: bool = True
-    ) -> Union[np.ndarray, np.ma.masked.array]:
+    ) -> Union[np.ndarray, np.ma.core.MaskedArray]:
         """Get a parameter array. This is just another way to access the
         dictionary self.variables.
         Parameters

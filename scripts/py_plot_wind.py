@@ -35,7 +35,7 @@ default_ion_fig_dims = (
 )
 
 default_ion_figsize = (
-    (7.5, 6.46), (19.25, 6.46), (13, 14.01), (13, 18.68), (13, 18.68), (19.25, 23.25)
+    (7.5, 4.46), (19.25, 6.46), (13, 14.01), (13, 18.68), (13, 18.68), (19.25, 23.25)
 )
 
 
@@ -105,7 +105,7 @@ def main():
 
     # First, plot the wind parameters
 
-    plot_wind_parameters(w, default_wind_parameters, axes_scales=axes_scales, display=display)
+    plot_wind_parameters(w, default_wind_parameters, axes_scales=axes_scales, subplot_kw=subplot_kw, display=display)
 
     # Next, plot the wind velocities, if the grid is rectilinear
 
@@ -192,10 +192,15 @@ def plot_wind_velocity(
             if logplot:  # todo: ignore division warning
                 with np.errstate(divide="ignore"):
                     toplot = np.log10(w[wind_velocities_to_plot[wind_index]])
-                ax[i, j].set_title("log(" + wind_velocities_to_plot[wind_index] + ")" + " [" + w.velocity_units + "]")
+                ax[i, j].set_title(
+                    "log(" + wind_velocities_to_plot[wind_index].replace("_", r"\_") + ")" + " ["
+                    + w.velocity_units + "]"
+                )
             else:
                 toplot = w[wind_velocities_to_plot[wind_index]]
-                ax[i, j].set_title(wind_velocities_to_plot[wind_index] + " [" + w.velocity_units + "]")
+                ax[i, j].set_title(
+                    wind_velocities_to_plot[wind_index].replace("_", r"\_") + " [" + w.velocity_units + "]"
+                )
 
             fig, ax = wind.plot_wind(
                 w, toplot, False, False, None, axes_scales, None, None, fig, ax, i, j
