@@ -566,6 +566,11 @@ def plot_wind(
         fig, ax = plot_1d_wind(
             wind["r"], parameter_points, "logx", fig, ax, i, j
         )
+    elif wind.coord_system == "polar":
+        fig, ax = plot_2d_wind(
+            np.deg2rad(wind["theta"]), np.log10(wind["r"]), parameter_points, wind.coord_system, inclinations_to_plot,
+            scale, vmin, vmax, fig, ax, i, j
+        )
     else:
         fig, ax = plot_2d_wind(
             wind["x"], wind["z"], parameter_points, wind.coord_system, inclinations_to_plot, scale, vmin, vmax,
@@ -705,6 +710,7 @@ def plot_2d_wind(
         ax[0, 0].legend(loc="lower left")
 
     fig.colorbar(im, ax=ax[i, j])
+
     if coordinate_system == "rectilinear":
         ax[i, j].set_xlabel(r"$x$ [cm]")
         ax[i, j].set_ylabel(r"$z$ [cm]")
@@ -725,4 +731,3 @@ def plot_2d_wind(
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 
     return fig, ax
-

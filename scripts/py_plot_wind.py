@@ -94,13 +94,6 @@ def main(
         root, cd, polar_coords, use_ion_density, velocity_units, axes_scales, use_cell_indices, file_ext, display = \
             setup_script()
 
-    if polar_coords:
-        coordinate_system = "polar"
-        subplot_kw = {"projection": "polar"}
-    else:
-        coordinate_system = "rectilinear"
-        subplot_kw = {}
-
     if not os.path.isfile("{}.master.txt".format(root)):
         util.create_wind_save_tables(root, cd, False)
         util.create_wind_save_tables(root, cd, True)
@@ -109,6 +102,11 @@ def main(
     # elements of the ions we want to plot and the number of ions.
 
     w = wind.Wind(root, cd, velocity_units, True)
+
+    if w.coord_system == "polar":
+        subplot_kw = {"projection": "polar"}
+    else:
+        subplot_kw = {}
 
     wind_parameters = [
         "t_e", "t_r", "ne", "rho", "c4", "ip"
@@ -145,7 +143,7 @@ def main(
     wind_index = 0
     for i in range(n_rows):
         for j in range(n_cols):
-            if logplot:  # todo: ignore division warning
+            if logplot:
                 with np.errstate(divide="ignore"):
                     toplot = np.log10(w[wind_parameters[wind_index]])
                 ax[i, j].set_title("log(" + wind_parameters[wind_index] + ")")
