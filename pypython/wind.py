@@ -473,11 +473,11 @@ class Wind:
         return np.unravel_index(elem, (self.nx, self.nz))
 
     def show(
-        self, block=False
+        self, block=True
     ):
         """Show a plot which has been created."""
 
-        plt.show(block)
+        plt.show(block=block)
 
     def __getitem__(
         self, key
@@ -499,6 +499,80 @@ class Wind:
 
 
 # Plotting functions -----------------------------------------------------------
+
+
+def plot_wind(
+    wind: Wind, parameter: Union[str, np.ndarray], log_parameter: bool = True, ion_fraction: bool = True,
+    inclinations_to_plot: List[str] = None, scale: str = "loglog", vmin: float = None, vmax: float = None,
+    fig: plt.Figure = None, ax: plt.Axes = None, i: int = 0, j: int = 0
+) -> Tuple[plt.Figure, Union[np.ndarray, plt.Axes]]:
+    """Wrapper function for plotting a wind. Will decide if a wind is 1D or 2D
+    and call the appropriate function.
+    Parameters
+    ----------
+    wind: Wind
+        The Wind object.
+    parameter: np.ndarray
+        The wind parameter to be plotted, in the same shape as the coordinate
+        arrays. Can also be the name of the variable.
+    inclinations_to_plot: List[str] [optional]
+        A list of inclination angles to plot onto the ax[0, 0] sub panel. Must
+        be strings and 0 < inclination < 90.
+    scale: str [optional]
+        The scaling of the axes: [logx, logy, loglog, linlin]
+    vmin: float [optional]
+        The minimum value to plot.
+    vmax: float [optional]
+        The maximum value to plot.
+    fig: plt.Figure [optional]
+        A Figure object to update, otherwise a new one will be created.
+    ax: plt.Axes [optional]
+        An axes array to update, otherwise a new one will be created.
+    i: int [optional]
+        The i index for the sub panel to plot onto.
+    j: int [optional]
+        The j index for the sub panel to plot onto.
+
+    Returns
+    -------
+    fig: plt.Figure
+        The (updated) Figure object for the plot.
+    ax: plt.Axes
+        The (updated) axes array for the plot.
+    """
+
+    # If the parameter is not an array, then get the variable from the wind
+    # todo: put first branch into a function
+
+    if type(parameter) is str:
+        element_check = parameter[:2].replace("_", "")
+        ion_check = parameter[2:].replace("_", "")
+        if element_check in wind.elements:
+            if ion_fraction:
+                parameter_points = wind.variables[element_check]["fraction"][ion_check]
+            else:
+                parameter_points = wind.variables[element_check]["density"][ion_check]
+        else:
+            parameter_points = wind.variables[parameter]
+        if log_parameter:
+            parameter_points = np.log10(parameter_points)
+    elif type(parameter) in [np.ndarray, np.ma.core.MaskedArray]:
+        parameter_points = parameter
+    else:
+        print(f"Incompatible type {type(parameter)} for parameter")
+        return fig, ax
+
+    if wind.coord_system == "spherical":
+        fig, ax = plot_1d_wind(
+            wind["r"], parameter_points, "logx", fig, ax, i, j
+        )
+    else:
+        fig, ax = plot_2d_wind(
+            wind["x"], wind["z"], parameter_points, wind.coord_system, inclinations_to_plot, scale, vmin, vmax,
+            fig, ax, i, j
+        )
+
+    return fig, ax
 
 
 def plot_1d_wind(

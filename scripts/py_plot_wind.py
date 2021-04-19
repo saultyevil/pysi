@@ -152,9 +152,11 @@ def main(
             else:
                 toplot = w[wind_parameters[wind_index]]
                 ax[i, j].set_title(wind_parameters[wind_index])
-            fig, ax = wind.plot_2d_wind(
-                w["x"], w["z"], toplot, coordinate_system, None, axes_scales, None, None, fig, ax, i, j
+
+            fig, ax = wind.plot_wind(
+                w, toplot, False, False, None, axes_scales, None, None, fig, ax, i, j
             )
+
             wind_index += 1
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
@@ -165,40 +167,43 @@ def main(
     else:
         plt.close()
 
-    # Next, plot the wind velocities
+    # Next, plot the wind velocities, if the grid is rectilinear
 
-    n_rows, n_cols = plotutil.subplot_dims(len(wind_velocities))
-    fig, ax = plt.subplots(
-        n_rows, n_cols, figsize=(13, 14), squeeze=False, sharex="col", sharey="row", subplot_kw=subplot_kw
-    )
+    if w.coord_system == "rectilinear":
+        n_rows, n_cols = plotutil.subplot_dims(len(wind_velocities))
+        fig, ax = plt.subplots(
+            n_rows, n_cols, figsize=(13, 14), squeeze=False, sharex="col", sharey="row", subplot_kw=subplot_kw
+        )
 
-    if velocity_units == "c":
-        logplot = True
-    else:
-        logplot = True
+        if velocity_units == "c":
+            logplot = True
+        else:
+            logplot = True
 
-    wind_index = 0
-    for i in range(n_rows):
-        for j in range(n_cols):
-            if logplot:  # todo: ignore division warning
-                with np.errstate(divide="ignore"):
-                    toplot = np.log10(w[wind_velocities[wind_index]])
-                ax[i, j].set_title("log(" + wind_velocities[wind_index] + ")" + " [" + w.velocity_units + "]")
-            else:
-                toplot = w[wind_velocities[wind_index]]
-                ax[i, j].set_title(wind_velocities[wind_index] + " [" + w.velocity_units + "]")
-            fig, ax = wind.plot_2d_wind(
-                w["x"], w["z"], toplot, coordinate_system, None, axes_scales, None, None, fig, ax, i, j
-            )
-            wind_index += 1
+        wind_index = 0
+        for i in range(n_rows):
+            for j in range(n_cols):
+                if logplot:  # todo: ignore division warning
+                    with np.errstate(divide="ignore"):
+                        toplot = np.log10(w[wind_velocities[wind_index]])
+                    ax[i, j].set_title("log(" + wind_velocities[wind_index] + ")" + " [" + w.velocity_units + "]")
+                else:
+                    toplot = w[wind_velocities[wind_index]]
+                    ax[i, j].set_title(wind_velocities[wind_index] + " [" + w.velocity_units + "]")
 
-    fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
-    fig.savefig(cd + "/" + root + "_wind_velocities.png", dpi=300)
+                fig, ax = wind.plot_wind(
+                    w, toplot, False, False, None, axes_scales, None, None, fig, ax, i, j
+                )
 
-    if display:
-        plt.show()
-    else:
-        plt.close()
+                wind_index += 1
+
+        fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+        fig.savefig(cd + "/" + root + "_wind_velocities.png", dpi=300)
+
+        if display:
+            plt.show()
+        else:
+            plt.close()
 
     # Now, plot the wind ions. This is a bit messier...
 
@@ -223,11 +228,13 @@ def main(
             for j in range(n_cols):
                 ion_key = "i{:02d}".format(ion_index)
                 with np.errstate(divide="ignore"):
-                    fig, ax = wind.plot_2d_wind(
-                        w["x"], w["z"], np.log10(w[element][ion_type_key][ion_key]), coordinate_system, None,
-                        axes_scales, vmin, vmax, fig, ax, i, j
+                    fig, ax = wind.plot_wind(
+                        w, np.log10(w[element][ion_type_key][ion_key]), False, False, None, axes_scales, vmin, vmax,
+                        fig, ax, i, j
                     )
+
                 ax[i, j].set_title("log(" + element + ion_key + ")")
+
                 ion_index += 1
                 if ion_index > n_ions:
                     break
