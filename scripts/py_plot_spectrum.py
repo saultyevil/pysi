@@ -16,10 +16,6 @@ from matplotlib import pyplot as plt
 from pypython import plotutil
 from pypython import spectrum as pysp
 
-plt.rcParams['xtick.labelsize'] = 15
-plt.rcParams['ytick.labelsize'] = 15
-plt.rcParams['axes.labelsize'] = 15
-
 
 def setup_script() -> tuple:
     """Parse the different modes this script can be run from the command line.

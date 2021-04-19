@@ -88,9 +88,11 @@ def main(
     -------"""
 
     if setup:
-        root, cd, polar_coords, use_ion_density, velocity_units, axes_scales, use_cell_indices, file_ext, display = setup
+        root, cd, polar_coords, use_ion_density, velocity_units, axes_scales, use_cell_indices, file_ext, display = \
+            setup
     else:
-        root, cd, polar_coords, use_ion_density, velocity_units, axes_scales, use_cell_indices, file_ext, display = setup_script()
+        root, cd, polar_coords, use_ion_density, velocity_units, axes_scales, use_cell_indices, file_ext, display = \
+            setup_script()
 
     if polar_coords:
         coordinate_system = "polar"

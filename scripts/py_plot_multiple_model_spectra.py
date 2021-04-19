@@ -11,7 +11,7 @@ import argparse as ap
 from typing import Tuple
 
 from matplotlib import pyplot as plt
-from pypython import spectrum, spectrumplot
+from pypython import spectrum
 from pypython.extrautil.error import EXIT_FAIL
 
 
@@ -94,7 +94,8 @@ def main(
     ----------
     setup: tuple
         A tuple containing the setup parameters to run the script. If this
-        isn't provided, then the script will parse them from the command line."""
+        isn't provided, then the script will parse them from the command
+        line."""
 
     if setup:
         output_name, wd, inclination, root, x_min, x_max, frequency_space, common_lines, axes_scales, smooth_amount,\
@@ -104,23 +105,11 @@ def main(
             file_extension, display = setup_script()
 
     spectra = spectrum.get_spectrum_files(root, wd)
-
     if len(spectra) == 0:
         print("Unable to find any spectrum files")
         exit(EXIT_FAIL)
 
-    # todo: figure out why I do this here, when it should be done in the function above
-
-    if root:
-        spectra_root = []
-        for s in spectra:
-            if s.find("{}.spec".format(root)) != -1:
-                spectra_root.append(s)
-        spectra = spectra_root
-
-    print(spectra)
-
-    fig, ax = spectrumplot.plot_multiple_model_spectra(
+    fig, ax = spectrum.plot_multiple_model_spectra(
         output_name, spectra, inclination, wd, x_min, x_max, frequency_space, axes_scales, smooth_amount, common_lines,
         file_extension, display
     )

@@ -986,7 +986,7 @@ def plot_multiple_model_spectra(
             except KeyError:
                 continue
 
-            ax[i].plot(x, y, label=spectrum.filepath, alpha=0.75)
+            ax[i].plot(x, y, label=spectrum.filepath.replace("_", r"\_"), alpha=0.75)
 
             # Calculate the y-axis limits to keep all spectra within the
             # plot area
@@ -1006,7 +1006,7 @@ def plot_multiple_model_spectra(
         if y_max == -1e99:
             y_max = None
 
-        ax[i].set_title(r"$i$ " + "= {}".format(inclinations[i]) + r"$^{\circ}$")
+        ax[i].set_title(f"{inclinations[i]}" + r"$^{\circ}$")
 
         x_lims = list(ax[i].get_xlim())
         if not x_min:
