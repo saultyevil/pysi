@@ -305,7 +305,10 @@ def create_wind_save_tables(
 
     files_before = listdir(wd)
 
-    command = "cd {}; Setup_Py_Dir; windsave2table".format(wd)
+    command = f"cd {wd};"
+    if not Path(f"{wd}/data").exists():
+        command += "Setup_Py_Dir;"
+    command += "windsave2table"
     if ion_density:
         command += " -d"
     command += " {}".format(root)
@@ -318,8 +321,7 @@ def create_wind_save_tables(
     if verbose:
         print(stdout.decode("utf-8"))
     if stderr:
-        print("the following was sent to stderr:")
-        print(stderr.decode("utf-8"))
+        print("There may have been a problem running windsave2table")
 
     # Move the new files in wd/tables
 
