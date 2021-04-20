@@ -10,7 +10,7 @@ for H, He, C, N, O and Si.
 """
 
 import argparse as ap
-from typing import List, Tuple, Union
+from typing import List, Tuple
 
 import numpy as np
 from matplotlib import pyplot as plt

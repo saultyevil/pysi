@@ -114,8 +114,7 @@ def clean_up_data_sym_links(
     wd: str = ".", verbose: bool = False
 ):
     """Search recursively from the specified directory for symbolic links named
-    data.
-    This script will only work on Unix systems where the find command is
+    data. This script will only work on Unix systems where the find command is
     available.
     todo: update to a system agnostic method to find symbolic links like pathlib
 
@@ -177,34 +176,24 @@ def get_root_from_filepath(
     ----------
     path: str
         The directory path to a Python .pf file
-    return_cd: str
+    return_cd: str [optional]
         Returns the directory containing the .pf file.
 
     Returns
     -------
     root: str
         The root name of the Python simulation
-    cd: str
+    where: str
         The directory path containing the provided Python .pf file"""
 
     if type(path) is not str:
-        raise TypeError("expected string as input, not whatever you put")
+        raise TypeError("expected a string as input for the file path, not whatever you put")
 
-    dot = 0
-    slash = 0
-
-    # todo: use find or rfind instead to avoid this mess
-
-    for i in range(len(path)):
-        letter = path[i]
-        if letter == ".":
-            dot = i
-        elif letter == "/":
-            slash = i + 1
+    dot = path.rfind(".")
+    slash = path.rfind("/")
 
     root = path[slash:dot]
     cd = path[:slash]
-
     if cd == "":
         cd = "."
 
@@ -253,7 +242,7 @@ def get_parameter_files(
 
 
 def get_cpu_count(
-    enablesmt: bool = False
+    enable_smt: bool = False
 ):
     """Return the number of CPU cores which can be used when running a Python
     simulation. By default, this will only return the number of physical cores
@@ -262,7 +251,7 @@ def get_cpu_count(
 
     Parameters
     ----------
-    enablesmt: [optional] bool
+    enable_smt: [optional] bool
         Return the number of logical cores, which includes both physical and
         logical (SMT/hyperthreads) threads.
 
@@ -274,7 +263,7 @@ def get_cpu_count(
     n_cores = 0
 
     try:
-        n_cores = cpu_count(logical=enablesmt)
+        n_cores = cpu_count(logical=enable_smt)
     except NotImplementedError:
         print("unable to determine number of CPU cores, psutil.cpu_count not implemented for your system")
 
