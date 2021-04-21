@@ -22,6 +22,7 @@ from .plotutil import (ax_add_line_ids, common_lines, get_y_lims_for_x_lims,
                        remove_extra_axes, subplot_dims)
 from .util import get_root_from_filepath, smooth_array
 
+
 UNITS_LNU = "erg/s/Hz"
 UNITS_FNU = "erg/s/cm^-2/Hz"
 UNITS_FLAMBDA = "erg/s/cm^-2/A"
@@ -33,7 +34,7 @@ class Spectrum:
     name is a key and the data is stored as a numpy array."""
 
     def __init__(
-        self, root: str, cd: str = ".", logspec: bool = False, spectype: str = None, delim: str = None
+        self, root: str, cd: str = ".", logspec: bool = False, spectype: str = None, smooth: int = None, delim: str = None
     ):
         """Initialise a Spectrum object. This method will construct the file path
         of the spectrum file given the root, containing directory and whether
@@ -86,6 +87,8 @@ class Spectrum:
         # member variables.
 
         self.read_in_spectrum(delim)
+        if smooth:
+            self.smooth(smooth)
 
     def read_in_spectrum(
         self, delim: str = None
@@ -115,7 +118,6 @@ class Spectrum:
                 line = line.split(delim)
             else:
                 line = line.split()
-            # todo: determine the units elsewhere
             if "Units:" in line:
                 self.units = line[4][1:-1]
             if len(line) == 0 or line[0] == "#":
@@ -168,7 +170,7 @@ class Spectrum:
             try:
                 width = int(width)
             except ValueError:
-                print("Unable to cast {} into an int".format(width))
+                print(f"Unable to cast {width} into an int")
                 return
 
         if to_smooth is None:
@@ -185,7 +187,7 @@ class Spectrum:
 
         for thing_to_smooth in to_smooth:
             if type(thing_to_smooth) is not str:
-                print("skipping {} not a string".format(thing_to_smooth))
+                print(f"not smoothing {thing_to_smooth} as it can't be interpreted")
                 continue
             try:
                 self.spectrum[thing_to_smooth] = convolve(
@@ -198,29 +200,136 @@ class Spectrum:
         self
     ):
         """Restore the spectrum to its unsmoothed form."""
+
         self.spectrum = copy.deepcopy(self.unsmoothed)
 
-    def quickplot(self):
-        """Plot the spectrum or a single component in a single figure. Useful
-        for when in an interactive session."""
-        raise NotImplementedError
+    def _plot_specific(self, name: str, label_lines: bool = False, ax_update: plt.Axes = None):
+        """Plot a specific column in a spectrum file.
+        Parameters
+        ----------
+        label_lines: bool
+            Plot line IDs.
+        ax_update: plt.Axes
+            An plt.Axes object to update, i.e. to plot on."""
+
+        normalize_figure_style()
+
+        if not ax_update:
+            fig, ax = plt.subplots(figsize=(9, 5))
+        else:
+            ax = ax_update
+
+        ax.set_yscale("log")
+        ax.set_xscale("log")
+
+        if self.units == UNITS_FLAMBDA:
+            ax.plot(self.spectrum["Lambda"], self.spectrum[name], label=name)
+            ax.set_xlabel(r"Wavelength [\AA]")
+            ax.set_ylabel(r"Flux Density 100 pc [erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
+            if label_lines:
+                ax = ax_add_line_ids(ax, common_lines(False), logx=True)
+        else:
+            ax.plot(self.spectrum["Freq."], self.spectrum[name], label=name)
+            ax.set_xlabel("Frequency [Hz]")
+            if self.units == UNITS_LNU:
+                ax.set_ylabel(r"Luminosity 100 pc [erg s$^{-1}$ Hz$^{-1}$]")
+            else:
+                ax.set_ylabel(r"Flux Density 100 pc [erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
+            if label_lines:
+                ax = ax_add_line_ids(ax, common_lines(True), logx=True)
+
+        if not ax_update:
+            fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+            return fig, ax
+        else:
+            return ax
+
+    def _plot_all(self, label_lines: bool = False):
+        """Plot the spectrum components and observer spectra on a 1x2 panel
+        plot. The left panel has the components, whilst the right panel has
+        the observer spectrum.
+        Parameters
+        ----------
+        label_lines: bool
+            Plot line IDs."""
+
+        normalize_figure_style()
+
+        fig, ax = plt.subplots(1, 2, figsize=(12, 5), sharey="row")
+
+        for component in self.columns[:-self.n_inclinations]:
+            if component in ["Lambda", "Freq."]:
+                continue
+            ax[0] = self._plot_specific(component, label_lines, ax[0])
+
+        for line in ax[0].get_lines():
+            line.set_alpha(0.7)
+        ax[0].legend(ncol=2, loc="upper right").set_zorder(0)
+
+        for inclination in self.inclinations:
+            ax[1] = self._plot_specific(inclination, label_lines, ax[1])
+
+        for label, line in zip(self.inclinations, ax[1].get_lines()):
+            line.set_alpha(0.7)
+            line.set_label(str(label) + r"$^{\circ}$")
+        ax[1].set_ylabel("")
+        ax[1].legend(ncol=2, loc="upper right").set_zorder(0)
+
+        fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+        fig.subplots_adjust(wspace=0)
+
+        return fig, ax
+
+    def plot(self, name: str = None, label_lines: bool = False):
+        """Plot the spectra or a single component in a single figure. By default
+        this creates a 1 x 2 of the components on the left and the observer
+        spectra on the right. Useful for when in an interactive session.
+        Parameters
+        ----------
+        name: str
+            The name of the thing to plot.
+        label_lines: bool
+            Plot line IDs."""
+
+        if name:
+            if name not in self.columns:
+                print(f"{name} is not in the spectrum columns")
+                return
+            fig, ax = self._plot_specific(name, label_lines)
+            if name.isdigit():
+                name += r"$^{\circ}$"
+            ax.set_title(name.replace("_", r"\_"))
+        else:
+            fig, ax = self._plot_all(label_lines)
+
+        return fig, ax
+
+    def show(
+        self, block=True
+    ):
+        """Show any plots which have been generated."""
+
+        plt.show(block=block)
 
     def __getitem__(
         self, key
     ):
         """Return an array in the spectrum dictionary when indexing."""
+
         return self.spectrum[key]
 
     def __setitem__(
         self, key, value
     ):
         """Allows to modify the arrays in the spectrum dictionary."""
+
         self.spectrum[key] = value
 
     def __str__(
         self
     ):
         """Print the basic details about the spectrum."""
+
         return textwrap.dedent("""\
             PYTHON spectrum for model {}
             File path: {}
