@@ -42,6 +42,7 @@ def normalize_figure_style():
         "ytick.major.size": 4,
         "ytick.minor.size": 3,
         "savefig.dpi": 300,
+        "pcolor.shading": "auto"
 
     }
 
@@ -264,8 +265,6 @@ def photoionization_edges(
         ["He II", 229],
         ["He I", 504],
         ["Lyman", 912],
-        # ["Ca I", 2028],
-        # ["Al I", 2071],
         ["Balmer", 3646],
         ["Paschen", 8204],
     ]
