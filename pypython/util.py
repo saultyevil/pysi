@@ -193,7 +193,7 @@ def get_root_from_filepath(
     dot = path.rfind(".")
     slash = path.rfind("/")
 
-    root = path[slash:dot]
+    root = path[slash + 1:dot]
     cd = path[:slash]
     if cd == "":
         cd = "."
