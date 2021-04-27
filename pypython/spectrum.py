@@ -6,6 +6,7 @@ Contains the spectrum object, as well as utility and plotting functions for
 spectra.
 """
 
+import os
 import copy
 import textwrap
 from pathlib import Path
@@ -34,7 +35,8 @@ class Spectrum:
     name is a key and the data is stored as a numpy array."""
 
     def __init__(
-        self, root: str, cd: str = ".", logspec: bool = False, spectype: str = None, smooth: int = None, delim: str = None
+        self, root: str, cd: str = ".", log: bool = False, smooth: int = None,
+            delim: str = None
     ):
         """Initialise a Spectrum object. This method will construct the file path
         of the spectrum file given the root, containing directory and whether
@@ -46,37 +48,21 @@ class Spectrum:
             The root name of the model.
         cd: str [optional]
             The directory containing the model.
-        logspec: bool [optional]
-            Read in the logarithmic spectrum.
-        spectype: str [optional]
-            Read in a spectrum with the given type name."""
+        log: bool [optional]
+            Read in the logarithmic spectrum."""
 
         self.root = root
         self.cd = cd
-        self.logspec = logspec
+        self.logspec = log
 
         if self.cd[-1] != "/":
             self.cd += "/"
-        self.filepath = self.cd + self.root
-        if self.logspec:
-            self.filepath += ".log_"
-        else:
-            self.filepath += "."
-        if spectype:
-            allowed = ["spec", "spec_tot", "spec_tot_wind", "spec_wind", "spec_tau"]
-            if spectype not in allowed:
-                print("{} is an unknown type of spectrum".format(spectype))
-                print("allowed: {}".format(allowed))
-                exit(1)  # todo: error code
-            self.filepath += spectype
-        else:
-            self.filepath += "spec"
 
-        self.spectrum = self.values = {}
-        self.columns = []
-        self.inclinations = []
-        self.n_inclinations = 0
-        self.units = "unknown"
+        self.spectrum = {}
+        self.columns = {}
+        self.inclinations = {}
+        self.n_inclinations = {}
+        self.units = {}
 
         # self.unsmoothed is a variable which keeps a copy of the spectrum for
         # safe keeping if it is smoothed
@@ -84,13 +70,17 @@ class Spectrum:
         self.unsmoothed = None
 
         # The next method call reads in the spectrum and initializes the above
-        # member variables.
+        # member variables. We also keep track of what spectra have been loaded
+        # in and set the "target" spectrum for indexing
 
-        self.read_in_spectrum(delim)
+        self.read_in_spectra(delim)
+        self.available = tuple(self.spectrum.keys())
+        self.target = self.available[0]
+
         if smooth:
             self.smooth(smooth)
 
-    def read_in_spectrum(
+    def read_in_spectra(
         self, delim: str = None
     ):
         """Read in a spectrum file given in self.filepath. The spectrum is stored
@@ -103,56 +93,79 @@ class Spectrum:
             A custom delimiter, useful for reading in files which have sometimes
             between delimited with commas instead of spaces."""
 
-        with open(self.filepath, "r") as f:
-            spectrum_file = f.readlines()
+        files_to_read = ["spec", "spec_tot", "spec_tot_wind", "spec_wind", "spec_tau"]
 
-        # Read in the spectrum file, ignoring empty lines and lines which have
-        # been commented out by # at the beginning
-        # todo: need some method to detect incorrect syntax
+        n_read = 0
 
-        spectrum = []
+        for spec_type in files_to_read:
+            fpath = self.cd + self.root + "."
+            if self.logspec and spec_type != "spec_tau":
+                fpath += "log_"
+            fpath += spec_type
 
-        for line in spectrum_file:
-            line = line.strip()
-            if delim:
-                line = line.split(delim)
-            else:
-                line = line.split()
-            if "Units:" in line:
-                self.units = line[4][1:-1]
-            if len(line) == 0 or line[0] == "#":
+            self.spectrum[spec_type] = {}
+            self.units[spec_type] = "unknown"
+
+            if not os.path.exists(fpath):
                 continue
-            spectrum.append(line)
+            n_read += 1
 
-        # Extract the header columns of the spectrum. This assumes the first
-        # read line in the spectrum is the header. If no header is found, then
-        # the columns are numbered instead
+            with open(fpath, "r") as f:
+                spectrum_file = f.readlines()
 
-        header = []
+            # Read in the spectrum file, ignoring empty lines and lines which have
+            # been commented out by # at the beginning
+            # todo: need some method to detect incorrect syntax
 
-        if spectrum[0][0] == "Freq." or spectrum[0][0] == "Lambda":
-            for i, column_name in enumerate(spectrum[0]):
-                if column_name[0] == "A":
-                    j = column_name.find("P")
-                    column_name = column_name[1:j]
-                header.append(column_name)
-            spectrum = np.array(spectrum[1:], dtype=np.float)
-        else:
-            header = np.arange(len(spectrum[0]))
+            spectrum = []
 
-        # Add the actual spectrum to the spectrum dictionary, the keys of the
-        # dictionary are the column names as given above. Set the header and
-        # also the inclination angles here as well
+            for line in spectrum_file:
+                line = line.strip()
+                if delim:
+                    line = line.split(delim)
+                else:
+                    line = line.split()
+                if "Units:" in line:
+                    self.units[spec_type] = line[4][1:-1]
+                if len(line) == 0 or line[0] == "#":
+                    continue
+                spectrum.append(line)
 
-        self.columns = header
-        for i, column_name in enumerate(header):
-            self.values = self.spectrum[column_name] = spectrum[:, i]
-        for col in header:
-            if col.isdigit() and col not in self.inclinations:
-                self.inclinations.append(col)
-        self.columns = tuple(self.columns)
-        self.inclinations = tuple(self.inclinations)
-        self.n_inclinations = len(self.inclinations)
+            # Extract the header columns of the spectrum. This assumes the first
+            # read line in the spectrum is the header. If no header is found, then
+            # the columns are numbered instead
+
+            header = []
+
+            if spectrum[0][0] == "Freq." or spectrum[0][0] == "Lambda":
+                for i, column_name in enumerate(spectrum[0]):
+                    if column_name[0] == "A":
+                        j = column_name.find("P")
+                        column_name = column_name[1:j]
+                    header.append(column_name)
+                spectrum = np.array(spectrum[1:], dtype=np.float)
+            else:
+                header = np.arange(len(spectrum[0]))
+
+            # Add the actual spectrum to the spectrum dictionary, the keys of the
+            # dictionary are the column names as given above. Set the header and
+            # also the inclination angles here as well
+
+            for i, column_name in enumerate(header):
+                self.spectrum[spec_type][column_name] = spectrum[:, i]
+
+            inclinations = []
+
+            for col in header:
+                if col.isdigit() and col not in self.inclinations:
+                    inclinations.append(col)
+
+            self.columns[spec_type] = tuple(header)
+            self.inclinations[spec_type] = tuple(inclinations)
+            self.n_inclinations[spec_type] = len(inclinations)
+
+        if n_read == 0:
+            raise IOError(f"Unable to open any spectrum files in {self.cd}")
 
     def smooth(
         self, width: int = 5, to_smooth: Union[List[str], Tuple[str], str] = None
@@ -165,6 +178,13 @@ class Spectrum:
             The width of the boxcar filter (in bins).
         to_smooth: list or tuple of strings [optional]
             A list or tuple"""
+
+        # Create a backup of the unsmoothed array before it is smoothed it
+
+        if self.unsmoothed is None:
+            self.unsmoothed = copy.deepcopy(self.spectrum)
+
+        # Get the input parameters for smoothing and make sure it's good input
 
         if type(width) is not int:
             try:
@@ -179,22 +199,19 @@ class Spectrum:
             ) + tuple(self.inclinations)
         elif type(to_smooth) is str:
             to_smooth = to_smooth,
+        else:
+            raise ValueError(f"unknown format for to_smooth, must be a tuple of strings or string")
 
-        # Create a backup of the unsmoothed array before it is smoothed it
+        # Loop over each available spectrum and smooth it
 
-        if self.unsmoothed is None:
-            self.unsmoothed = copy.deepcopy(self.spectrum)
-
-        for thing_to_smooth in to_smooth:
-            if type(thing_to_smooth) is not str:
-                print(f"not smoothing {thing_to_smooth} as it can't be interpreted")
-                continue
-            try:
-                self.spectrum[thing_to_smooth] = convolve(
-                    self.spectrum[thing_to_smooth], boxcar(width) / float(width), mode="same"
-                )
-            except KeyError:
-                continue
+        for key in self.available:
+            for thing_to_smooth in to_smooth:
+                try:
+                    self.spectrum[key][thing_to_smooth] = convolve(
+                        self.spectrum[key][thing_to_smooth], boxcar(width) / float(width), mode="same"
+                    )
+                except KeyError:
+                    continue
 
     def unsmooth(
         self
@@ -222,16 +239,16 @@ class Spectrum:
         ax.set_yscale("log")
         ax.set_xscale("log")
 
-        if self.units == UNITS_FLAMBDA:
-            ax.plot(self.spectrum["Lambda"], self.spectrum[name], label=name)
+        if self.units[self.target] == UNITS_FLAMBDA:
+            ax.plot(self.spectrum[self.target]["Lambda"], self.spectrum[self.target][name], label=name)
             ax.set_xlabel(r"Wavelength [\AA]")
             ax.set_ylabel(r"Flux Density 100 pc [erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
             if label_lines:
                 ax = ax_add_line_ids(ax, common_lines(False), logx=True)
         else:
-            ax.plot(self.spectrum["Freq."], self.spectrum[name], label=name)
+            ax.plot(self.spectrum[self.target]["Freq."], self.spectrum[self.target][name], label=name)
             ax.set_xlabel("Frequency [Hz]")
-            if self.units == UNITS_LNU:
+            if self.units[self.target] == UNITS_LNU:
                 ax.set_ylabel(r"Luminosity 100 pc [erg s$^{-1}$ Hz$^{-1}$]")
             else:
                 ax.set_ylabel(r"Flux Density 100 pc [erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
@@ -257,7 +274,7 @@ class Spectrum:
 
         fig, ax = plt.subplots(1, 2, figsize=(12, 5), sharey="row")
 
-        for component in self.columns[:-self.n_inclinations]:
+        for component in self.columns[self.target][:-self.n_inclinations[self.target]]:
             if component in ["Lambda", "Freq."]:
                 continue
             ax[0] = self._plot_specific(component, label_lines, ax[0])
@@ -266,14 +283,17 @@ class Spectrum:
             line.set_alpha(0.7)
         ax[0].legend(ncol=2, loc="upper right").set_zorder(0)
 
-        for inclination in self.inclinations:
+        for inclination in self.inclinations[self.target]:
             ax[1] = self._plot_specific(inclination, label_lines, ax[1])
 
-        for label, line in zip(self.inclinations, ax[1].get_lines()):
+        for label, line in zip(self.inclinations[self.target], ax[1].get_lines()):
             line.set_alpha(0.7)
             line.set_label(str(label) + r"$^{\circ}$")
         ax[1].set_ylabel("")
         ax[1].legend(ncol=2, loc="upper right").set_zorder(0)
+
+        ax[0].set_title("Components")
+        ax[1].set_title("Observer spectra")
 
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
         fig.subplots_adjust(wspace=0)
@@ -291,8 +311,19 @@ class Spectrum:
         label_lines: bool
             Plot line IDs."""
 
+        if "spec" not in self.available and "log_spec" not in self.available:
+            print(f"Unable to plot, as there is no {self.root}.spec file")
+            return
+
+        # todo:
+        # This is some badness inspired by Python. This is done, for now, as
+        # I haven't implemented a way to plot other spectra quickly this way
+
+        original_target = self.target
+        self.target = "spec"
+
         if name:
-            if name not in self.columns:
+            if name not in self.columns[self.target]:
                 print(f"{name} is not in the spectrum columns")
                 return
             fig, ax = self._plot_specific(name, label_lines)
@@ -301,6 +332,8 @@ class Spectrum:
             ax.set_title(name.replace("_", r"\_"))
         else:
             fig, ax = self._plot_all(label_lines)
+
+        self.target = original_target
 
         return fig, ax
 
@@ -311,29 +344,50 @@ class Spectrum:
 
         plt.show(block=block)
 
+    def set_spectrum(
+        self, spec_type
+    ):
+        """Set a different spectrum to be the target."""
+
+        if spec_type not in self.available:
+            raise ValueError(f"Spectrum {spec_type} is not available: available {self.available}")
+
+        self.target = spec_type
+
     def __getitem__(
         self, key
     ):
         """Return an array in the spectrum dictionary when indexing."""
 
-        return self.spectrum[key]
+        if key not in self.available:
+            return self.spectrum[self.target][key]
+        else:
+            return self.spectrum[key]
 
     def __setitem__(
         self, key, value
     ):
         """Allows to modify the arrays in the spectrum dictionary."""
 
-        self.spectrum[key] = value
+        if key not in self.available:
+            self.spectrum[self.target][key] = value
+        else:
+            self.spectrum[key] = value
 
     def __str__(
         self
     ):
         """Print the basic details about the spectrum."""
 
-        return textwrap.dedent("""\
-            PYTHON spectrum for model {}
-            File path: {}
-            Headers: {}""".format(self.root, self.filepath, self.columns))
+        msg = f"Spectrum for the model {self.root} in {self.cd}\n"
+        msg += f"Available spectra: {self.available}\n"
+        msg += f"Current target spectrum {self.target}\n"
+        if "spec" in self.available or "log_spec" in self.available:
+            msg += f"Spectrum inclinations: {self.inclinations['spec']}\n"
+        if "tau_spec" in self.available:
+            msg += f"Optical depth inclinations {self.inclinations['tau_spec']}\n"
+
+        return textwrap.dedent(msg)
 
 
 # Utility functions ------------------------------------------------------------
