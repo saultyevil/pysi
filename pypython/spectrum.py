@@ -34,7 +34,7 @@ class Spectrum:
     def __init__(self,
                  root: str,
                  cd: str = ".",
-                 default: str = "spec",
+                 default: str = None,
                  log: bool = False,
                  smooth: int = None,
                  delim: str = None):
@@ -83,7 +83,7 @@ class Spectrum:
         # in and set the "target" spectrum for indexing
 
         self.read_in_spectra(delim)
-        self.available = tuple(self.spectrum.keys())
+        self.available = tuple(self.all_spectrum.keys())
 
         # Now set the units, etc., to the target spectrum. If default is
         # provided, then this is used as the default spectrum.
@@ -183,7 +183,7 @@ class Spectrum:
             inclinations = []
 
             for col in header:
-                if col.isdigit() and col not in self.inclinations:
+                if col.isdigit() and col not in inclinations:
                     inclinations.append(col)
 
             self.all_columns[spec_type] = tuple(header)
@@ -270,9 +270,9 @@ class Spectrum:
         ax.set_yscale("log")
         ax.set_xscale("log")
 
-        if self.units[self.current] == UNITS_FLAMBDA:
-            ax.plot(self.spectrum[self.current]["Lambda"],
-                    self.spectrum[self.current][name],
+        if self.units == UNITS_FLAMBDA:
+            ax.plot(self.spectrum["Lambda"],
+                    self.spectrum[name],
                     label=name)
             ax.set_xlabel(r"Wavelength [\AA]")
             ax.set_ylabel(
@@ -280,11 +280,11 @@ class Spectrum:
             if label_lines:
                 ax = ax_add_line_ids(ax, common_lines(False), logx=True)
         else:
-            ax.plot(self.spectrum[self.current]["Freq."],
-                    self.spectrum[self.current][name],
+            ax.plot(self.spectrum["Freq."],
+                    self.spectrum[name],
                     label=name)
             ax.set_xlabel("Frequency [Hz]")
-            if self.units[self.current] == UNITS_LNU:
+            if self.units == UNITS_LNU:
                 ax.set_ylabel(r"Luminosity 100 pc [erg s$^{-1}$ Hz$^{-1}$]")
             else:
                 ax.set_ylabel(
@@ -312,8 +312,7 @@ class Spectrum:
 
         fig, ax = plt.subplots(1, 2, figsize=(12, 5), sharey="row")
 
-        for component in self.columns[
-                self.current][:-self.n_inclinations[self.current]]:
+        for component in self.columns[:-self.n_inclinations]:
             if component in ["Lambda", "Freq."]:
                 continue
             ax[0] = self._plot_specific(component, label_lines, ax[0])
@@ -322,10 +321,10 @@ class Spectrum:
             line.set_alpha(0.7)
         ax[0].legend(ncol=2, loc="upper right").set_zorder(0)
 
-        for inclination in self.inclinations[self.current]:
+        for inclination in self.inclinations:
             ax[1] = self._plot_specific(inclination, label_lines, ax[1])
 
-        for label, line in zip(self.inclinations[self.current],
+        for label, line in zip(self.inclinations,
                                ax[1].get_lines()):
             line.set_alpha(0.7)
             line.set_label(str(label) + r"$^{\circ}$")
@@ -352,10 +351,6 @@ class Spectrum:
         label_lines: bool
             Plot line IDs."""
 
-        if "spec" not in self.available and "log_spec" not in self.available:
-            raise IOError(
-                f"Unable to plot, as there is no {self.root}.spec file")
-
         # todo:
         # This is some badness inspired by Python. This is done, for now, as
         # I haven't implemented a way to plot other spectra quickly this way
@@ -364,7 +359,7 @@ class Spectrum:
         self.current = "spec"
 
         if name:
-            if name not in self.columns[self.current]:
+            if name not in self.columns:
                 print(f"{name} is not in the spectrum columns")
                 return
             fig, ax = self._plot_specific(name, label_lines)
@@ -372,6 +367,10 @@ class Spectrum:
                 name += r"$^{\circ}$"
             ax.set_title(name.replace("_", r"\_"))
         else:
+            # todo: update with more functions to plot spec_tot w/o name etc
+            if "spec" not in self.available and "log_spec" not in self.available:
+                raise IOError(
+                    f"Unable to plot without parameter 'name' as there is no {self.root}.spec file")
             fig, ax = self._spec_plot_all(label_lines)
 
         self.current = ot
@@ -422,7 +421,7 @@ class Spectrum:
 
         msg = f"Spectrum for the model {self.root} in {self.cd}\n"
         msg += f"Available spectra: {self.available}\n"
-        msg += f"Current target spectrum {self.current}\n"
+        msg += f"Current spectrum {self.current}\n"
         if "spec" in self.available or "log_spec" in self.available:
             msg += f"Spectrum inclinations: {self.inclinations['spec']}\n"
         if "tau_spec" in self.available:
