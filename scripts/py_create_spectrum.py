@@ -8,7 +8,7 @@ import argparse as ap
 
 import numpy as np
 from matplotlib import pyplot as plt
-from physics import convert
+from pypython.physics import convert
 from pypython import createspectrum, plotutil, util
 from pypython.spectrum import Spectrum
 

@@ -84,43 +84,7 @@ def setup_script() -> tuple:
     return setup
 
 
-def main():
-    """The main function of the script."""
 
-    root, cd, use_ion_density, velocity_units, axes_scales, use_cell_indices, display = setup_script(
-    )
-
-    # Read in the wind, set the wing parameters we want to plot, as well as the
-    # elements of the ions we want to plot and the number of ions.
-
-    w = wind.Wind(root, cd, velocity_units, True)
-
-    if w.coord_system == "polar":
-        subplot_kw = {"projection": "polar"}
-    else:
-        subplot_kw = {}
-
-    # First, plot the wind parameters
-
-    plot_wind_parameters(w,
-                         default_wind_parameters,
-                         axes_scales=axes_scales,
-                         subplot_kw=subplot_kw,
-                         display=display)
-
-    # Next, plot the wind velocities, if the grid is rectilinear
-
-    if w.coord_system == "rectilinear":
-        plot_wind_velocity(w, default_wind_velocities, velocity_units,
-                           subplot_kw, axes_scales, display)
-
-    # Now, plot the wind ions. This is a bit messier...
-
-    fig, ax = plot_wind_ions(w, default_wind_ions, default_ion_fig_dims,
-                             default_ion_figsize, use_ion_density, axes_scales,
-                             subplot_kw, display)
-
-    return
 
 
 def plot_wind_parameters(
@@ -289,6 +253,45 @@ def plot_wind_ions(w: wind.Wind,
             plt.show()
         else:
             plt.close()
+
+    return fig, ax
+
+
+def main():
+    """The main function of the script."""
+
+    root, cd, use_ion_density, velocity_units, axes_scales, use_cell_indices, display = setup_script(
+    )
+
+    # Read in the wind, set the wing parameters we want to plot, as well as the
+    # elements of the ions we want to plot and the number of ions.
+
+    w = wind.Wind(root, cd, velocity_units, True)
+
+    if w.coord_system == "polar":
+        subplot_kw = {"projection": "polar"}
+    else:
+        subplot_kw = {}
+
+    # First, plot the wind parameters
+
+    plot_wind_parameters(w,
+                         default_wind_parameters,
+                         axes_scales=axes_scales,
+                         subplot_kw=subplot_kw,
+                         display=display)
+
+    # Next, plot the wind velocities, if the grid is rectilinear
+
+    if w.coord_system == "rectilinear":
+        plot_wind_velocity(w, default_wind_velocities, velocity_units,
+                           subplot_kw, axes_scales, display)
+
+    # Now, plot the wind ions. This is a bit messier...
+
+    fig, ax = plot_wind_ions(w, default_wind_ions, default_ion_fig_dims,
+                             default_ion_figsize, use_ion_density, axes_scales,
+                             subplot_kw, display)
 
     return fig, ax
 

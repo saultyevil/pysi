@@ -183,7 +183,7 @@ def main(setup: tuple = None):
         root, wd, n_cores, sm, display = setup_script()
 
     full_spectrum = Spectrum(root, wd)
-    optical_depth = Spectrum(root, wd, spectype="spec_tau")
+    optical_depth = Spectrum(root, wd, "spec_tau")
     create_plot(root, full_spectrum, optical_depth, sm=sm, display=display)
 
     return

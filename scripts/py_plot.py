@@ -115,19 +115,6 @@ def plot(setup: tuple = None):
         root, wd, xmin, xmax, frequency_space, polar_coords, smooth_amount, file_ext, display = setup_script(
         )
 
-    # todo: why did I write this? i am very confused :-(
-    # Oh it's because projection was a string, I think, but I should still change
-    # this garbage bit of code
-
-    # if polar_coords:
-    #     polar_coords = True
-    # else:
-    #     polar_coords = False
-
-    if not os.path.isfile("{}.master.txt".format(root)):
-        pypython.util.create_wind_save_tables(root, wd, False)
-        pypython.util.create_wind_save_tables(root, wd, True)
-
     # Create plots for the wind - only create velocity plots for rectilinear
     # at the moment - and remove the data folder afterwards
 
