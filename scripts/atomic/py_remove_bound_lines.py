@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
 Remove all bound-bound transitions for a given ion in the atomic data. The
 script will find the lines for a given ion, defined by its atomic number and

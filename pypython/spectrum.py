@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
 Contains the spectrum object, as well as utility and plotting functions for
 spectra.
@@ -23,7 +22,6 @@ from .plotutil import (ax_add_line_ids, common_lines, get_y_lims_for_x_lims,
                        remove_extra_axes, subplot_dims)
 from .util import get_root_from_filepath, smooth_array
 
-
 UNITS_LNU = "erg/s/Hz"
 UNITS_FNU = "erg/s/cm^-2/Hz"
 UNITS_FLAMBDA = "erg/s/cm^-2/A"
@@ -33,11 +31,13 @@ class Spectrum:
     """A class to store PYTHON .spec and .log_spec files.
     The PYTHON spectrum is read in and stored within a dict, where each column
     name is a key and the data is stored as a numpy array."""
-
-    def __init__(
-        self, root: str, cd: str = ".", log: bool = False, smooth: int = None,
-        delim: str = None
-    ):
+    def __init__(self,
+                 root: str,
+                 cd: str = ".",
+                 default: str = "spec",
+                 log: bool = False,
+                 smooth: int = None,
+                 delim: str = None):
         """Initialise a Spectrum object. This method will construct the file path
         of the spectrum file given the root, containing directory and whether
         the logarithmic spectrum is used or not. The spectrum is then read in.
@@ -48,21 +48,30 @@ class Spectrum:
             The root name of the model.
         cd: str [optional]
             The directory containing the model.
+        default: str [optional]
+            The default spectrum to make the available spectrum for indexing.
         log: bool [optional]
-            Read in the logarithmic spectrum."""
+            Read in the logarithmic spectrum.
+        smooth: int [optional]
+            The amount of smoothing to use.
+        delim: str [optional]
+            The deliminator in the spectrum file."""
 
         self.root = root
         self.cd = cd
         self.logspec = log
 
+        if log and not default.startswith("log_"):
+            default = "log_" + default
+
         if self.cd[-1] != "/":
             self.cd += "/"
 
-        self.spectrum = {}
-        self.columns = {}
-        self.inclinations = {}
-        self.n_inclinations = {}
-        self.units = {}
+        self.all_spectrum = {}
+        self.all_columns = {}
+        self.all_inclinations = {}
+        self.all_n_inclinations = {}
+        self.all_units = {}
 
         # self.unsmoothed is a variable which keeps a copy of the spectrum for
         # safe keeping if it is smoothed
@@ -75,14 +84,30 @@ class Spectrum:
 
         self.read_in_spectra(delim)
         self.available = tuple(self.spectrum.keys())
-        self.target = self.available[0]
+
+        # Now set the units, etc., to the target spectrum. If default is
+        # provided, then this is used as the default spectrum.
+
+        if default:
+            if default in self.available:
+                self.current = default
+            else:
+                raise ValueError(
+                    f"{self.root}.{default} is not available as it has not been read in"
+                )
+        else:
+            self.current = self.available[0]
+
+        self.spectrum = self.all_spectrum[self.current]
+        self.columns = self.all_columns[self.current]
+        self.inclinations = self.all_inclinations[self.current]
+        self.n_inclinations = self.all_n_inclinations[self.current]
+        self.units = self.all_units[self.current]
 
         if smooth:
             self.smooth(smooth)
 
-    def read_in_spectra(
-        self, delim: str = None
-    ):
+    def read_in_spectra(self, delim: str = None):
         """Read in a spectrum file given in self.filepath. The spectrum is stored
         as a dictionary in self.spectrum where each key is the name of the
         columns.
@@ -108,8 +133,8 @@ class Spectrum:
                 continue
 
             n_read += 1
-            self.spectrum[spec_type] = {}
-            self.units[spec_type] = "unknown"
+            self.all_spectrum[spec_type] = {}
+            self.all_units[spec_type] = "unknown"
 
             with open(fpath, "r") as f:
                 spectrum_file = f.readlines()
@@ -127,7 +152,7 @@ class Spectrum:
                 else:
                     line = line.split()
                 if "Units:" in line:
-                    self.units[spec_type] = line[4][1:-1]
+                    self.all_units[spec_type] = line[4][1:-1]
                 if len(line) == 0 or line[0] == "#":
                     continue
                 spectrum.append(line)
@@ -153,7 +178,7 @@ class Spectrum:
             # also the inclination angles here as well
 
             for i, column_name in enumerate(header):
-                self.spectrum[spec_type][column_name] = spectrum[:, i]
+                self.all_spectrum[spec_type][column_name] = spectrum[:, i]
 
             inclinations = []
 
@@ -161,16 +186,16 @@ class Spectrum:
                 if col.isdigit() and col not in self.inclinations:
                     inclinations.append(col)
 
-            self.columns[spec_type] = tuple(header)
-            self.inclinations[spec_type] = tuple(inclinations)
-            self.n_inclinations[spec_type] = len(inclinations)
+            self.all_columns[spec_type] = tuple(header)
+            self.all_inclinations[spec_type] = tuple(inclinations)
+            self.all_n_inclinations[spec_type] = len(inclinations)
 
         if n_read == 0:
             raise IOError(f"Unable to open any spectrum files in {self.cd}")
 
-    def smooth(
-        self, width: int = 5, to_smooth: Union[List[str], Tuple[str], str] = None
-    ):
+    def smooth(self,
+               width: int = 5,
+               to_smooth: Union[List[str], Tuple[str], str] = None):
         """Smooth the spectrum flux/luminosity bins.
 
         Parameters
@@ -195,13 +220,15 @@ class Spectrum:
                 return
 
         if to_smooth is None:
-            to_smooth = (
-                "Created", "WCreated", "Emitted", "CenSrc", "Disk", "Wind", "HitSurf", "Scattered"
-            ) + tuple(self.inclinations)
+            to_smooth = ("Created", "WCreated", "Emitted", "CenSrc", "Disk",
+                         "Wind", "HitSurf", "Scattered") + tuple(
+                             self.inclinations)
         elif type(to_smooth) is str:
             to_smooth = to_smooth,
         else:
-            raise ValueError(f"unknown format for to_smooth, must be a tuple of strings or string")
+            raise ValueError(
+                f"unknown format for to_smooth, must be a tuple of strings or string"
+            )
 
         # Loop over each available spectrum and smooth it
 
@@ -209,20 +236,23 @@ class Spectrum:
             for thing_to_smooth in to_smooth:
                 try:
                     self.spectrum[key][thing_to_smooth] = convolve(
-                        self.spectrum[key][thing_to_smooth], boxcar(width) / float(width), mode="same"
-                    )
+                        self.spectrum[key][thing_to_smooth],
+                        boxcar(width) / float(width),
+                        mode="same")
                 except KeyError:
                     continue
 
-    def unsmooth(
-        self
-    ):
+    def unsmooth(self):
         """Restore the spectrum to its unsmoothed form."""
 
         self.spectrum = copy.deepcopy(self.unsmoothed)
 
-    def _plot_specific(self, name: str, label_lines: bool = False, ax_update: plt.Axes = None):
+    def _plot_specific(self,
+                       name: str,
+                       label_lines: bool = False,
+                       ax_update: plt.Axes = None):
         """Plot a specific column in a spectrum file.
+
         Parameters
         ----------
         label_lines: bool
@@ -240,19 +270,25 @@ class Spectrum:
         ax.set_yscale("log")
         ax.set_xscale("log")
 
-        if self.units[self.target] == UNITS_FLAMBDA:
-            ax.plot(self.spectrum[self.target]["Lambda"], self.spectrum[self.target][name], label=name)
+        if self.units[self.current] == UNITS_FLAMBDA:
+            ax.plot(self.spectrum[self.current]["Lambda"],
+                    self.spectrum[self.current][name],
+                    label=name)
             ax.set_xlabel(r"Wavelength [\AA]")
-            ax.set_ylabel(r"Flux Density 100 pc [erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
+            ax.set_ylabel(
+                r"Flux Density 100 pc [erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
             if label_lines:
                 ax = ax_add_line_ids(ax, common_lines(False), logx=True)
         else:
-            ax.plot(self.spectrum[self.target]["Freq."], self.spectrum[self.target][name], label=name)
+            ax.plot(self.spectrum[self.current]["Freq."],
+                    self.spectrum[self.current][name],
+                    label=name)
             ax.set_xlabel("Frequency [Hz]")
-            if self.units[self.target] == UNITS_LNU:
+            if self.units[self.current] == UNITS_LNU:
                 ax.set_ylabel(r"Luminosity 100 pc [erg s$^{-1}$ Hz$^{-1}$]")
             else:
-                ax.set_ylabel(r"Flux Density 100 pc [erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
+                ax.set_ylabel(
+                    r"Flux Density 100 pc [erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
             if label_lines:
                 ax = ax_add_line_ids(ax, common_lines(True), logx=True)
 
@@ -266,6 +302,7 @@ class Spectrum:
         """Plot the spectrum components and observer spectra on a 1x2 panel
         plot. The left panel has the components, whilst the right panel has
         the observer spectrum.
+
         Parameters
         ----------
         label_lines: bool
@@ -275,7 +312,8 @@ class Spectrum:
 
         fig, ax = plt.subplots(1, 2, figsize=(12, 5), sharey="row")
 
-        for component in self.columns[self.target][:-self.n_inclinations[self.target]]:
+        for component in self.columns[
+                self.current][:-self.n_inclinations[self.current]]:
             if component in ["Lambda", "Freq."]:
                 continue
             ax[0] = self._plot_specific(component, label_lines, ax[0])
@@ -284,10 +322,11 @@ class Spectrum:
             line.set_alpha(0.7)
         ax[0].legend(ncol=2, loc="upper right").set_zorder(0)
 
-        for inclination in self.inclinations[self.target]:
+        for inclination in self.inclinations[self.current]:
             ax[1] = self._plot_specific(inclination, label_lines, ax[1])
 
-        for label, line in zip(self.inclinations[self.target], ax[1].get_lines()):
+        for label, line in zip(self.inclinations[self.current],
+                               ax[1].get_lines()):
             line.set_alpha(0.7)
             line.set_label(str(label) + r"$^{\circ}$")
         ax[1].set_ylabel("")
@@ -305,6 +344,7 @@ class Spectrum:
         """Plot the spectra or a single component in a single figure. By default
         this creates a 1 x 2 of the components on the left and the observer
         spectra on the right. Useful for when in an interactive session.
+
         Parameters
         ----------
         name: str
@@ -313,17 +353,18 @@ class Spectrum:
             Plot line IDs."""
 
         if "spec" not in self.available and "log_spec" not in self.available:
-            raise IOError(f"Unable to plot, as there is no {self.root}.spec file")
+            raise IOError(
+                f"Unable to plot, as there is no {self.root}.spec file")
 
         # todo:
         # This is some badness inspired by Python. This is done, for now, as
         # I haven't implemented a way to plot other spectra quickly this way
 
-        ot = self.target
-        self.target = "spec"
+        ot = self.current
+        self.current = "spec"
 
         if name:
-            if name not in self.columns[self.target]:
+            if name not in self.columns[self.current]:
                 print(f"{name} is not in the spectrum columns")
                 return
             fig, ax = self._plot_specific(name, label_lines)
@@ -333,55 +374,55 @@ class Spectrum:
         else:
             fig, ax = self._spec_plot_all(label_lines)
 
-        self.target = ot
+        self.current = ot
 
         return fig, ax
 
-    def show(
-        self, block=True
-    ):
+    def show(self, block=True):
         """Show any plots which have been generated."""
 
         plt.show(block=block)
 
-    def set_spectrum(
-        self, spec_type
-    ):
+    def set(self, name):
         """Set a different spectrum to be the target."""
 
-        if spec_type not in self.available:
-            raise ValueError(f"Spectrum {spec_type} is not available: available {self.available}")
+        if self.logspec and not name.startswith("log_"):
+            name = "log_" + name
 
-        self.target = spec_type
+        if name not in self.available:
+            raise ValueError(
+                f"Spectrum {name} is not available: available {self.available}"
+            )
 
-    def __getitem__(
-        self, key
-    ):
+        self.current = name
+        self.spectrum = self.all_spectrum[self.current]
+        self.columns = self.all_columns[self.current]
+        self.inclinations = self.all_inclinations[self.current]
+        self.n_inclinations = self.all_n_inclinations[self.current]
+        self.units = self.all_units[self.current]
+
+    def __getitem__(self, key):
         """Return an array in the spectrum dictionary when indexing."""
 
         if key not in self.available:
-            return self.spectrum[self.target][key]
+            return self.spectrum[self.current][key]
         else:
             return self.spectrum[key]
 
-    def __setitem__(
-        self, key, value
-    ):
+    def __setitem__(self, key, value):
         """Allows to modify the arrays in the spectrum dictionary."""
 
         if key not in self.available:
-            self.spectrum[self.target][key] = value
+            self.spectrum[self.current][key] = value
         else:
             self.spectrum[key] = value
 
-    def __str__(
-        self
-    ):
+    def __str__(self):
         """Print the basic details about the spectrum."""
 
         msg = f"Spectrum for the model {self.root} in {self.cd}\n"
         msg += f"Available spectra: {self.available}\n"
-        msg += f"Current target spectrum {self.target}\n"
+        msg += f"Current target spectrum {self.current}\n"
         if "spec" in self.available or "log_spec" in self.available:
             msg += f"Spectrum inclinations: {self.inclinations['spec']}\n"
         if "tau_spec" in self.available:
@@ -393,9 +434,9 @@ class Spectrum:
 # Utility functions ------------------------------------------------------------
 
 
-def get_spectrum_files(
-    this_root: str = None, cd: str = ".", ignore_delay_dump_spec: bool = True
-) -> List[str]:
+def get_spectrum_files(this_root: str = None,
+                       cd: str = ".",
+                       ignore_delay_dump_spec: bool = True) -> List[str]:
     """Find root.spec files recursively in the provided directory.
 
     Parameters
@@ -417,7 +458,8 @@ def get_spectrum_files(
 
     for filepath in Path(cd).glob("**/*.spec"):
         str_filepath = str(filepath)
-        if ignore_delay_dump_spec and str_filepath.find(".delay_dump.spec") != -1:
+        if ignore_delay_dump_spec and str_filepath.find(
+                ".delay_dump.spec") != -1:
             continue
         if this_root:
             root, cd = get_root_from_filepath(str_filepath)
@@ -430,16 +472,16 @@ def get_spectrum_files(
 
 # Plotting functions -----------------------------------------------------------
 
-
 MIN_SPEC_COMP_FLUX = 1e-15
 DEFAULT_PYTHON_DISTANCE = 100 * PARSEC
 
 
-def _plot_panel_subplot(
-    ax: plt.Axes, x_values: np.ndarray, spectrum: Spectrum, units: str, things_to_plot: Union[List[str], str],
-    xlims: Tuple[Union[float, int, None], Union[float, int, None]], sm: int, alpha: float, scale: str,
-    frequency_space: bool, skip_sparse: bool
-) -> plt.Axes:
+def _plot_panel_subplot(ax: plt.Axes, x_values: np.ndarray, spectrum: Spectrum,
+                        units: str, things_to_plot: Union[List[str], str],
+                        xlims: Tuple[Union[float, int, None],
+                                     Union[float, int, None]], sm: int,
+                        alpha: float, scale: str, frequency_space: bool,
+                        skip_sparse: bool) -> plt.Axes:
     """Create a subplot panel for a figure given the spectrum components names
     in the list dname.
 
@@ -532,11 +574,18 @@ def _plot_panel_subplot(
     return ax
 
 
-def plot(
-    x: np.ndarray, y: np.ndarray, xmin: float = None, xmax: float = None, xlabel: str = None, ylabel: str = None,
-    scale: str = "logy", fig: plt.Figure = None, ax: plt.Axes = None, label: str = None, alpha: float = 1.0,
-    display: bool = False
-) -> Tuple[plt.Figure, plt.Axes]:
+def plot(x: np.ndarray,
+         y: np.ndarray,
+         xmin: float = None,
+         xmax: float = None,
+         xlabel: str = None,
+         ylabel: str = None,
+         scale: str = "logy",
+         fig: plt.Figure = None,
+         ax: plt.Axes = None,
+         label: str = None,
+         alpha: float = 1.0,
+         display: bool = False) -> Tuple[plt.Figure, plt.Axes]:
     """This is a simple plotting function designed to give you the bare minimum.
     It will create a figure and axes object for a single panel and that is
     it. It is mostly designed for quick plotting of models and real data.
@@ -581,9 +630,11 @@ def plot(
     normalize_figure_style()
 
     if fig and not ax:
-        raise InvalidParameter("fig has been provided, but ax has not. Both are required.")
+        raise InvalidParameter(
+            "fig has been provided, but ax has not. Both are required.")
     if not fig and ax:
-        raise InvalidParameter("fig has not been provided, but ax has. Both are required.")
+        raise InvalidParameter(
+            "fig has not been provided, but ax has. Both are required.")
     if not fig and not ax:
         fig, ax = plt.subplots(1, 1, figsize=(12, 5))
     if label is None:
@@ -628,11 +679,15 @@ def plot(
     return fig, ax
 
 
-def plot_optical_depth(
-    root: str, wd: str, inclinations: List[str] = "all", xmin: float = None, xmax: float = None,
-    scale: str = "loglog", show_absorption_edge_labels: bool = True, frequency_space: bool = True,
-    display: bool = False
-) -> Tuple[plt.Figure, plt.Axes]:
+def plot_optical_depth(root: str,
+                       wd: str,
+                       inclinations: List[str] = "all",
+                       xmin: float = None,
+                       xmax: float = None,
+                       scale: str = "loglog",
+                       show_absorption_edge_labels: bool = True,
+                       frequency_space: bool = True,
+                       display: bool = False) -> Tuple[plt.Figure, plt.Axes]:
     """Create an optical depth spectrum for a given Python simulation. This figure
     can be created in both wavelength or frequency space and with various
     choices of axes scaling.
@@ -676,7 +731,8 @@ def plot_optical_depth(
     spectrum = Spectrum(root, wd, spectype="spec_tau")
     spec_angles = spectrum.inclinations
     n_angles = len(spec_angles)
-    n_plots = len(inclinations)  # Really have no clue what this does in hindsight...
+    n_plots = len(
+        inclinations)  # Really have no clue what this does in hindsight...
 
     # Ignore all if other inclinations are passed - assume it was a mistake to pass all
 
@@ -702,7 +758,8 @@ def plot_optical_depth(
     # This loop will plot the inclinations provided by the user
 
     for i in range(n_plots):
-        if inclinations[0] != "all" and inclinations[i] not in spec_angles:  # Skip inclinations which don't exist
+        if inclinations[0] != "all" and inclinations[
+                i] not in spec_angles:  # Skip inclinations which don't exist
             continue
         ii = str(inclinations[i])
         label = ii + r"$^{\circ}$"
@@ -745,10 +802,21 @@ def plot_optical_depth(
 
 
 def plot_spectrum_physics_process_contributions(
-    contribution_spectra: dict, inclination: str, root: str, wd: str = ".", xmin: float = None, xmax: float = None,
-    ymin: float = None, ymax: float = None, scale: str = "logy", line_labels: bool = True, sm: int = 5,
-    lw: int = 2, alpha: float = 0.75, file_ext: str = "png", display: bool = False
-) -> Tuple[plt.Figure, plt.Axes]:
+        contribution_spectra: dict,
+        inclination: str,
+        root: str,
+        wd: str = ".",
+        xmin: float = None,
+        xmax: float = None,
+        ymin: float = None,
+        ymax: float = None,
+        scale: str = "logy",
+        line_labels: bool = True,
+        sm: int = 5,
+        lw: int = 2,
+        alpha: float = 0.75,
+        file_ext: str = "png",
+        display: bool = False) -> Tuple[plt.Figure, plt.Axes]:
     """Description of the function.
     todo: some of these things really need re-naming..... it seems very confusing
 
@@ -767,7 +835,11 @@ def plot_spectrum_physics_process_contributions(
     fig, ax = plt.subplots(figsize=(12, 8))
 
     for name, spectrum in contribution_spectra.items():
-        ax.plot(spectrum["Lambda"], smooth_array(spectrum[inclination], sm), label=name, linewidth=lw, alpha=alpha)
+        ax.plot(spectrum["Lambda"],
+                smooth_array(spectrum[inclination], sm),
+                label=name,
+                linewidth=lw,
+                alpha=alpha)
 
     if scale == "logx" or scale == "loglog":
         ax.set_xscale("log")
@@ -778,6 +850,7 @@ def plot_spectrum_physics_process_contributions(
     ax.legend(loc="upper center", ncol=len(contribution_spectra))
     ax.set_xlabel(r"Wavelength [$\AA$]")
     ax.set_ylabel(r"Flux F$_{\lambda}$ [erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$]")
+
     if line_labels:
         if scale == "logx" or scale == "loglog":
             logx = True
@@ -799,10 +872,17 @@ def plot_spectrum_physics_process_contributions(
 
 
 def plot_spectrum_components(
-    root: str, wd: str, spec_tot: bool = False, wind_tot: bool = False, xmin: float = None, xmax: float = None,
-    smooth_amount: int = 5, scale: str = "loglog", alpha: float = 0.6, frequency_space: bool = False,
-    display: bool = False
-) -> Tuple[plt.Figure, plt.Axes]:
+        root: str,
+        wd: str,
+        spec_tot: bool = False,
+        wind_tot: bool = False,
+        xmin: float = None,
+        xmax: float = None,
+        smooth_amount: int = 5,
+        scale: str = "loglog",
+        alpha: float = 0.6,
+        frequency_space: bool = False,
+        display: bool = False) -> Tuple[plt.Figure, plt.Axes]:
     """Create a figure of the different spectrum components of a Python spectrum
     file. Note that all of the spectrum components added together DO NOT have
     to equal the output spectrum or the emitted spectrum (don't ask).
@@ -867,14 +947,14 @@ def plot_spectrum_components(
         x = spectrum["Lambda"]
     xlims = (None, None)
 
-    ax[0] = _plot_panel_subplot(
-        ax[0], x, spectrum, spectrum.units, ["Created", "WCreated", "Emitted"], xlims, smooth_amount, alpha, scale,
-        frequency_space, True
-    )
-    ax[1] = _plot_panel_subplot(
-        ax[1], x, spectrum, spectrum.units, ["CenSrc", "Disk", "Wind", "HitSurf"], xlims, smooth_amount, alpha,
-        scale, frequency_space, True
-    )
+    ax[0] = _plot_panel_subplot(ax[0], x, spectrum, spectrum.units,
+                                ["Created", "WCreated", "Emitted"], xlims,
+                                smooth_amount, alpha, scale, frequency_space,
+                                True)
+    ax[1] = _plot_panel_subplot(ax[1], x, spectrum, spectrum.units,
+                                ["CenSrc", "Disk", "Wind", "HitSurf"], xlims,
+                                smooth_amount, alpha, scale, frequency_space,
+                                True)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 
@@ -887,9 +967,16 @@ def plot_spectrum_components(
 
 
 def plot_spectrum_inclinations_in_subpanels(
-    root: str, wd: str, xmin: float = None, xmax: float = None, smooth_amount: int = 5, add_line_ids: bool = True,
-    frequency_space: bool = False, scale: str = "logy", figsize: Tuple[float, float] = None, display: bool = False
-) -> Tuple[plt.Figure, plt.Axes]:
+        root: str,
+        wd: str,
+        xmin: float = None,
+        xmax: float = None,
+        smooth_amount: int = 5,
+        add_line_ids: bool = True,
+        frequency_space: bool = False,
+        scale: str = "logy",
+        figsize: Tuple[float, float] = None,
+        display: bool = False) -> Tuple[plt.Figure, plt.Axes]:
     """Creates a figure which plots all of the different inclination angles in
     different panels.
 
@@ -936,8 +1023,12 @@ def plot_spectrum_inclinations_in_subpanels(
 
     normalize_figure_style()
 
-    fig, ax = plt.subplots(plot_dimensions[0], plot_dimensions[1], figsize=size, squeeze=False)
-    fig, ax = remove_extra_axes(fig, ax, n_inclinations, plot_dimensions[0] * plot_dimensions[1])
+    fig, ax = plt.subplots(plot_dimensions[0],
+                           plot_dimensions[1],
+                           figsize=size,
+                           squeeze=False)
+    fig, ax = remove_extra_axes(fig, ax, n_inclinations,
+                                plot_dimensions[0] * plot_dimensions[1])
 
     # Use either frequency or wavelength and set the plot limits respectively
 
@@ -958,8 +1049,10 @@ def plot_spectrum_inclinations_in_subpanels(
             if inclination_index > n_inclinations - 1:
                 break
             name = str(spectrum_inclinations[inclination_index])
-            ax[i, j] = _plot_panel_subplot(
-                ax[i, j], x, spectrum, spectrum_units, name, xlims, smooth_amount, 1, scale, frequency_space, False)
+            ax[i,
+               j] = _plot_panel_subplot(ax[i, j], x, spectrum, spectrum_units,
+                                        name, xlims, smooth_amount, 1, scale,
+                                        frequency_space, False)
             ymin, ymax = get_y_lims_for_x_lims(x, spectrum[name], xmin, xmax)
             ax[i, j].set_ylim(ymin, ymax)
 
@@ -968,7 +1061,9 @@ def plot_spectrum_inclinations_in_subpanels(
                     logx = True
                 else:
                     logx = False
-                ax[i, j] = ax_add_line_ids(ax[i, j], common_lines(frequency_space), logx=logx)
+                ax[i, j] = ax_add_line_ids(ax[i, j],
+                                           common_lines(frequency_space),
+                                           logx=logx)
             inclination_index += 1
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
@@ -982,9 +1077,15 @@ def plot_spectrum_inclinations_in_subpanels(
 
 
 def plot_single_spectrum_inclination(
-    root: str, wd: str, inclination: Union[str, float, int], xmin: float = None, xmax: float = None,
-    smooth_amount: int = 5, scale: str = "logy", frequency_space: bool = False, display: bool = False
-) -> Union[None, Tuple[plt.Figure, plt.Axes]]:
+        root: str,
+        wd: str,
+        inclination: Union[str, float, int],
+        xmin: float = None,
+        xmax: float = None,
+        smooth_amount: int = 5,
+        scale: str = "logy",
+        frequency_space: bool = False,
+        display: bool = False) -> Union[None, Tuple[plt.Figure, plt.Axes]]:
     """Create a plot of an individual spectrum for the provided inclination
     angle.
 
@@ -1057,10 +1158,18 @@ def plot_single_spectrum_inclination(
 
 
 def plot_multiple_model_spectra(
-    output_name: str, spectra_filepaths: list, inclination_angle: str, wd: str = ".", x_min: float = None,
-    x_max: float = None, frequency_space: bool = False, axes_scales: str = "logy", smooth_amount: int = 5,
-    plot_common_lines: bool = False, file_ext: str = "png", display: bool = False
-) -> Tuple[plt.Figure, plt.Axes]:
+        output_name: str,
+        spectra_filepaths: list,
+        inclination_angle: str,
+        wd: str = ".",
+        x_min: float = None,
+        x_max: float = None,
+        frequency_space: bool = False,
+        axes_scales: str = "logy",
+        smooth_amount: int = 5,
+        plot_common_lines: bool = False,
+        file_ext: str = "png",
+        display: bool = False) -> Tuple[plt.Figure, plt.Axes]:
     """Plot multiple spectra, from multiple models, given in the list of spectra
     provided.
     todo: when using "all", create separate plot for each inclination
@@ -1149,7 +1258,10 @@ def plot_multiple_model_spectra(
             except KeyError:
                 continue
 
-            ax[i].plot(x, y, label=spectrum.filepath.replace("_", r"\_"), alpha=0.75)
+            ax[i].plot(x,
+                       y,
+                       label=spectrum.filepath.replace("_", r"\_"),
+                       alpha=0.75)
 
             # Calculate the y-axis limits to keep all spectra within the
             # plot area
@@ -1189,7 +1301,8 @@ def plot_multiple_model_spectra(
             ax[i].set_ylabel(r"$\nu F_{\nu}$ (erg s$^{-1}$ cm$^{-2}$")
         else:
             ax[i].set_xlabel(r"Wavelength [$\AA$]")
-            ax[i].set_ylabel(r"$F_{\lambda}$ (erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)")
+            ax[i].set_ylabel(
+                r"$F_{\lambda}$ (erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)")
 
         if plot_common_lines:
             if axes_scales == "logx" or axes_scales == "loglog":
@@ -1216,4 +1329,3 @@ def plot_multiple_model_spectra(
         plt.close()
 
     return fig, ax
-

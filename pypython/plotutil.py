@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
 Functions for helping plotting with matplotlib.
 """
@@ -43,7 +42,6 @@ def normalize_figure_style():
         "ytick.minor.size": 3,
         "savefig.dpi": 300,
         "pcolor.shading": "auto"
-
     }
 
     plt.rcParams.update(parameters)
@@ -51,9 +49,7 @@ def normalize_figure_style():
     return parameters
 
 
-def subplot_dims(
-    n_plots: int
-) -> Tuple[int, int]:
+def subplot_dims(n_plots: int) -> Tuple[int, int]:
     """Return the dimensions for a plot with multiple subplot panels.
     todo: include more plot subdivisions
 
@@ -86,8 +82,8 @@ def subplot_dims(
 
 
 def remove_extra_axes(
-    fig: plt.Figure, ax: Union[plt.Axes, np.ndarray], n_wanted: int, n_panel: int
-) -> Tuple[plt.Figure, Union[plt.Axes, np.ndarray]]:
+        fig: plt.Figure, ax: Union[plt.Axes, np.ndarray], n_wanted: int,
+        n_panel: int) -> Tuple[plt.Figure, Union[plt.Axes, np.ndarray]]:
     """Remove additional axes which are included in a plot. This can be used if you
     have 4 x 2 = 8 panels but only want to use 7 of tha panels. The 8th panel
     will be removed.
@@ -131,9 +127,12 @@ def remove_extra_axes(
     return fig, ax
 
 
-def get_y_lims_for_x_lims(
-    x: np.array, y: np.array, xmin: float, xmax: float, scale: float = 10
-) -> Union[Tuple[float, float], Tuple[None, None]]:
+def get_y_lims_for_x_lims(x: np.array,
+                          y: np.array,
+                          xmin: float,
+                          xmax: float,
+                          scale: float = 10
+                          ) -> Union[Tuple[float, float], Tuple[None, None]]:
     """Determine the lower and upper y limits for a matplotlib plot given a
     restricted x range, since matplotlib doesn't do this automatically.
 
@@ -162,8 +161,8 @@ def get_y_lims_for_x_lims(
 
     if x.shape[0] != y.shape[0]:
         raise DimensionError(
-            "{}: x and y are of different dimensions x {} y {}".format(n, x.shape, y.shape)
-        )
+            "{}: x and y are of different dimensions x {} y {}".format(
+                n, x.shape, y.shape))
 
     if not xmin or not xmax:
         return None, None
@@ -187,9 +186,7 @@ def get_y_lims_for_x_lims(
     return ymin, ymax
 
 
-def common_lines(
-    freq: bool = False
-) -> list:
+def common_lines(freq: bool = False) -> list:
     """Return a list containing the names of line transitions and the
     wavelength of the transition in Angstroms. Instead of returning the
     wavelength, the frequency can be returned instead. It is also possible to
@@ -241,9 +238,7 @@ def common_lines(
     return lines
 
 
-def photoionization_edges(
-    freq: bool = False
-) -> list:
+def photoionization_edges(freq: bool = False) -> list:
     """Return a list containing the names of line transitions and the
     wavelength of the transition in Angstroms. Instead of returning the
     wavelength, the frequency can be returned instead. It is also possible to
@@ -276,10 +271,14 @@ def photoionization_edges(
     return edges
 
 
-def ax_add_line_ids(
-    ax: plt.Axes, lines: list, linestyle: str = "dashed", ynorm: float = 0.90, logx: bool = False, offset: float = 25,
-    rotation: str = "vertical", fontsize: int = 10
-) -> plt.Axes:
+def ax_add_line_ids(ax: plt.Axes,
+                    lines: list,
+                    linestyle: str = "dashed",
+                    ynorm: float = 0.90,
+                    logx: bool = False,
+                    offset: float = 25,
+                    rotation: str = "vertical",
+                    fontsize: int = 10) -> plt.Axes:
     """Add labels for line transitions or other regions of interest onto a
     matplotlib figure. Labels are placed at the top of the panel and dashed
     lines, with zorder = 0, are drawn from top to bottom.
@@ -331,12 +330,18 @@ def ax_add_line_ids(
         # Calculate the x location of the label in axes coordinates
 
         if logx:
-            xnorm = (np.log10(x) - np.log10(xlims[0])) / (np.log10(xlims[1]) - np.log10(xlims[0]))
+            xnorm = (np.log10(x) - np.log10(xlims[0])) / (np.log10(xlims[1]) -
+                                                          np.log10(xlims[0]))
         else:
             xnorm = (x - xlims[0]) / (xlims[1] - xlims[0])
 
-        ax.text(
-            xnorm, ynorm, label, ha="center", va="center", rotation=rotation, fontsize=fontsize, transform=ax.transAxes
-        )
+        ax.text(xnorm,
+                ynorm,
+                label,
+                ha="center",
+                va="center",
+                rotation=rotation,
+                fontsize=fontsize,
+                transform=ax.transAxes)
 
     return ax

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
 Functions for evaluating the convergence or the number of errors in a Python
 simulation, as well as (in the future) other helpful little things.
@@ -12,8 +11,10 @@ from typing import List, Tuple, Union
 
 
 def check_model_convergence(
-    root: str, wd: str = ".", return_per_cycle: bool = False, return_converging: bool = False
-) -> Union[float, list, List[float]]:
+        root: str,
+        wd: str = ".",
+        return_per_cycle: bool = False,
+        return_converging: bool = False) -> Union[float, list, List[float]]:
     """Check the convergence of a Python simulation by parsing the
     !!Check_convergence line in the Python diag file.
 
@@ -60,7 +61,9 @@ def check_model_convergence(
         line = diag[i]
         if line.find("converged") != -1 and line.find("converging") != -1:
             # Skip if the convergence statistic is from the brief run summary
-            if prev.find("Convergence statistics for the wind after the ionization calculation:") != -1:
+            if prev.find(
+                    "Convergence statistics for the wind after the ionization calculation:"
+            ) != -1:
                 i += brief_summary_len
                 continue
 
@@ -93,7 +96,8 @@ def check_model_convergence(
 
 
 def model_convergence_components(
-    root: str, wd: str = "."
+    root: str,
+    wd: str = "."
 ) -> Tuple[List[float], List[float], List[float], List[float]]:
     """Returns a break down in terms of the number of cells which have passed
     the convergence checks on radiation temperature, electron temperature and
@@ -142,8 +146,11 @@ def model_convergence_components(
 
     for i in range(len(diag)):
         line = diag[i]
-        if line.find("t_r") != -1 and line.find("t_e(real)") != -1 and line.find("hc(real)") != -1:
-            if diag[i - 2].find("Convergence statistics for the wind after the ionization calculation:") != -1:
+        if line.find("t_r") != -1 and line.find(
+                "t_e(real)") != -1 and line.find("hc(real)") != -1:
+            if diag[i - 2].find(
+                    "Convergence statistics for the wind after the ionization calculation:"
+            ) != -1:
                 i += brief_summary_len
                 continue
 
@@ -164,9 +171,10 @@ def model_convergence_components(
     return n_tr, n_te, n_te_max, n_hc
 
 
-def model_error_summary(
-    root: str, wd: str = ".", n_cores: int = -1, print_errors: bool = False
-) -> dict:
+def model_error_summary(root: str,
+                        wd: str = ".",
+                        n_cores: int = -1,
+                        print_errors: bool = False) -> dict:
     """Return a dictionary containing each error found in the error summary for
     each processor for a Python simulation.
     todo: create a mode where a dict is returned for each MPI process
@@ -230,7 +238,8 @@ def model_error_summary(
                         break
 
                 if error_start == -1 or error_end == -1:
-                    print("unable to find error summary, returning empty dict ")
+                    print(
+                        "unable to find error summary, returning empty dict ")
                     return total_errors
 
                 # Extract the errors from the diag file
@@ -244,7 +253,9 @@ def model_error_summary(
                     try:
                         error_count = error_words[0]
                     except IndexError:
-                        print("index error when trying to process line '{}' for {}".format(" ".join(error_words), diag))
+                        print(
+                            "index error when trying to process line '{}' for {}"
+                            .format(" ".join(error_words), diag))
                         broken_diag_files.append(diag)
                         break
 
@@ -266,7 +277,8 @@ def model_error_summary(
 
     if print_errors:
         n_reported = len(diag_files) - len(broken_diag_files)
-        print("Total errors reported from {} processors per process for {}:\n".format(n_reported, wd + root))
+        print("Total errors reported from {} processors per process for {}:\n".
+              format(n_reported, wd + root))
         for key in total_errors.keys():
             n_error = int(total_errors[key]) // n_reported
             if n_error < 1:

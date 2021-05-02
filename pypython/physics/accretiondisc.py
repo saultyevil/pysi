@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
 Functions to calculate parameters and quantities for accretion discs and
 accretion in general live here. For example, there are functions for the
@@ -19,9 +18,9 @@ from .constants import (MPROT, MSOL, MSOL_PER_YEAR, PI, STEFAN_BOLTZMANN,
                         THOMPSON, C, G)
 
 
-def alpha_disc_effective_temperature(
-    ri: Union[np.ndarray, float], r_co: float, m_co: float, mdot: float
-) -> Union[float, np.ndarray]:
+def alpha_disc_effective_temperature(ri: Union[np.ndarray, float], r_co: float,
+                                     m_co: float,
+                                     mdot: float) -> Union[float, np.ndarray]:
     """Standard alpha-disc effective temperature profile.
 
     Parameters
@@ -45,15 +44,15 @@ def alpha_disc_effective_temperature(
     mdot *= MSOL_PER_YEAR
 
     with np.errstate(all="ignore"):
-        teff4 = (3 * G * m_co * mdot) / (8 * np.pi * ri ** 3 * STEFAN_BOLTZMANN)
-        teff4 *= 1 - (r_co / ri) ** 0.5
+        teff4 = (3 * G * m_co * mdot) / (8 * np.pi * ri**3 * STEFAN_BOLTZMANN)
+        teff4 *= 1 - (r_co / ri)**0.5
 
-    return teff4 ** 0.25
+    return teff4**0.25
 
 
 def modified_eddigton_alpha_disc_effective_temperature(
-    ri: Union[np.ndarray, float], m_co: float, mdot: float
-) -> Union[float, np.ndarray]:
+        ri: Union[np.ndarray, float], m_co: float,
+        mdot: float) -> Union[float, np.ndarray]:
     """The effective temperature profile from Strubbe and Quataert 2009.
 
     Parameters
@@ -80,15 +79,15 @@ def modified_eddigton_alpha_disc_effective_temperature(
 
     with np.errstate(all="ignore"):
         fnt = 1 - np.sqrt(risco / ri)
-        teff4 = (3 * G * m_co * mdot * fnt) / (8 * PI * ri ** 3 * STEFAN_BOLTZMANN)
-        teff4 *= (0.5 + (0.25 + 6 * fnt * (mdot * C ** 2 / ledd) ** 2 * (ri / rg) ** -2) ** 0.5) ** -1
+        teff4 = (3 * G * m_co * mdot * fnt) / (8 * PI * ri**3 *
+                                               STEFAN_BOLTZMANN)
+        teff4 *= (0.5 + (0.25 + 6 * fnt * (mdot * C**2 / ledd)**2 *
+                         (ri / rg)**-2)**0.5)**-1
 
-    return teff4 ** 0.25
+    return teff4**0.25
 
 
-def eddington_accretion_limit(
-    mbh: float, efficiency: float
-) -> float:
+def eddington_accretion_limit(mbh: float, efficiency: float) -> float:
     """Calculate the Eddington accretion limit for a black hole. Note that the
     accretion rate can be larger than the Eddington accretion rate. See, for
     example, Foundations of High-Energy Astrophysics by Mario Vietri.
@@ -109,9 +108,7 @@ def eddington_accretion_limit(
     return (4 * PI * G * mbh * MPROT) / (efficiency * C * THOMPSON)
 
 
-def eddington_luminosity_limit(
-    mbh: float
-) -> float:
+def eddington_luminosity_limit(mbh: float) -> float:
     """Calculate the Eddington luminosity for accretion onto a black hole.
 
     Parameters
@@ -128,10 +125,15 @@ def eddington_luminosity_limit(
     return (4 * PI * G * mbh * C * MPROT) / THOMPSON
 
 
-def create_disc_spectrum(
-    m_co: float, mdot: float, r_in: float, r_out: float, freq_min: float, freq_max: float, freq_units: bool = True,
-    n_freq: int = 5000, n_rings: int = 1000
-) -> np.array:
+def create_disc_spectrum(m_co: float,
+                         mdot: float,
+                         r_in: float,
+                         r_out: float,
+                         freq_min: float,
+                         freq_max: float,
+                         freq_units: bool = True,
+                         n_freq: int = 5000,
+                         n_rings: int = 1000) -> np.array:
     """Create a crude accretion disc spectrum. This works by approximating an
     accretion disc as being a collection of annuli radiating at different
     temperatures and treats them as a blackbody. The emerging spectrum is then
@@ -183,7 +185,7 @@ def create_disc_spectrum(
     for i in range(n_rings - 1):
         # Use midpoint of annulus as point on r grid
         r = (radii_range[i + 1] + radii_range[i]) * 0.5
-        area_annulus = PI * (radii_range[i + 1] ** 2 - radii_range[i] ** 2)
+        area_annulus = PI * (radii_range[i + 1]**2 - radii_range[i]**2)
 
         t_eff = alpha_disc_effective_temperature(r, r_in, m_co, mdot)
 

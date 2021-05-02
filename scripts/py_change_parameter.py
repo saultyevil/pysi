@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
 Update an existing parameter for some parameter file(s).
 The script will search recursively from the calling directory for parameter
@@ -14,9 +13,7 @@ from typing import List
 from pypython import grid, util
 
 
-def change_pfs(
-    filepaths: List[str], parameter: str, value: str
-) -> None:
+def change_pfs(filepaths: List[str], parameter: str, value: str) -> None:
     """Iterate over a list of pfs, and update the parameter given by the variable
     parameter with the new value given by value. This function will also
     print out verbose, because it seems most sensible to be loud about this.
@@ -41,15 +38,13 @@ def main():
 
     p = ap.ArgumentParser(description=__doc__)
 
+    p.add_argument("parameter", help="Name of the parameter to add.")
+    p.add_argument("value", help="The value for the new parameter.")
     p.add_argument(
-        "parameter", help="Name of the parameter to add."
-    )
-    p.add_argument(
-        "value", help="The value for the new parameter."
-    )
-    p.add_argument(
-        "--root", default=None, help="Add the parameter to parameter files with this specific root name."
-    )
+        "--root",
+        default=None,
+        help=
+        "Add the parameter to parameter files with this specific root name.")
 
     args = p.parse_args()
 

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
 The purpose of this script is to parse the diag file of Python and to compare
 the photon luminosity before and after trans_phot.
@@ -34,9 +33,7 @@ def get_input():
     return args.root
 
 
-def check_luminosity_balance(
-    root: str, wd: str = "./"
-):
+def check_luminosity_balance(root: str, wd: str = "./"):
     """Check the luminosity before and after trans_phot for a Python simulation.
     This function will also create a plot of the relative change.
 
@@ -56,12 +53,14 @@ def check_luminosity_balance(
         diag = f.readlines()
 
     for line in diag:
-        if line.find("!!python: Total photon luminosity before transphot") != -1:
+        if line.find(
+                "!!python: Total photon luminosity before transphot") != -1:
             try:
                 luminosity_before.append(float(line.split()[-1]))
             except IndexError:
                 luminosity_before.append(-1)
-        if line.find("!!python: Total photon luminosity after transphot") != -1:
+        if line.find(
+                "!!python: Total photon luminosity after transphot") != -1:
             try:
                 luminosity_after.append(float(line.split()[6]))
             except IndexError:
@@ -79,12 +78,16 @@ def check_luminosity_balance(
     print("Luminosity before     = ", luminosity_before[-1])
     print("Luminosity after      = ", luminosity_after[-1])
     print("Absorbed/lost         = ", absorbed_lost[-1])
-    print("Ratio: after / before = ", luminosity_after[-1] / luminosity_before[-1])
+    print("Ratio: after / before = ",
+          luminosity_after[-1] / luminosity_before[-1])
     print()
 
     cycles = np.arange(1, len(luminosity_after) + 1)
     # todo: assumes luminosity is always the same before, when in simple atom it probably isn't
-    plt.plot(cycles, np.array(luminosity_after) / luminosity_before[0], label="After / Before", linewidth=3)
+    plt.plot(cycles,
+             np.array(luminosity_after) / luminosity_before[0],
+             label="After / Before",
+             linewidth=3)
     plt.axhline(1, color="k", linestyle="--", label="No Change", linewidth=3)
     plt.xlim(1, len(luminosity_after) + 1)
     plt.xlabel("Cycle")

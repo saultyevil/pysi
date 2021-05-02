@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
 Remove an element or transition from a data set. This was created because it is
 often tedious to remove a single transition from the photoionization data.

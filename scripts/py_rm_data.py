@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
 Remove all data directories from Python simulations - this was written because
 Dropbox is able to follow symbolic links on Linux >:(.
@@ -27,4 +26,3 @@ elif len(argv) == 2:
 else:
     print("Unknown number of arguments.")
     print(__doc__)
-

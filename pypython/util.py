@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
 Utility functions to ease the pain of using Python or a Unix environment whilst
 trying to do computational astrophysics.
 """
-
 
 import time
 import textwrap
@@ -21,9 +19,7 @@ from psutil import cpu_count
 from scipy.signal import boxcar, convolve
 
 
-def get_array_index(
-    x: np.ndarray, target: float
-) -> int:
+def get_array_index(x: np.ndarray, target: float) -> int:
     """Return the index for a given value in an array.
 
     This function is fairly limited in that it can't deal with arrays with
@@ -51,9 +47,8 @@ def get_array_index(
     return index
 
 
-def smooth_array(
-    array: Union[np.ndarray, List[Union[float, int]]], width: Union[int, float]
-) -> np.ndarray:
+def smooth_array(array: Union[np.ndarray, List[Union[float, int]]],
+                 width: Union[int, float]) -> np.ndarray:
     """Smooth a 1D array of data using a boxcar filter.
 
     Parameters
@@ -84,14 +79,14 @@ def smooth_array(
     if type(array) is not np.ndarray:
         array = np.array(array)
 
-    array = np.reshape(array, (len(array),))  # todo: why do I have to do this? safety probably
+    array = np.reshape(
+        array,
+        (len(array), ))  # todo: why do I have to do this? safety probably
 
     return convolve(array, boxcar(width) / float(width), mode="same")
 
 
-def get_file_len(
-    filename: str
-) -> int:
+def get_file_len(filename: str) -> int:
     """Slowly count the number of lines in a file.
     todo: update to jit_open or some other more efficient method
 
@@ -111,9 +106,7 @@ def get_file_len(
     return i + 1
 
 
-def clean_up_data_sym_links(
-    wd: str = ".", verbose: bool = False
-):
+def clean_up_data_sym_links(wd: str = ".", verbose: bool = False):
     """Search recursively from the specified directory for symbolic links named
     data. This script will only work on Unix systems where the find command is
     available.
@@ -140,7 +133,8 @@ def clean_up_data_sym_links(
 
     # - type l will only search for symbolic links
     cmd = "cd {}; find . -type l -name 'data'".format(wd)
-    stdout, stderr = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
+    stdout, stderr = Popen(cmd, stdout=PIPE, stderr=PIPE,
+                           shell=True).communicate()
     stdout = stdout.decode("utf-8")
     stderr = stderr.decode("utf-8")
 
@@ -149,7 +143,9 @@ def clean_up_data_sym_links(
         print(stderr)
 
     if stdout and verbose:
-        print("deleting data symbolic links in the following directories:\n\n{}".format(stdout[:-1]))
+        print(
+            "deleting data symbolic links in the following directories:\n\n{}".
+            format(stdout[:-1]))
     else:
         print("no data symlinks to delete")
         return n_del
@@ -159,7 +155,8 @@ def clean_up_data_sym_links(
     for directory in directories:
         current = wd + directory[1:]
         cmd = "rm {}".format(current)
-        stdout, stderr = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
+        stdout, stderr = Popen(cmd, stdout=PIPE, stderr=PIPE,
+                               shell=True).communicate()
         if stderr:
             print(stderr.decode("utf-8"))
         else:
@@ -168,9 +165,9 @@ def clean_up_data_sym_links(
     return n_del
 
 
-def get_root_from_filepath(
-    path: str, return_cd: bool = True
-) -> Union[str, Tuple[str, str]]:
+def get_root_from_filepath(path: str,
+                           return_cd: bool = True
+                           ) -> Union[str, Tuple[str, str]]:
     """Get the root name of a Python simulation, extracting it from a file path.
 
     Parameters
@@ -188,7 +185,9 @@ def get_root_from_filepath(
         The directory path containing the provided Python .pf file"""
 
     if type(path) is not str:
-        raise TypeError("expected a string as input for the file path, not whatever you put")
+        raise TypeError(
+            "expected a string as input for the file path, not whatever you put"
+        )
 
     dot = path.rfind(".")
     slash = path.rfind("/")
@@ -204,9 +203,7 @@ def get_root_from_filepath(
         return root
 
 
-def get_parameter_files(
-    root: str = None, cd: str = "."
-) -> List[str]:
+def get_parameter_files(root: str = None, cd: str = ".") -> List[str]:
     """Search recursively for Python .pf files. This function will ignore
     py_wind.pf parameter files, as well as any root.out.pf files.
 
@@ -242,9 +239,7 @@ def get_parameter_files(
     return parameter_files
 
 
-def get_cpu_count(
-    enable_smt: bool = False
-):
+def get_cpu_count(enable_smt: bool = False):
     """Return the number of CPU cores which can be used when running a Python
     simulation. By default, this will only return the number of physical cores
     and will ignore logical threads, i.e. in Intel terms, it will not count the
@@ -266,14 +261,17 @@ def get_cpu_count(
     try:
         n_cores = cpu_count(logical=enable_smt)
     except NotImplementedError:
-        print("unable to determine number of CPU cores, psutil.cpu_count not implemented for your system")
+        print(
+            "unable to determine number of CPU cores, psutil.cpu_count not implemented for your system"
+        )
 
     return n_cores
 
 
-def create_wind_save_tables(
-    root: str, wd: str = ".", ion_density: bool = False, verbose: bool = False
-) -> None:
+def create_wind_save_tables(root: str,
+                            wd: str = ".",
+                            ion_density: bool = False,
+                            verbose: bool = False) -> None:
     """Run windsave2table in a directory to create the standard data tables. The
     function can also create a root.all.complete.txt file which merges all the
     data tables together into one (a little big) file.
@@ -328,9 +326,9 @@ def create_wind_save_tables(
     return
 
 
-def run_py_wind_commands(
-    root: str, commands: List[str], wd: str = "."
-) -> List[str]:
+def run_py_wind_commands(root: str,
+                         commands: List[str],
+                         wd: str = ".") -> List[str]:
     """Run py_wind with the provided commands.
 
     Parameters
@@ -353,7 +351,10 @@ def run_py_wind_commands(
         for i in range(len(commands)):
             f.write("{}\n".format(commands[i]))
 
-    sh = Popen("cd {}; py_wind {} < .tmpcmds.txt".format(wd, root), stdout=PIPE, stderr=PIPE, shell=True)
+    sh = Popen("cd {}; py_wind {} < .tmpcmds.txt".format(wd, root),
+               stdout=PIPE,
+               stderr=PIPE,
+               shell=True)
     stdout, stderr = sh.communicate()
     if stderr:
         print(stderr.decode("utf-8"))
@@ -363,9 +364,14 @@ def run_py_wind_commands(
     return stdout.decode("utf-8").split("\n")
 
 
-def create_slurm_file(
-    name: str, n_cores: int, split_cycle: bool, n_hours: int, n_minutes: int, root: str, flags: str, wd: str = "."
-) -> None:
+def create_slurm_file(name: str,
+                      n_cores: int,
+                      split_cycle: bool,
+                      n_hours: int,
+                      n_minutes: int,
+                      root: str,
+                      flags: str,
+                      wd: str = ".") -> None:
     """Create a slurm file in the directory wd with the name root.slurm. All
     of the script flags are passed using the flags variable.
 
@@ -404,8 +410,7 @@ def create_slurm_file(
         module load conda/py3-latest
         source activate pypython
         python /home/ejp1n17/PythonScripts/py_run.py -n {} {} -f="{}"
-        """.format(n_cores, n_hours, n_minutes, n_cores, split, flags, root)
-    )
+        """.format(n_cores, n_hours, n_minutes, n_cores, split, flags, root))
 
     if wd[-1] != "/":
         wd += "/"
@@ -416,9 +421,7 @@ def create_slurm_file(
     return
 
 
-def create_run_script(
-    commands: List[str]
-) -> None:
+def create_run_script(commands: List[str]) -> None:
     """Create a shell run script given a list of commands to do. This assumes that
     you want to use a bash interpreter.
 

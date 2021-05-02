@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
 The purpose of this script is to be able to parse out where luminosity is
 being lost in a Python model by trawling through the diagnostic files.
@@ -16,26 +15,20 @@ def setup_script():
 
     p = ap.ArgumentParser(description=__doc__)
 
-    p.add_argument(
-        "root", help="The root name of the Python simulation."
-    )
-    p.add_argument(
-        "-wd", "--working_directory", default=".", help="The directory containing the Python simulation."
-    )
+    p.add_argument("root", help="The root name of the Python simulation.")
+    p.add_argument("-wd",
+                   "--working_directory",
+                   default=".",
+                   help="The directory containing the Python simulation.")
 
     args = p.parse_args()
 
-    setup = (
-        args.root,
-        args.working_directory
-    )
+    setup = (args.root, args.working_directory)
 
     return setup
 
 
-def read_diag(
-    sinks: tuple, fname: str
-) -> tuple:
+def read_diag(sinks: tuple, fname: str) -> tuple:
     """Read the provided diag file for the sinks of luminosity.
     todo: finish documentation
 
@@ -54,12 +47,14 @@ def read_diag(
     for n in range(len(lines)):
         line = lines[n]
 
-        if line.find("!!python: luminosity lost by adiabatic kpkt destruction") != -1:
+        if line.find("!!python: luminosity lost by adiabatic kpkt destruction"
+                     ) != -1:
             sinks["adiabatic"] += float(line.split()[-1])
             sinks["low_freq"] += float(lines[n].split()[-1])
             n += 1
 
-        if line.find("!!python: luminosity lost by being completely absorbed") != -1:
+        if line.find("!!python: luminosity lost by being completely absorbed"
+                     ) != -1:
             sinks["ncycles"] += 1
             sinks["absorbed"] += float(line.split()[-1])
             sinks["max_scatter"] += float(lines[n + 1].split()[-1])
@@ -92,7 +87,10 @@ def main():
     diag_files = glob(glob_directory)
     diag_files = sorted(diag_files)
 
-    for diag in tqdm(diag_files, desc="Reading diag files for {}".format(root), unit="files", smoothing=0):
+    for diag in tqdm(diag_files,
+                     desc="Reading diag files for {}".format(root),
+                     unit="files",
+                     smoothing=0):
         sinks = read_diag(sinks, diag)
 
     for key in sinks:

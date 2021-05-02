@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
 Logging utilities.
 """
@@ -10,9 +9,8 @@ from typing import TextIO, Union
 LOGFILE = None
 
 
-def init_logfile(
-    logfile_name: str, use_global_log: bool = True
-) -> Union[None, TextIO]:
+def init_logfile(logfile_name: str,
+                 use_global_log: bool = True) -> Union[None, TextIO]:
     """Initialise a logfile global variable
 
     Parameters
@@ -36,9 +34,7 @@ def init_logfile(
     return
 
 
-def close_logfile(
-    logfile=None
-) -> None:
+def close_logfile(logfile=None) -> None:
     """Close a log file for writing - this will either use the log file provided
     or will attempt to close the global log file.
 
@@ -59,9 +55,7 @@ def close_logfile(
     return
 
 
-def log(
-    message: str, logfile=None
-) -> None:
+def log(message: str, logfile=None) -> None:
     """Log a message to screen and to the log file provided or the global log
     file.
 
@@ -85,9 +79,7 @@ def log(
     return
 
 
-def logsilent(
-    message: str, logfile=None
-) -> None:
+def logsilent(message: str, logfile=None) -> None:
     """Log a message to the logfile, but do not print it to the screen.
 
     Parameters

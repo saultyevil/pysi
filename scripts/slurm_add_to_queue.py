@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
 Search recursively for .slurm files and add them to the slurm queue.
 """
@@ -11,9 +10,7 @@ from subprocess import PIPE, Popen
 from typing import List, Tuple
 
 
-def split_path_and_filename(
-    filepath: str
-) -> Tuple[str, str]:
+def split_path_and_filename(filepath: str) -> Tuple[str, str]:
     """Extract the slurm file name and the directory it is in from the entire
     file path.
 
@@ -22,7 +19,7 @@ def split_path_and_filename(
     filepath: str
         The filepath to split the slurm file name and directory from."""
 
-    assert(type(filepath) == str)
+    assert (type(filepath) == str)
 
     slash_idx = -1
     extension_idx = filepath.find(".slurm")
@@ -40,9 +37,7 @@ def split_path_and_filename(
     return slurm_file, directory
 
 
-def add_files_to_slurm_queue(
-    slurm_files: List[str]
-) -> None:
+def add_files_to_slurm_queue(slurm_files: List[str]) -> None:
     """Add a bunch of slurm files to the slurm queue. Uses subprocess and so
     only works on macOS and Linux.
 
@@ -70,9 +65,7 @@ def add_files_to_slurm_queue(
     return
 
 
-def find_slurm_files(
-    filepath: str = "."
-) -> List[str]:
+def find_slurm_files(filepath: str = ".") -> List[str]:
     """Searches recursively from the calling direction for files which end with
     the extension *.slurm and returns a list of the found files.
 
@@ -112,9 +105,11 @@ def setup() -> bool:
         Indicates whether to add the slurm files to the queue or not."""
 
     p = ap.ArgumentParser(description=__doc__)
-    p.add_argument(
-        "-a", "--add_to_queue", action="store_true", default=False, help="Add slurm files to the slurm queue."
-    )
+    p.add_argument("-a",
+                   "--add_to_queue",
+                   action="store_true",
+                   default=False,
+                   help="Add slurm files to the slurm queue.")
 
     args = p.parse_args()
 
@@ -127,7 +122,8 @@ def main() -> None:
     add_to_queue = setup()
     slurm_files = find_slurm_files()
 
-    print("The following {} .slurm files will be added to the queue:\n".format(len(slurm_files)))
+    print("The following {} .slurm files will be added to the queue:\n".format(
+        len(slurm_files)))
     for n, file in enumerate(slurm_files):
         print("{}\t{}".format(n + 1, file))
     print("")

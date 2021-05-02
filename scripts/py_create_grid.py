@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-
 """
 Create and run a grid of Python simulations. Note that this script has to be
 edited before being called as I didn't want to add one billion command line
@@ -14,7 +12,6 @@ Usage
     --full_run: as well as creating a grid of runs, also run them
 """
 
-
 import os
 import shutil
 from typing import List
@@ -22,9 +19,8 @@ from typing import List
 # from iridis_create_slurm_file import write_slurm_file
 
 
-def create_grid(
-    pf: str, parameter: str, grid: List[str], ncores: int, thours: int, names: List[str], flags: str
-) -> List[str]:
+def create_grid(pf: str, parameter: str, grid: List[str], ncores: int,
+                thours: int, names: List[str], flags: str) -> List[str]:
     """The purpose of this function is to use a base parameter file and to create
     directories containing parameter files with a different value to the given
     parameter. These values are given in grid.
@@ -66,7 +62,8 @@ def create_grid(
         if line == "/":  # todo: switch to using rfind
             sl = i  # This will find the index of the final /
     pl = pf.find(".pf")
-    root = pf[sl:pl]  # Now we can extract just the root name from the file path
+    root = pf[sl:
+              pl]  # Now we can extract just the root name from the file path
     shutil.copyfile(pf, pf + ".bak")
 
     with open(pf, "r") as f:
@@ -121,7 +118,8 @@ def run_grid() -> List[str]:
         grid.append("{:.4e}".format(tmp[i]))
     print(parameter, grid)
 
-    print("ENSURE THAT THE SCRIPT HAS BEEN EDITED APPROPRIATELY BEFORE RUNNING")
+    print(
+        "ENSURE THAT THE SCRIPT HAS BEEN EDITED APPROPRIATELY BEFORE RUNNING")
     input("Press a enter to continue...")
 
     print("Running grid of {} simulations:".format(len(grid)))

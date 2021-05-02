@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
 Description of file.
 """
@@ -12,9 +11,7 @@ import numpy as np
 from .error import EXIT_FAIL
 
 
-def renormalize_vector(
-    a: np.ndarray, scalar: Union[float, int]
-) -> np.ndarray:
+def renormalize_vector(a: np.ndarray, scalar: Union[float, int]) -> np.ndarray:
     """This function is used to renormalise a 3-vector quantity.
 
     Parameters
@@ -46,8 +43,8 @@ def renormalize_vector(
 
 
 def project_cartesian_to_cylindrical_coordinates(
-        a: Union[np.ndarray, List[float]], b: Union[np.ndarray, List[float]]
-) -> np.ndarray:
+        a: Union[np.ndarray, List[float]],
+        b: Union[np.ndarray, List[float]]) -> np.ndarray:
     """Attempt to project a vector from cartesian into cylindrical coordinates.
 
     Parameters

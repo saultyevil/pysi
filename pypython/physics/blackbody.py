@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
 Contains functions for calculating the properties of a blackbody.
 """
@@ -13,9 +12,8 @@ from .constants import (ANGSTROM, BOLTZMANN, VLIGHT, WIEN_FREQUENCY,
                         WIEN_WAVELENGTH, H)
 
 
-def planck_nu(
-    temperature: float, frequency: Union[np.ndarray, float]
-) -> Union[np.ndarray, float]:
+def planck_nu(temperature: float,
+              frequency: Union[np.ndarray, float]) -> Union[np.ndarray, float]:
     """Calculate the monochromatic intensity for a black body given a temperature
     and frequency of interest.
 
@@ -34,14 +32,13 @@ def planck_nu(
 
     with np.errstate(all="ignore"):
         x = H * frequency / (BOLTZMANN * temperature)
-        b_nu = (2 * H * frequency ** 3) / (VLIGHT ** 2 * (np.exp(x) - 1))
+        b_nu = (2 * H * frequency**3) / (VLIGHT**2 * (np.exp(x) - 1))
 
     return b_nu
 
 
-def planck_lambda(
-    temperature: float, lamda: Union[np.ndarray, float]
-) -> Union[np.ndarray, float]:
+def planck_lambda(temperature: float,
+                  lamda: Union[np.ndarray, float]) -> Union[np.ndarray, float]:
     """Calculate the monochromatic intensity for a black body given a temperature
     and frequency of interest.
 
@@ -61,7 +58,7 @@ def planck_lambda(
     with np.errstate(all="ignore"):
         lcm = lamda * ANGSTROM
         x = H * VLIGHT / lcm / BOLTZMANN / temperature
-        y = 2 * H * VLIGHT ** 2 / lcm ** 5
+        y = 2 * H * VLIGHT**2 / lcm**5
         b_lamda = y / (np.exp(x) - 1)
 
     return b_lamda

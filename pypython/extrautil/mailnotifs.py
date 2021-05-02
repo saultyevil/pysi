@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
 Tools to send email notifications to update users on the current progress or
 some long program. Requires access to the mcrtpythonupdates@gmail.com Gmail API.
@@ -18,9 +17,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import Resource, build
 
 
-def create_email_message(
-    sender: str, to: str, subject: str, message: str
-) -> dict:
+def create_email_message(sender: str, to: str, subject: str,
+                         message: str) -> dict:
     """Create an email message and encode it.
 
     Parameters
@@ -43,14 +41,15 @@ def create_email_message(
     message["to"] = to
     message["from"] = sender
     message["subject"] = subject
-    message = {"raw": base64.urlsafe_b64encode(message.as_string().encode()).decode()}
+    message = {
+        "raw": base64.urlsafe_b64encode(message.as_string().encode()).decode()
+    }
 
     return message
 
 
-def send_email_message(
-    service: Resource, msg: dict, user: str
-) -> Union[None, dict]:
+def send_email_message(service: Resource, msg: dict,
+                       user: str) -> Union[None, dict]:
     """Send an email message using the API service.
 
     Parameters
@@ -76,9 +75,10 @@ def send_email_message(
     return {}
 
 
-def send_notification(
-    to: str, subject: str, notification: str, sender: str = "mcrtpythonupdates@gmail.com"
-) -> dict:
+def send_notification(to: str,
+                      subject: str,
+                      notification: str,
+                      sender: str = "mcrtpythonupdates@gmail.com") -> dict:
     """Send a notification email to the user. Requires access to the Gmail API.
 
     Parameters
@@ -118,10 +118,12 @@ def send_notification(
             credentials.refresh(Request())
         else:
             try:
-                flow = InstalledAppFlow.from_client_secrets_file("credentials.json", scope)
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    "credentials.json", scope)
             except FileNotFoundError:
                 try:
-                    flow = InstalledAppFlow.from_client_secrets_file(os.path.expanduser("~/credentials.json"), scope)
+                    flow = InstalledAppFlow.from_client_secrets_file(
+                        os.path.expanduser("~/credentials.json"), scope)
                 except FileNotFoundError:
                     return {}
 

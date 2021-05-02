@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
 The purpose of this script is to collate the errors over all of the MPI processes
 for a bunch of simulations.
 todo: this will only work for a simulation which didn't crash.......... according to past me at least.
 """
-
 
 from pypython.simulation import model_error_summary
 from pypython.util import get_parameter_files, get_root_from_filepath

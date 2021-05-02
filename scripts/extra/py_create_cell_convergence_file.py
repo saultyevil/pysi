@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
 The purpose of this script is to print out detailed convergence information -
 with a specific focus on cells which have failed the specified number of
@@ -10,7 +9,6 @@ contained in a regular master file should be printed out. Note that this will
 not work as well with all master files, but only those which contain the
 converging output as well.
 """
-
 
 import argparse as ap
 import pandas as pd
@@ -32,16 +30,17 @@ def setup_script() -> Union[str, int, int]:
         Either 0 or 1 depending on if you want a converging or non-converging cells.
     """
 
-    pd.set_option('display.expand_frame_repr', False)  # Expand the Pandas table to streeeetch
+    pd.set_option('display.expand_frame_repr',
+                  False)  # Expand the Pandas table to streeeetch
 
     p = ap.ArgumentParser(description=__doc__)
 
-    p.add_argument("root",
-                   help="Root name of the wind_save file")
+    p.add_argument("root", help="Root name of the wind_save file")
 
-    p.add_argument("nfails",
-                   type=int,
-                   help="Extract cells which failed this number of convergence checks")
+    p.add_argument(
+        "nfails",
+        type=int,
+        help="Extract cells which failed this number of convergence checks")
 
     p.add_argument("converging",
                    nargs="?",
@@ -70,10 +69,15 @@ def main():
     master = master[master["inwind"] == 0]
     screen_output = master[master["converge"] == nfails]
     try:
-        screen_output = screen_output[screen_output["converging"] == converging]
+        screen_output = screen_output[screen_output["converging"] ==
+                                      converging]
     except KeyError:
-        print("Can't find converging flag: probably doesn't exist... so skipping.")
-    screen_output.to_csv("{}_nfails{}_converging{}.txt".format(root, nfails, converging), sep=" ")
+        print(
+            "Can't find converging flag: probably doesn't exist... so skipping."
+        )
+    screen_output.to_csv("{}_nfails{}_converging{}.txt".format(
+        root, nfails, converging),
+                         sep=" ")
     print(screen_output)
 
     return screen_output

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
 The purpose of this script is to determine if a simulation has converged or not,
 and to create any plots which are related to the convergence of a simulation.
@@ -15,10 +14,14 @@ from pypython import plotutil, simulation, util
 COL_WIDTH = 80
 
 
-def plot_convergence(
-    root: str, convergence: List[float], converging: List[float] = None, tr: List[float] = None,
-    te: List[float] = None, te_max: List[float] = None, hc: List[float] = None, wd: str = "."
-):
+def plot_convergence(root: str,
+                     convergence: List[float],
+                     converging: List[float] = None,
+                     tr: List[float] = None,
+                     te: List[float] = None,
+                     te_max: List[float] = None,
+                     hc: List[float] = None,
+                     wd: str = "."):
     """Create a detailed plot of the convergence of a Python simulation, including,
     if provided, a breakdown of the different convergence criteria.
 
@@ -60,14 +63,19 @@ def plot_convergence(
     if te:
         ax.plot(cycles, te, "--", label="Electron temperature", alpha=0.65)
     if te_max:
-        ax.plot(cycles, te_max, "--", label="Electron temperature max", alpha=0.65)
+        ax.plot(cycles,
+                te_max,
+                "--",
+                label="Electron temperature max",
+                alpha=0.65)
     if hc:
         ax.plot(cycles, hc, "--", label="Heating/Cooling", alpha=0.65)
 
     ax.legend()
     ax.set_xlabel("Cycle")
     ax.set_ylabel("Fraction of Cells Passed")
-    ax.set_title("Final Convergence = {:4.2f}%".format(float(convergence[-1]) * 100))
+    ax.set_title("Final Convergence = {:4.2f}%".format(
+        float(convergence[-1]) * 100))
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
     plt.savefig("{}/{}_convergence.png".format(wd, root))
     plt.close()
@@ -75,9 +83,7 @@ def plot_convergence(
     return
 
 
-def get_convergence(
-    root: str, wd: str = "./"
-) -> None:
+def get_convergence(root: str, wd: str = "./") -> None:
     """Print out the convergence of a Python simulation and then create a detailed
     plot of the convergence and convergence break down of the simulation.
 
@@ -88,18 +94,26 @@ def get_convergence(
     wd: str [optional]
         The directory containing the Python simulation."""
 
-    convergence = simulation.check_model_convergence(root, wd, return_per_cycle=True)
-    converging = simulation.check_model_convergence(root, wd, return_per_cycle=True, return_converging=True)
+    convergence = simulation.check_model_convergence(root,
+                                                     wd,
+                                                     return_per_cycle=True)
+    converging = simulation.check_model_convergence(root,
+                                                    wd,
+                                                    return_per_cycle=True,
+                                                    return_converging=True)
     tr, te, te_max, hc = simulation.model_convergence_components(root, wd)
 
     n_cycles = len(convergence)
     if n_cycles == 0:
-        print("Unable to find any convergence information for this model :-(\n")
+        print(
+            "Unable to find any convergence information for this model :-(\n")
         return
 
     for i in range(n_cycles):
-        print("Cycle {:2d} / {:2d}: {:5.2f}% of cells converged and {:5.2f}% of cells are still converging"
-              .format(i + 1, n_cycles, convergence[i] * 100, converging[i] * 100))
+        print(
+            "Cycle {:2d} / {:2d}: {:5.2f}% of cells converged and {:5.2f}% of cells are still converging"
+            .format(i + 1, n_cycles, convergence[i] * 100,
+                    converging[i] * 100))
     print("")
 
     try:
@@ -127,7 +141,8 @@ def main():
             if cd.find("continuum") != -1:
                 continue
             print("-" * COL_WIDTH)
-            print("\nGetting the convergence for {} in directory {}\n".format(root, cd[:-1]))
+            print("\nGetting the convergence for {} in directory {}\n".format(
+                root, cd[:-1]))
             get_convergence(root, cd)
 
     print("-" * COL_WIDTH)

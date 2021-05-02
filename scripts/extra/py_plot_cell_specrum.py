@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """
 The purpose of this script is to create a Spectral Energy Distribution (SED) for
 a cell in Python. To do this, the simulation must have been run using the
 matrix_pow ionisation solver.
 """
-
 
 import argparse as ap
 from pypython import util
@@ -17,15 +15,17 @@ from matplotlib import pyplot as plt
 from typing import List
 from astropy import constants as consts
 
-
 plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15
 plt.rcParams['axes.labelsize'] = 15
 
 
-def get_spec_model(
-    root: str, nx: int, nz: int, i: int, j: int, nbands: int = 4
-) -> List[str]:
+def get_spec_model(root: str,
+                   nx: int,
+                   nz: int,
+                   i: int,
+                   j: int,
+                   nbands: int = 4) -> List[str]:
     """Get the spectral model for a specific cell from py_wind
 
     Parameters
@@ -48,7 +48,8 @@ def get_spec_model(
     spectral_model_bands: List[str]
         A list containing the spectral model bands output from py_wind."""
 
-    everything_output = get_py_wind_everything_output(root, nx, nz, i, j).split("\n")
+    everything_output = get_py_wind_everything_output(root, nx, nz, i,
+                                                      j).split("\n")
 
     # Find where the spectra model bands are and extract those lines from the
     # py_wind output
@@ -62,9 +63,8 @@ def get_spec_model(
     return spectral_models_bands
 
 
-def get_py_wind_everything_output(
-    root: str, nx: int, nz: int, i: int, j: int
-) -> str:
+def get_py_wind_everything_output(root: str, nx: int, nz: int, i: int,
+                                  j: int) -> str:
     """Run py_wind to get the "everything" output to be able to parse out the
     spectral model bands.
 
@@ -89,7 +89,10 @@ def get_py_wind_everything_output(
     elem = nz * i + j
     cmds = np.array(["1", "e", str(elem)])
     np.savetxt(".tmpcmd.txt", cmds, fmt="%s")
-    sh = Popen("Setup_Py_Dir; py_wind {} < .tmpcmd.txt".format(root), stdout=PIPE, stderr=PIPE, shell=True)
+    sh = Popen("Setup_Py_Dir; py_wind {} < .tmpcmd.txt".format(root),
+               stdout=PIPE,
+               stderr=PIPE,
+               shell=True)
     stdout, stderr = sh.communicate()
 
     # todo: print stderr, but ignore if it's as expected since it seems to print to stderr for some reason
@@ -101,9 +104,11 @@ def get_py_wind_everything_output(
     return stdout.decode("utf-8")
 
 
-def plot_cell_sed(
-    model_bands: List[str], filename: str, icell: int, jcell: int, smooth_amount: int = 1
-) -> None:
+def plot_cell_sed(model_bands: List[str],
+                  filename: str,
+                  icell: int,
+                  jcell: int,
+                  smooth_amount: int = 1) -> None:
     """Create a plot of a cell SED given the model bands. Provided by Nick :-).
 
     Parameters
@@ -146,14 +151,16 @@ def plot_cell_sed(
 
     for i in range(len(numin)):
         if numax[i] > numin[i]:
-            freq_temp = np.logspace(np.log10(numin[i]), np.log10(numax[i]), 101)
+            freq_temp = np.logspace(np.log10(numin[i]), np.log10(numax[i]),
+                                    101)
             for nu in freq_temp:
                 freq.append(nu)
                 if model[i] == 1:
-                    f_nu.append(10 ** (pl_log_w[i] + np.log10(nu) * pl_alpha[i]))
+                    f_nu.append(10**(pl_log_w[i] + np.log10(nu) * pl_alpha[i]))
                 elif model[i] == 2:
-                    f_nu.append(
-                        exp_w[i] * np.exp((-1.0 * consts.h.cgs.value * nu) / (exp_temp[i] * consts.k_B.cgs.value)))
+                    f_nu.append(exp_w[i] * np.exp(
+                        (-1.0 * consts.h.cgs.value * nu) /
+                        (exp_temp[i] * consts.k_B.cgs.value)))
                 else:
                     f_nu.append(0.0)
         else:
@@ -170,10 +177,14 @@ def plot_cell_sed(
     fig, ax = plt.subplots(1, 1, figsize=(8, 6))
 
     ax.loglog(freq, f_nu, "k-", linewidth=3)
-    ax.loglog(freq, smooth_array(np.array(f_nu, dtype=np.float64), smooth_amount), "r-", label="smoothed")
+    ax.loglog(freq,
+              smooth_array(np.array(f_nu, dtype=np.float64), smooth_amount),
+              "r-",
+              label="smoothed")
     ax.set_xlim(np.min(freq), np.max(freq))
     ax.set_xlabel(r"Frequency, $\nu$")
-    ax.set_ylabel(r"$J_{\nu}$ in cell (ergs s$^{-1}$ cm$^{-3}$ Sr$^{-1}$ Hz$^{-1}$)")
+    ax.set_ylabel(
+        r"$J_{\nu}$ in cell (ergs s$^{-1}$ cm$^{-3}$ Sr$^{-1}$ Hz$^{-1}$)")
     ax.set_title("Cell SED i = {} j = {}".format(icell, jcell))
     ax.legend(loc="lower left")
 
@@ -198,21 +209,15 @@ def main() -> None:
 
     p = ap.ArgumentParser(description=__doc__)
 
-    p.add_argument(
-        "root", help="The root name of the Python simulation"
-    )
-    p.add_argument(
-        "nx", type=int, help="The number of cells in the i-direction"
-    )
-    p.add_argument(
-        "nz", type=int, help="The number of cells in the j-direction"
-    )
-    p.add_argument(
-        "i", type=int, help="The i index of the cell"
-    )
-    p.add_argument(
-        "j", type=int, help="The j index of the cell"
-    )
+    p.add_argument("root", help="The root name of the Python simulation")
+    p.add_argument("nx",
+                   type=int,
+                   help="The number of cells in the i-direction")
+    p.add_argument("nz",
+                   type=int,
+                   help="The number of cells in the j-direction")
+    p.add_argument("i", type=int, help="The i index of the cell")
+    p.add_argument("j", type=int, help="The j index of the cell")
 
     args = p.parse_args()
 
