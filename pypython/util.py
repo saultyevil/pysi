@@ -7,6 +7,7 @@ trying to do computational astrophysics.
 """
 
 
+import time
 import textwrap
 from os import remove, listdir
 from pathlib import Path
@@ -318,7 +319,11 @@ def create_wind_save_tables(
     new_files = [x for x in files_after if x not in s]
     Path(f"{wd}/tables").mkdir(exist_ok=True)
     for new in new_files:
-        Path(f"{wd}/{new}").rename(f"{wd}/tables/{new}")
+        try:
+            Path(f"{wd}/{new}").rename(f"{wd}/tables/{new}")
+        except PermissionError:
+            time.sleep(1.5)
+            Path(f"{wd}/{new}").rename(f"{wd}/tables/{new}")
 
     return
 

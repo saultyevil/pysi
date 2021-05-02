@@ -288,9 +288,8 @@ class Wind:
                 for index, col in enumerate(columns):
                     self.variables[element][ion_type_index_name][col] = wind[:, index].reshape(self.nx, self.nz)
 
-        if n_elements_read == 0:
-            print("Unable to open any ion tables, try running windsave2table...")
-            exit(1)
+        if n_elements_read == 0 and len(self.columns) == 0:
+            raise IOError("Unable to open any parameter or ion tables: Have you run windsave2table?")
 
     def project_cartesian_velocity_to_cylindrical(
         self
