@@ -94,7 +94,6 @@ class Spectrum:
             between delimited with commas instead of spaces."""
 
         files_to_read = ["spec", "spec_tot", "spec_tot_wind", "spec_wind", "spec_tau"]
-
         n_read = 0
 
         for spec_type in files_to_read:
@@ -103,11 +102,11 @@ class Spectrum:
                 fpath += "log_"
             fpath += spec_type
 
-            self.spectrum[spec_type] = {}
-            self.units[spec_type] = "unknown"
-
             if not os.path.exists(fpath):
                 continue
+
+            self.spectrum[spec_type] = {}
+            self.units[spec_type] = "unknown"
             n_read += 1
 
             with open(fpath, "r") as f:

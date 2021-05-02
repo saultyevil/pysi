@@ -118,13 +118,17 @@ def main():
     print("-" * COL_WIDTH, "\n")
 
     parameter_files = util.get_parameter_files()
-    for pf in parameter_files:
-        root, cd = util.get_root_from_filepath(pf)
-        if cd.find("continuum") != -1:
-            continue
-        print("-" * COL_WIDTH)
-        print("\nGetting the convergence for {} in directory {}\n".format(root, cd[:-1]))
-        get_convergence(root, cd)
+
+    if len(parameter_files) == 0:
+        print("\nCan't find any Python simulations\n")
+    else:
+        for pf in parameter_files:
+            root, cd = util.get_root_from_filepath(pf)
+            if cd.find("continuum") != -1:
+                continue
+            print("-" * COL_WIDTH)
+            print("\nGetting the convergence for {} in directory {}\n".format(root, cd[:-1]))
+            get_convergence(root, cd)
 
     print("-" * COL_WIDTH)
 
