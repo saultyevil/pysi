@@ -196,7 +196,7 @@ def get_root_from_filepath(
     root = path[slash + 1:dot]
     cd = path[:slash]
     if cd == "":
-        cd = "."
+        cd = "./"
 
     if return_cd:
         return root, cd
