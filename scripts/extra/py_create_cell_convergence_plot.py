@@ -7,12 +7,13 @@ from using this for any cell in a model. The input files in general are expected
 to be in the form of rootXX.0.master.txt, where XX is a series of numbers.
 """
 
-import glob
 import argparse as ap
+import glob
+from typing import Union
+
+import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-from typing import Union
-import numpy as np
 
 
 def setup_script() -> Union[str, int, int]:

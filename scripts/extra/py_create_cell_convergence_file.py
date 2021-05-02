@@ -11,9 +11,11 @@ converging output as well.
 """
 
 import argparse as ap
-import pandas as pd
-from pypython.util import create_wind_save_tables
 from typing import Union
+
+import pandas as pd
+
+from pypython.util import create_wind_save_tables
 
 
 def setup_script() -> Union[str, int, int]:

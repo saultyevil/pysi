@@ -11,11 +11,13 @@ FOR EXAMPLE ALSO CHECK THE OTHER DIAG FILES AND AVERAGE OVER THEM OR CREATE A
 PLOT FOR EACH PROCESS.
 """
 
-import numpy as np
 import argparse as ap
+
+import numpy as np
 from matplotlib import pyplot as plt
-from pypython.util import get_parameter_files, get_root_from_filepath
+
 from pypython.simulation import check_model_convergence
+from pypython.util import get_parameter_files, get_root_from_filepath
 
 
 def get_input():

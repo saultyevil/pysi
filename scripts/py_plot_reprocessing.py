@@ -11,6 +11,7 @@ from typing import Tuple
 
 import numpy as np
 from matplotlib import pyplot as plt
+
 from pypython import plot
 from pypython.physics.constants import PARSEC, PI
 from pypython.spectrum import Spectrum
@@ -146,9 +147,7 @@ def create_plot(
     ax.set_xlim(np.min(optical_depth_freq), np.max(optical_depth_freq))
     ax.set_zorder(ax2.get_zorder() + 1)
     ax.patch.set_visible(False)
-    ax = plot.ax_add_line_ids(ax,
-                              plot.photoionization_edges(True),
-                              logx=True)
+    ax = plot.ax_add_line_ids(ax, plot.photoionization_edges(True), logx=True)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
     fig.savefig("{}_reprocessing.png".format(root), dpi=300)

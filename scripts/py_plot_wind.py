@@ -13,8 +13,8 @@ from typing import List, Tuple
 
 import numpy as np
 from matplotlib import pyplot as plt
-from pypython import plot
-from pypython import wind
+
+from pypython import plot, wind
 
 default_wind_parameters = ("t_e", "t_r", "ne", "rho", "c4", "ip")
 
@@ -82,9 +82,6 @@ def setup_script() -> tuple:
              args.velocity_units, args.scale, args.cells, args.display)
 
     return setup
-
-
-
 
 
 def plot_wind_parameters(

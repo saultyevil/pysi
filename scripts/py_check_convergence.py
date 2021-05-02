@@ -9,6 +9,7 @@ from typing import List
 
 import numpy as np
 from matplotlib import pyplot as plt
+
 from pypython import plot, simulation, util
 
 COL_WIDTH = 80

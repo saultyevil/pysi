@@ -8,8 +8,9 @@ import argparse as ap
 
 import numpy as np
 from matplotlib import pyplot as plt
-from pypython.physics import convert
+
 from pypython import createspectrum, plot, util
+from pypython.physics import convert
 from pypython.spectrum import Spectrum
 
 plt.rcParams['xtick.labelsize'] = 15
@@ -278,8 +279,9 @@ def plot(root: str,
                 logx = True
             else:
                 logx = False
-            ax = plot.ax_add_line_ids(
-                ax, plot.common_lines(freq=frequency_space), logx=logx)
+            ax = plot.ax_add_line_ids(ax,
+                                      plot.common_lines(freq=frequency_space),
+                                      logx=logx)
 
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 

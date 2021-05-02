@@ -7,13 +7,15 @@ matrix_pow ionisation solver.
 """
 
 import argparse as ap
+from subprocess import PIPE, Popen
+from typing import List
+
+import numpy as np
+from astropy import constants as consts
+from matplotlib import pyplot as plt
+
 from pypython import util
 from pypython.util import smooth_array
-from subprocess import Popen, PIPE
-import numpy as np
-from matplotlib import pyplot as plt
-from typing import List
-from astropy import constants as consts
 
 plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15

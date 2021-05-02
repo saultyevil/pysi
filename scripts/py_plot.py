@@ -11,11 +11,11 @@ use (or edit) the other plotting scripts to fit your needs appropriately.
 import argparse as ap
 import os
 
-import pypython
-
 import py_plot_optical_depth
 import py_plot_spectrum
 import py_plot_wind
+
+import pypython
 
 
 def setup_script() -> tuple:

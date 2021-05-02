@@ -6,6 +6,7 @@ often tedious to remove a single transition from the photoionization data.
 """
 
 import argparse as ap
+
 from pypython.atomicdata import remove_photoionization_edge
 
 

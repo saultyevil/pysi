@@ -7,6 +7,7 @@ ionisation state, and set the oscillator strength of the transition to 0.
 """
 
 import argparse as ap
+
 from pypython.atomicdata import remove_bound_bound_transitions_ion
 
 

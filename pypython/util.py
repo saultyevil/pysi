@@ -5,9 +5,9 @@ Utility functions to ease the pain of using Python or a Unix environment whilst
 trying to do computational astrophysics.
 """
 
-import time
 import textwrap
-from os import remove, listdir
+import time
+from os import listdir, remove
 from pathlib import Path
 from platform import system
 from shutil import which

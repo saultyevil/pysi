@@ -6,11 +6,12 @@ in a Python simulation. To do this, we need to read in the diagnostic save_photo
 file. Python generally is required to be run in the diagnostic
 """
 
+import argparse as ap
+from typing import List, Tuple, Union
+
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-import argparse as ap
-from typing import Tuple, List, Union
 
 
 def get_input() -> Tuple[str, int, str]:

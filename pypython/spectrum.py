@@ -5,8 +5,8 @@ Contains the spectrum object, as well as utility and plotting functions for
 spectra.
 """
 
-import os
 import copy
+import os
 import textwrap
 from pathlib import Path
 from typing import List, Tuple, Union
@@ -271,18 +271,14 @@ class Spectrum:
         ax.set_xscale("log")
 
         if self.units == UNITS_FLAMBDA:
-            ax.plot(self.spectrum["Lambda"],
-                    self.spectrum[name],
-                    label=name)
+            ax.plot(self.spectrum["Lambda"], self.spectrum[name], label=name)
             ax.set_xlabel(r"Wavelength [\AA]")
             ax.set_ylabel(
                 r"Flux Density 100 pc [erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
             if label_lines:
                 ax = ax_add_line_ids(ax, common_lines(False), logx=True)
         else:
-            ax.plot(self.spectrum["Freq."],
-                    self.spectrum[name],
-                    label=name)
+            ax.plot(self.spectrum["Freq."], self.spectrum[name], label=name)
             ax.set_xlabel("Frequency [Hz]")
             if self.units == UNITS_LNU:
                 ax.set_ylabel(r"Luminosity 100 pc [erg s$^{-1}$ Hz$^{-1}$]")
@@ -324,8 +320,7 @@ class Spectrum:
         for inclination in self.inclinations:
             ax[1] = self._plot_specific(inclination, label_lines, ax[1])
 
-        for label, line in zip(self.inclinations,
-                               ax[1].get_lines()):
+        for label, line in zip(self.inclinations, ax[1].get_lines()):
             line.set_alpha(0.7)
             line.set_label(str(label) + r"$^{\circ}$")
         ax[1].set_ylabel("")
@@ -370,7 +365,8 @@ class Spectrum:
             # todo: update with more functions to plot spec_tot w/o name etc
             if "spec" not in self.available and "log_spec" not in self.available:
                 raise IOError(
-                    f"Unable to plot without parameter 'name' as there is no {self.root}.spec file")
+                    f"Unable to plot without parameter 'name' as there is no {self.root}.spec file"
+                )
             fig, ax = self._spec_plot_all(label_lines)
 
         self.current = ot
