@@ -728,7 +728,7 @@ def plot_optical_depth(root: str,
     fig, ax = plt.subplots(1, 1, figsize=(12, 9))
     if type(inclinations) == str:
         inclinations = [inclinations]
-    spectrum = Spectrum(root, wd, spectype="spec_tau")
+    spectrum = Spectrum(root, wd, "spec_tau")
     spec_angles = spectrum.inclinations
     n_angles = len(spec_angles)
     n_plots = len(
@@ -940,7 +940,7 @@ def plot_spectrum_components(
         spectype = None
         logspec = False
 
-    spectrum = Spectrum(root, wd, logspec, spectype)
+    spectrum = Spectrum(root, wd, spectype, logspec)
     if frequency_space:
         x = spectrum["Freq."]
     else:
@@ -1119,7 +1119,7 @@ def plot_single_spectrum_inclination(
 
     normalize_figure_style()
 
-    s = Spectrum(root, wd).smooth(smooth_amount)
+    s = Spectrum(root, wd, smooth=smooth_amount)
 
     if frequency_space:
         x = s["Freq."]
@@ -1213,7 +1213,7 @@ def plot_multiple_model_spectra(
     spectrum_objects = []
     for spectrum in spectra_filepaths:
         root, cd = get_root_from_filepath(spectrum)
-        spectrum_objects.append(Spectrum(root, cd))
+        spectrum_objects.append(Spectrum(root, cd, smooth=smooth_amount))
 
     if inclination_angle == "all":
         inclinations = []
@@ -1224,9 +1224,6 @@ def plot_multiple_model_spectra(
     else:
         inclinations = [inclination_angle]
         figsize = (12, 5)
-
-    for spectrum in spectrum_objects:
-        spectrum.smooth(smooth_amount)
 
     n_inclinations = len(inclinations)
     n_rows, n_cols = subplot_dims(n_inclinations)
