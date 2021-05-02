@@ -13,7 +13,7 @@ from typing import List, Tuple
 
 import numpy as np
 from matplotlib import pyplot as plt
-from pypython import plotutil
+from pypython import plot
 from pypython import wind
 
 default_wind_parameters = ("t_e", "t_r", "ne", "rho", "c4", "ip")
@@ -98,7 +98,7 @@ def plot_wind_parameters(
     ----------
     todo"""
 
-    n_rows, n_cols = plotutil.subplot_dims(len(parameters_to_plot))
+    n_rows, n_cols = plot.subplot_dims(len(parameters_to_plot))
 
     fig, ax = plt.subplots(n_rows,
                            n_cols,
@@ -149,7 +149,7 @@ def plot_wind_velocity(w: wind.Wind,
     ----------
     todo"""
 
-    n_rows, n_cols = plotutil.subplot_dims(len(wind_velocities_to_plot))
+    n_rows, n_cols = plot.subplot_dims(len(wind_velocities_to_plot))
     fig, ax = plt.subplots(n_rows,
                            n_cols,
                            figsize=(13, 14),
@@ -228,7 +228,7 @@ def plot_wind_ions(w: wind.Wind,
                                sharex="col",
                                sharey="row",
                                subplot_kw=subplot_kw)
-        fig, ax = plotutil.remove_extra_axes(fig, ax, n_ions, n_rows * n_cols)
+        fig, ax = plot.remove_extra_axes(fig, ax, n_ions, n_rows * n_cols)
 
         ion_index = 1
         for i in range(n_rows):

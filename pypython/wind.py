@@ -14,7 +14,7 @@ from matplotlib import pyplot as plt
 
 from .extrautil import vector
 from .physics.constants import CMS_TO_KMS, PI, C
-from .plotutil import normalize_figure_style
+from .plot import normalize_figure_style
 from .util import get_array_index, create_wind_save_tables
 
 

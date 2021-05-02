@@ -12,7 +12,7 @@ import argparse as ap
 from typing import Tuple
 
 from matplotlib import pyplot as plt
-from pypython import plotutil
+from pypython import plot
 from pypython import spectrum as pysp
 
 
@@ -157,7 +157,7 @@ def plot_all_spectrum_inclinations_in_one_panel(
     for inclination in spectrum_inclinations:
         y = spectrum[inclination]
 
-        temp_ymin, temp_ymax = plotutil.get_y_lims_for_x_lims(x, y, xmin, xmax)
+        temp_ymin, temp_ymax = plot.get_y_lims_for_x_lims(x, y, xmin, xmax)
         if temp_ymin < ymin:
             ymin = temp_ymin
         if temp_ymax > ymax:
@@ -187,7 +187,7 @@ def plot_all_spectrum_inclinations_in_one_panel(
             logx = True
         else:
             logx = False
-        ax = plotutil.ax_add_line_ids(ax, plotutil.common_lines(), logx=logx)
+        ax = plot.ax_add_line_ids(ax, plot.common_lines(), logx=logx)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
     fig.savefig("{}/{}_spectra_single.{}".format(cd, root, file_ext))
@@ -320,7 +320,7 @@ def plot_spectrum_inclination_in_individual_figures(
             logx = True
         else:
             logx = False
-        ax = plotutil.ax_add_line_ids(ax, plotutil.common_lines(), logx=logx)
+        ax = plot.ax_add_line_ids(ax, plot.common_lines(), logx=logx)
         ax.set_title("Inclination i = {}".format(str(inclination)) +
                      r"$^{\circ}$")
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])

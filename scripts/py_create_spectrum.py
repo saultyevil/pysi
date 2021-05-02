@@ -9,7 +9,7 @@ import argparse as ap
 import numpy as np
 from matplotlib import pyplot as plt
 from pypython.physics import convert
-from pypython import createspectrum, plotutil, util
+from pypython import createspectrum, plot, util
 from pypython.spectrum import Spectrum
 
 plt.rcParams['xtick.labelsize'] = 15
@@ -261,7 +261,7 @@ def plot(root: str,
             ax.set_yscale("log")
         ax.set_xlim(xmin, xmax)
         ax.set_ylim(
-            plotutil.get_y_lims_for_x_lims(
+            plot.get_y_lims_for_x_lims(
                 filtered_spectrum[:-1, index],
                 util.smooth_array(filtered_spectrum[:-1, i + 2], sm), xmin,
                 xmax))
@@ -278,8 +278,8 @@ def plot(root: str,
                 logx = True
             else:
                 logx = False
-            ax = plotutil.ax_add_line_ids(
-                ax, plotutil.common_lines(freq=frequency_space), logx=logx)
+            ax = plot.ax_add_line_ids(
+                ax, plot.common_lines(freq=frequency_space), logx=logx)
 
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 

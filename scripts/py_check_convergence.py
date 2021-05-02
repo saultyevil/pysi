@@ -9,7 +9,7 @@ from typing import List
 
 import numpy as np
 from matplotlib import pyplot as plt
-from pypython import plotutil, simulation, util
+from pypython import plot, simulation, util
 
 COL_WIDTH = 80
 
@@ -44,7 +44,7 @@ def plot_convergence(root: str,
     wd: str [optional]
         The directory containing the Python simulation."""
 
-    plotutil.normalize_figure_style()
+    plot.normalize_figure_style()
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     n_cycles = len(convergence)
     cycles = np.arange(1, n_cycles + 1, 1)
