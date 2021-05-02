@@ -36,7 +36,7 @@ class Spectrum:
 
     def __init__(
         self, root: str, cd: str = ".", log: bool = False, smooth: int = None,
-            delim: str = None
+        delim: str = None
     ):
         """Initialise a Spectrum object. This method will construct the file path
         of the spectrum file given the root, containing directory and whether
@@ -93,8 +93,10 @@ class Spectrum:
             A custom delimiter, useful for reading in files which have sometimes
             between delimited with commas instead of spaces."""
 
-        files_to_read = ["spec", "spec_tot", "spec_tot_wind", "spec_wind", "spec_tau"]
         n_read = 0
+        files_to_read = [
+            "spec", "spec_tot", "spec_tot_wind", "spec_wind", "spec_tau"
+        ]
 
         for spec_type in files_to_read:
             fpath = self.cd + self.root + "."
@@ -105,9 +107,9 @@ class Spectrum:
             if not os.path.exists(fpath):
                 continue
 
+            n_read += 1
             self.spectrum[spec_type] = {}
             self.units[spec_type] = "unknown"
-            n_read += 1
 
             with open(fpath, "r") as f:
                 spectrum_file = f.readlines()
@@ -260,7 +262,7 @@ class Spectrum:
         else:
             return ax
 
-    def _plot_all(self, label_lines: bool = False):
+    def _spec_plot_all(self, label_lines: bool = False):
         """Plot the spectrum components and observer spectra on a 1x2 panel
         plot. The left panel has the components, whilst the right panel has
         the observer spectrum.
@@ -311,14 +313,13 @@ class Spectrum:
             Plot line IDs."""
 
         if "spec" not in self.available and "log_spec" not in self.available:
-            print(f"Unable to plot, as there is no {self.root}.spec file")
-            return
+            raise IOError(f"Unable to plot, as there is no {self.root}.spec file")
 
         # todo:
         # This is some badness inspired by Python. This is done, for now, as
         # I haven't implemented a way to plot other spectra quickly this way
 
-        original_target = self.target
+        ot = self.target
         self.target = "spec"
 
         if name:
@@ -330,9 +331,9 @@ class Spectrum:
                 name += r"$^{\circ}$"
             ax.set_title(name.replace("_", r"\_"))
         else:
-            fig, ax = self._plot_all(label_lines)
+            fig, ax = self._spec_plot_all(label_lines)
 
-        self.target = original_target
+        self.target = ot
 
         return fig, ax
 
