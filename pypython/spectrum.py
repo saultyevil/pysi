@@ -400,17 +400,17 @@ class Spectrum:
         """Return an array in the spectrum dictionary when indexing."""
 
         if key not in self.available:
-            return self.spectrum[self.current][key]
-        else:
             return self.spectrum[key]
+        else:
+            return self.all_spectrum[key]
 
     def __setitem__(self, key, value):
         """Allows to modify the arrays in the spectrum dictionary."""
 
         if key not in self.available:
-            self.spectrum[self.current][key] = value
-        else:
             self.spectrum[key] = value
+        else:
+            self.all_spectrum[key] = value
 
     def __str__(self):
         """Print the basic details about the spectrum."""
