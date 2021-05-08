@@ -9,13 +9,10 @@ import argparse as ap
 import numpy as np
 from matplotlib import pyplot as plt
 
+from pypython import smooth
 from pypython import createspectrum, plot, util
 from pypython.physics import convert
 from pypython.spectrum import Spectrum
-
-plt.rcParams['xtick.labelsize'] = 15
-plt.rcParams['ytick.labelsize'] = 15
-plt.rcParams['axes.labelsize'] = 15
 
 
 def setup_script() -> tuple:
@@ -251,7 +248,7 @@ def plot(root: str,
             index = 1
 
         ax.plot(filtered_spectrum[:-1, index],
-                util.smooth_array(filtered_spectrum[:-1, i + 2], sm),
+                smooth(filtered_spectrum[:-1, i + 2], sm),
                 linewidth=1.4,
                 alpha=0.75,
                 label="Filtered Spectrum")
@@ -264,7 +261,7 @@ def plot(root: str,
         ax.set_ylim(
             plot.get_y_lims_for_x_lims(
                 filtered_spectrum[:-1, index],
-                util.smooth_array(filtered_spectrum[:-1, i + 2], sm), xmin,
+                smooth(filtered_spectrum[:-1, i + 2], sm), xmin,
                 xmax))
 
         ax.legend(loc="lower right", fontsize=15)

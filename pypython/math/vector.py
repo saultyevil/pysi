@@ -8,7 +8,7 @@ from typing import List, Union
 
 import numpy as np
 
-from .error import EXIT_FAIL
+from pypython.error import EXIT_FAIL
 
 
 def renormalize_vector(a: np.ndarray, scalar: Union[float, int]) -> np.ndarray:

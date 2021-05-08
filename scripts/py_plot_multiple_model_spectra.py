@@ -11,8 +11,9 @@ from typing import Tuple
 
 from matplotlib import pyplot as plt
 
+from pypython import get
 from pypython import spectrum
-from pypython.extrautil.error import EXIT_FAIL
+from pypython.error import EXIT_FAIL
 
 
 def setup_script():
@@ -107,7 +108,7 @@ def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
         output_name, wd, inclination, root, x_min, x_max, frequency_space, common_lines, axes_scales, smooth_amount, \
             file_extension, display = setup_script()
 
-    spectra = spectrum.get_spectrum_files(root, wd)
+    spectra = get("*.spec")
     if len(spectra) == 0:
         print("Unable to find any spectrum files")
         exit(EXIT_FAIL)

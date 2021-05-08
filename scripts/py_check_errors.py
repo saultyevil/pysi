@@ -7,7 +7,7 @@ todo: this will only work for a simulation which didn't crash.......... accordin
 """
 
 from pypython.simulation import model_error_summary
-from pypython.util import get_parameter_files, get_root_from_filepath
+from pypython import get, get_root
 
 COL_LEN = 80
 
@@ -15,14 +15,14 @@ COL_LEN = 80
 def main():
     """Main function of the script"""
 
-    pfs = get_parameter_files()
+    pfs = get("*.pf")
 
     for i in range(len(pfs)):
         print("-" * 80)
-        root, wd = get_root_from_filepath(pfs[i])
-        if wd.find("continuum") != -1:
+        root, fp = get_root(pfs[i])
+        if fp.find("continuum") != -1:
             continue
-        model_error_summary(root, wd, print_errors=True)
+        model_error_summary(root, fp, print_errors=True)
 
     print("-" * 80)
 

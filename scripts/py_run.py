@@ -19,11 +19,12 @@ from subprocess import PIPE, Popen
 from sys import exit
 from typing import List, Tuple
 
+import pypython
 from pypython import grid, simulation, util
-from pypython.extrautil.error import EXIT_FAIL
-from pypython.extrautil.logging import (close_logfile, init_logfile, log,
-                                        logsilent)
-from pypython.extrautil.mailnotifs import send_notification
+from pypython.error import EXIT_FAIL
+from pypython.extra.logging import (close_logfile, init_logfile, log,
+                                    logsilent)
+from pypython.extra.mailnotifs import send_notification
 
 CONVERGED = \
     r"""
@@ -88,8 +89,8 @@ VERBOSITY = VERBOSE_EXTRA_INFORMATION_TRANSPORT
 
 
 def setup_script() -> None:
-    """Setup the global variables via command line arguments."""
-
+    """Setup the global variables via command line arguments.
+    """
     global VERBOSITY
     global SPLIT_CYCLES
     global PYTHON_BINARY
@@ -209,8 +210,8 @@ def print_python_output(input_line: str,
         The number of cores the simulation is being run with. This is required
         to calculate the total photon number
     verbosity: bool, optional
-        If this is True, then every line will be printed to screen"""
-
+        If this is True, then every line will be printed to screen
+    """
     line = copy(input_line)
     split_line = line.split()
 
@@ -304,10 +305,8 @@ def print_python_output(input_line: str,
     ) != -1 and verbosity >= VERBOSE_EXTRA_INFORMATION_TRANSPORT:
         log("         {}".format(line))
 
-    return
 
-
-def restore_backup_pf(root: str, cd: str) -> None:
+def restore_backup_pf(root: str, fp: str) -> None:
     """Copy a backup parameter file back to the original parameter file
     destination.
 
@@ -315,10 +314,10 @@ def restore_backup_pf(root: str, cd: str) -> None:
     ----------
     root: str
         The root name of the Python simulation.
-    cd: str
-        The working directory to run the Python simulation in."""
-
-    opf = "{}/{}.pf".format(cd, root)
+    fp: str
+        The working directory to run the Python simulation in.
+    """
+    opf = "{}/{}.pf".format(fp, root)
     bak = opf + ".bak"
     copyfile(bak, opf)
 
@@ -340,8 +339,8 @@ def convergence_check(root: str, cd: str) -> Tuple[bool, float]:
     Returns
     -------
     converged: bool
-        If the simulation has converged, True is returned."""
-
+        If the simulation has converged, True is returned.
+    """
     converged = False
     model_convergence = simulation.check_model_convergence(root, cd)
     if type(model_convergence) == list:
@@ -377,8 +376,8 @@ def print_errors(error: dict, root: str) -> None:
         A dictionary where the keys are the error messages and the values are
         the number of times the error happened.
     root: str
-        The root name of the Python simulation"""
-
+        The root name of the Python simulation
+    """
     log("Total errors reported for {}:\n".format(root))
     for key in error.keys():
         log("  {:6d} -- {}".format(error[key], key))
@@ -387,7 +386,7 @@ def print_errors(error: dict, root: str) -> None:
 
 
 def run_single_model(root: str,
-                     wd: str,
+                     fp: str,
                      use_mpi: bool,
                      n_cores: int,
                      resume_model: bool = False,
@@ -402,7 +401,7 @@ def run_single_model(root: str,
     ----------
     root: str
         The root name of the Python simulation.
-    wd: str
+    fp: str
         The working directory to run the Python simulation in.
     use_mpi: bool
         If True, Python will be run using mpirun.
@@ -422,8 +421,8 @@ def run_single_model(root: str,
     Returns
     -------
     rc: int
-        The return code from the Python simulation"""
-
+        The return code from the Python simulation
+    """
     if VERBOSITY >= VERBOSE_ALL:
         verbose = True
     else:
@@ -441,21 +440,21 @@ def run_single_model(root: str,
     # todo: put into separate function
 
     try:
-        if wd == ".":
-            wd += "/"
+        if fp == ".":
+            fp += "/"
         if split_cycles and not restart_from_spec_cycles:
-            grid.update_single_parameter(wd + pf,
+            grid.update_single_parameter(fp + pf,
                                          "Spectrum_cycles",
                                          "0",
                                          backup=True,
                                          verbose=verbose)
         elif split_cycles and restart_from_spec_cycles:
-            grid.update_single_parameter(wd + pf,
+            grid.update_single_parameter(fp + pf,
                                          "Spectrum_cycles",
                                          "5",
                                          backup=False,
                                          verbose=verbose)
-            grid.update_single_parameter(wd + pf,
+            grid.update_single_parameter(fp + pf,
                                          "Photons_per_cycle",
                                          "1e6",
                                          backup=False,
@@ -463,13 +462,13 @@ def run_single_model(root: str,
     except IOError:
         print(
             "Unable to open parameter file {} in split cycle mode to change parameters"
-            .format(wd + pf))
+            .format(fp + pf))
         exit(EXIT_FAIL)
 
     # Construct shell command to run Python and use subprocess to run
 
-    command = "cd {}; ".format(wd)
-    if not path.exists("{}/data".format(wd)):
+    command = "cd {}; ".format(fp)
+    if not path.exists("{}/data".format(fp)):
         command += "Setup_Py_Dir; "
     if use_mpi:
         command += "mpirun -n {} ".format(n_cores)
@@ -480,7 +479,7 @@ def run_single_model(root: str,
     # run
 
     if path.exists("{}/{}.wind_save".format(
-            wd, root)) and not AUTOMATIC_RESTART_OVERRIDE:
+            fp, root)) and not AUTOMATIC_RESTART_OVERRIDE:
         resume_model = True
 
     if resume_model:
@@ -503,7 +502,7 @@ def run_single_model(root: str,
 
     # This next bit provides real time output of Python's output...
 
-    model_log = "{}/{}.log.txt".format(wd, root)
+    model_log = "{}/{}.log.txt".format(fp, root)
     model_logfile = open(model_log, "a")
     model_logfile.write("{}\n".format(datetime.datetime.now()))
 
@@ -537,7 +536,7 @@ def run_single_model(root: str,
     # model into two runs, then restore the original backup
 
     if split_cycles and restart_from_spec_cycles:
-        restore_backup_pf(root, wd)
+        restore_backup_pf(root, fp)
 
     return rc
 
@@ -571,9 +570,9 @@ def run_all_models(parameter_files: List[str], use_mpi: bool,
         SEND_NOTIFS = send_notification("ejp1n17@soton.ac.uk",
                                         "{}: Starting models".format(host), "")
 
-    for i, filepath in enumerate(parameter_files):
+    for i, path in enumerate(parameter_files):
 
-        root, wd = util.get_root_from_filepath(filepath)
+        root, fp = pypython.get_root(path)
         msg = textwrap.dedent("""\
             ------------------------
 
@@ -583,7 +582,7 @@ def run_all_models(parameter_files: List[str], use_mpi: bool,
 
             Root ...................... {}
             Directory ................. {}
-            """.format(i + 1, n_models, root, wd))
+            """.format(i + 1, n_models, root, fp))
 
         log(msg)
 
@@ -593,10 +592,10 @@ def run_all_models(parameter_files: List[str], use_mpi: bool,
                 "{}: Model {}/{} has started running".format(
                     host, i + 1,
                     n_models), "The model {} has started running on {}".format(
-                        filepath, host))
+                        path, host))
 
         rc = run_single_model(root,
-                              wd,
+                              fp,
                               use_mpi,
                               n_cores,
                               resume_model=RESTART_MODEL,
@@ -611,13 +610,13 @@ def run_all_models(parameter_files: List[str], use_mpi: bool,
                     "ejp1n17@soton.ac.uk",
                     "{}: Model {}/{} failed".format(host, i + 1, n_models),
                     "The model {} has failed\nReturn code {}".format(
-                        filepath, host, rc))
+                        path, host, rc))
             continue
 
         # Print the error report and the convergence
 
-        errors = simulation.model_error_summary(root, wd, N_CORES)
-        b_converged, convergence = convergence_check(root, wd)
+        errors = simulation.model_error_summary(root, fp, N_CORES)
+        b_converged, convergence = convergence_check(root, fp)
         print_errors(errors, root)
         log("\nModel convergence ........... {}".format(convergence))
 
@@ -631,7 +630,7 @@ def run_all_models(parameter_files: List[str], use_mpi: bool,
                     "ejp1n17@soton.ac.uk",
                     "{}: Model {}/{} failed".format(host, i + 1, n_models),
                     "The model {} has failed on {}\nReturn code {}".format(
-                        filepath, host, rc))
+                        path, host, rc))
             continue
 
         # If the cycles are being split into two separate runs to lower the
@@ -639,14 +638,14 @@ def run_all_models(parameter_files: List[str], use_mpi: bool,
 
         if SPLIT_CYCLES and b_converged:
             rc = run_single_model(root,
-                                  wd,
+                                  fp,
                                   use_mpi,
                                   n_cores,
                                   resume_model=True,
                                   restart_from_spec_cycles=True,
                                   split_cycles=True)
             return_codes[i] = rc
-            errors = simulation.model_error_summary(root, wd, N_CORES)
+            errors = simulation.model_error_summary(root, fp, N_CORES)
             print_errors(errors, root)
         elif SPLIT_CYCLES and not b_converged:
             log("The model has not converged to the set convergence limit of {}."
@@ -656,7 +655,7 @@ def run_all_models(parameter_files: List[str], use_mpi: bool,
                     "ejp1n17@soton.ac.uk",
                     "{}: Model {}/{} failed".format(host, i + 1, n_models),
                     "The model {} has failed on {}\nReturn code {}".format(
-                        filepath, host, rc))
+                        path, host, rc))
 
         # rc will determine if the model failed or not
 
@@ -669,7 +668,7 @@ def run_all_models(parameter_files: List[str], use_mpi: bool,
                     "{}: Model {}/{} spectral cycles failed".format(
                         host, i + 1, n_models),
                     "The model {} has failed during spectral cycles on {}\nReturn code {}"
-                    .format(filepath, host, rc))
+                    .format(path, host, rc))
             continue
         else:
             if SEND_NOTIFS:
@@ -677,7 +676,7 @@ def run_all_models(parameter_files: List[str], use_mpi: bool,
                     "ejp1n17@soton.ac.uk",
                     "{}: Model {}/{} finished".format(host, i + 1, n_models),
                     "The model {} has finished running on {}\nReturn code {}\nConvergence {}"
-                    .format(filepath, host, rc, convergence))
+                    .format(path, host, rc, convergence))
 
         log("")
 
@@ -689,8 +688,8 @@ def run_all_models(parameter_files: List[str], use_mpi: bool,
 
 
 def main() -> None:
-    """Main function of the script."""
-
+    """Main function of the script.
+    """
     if SEND_NOTIFS:
         atexit.register(
             send_notification, "ejp1n17@soton.ac.uk",
@@ -704,7 +703,7 @@ def main() -> None:
     # Find models to run by searching recursively from the calling directory
     # for .pf files
 
-    parameter_files = util.get_parameter_files()
+    parameter_files = pypython.get("*.pf")
     n_models = len(parameter_files)
 
     if not n_models:
@@ -743,19 +742,19 @@ def main() -> None:
 
     return_codes = run_all_models(parameter_files, use_mpi, n_cores_to_use)
 
-    ncrash = 0
+    n_crashed = 0
     for pf, rc in zip(parameter_files, return_codes):
         if rc > 0:
             log("Model {} failed with rc {}".format(pf, rc))
-            ncrash += 1
+            n_crashed += 1
 
     log("------------------------")
     close_logfile()
 
     atexit.unregister(send_notification)
 
-    if ncrash:
-        exit(ncrash)
+    if n_crashed:
+        exit(n_crashed)
 
     return
 

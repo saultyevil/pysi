@@ -14,7 +14,7 @@ from typing import Tuple
 from matplotlib import pyplot as plt
 
 from pypython import plot
-from pypython import spectrum as pysp
+from pypython import spectrum as spec
 
 
 def setup_script() -> tuple:
@@ -124,7 +124,7 @@ def plot_all_spectrum_inclinations_in_one_panel(
         The matplotlib Axes objects for the plot panels."""
 
     alpha = 0.75
-    spectrum = pysp.Spectrum(root, cd)
+    spectrum = spec.Spectrum(root, cd)
     spectrum.smooth(smooth_amount)
     spectrum_inclinations = spectrum.inclinations
 
@@ -168,7 +168,7 @@ def plot_all_spectrum_inclinations_in_one_panel(
         if frequency_space:
             y *= spectrum["Lambda"]
 
-        fig, ax = pysp.plot(x,
+        fig, ax = spec.plot(x,
                             y,
                             xmin,
                             xmax,
@@ -237,7 +237,7 @@ def plot_spectrum_inclinations_on_one_figure_in_subpanels(
     ax: plt.Axes
         The matplotlib Axes objects for the plot panels."""
 
-    fig, ax = pysp.plot_spectrum_inclinations_in_subpanels(
+    fig, ax = spec.plot_spectrum_inclinations_in_subpanels(
         root, cd, xmin, xmax, smooth_amount, common_lines, frequency_space,
         axes_scales)
     fig.savefig("{}/{}_spectra.{}".format(cd, root, file_ext))
@@ -284,7 +284,7 @@ def plot_spectrum_inclination_in_individual_figures(
         The matplotlib Axes objects for the plot panels."""
 
     alpha = 0.75
-    spectrum = pysp.Spectrum(root, cd)
+    spectrum = spec.Spectrum(root, cd)
     spectrum.smooth(smooth_amount)
     spectrum_inclinations = spectrum.inclinations
 
@@ -309,7 +309,7 @@ def plot_spectrum_inclination_in_individual_figures(
         # Convert into lambda F_lambda which is (I hope) the same as nu F_nu
         if frequency_space:
             y *= spectrum["Lambda"]
-        fig, ax = pysp.plot(x,
+        fig, ax = spec.plot(x,
                             y,
                             xmin,
                             xmax,
@@ -402,7 +402,7 @@ def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
 
     alpha = 0.75
     try:
-        fig, ax = pysp.plot_spectrum_components(root, cd, False, False, xmin,
+        fig, ax = spec.plot_spectrum_components(root, cd, False, False, xmin,
                                                 xmax, smooth_amount,
                                                 axes_scales, alpha,
                                                 frequency_space, display)
@@ -414,7 +414,7 @@ def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
 
     # log_spec_tot - all photons
     try:
-        fig, ax = pysp.plot_spectrum_components(root, cd, True, False, xmin,
+        fig, ax = spec.plot_spectrum_components(root, cd, True, False, xmin,
                                                 xmax, smooth_amount,
                                                 axes_scales, alpha,
                                                 frequency_space, display)
@@ -426,7 +426,7 @@ def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
 
     # log_spec_tot_wind - anything which is "inwind"
     try:
-        fig, ax = pysp.plot_spectrum_components(root, cd, False, True, xmin,
+        fig, ax = spec.plot_spectrum_components(root, cd, False, True, xmin,
                                                 xmax, smooth_amount,
                                                 axes_scales, alpha,
                                                 frequency_space, display)

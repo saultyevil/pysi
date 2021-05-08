@@ -10,6 +10,7 @@ on pf files which have the same root name.
 import argparse as ap
 from typing import List
 
+from pypython import get
 from pypython import grid, util
 
 
@@ -49,7 +50,12 @@ def main():
 
     args = p.parse_args()
 
-    add_parameter(util.get_parameter_files(args.root), args.parameter,
+    if args.root is None:
+        root = ""
+    else:
+        root = args.root
+
+    add_parameter(get(f"*/{root}.pf"), args.parameter,
                   args.value)
 
     return

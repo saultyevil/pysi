@@ -10,6 +10,7 @@ files. If a root name is provided, however, then the script will only operate
 import argparse as ap
 from typing import List
 
+from pypython import get
 from pypython import grid, util
 
 
@@ -48,7 +49,12 @@ def main():
 
     args = p.parse_args()
 
-    change_pfs(util.get_parameter_files(args.root), args.parameter, args.value)
+    if args.root is None:
+        root = ""
+    else:
+        root = args.root
+
+    change_pfs(get(f"*/{root}.pf"), args.parameter, args.value)
 
     return
 

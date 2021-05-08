@@ -12,7 +12,7 @@ setup(
       author="Edward J. Parkinson",
       author_email="e.j.parkinson@soton.ac.uk",
       license="MIT",
-      packages=["pypython", "pypython/physics", "pypython/extrautil"],
+      packages=["pypython", "pypython/physics", "pypython/extra"],
       zip_safe=False,
       install_requires=[
             "matplotlib", "scipy", "numpy", "pandas", "astropy", "numba",

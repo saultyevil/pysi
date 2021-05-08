@@ -8,7 +8,7 @@ Python, to i.e. remove various transitions from the data..
 from os import getenv
 from sys import exit
 
-from .extrautil.error import EXIT_FAIL
+from pypython.error import EXIT_FAIL
 
 
 def remove_photoionization_edge(data: str,

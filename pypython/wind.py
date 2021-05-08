@@ -12,7 +12,7 @@ from typing import List, Tuple, Union
 import numpy as np
 from matplotlib import pyplot as plt
 
-from .extrautil import vector
+from .math import vector
 from .physics.constants import CMS_TO_KMS, PI, C
 from .plot import normalize_figure_style
 from .util import create_wind_save_tables, get_array_index

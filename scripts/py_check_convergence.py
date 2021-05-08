@@ -10,6 +10,7 @@ from typing import List
 import numpy as np
 from matplotlib import pyplot as plt
 
+from pypython import get, get_root
 from pypython import plot, simulation, util
 
 COL_WIDTH = 80
@@ -132,13 +133,13 @@ def main():
 
     print("-" * COL_WIDTH, "\n")
 
-    parameter_files = util.get_parameter_files()
+    parameter_files = get("*.pf")
 
     if len(parameter_files) == 0:
         print("\nCan't find any Python simulations\n")
     else:
         for pf in parameter_files:
-            root, cd = util.get_root_from_filepath(pf)
+            root, cd = util.get_root(pf)
             if cd.find("continuum") != -1:
                 continue
             print("-" * COL_WIDTH)

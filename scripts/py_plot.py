@@ -9,7 +9,6 @@ use (or edit) the other plotting scripts to fit your needs appropriately.
 """
 
 import argparse as ap
-import os
 
 import py_plot_optical_depth
 import py_plot_spectrum

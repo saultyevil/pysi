@@ -9,7 +9,7 @@ from typing import Tuple, Union
 import numpy as np
 from matplotlib import pyplot as plt
 
-from .extrautil.error import EXIT_FAIL
+from pypython.error import EXIT_FAIL
 from .plot import ax_add_line_ids, common_lines, get_y_lims_for_x_lims
 from .util import get_array_index
 

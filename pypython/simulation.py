@@ -201,7 +201,10 @@ def model_error_summary(root: str,
     """
     total_errors = {}
     diag_files = glob(f"{wd}/diag_{root}/{root}_*.diag")
-    diag_files.sort(key=lambda var: [int(x) if x.isdigit() else x for x in re.findall(r'[^0-9]|[0-9]+', var)])
+    diag_files.sort(key=lambda var: [
+        int(x) if x.isdigit() else x
+        for x in re.findall(r'[^0-9]|[0-9]+', var)
+    ])
 
     if n_cores > 0:
         n_diag_files = n_cores
@@ -266,8 +269,8 @@ def model_error_summary(root: str,
                     error_count = error_words[0]
                 except IndexError:
                     print(
-                        "index error when trying to process line '{}' for {}"
-                        .format(" ".join(error_words), diag))
+                        "index error when trying to process line '{}' for {}".
+                        format(" ".join(error_words), diag))
                     broken_diag_files.append(diag)
                     break
 
@@ -291,7 +294,9 @@ def model_error_summary(root: str,
 
     if print_errors:
         n_reported = len(diag_files) - len(broken_diag_files)
-        print(f"Total errors reported from {n_reported} of {len(diag_files)} processes for {wd + root}, which {exit_msg}:")
+        print(
+            f"Total errors reported from {n_reported} of {len(diag_files)} processes for {wd + root}, which {exit_msg}:"
+        )
         for key in total_errors.keys():
             n_error = int(total_errors[key])
             if n_error < 1:

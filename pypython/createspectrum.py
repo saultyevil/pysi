@@ -18,7 +18,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from .extrautil.error import EXIT_FAIL
+from pypython.error import EXIT_FAIL
 from .physics.constants import PARSEC, C
 from .physics.convert import angstrom_to_hz, hz_to_angstrom
 from .spectrum import Spectrum
