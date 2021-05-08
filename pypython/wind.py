@@ -21,14 +21,16 @@ from .util import create_wind_save_tables, get_array_index
 class Wind:
     """A class to store 1D and 2D Python wind tables. Contains methods to
     extract variables, as well as convert various indices into other indices.
-    todo: add dot notation for accessing dictionaries"""
+    todo: add dot notation for accessing dictionaries.
+    """
     def __init__(self,
                  root: str,
                  cd: str = ".",
                  velocity_units: str = "kms",
-                 mask_cells: bool = True,
+                 mask: bool = True,
                  delim: str = None):
-        """Initialize the object.
+        """Initialize the Wind object.
+
         Parameters
         ----------
         root: str
@@ -38,8 +40,8 @@ class Wind:
         mask_cells: bool [optional]
             Store the wind parameters as masked arrays.
         delim: str [optional]
-            The delimiter used in the wind table files."""
-
+            The delimiter used in the wind table files.
+        """
         self.root = root
         self.cd = cd
         if self.cd[-1] != "/":
@@ -63,7 +65,7 @@ class Wind:
             print(
                 f"unknown velocity units {velocity_units}. Allowed units [kms, cms, c]"
             )
-            exit(1)  # todo: error code
+            exit(1)
 
         self.velocity_units = velocity_units
         if velocity_units == "kms":
@@ -102,16 +104,17 @@ class Wind:
         # Create masked cells, if that's the users deepest desire for their
         # data
 
-        if mask_cells:
+        if mask:
             self.mask_non_inwind_cells()
 
     def read_in_wind_parameters(self, delim: str = None):
         """Read in the wind parameters.
+
         Parameters
         ----------
         delim: str [optional]
-            The deliminator in the wind table files."""
-
+            The deliminator in the wind table files.
+        """
         wind_all = []
         wind_columns = []
 
@@ -162,7 +165,7 @@ class Wind:
 
         if n_read == 0:
             raise IOError(
-                "Unable to open any wind tables. Try re-compiling windsave2table and regenerating tables"
+                f"Unable to open any wind tables for root {self.root} directory {self.cd}"
             )
 
         # Determine the number of nx and nz elements. There is a basic check to
@@ -170,7 +173,8 @@ class Wind:
 
         i_col = wind_columns.index("i")
         self.nx = int(np.max(wind_all[0][:, i_col]) + 1)
-        if "j" in wind_columns:
+
+        if "z" in wind_columns or "theta" in wind_columns:
             j_col = wind_columns.index("j")
             self.nz = int(np.max(wind_all[0][:, j_col]) + 1)
         self.n_elem = int(self.nx * self.nz)  # the int() is for safety
@@ -222,7 +226,14 @@ class Wind:
                           elements_to_get: Union[List[str], Tuple[str],
                                                  str] = None):
         """Read in the ion parameters.
-        todo: add way to load in either densities or fractions"""
+
+        Parameters
+        ----------
+        delim: str [optional]
+            The file delimiter.
+        elements_to_get: List[str] or Tuple[str]
+            The elements to read ions in for.
+        """
 
         if elements_to_get is None:
             elements_to_get = ("H", "He", "C", "N", "O", "Si", "Fe")
@@ -305,8 +316,7 @@ class Wind:
     def project_cartesian_velocity_to_cylindrical(self):
         """Project the cartesian velocities of the wind into cylindrical
          coordinates.
-         todo: this doesn't work for polar coordinates, renorm errors"""
-
+         """
         v_l = np.zeros_like(self.variables["v_x"])
         v_rot = np.zeros_like(v_l)
         v_r = np.zeros_like(v_l)
@@ -344,8 +354,8 @@ class Wind:
 
     def mask_non_inwind_cells(self):
         """Convert each array into a masked array, where the mask is defined by
-        the inwind variable."""
-
+        the inwind variable.
+        """
         to_mask_wind = list(self.parameters)
 
         # Remove some of the columns, as these shouldn't be masked because
@@ -386,6 +396,7 @@ class Wind:
             ) -> Union[np.ndarray, np.ma.core.MaskedArray]:
         """Get a parameter array. This is just another way to access the
         dictionary self.variables.
+
         Parameters
         ----------
         parameter: str
@@ -396,6 +407,7 @@ class Wind:
 
         element_check = parameter[:2].replace("_", "")
         ion_check = parameter[2:].replace("_", "")
+
         if element_check in self.elements:
             if fraction:
                 variable = self.variables[element_check]["fraction"][ion_check]
@@ -413,8 +425,8 @@ class Wind:
         Parameters
         ----------
         theta: float
-            The angle of the sight line to extract from. Given in degrees."""
-
+            The angle of the sight line to extract from. Given in degrees.
+        """
         return np.array(self.m_coords,
                         dtype=np.float64) * np.tan(PI / 2 - np.deg2rad(theta))
 
@@ -423,8 +435,8 @@ class Wind:
                                      parameter: str,
                                      fraction: bool = False):
         """Extract a variable along a given sight line.
-        todo: i think this only works with rectilinear grids, not polar"""
-
+        todo: i think this only works with rectilinear grids, not polar.
+        """
         if self.coord_system == "polar":
             raise NotImplementedError()
 
@@ -457,11 +469,8 @@ class Wind:
         fraction: bool [optional]
             Plot ion fractions instead of density
         log_variable: bool [optional
-            Plot the log10 of the variable."""
-
-        # First, we need to get the variable. If we want to include ions, then
-        # we need to do a bit of messing around
-
+            Plot the log10 of the variable.
+        """
         variable = self.get(variable_name, fraction)
         if log_variable:
             variable = np.log10(variable)
@@ -497,34 +506,33 @@ class Wind:
         return fig, ax
 
     def get_elem_number_from_ij(self, i: int, j: int):
-        """Get the wind element number for a given i and j index."""
-
-        raise self.nz * i + j
+        """Get the wind element number for a given i and j index.
+        """
+        return self.nz * i + j
 
     def get_ij_from_elem_number(self, elem: int):
         """Get the i and j index for a given wind element number.
-        todo: check that this is row or column major in Python"""
-
+        """
         return np.unravel_index(elem, (self.nx, self.nz))
 
     def show(self, block=True):
-        """Show a plot which has been created."""
-
+        """Show a plot which has been created.
+        """
         plt.show(block=block)
 
     def __getitem__(self, key):
-        """Return an array in the variables dictionary when indexing."""
-
+        """Return an array in the variables dictionary when indexing.
+        """
         return self.variables[key]
 
     def __setitem__(self, key, value):
-        """Set an array in the variables dictionary."""
-
+        """Set an array in the variables dictionary.
+        """
         self.variables[key] = value
 
     def __str__(self):
-        """Print basic details about the wind."""
-
+        """Print basic details about the wind.
+        """
         txt = "root: {}\nfilepath: {}\ncoordinate system:{}\nparameters: {}\nelements: {}\n".format(
             self.root, self.cd, self.coord_system, self.parameters,
             self.elements)
@@ -585,9 +593,6 @@ def plot_wind(wind: Wind,
     ax: plt.Axes
         The (updated) axes array for the plot.
     """
-
-    # If the parameter is not an array, then get the variable from the wind
-
     if type(parameter) is str:
         parameter_points = wind.get(parameter, ion_fraction)
         if log_parameter:
@@ -648,8 +653,8 @@ def plot_1d_wind(m_points: np.ndarray,
     fig: plt.Figure
         The (updated) Figure object for the plot.
     ax: plt.Axes
-        The (updated) axes array for the plot."""
-
+        The (updated) axes array for the plot.
+    """
     normalize_figure_style()
 
     if fig is None or ax is None:
@@ -723,8 +728,8 @@ def plot_2d_wind(m_points: np.ndarray,
     fig: plt.Figure
         The (updated) Figure object for the plot.
     ax: plt.Axes
-        The (updated) axes array for the plot."""
-
+        The (updated) axes array for the plot.
+    """
     normalize_figure_style()
 
     if fig is None or ax is None:

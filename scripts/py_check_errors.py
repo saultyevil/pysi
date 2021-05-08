@@ -15,16 +15,16 @@ COL_LEN = 80
 def main():
     """Main function of the script"""
 
-    print("-" * COL_LEN)
     pfs = get_parameter_files()
 
     for i in range(len(pfs)):
+        print("-" * 80)
         root, wd = get_root_from_filepath(pfs[i])
         if wd.find("continuum") != -1:
             continue
-        errors = model_error_summary(root, wd, print_errors=True)
+        model_error_summary(root, wd, print_errors=True)
 
-        print("-" * COL_LEN)
+    print("-" * 80)
 
     return
 

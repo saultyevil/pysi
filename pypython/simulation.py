@@ -5,6 +5,7 @@ Functions for evaluating the convergence or the number of errors in a Python
 simulation, as well as (in the future) other helpful little things.
 """
 
+import re
 from copy import copy
 from glob import glob
 from typing import List, Tuple, Union
@@ -34,8 +35,8 @@ def check_model_convergence(
     -------
     convergence: float or int
         The convergence fraction in the final cycle of the simulation. If this
-        is -1, then a convergence fraction was not found."""
-
+        is -1, then a convergence fraction was not found.
+    """
     brief_summary_len = 9
     convergence = [-1]
     converging = [-1]
@@ -123,8 +124,8 @@ def model_convergence_components(
         temperature.
     n_hc: List[float]
         The fraction of cells which have passed the heating/cooling
-        convergence test."""
-
+        convergence test.
+    """
     brief_summary_len = 7
     n_tr = []
     n_te = []
@@ -196,12 +197,11 @@ def model_error_summary(root: str,
     total_errors: dict
         A dictionary containing the total errors over all processors. The keys
         are the error messages and the values are the number of times that
-        error occurred."""
-
+        error occurred.
+    """
     total_errors = {}
-
-    glob_directory = "{}/diag_{}/{}_*.diag".format(wd, root, root)
-    diag_files = glob(glob_directory)
+    diag_files = glob(f"{wd}/diag_{root}/{root}_*.diag")
+    diag_files.sort(key=lambda var: [int(x) if x.isdigit() else x for x in re.findall(r'[^0-9]|[0-9]+', var)])
 
     if n_cores > 0:
         n_diag_files = n_cores
@@ -209,7 +209,7 @@ def model_error_summary(root: str,
         n_diag_files = len(diag_files)
 
     if n_diag_files == 0:
-        print("no diag files found in path {}".format(glob_directory))
+        print("no diag files found in path")
         return total_errors
 
     broken_diag_files = []
@@ -224,63 +224,76 @@ def model_error_summary(root: str,
 
         # Find the final error summary: look over the lines list in reverse
 
-        error_end = -1
+        error_start = -1
+
         for k, start_line in enumerate(lines):
 
-            # Find error summary
-            if start_line.find("Error summary: End of program") != -1:
+            # Find start of error summary
+
+            if start_line.find("Error summary:") != -1:
                 error_start = k
+                if start_line.find("End of program") != -1:
+                    exit_msg = "exited successfully"
+                else:
+                    exit_msg = "was aborted"
+            else:
+                continue
 
-                # Find end of error summary
-                for kk, end_line in enumerate(lines[error_start + 1:]):
-                    if end_line.find("Run py_error.py for full") != -1:
-                        error_end = error_start + kk
+            # Find the final error summary
+
+            error_end = -1
+
+            for kk, end_line in enumerate(lines[error_start + 3:]):
+                end_line = end_line.split()
+                if len(end_line):
+                    if end_line[0].isdigit() is False:
+                        error_end = error_start + kk + 3
                         break
 
-                if error_start == -1 or error_end == -1:
+            if error_end == -1:
+                broken_diag_files.append(diag)
+                break
+
+            # Extract the errors from the diag file
+
+            errors = lines[error_start:error_end]
+
+            for error_line in errors:
+                error_words = error_line.split()
+                if len(error_words) == 0:
+                    continue
+                try:
+                    error_count = error_words[0]
+                except IndexError:
                     print(
-                        "unable to find error summary, returning empty dict ")
-                    return total_errors
+                        "index error when trying to process line '{}' for {}"
+                        .format(" ".join(error_words), diag))
+                    broken_diag_files.append(diag)
+                    break
 
-                # Extract the errors from the diag file
-
-                errors = lines[error_start:error_end]
-
-                for error_line in errors:
-                    error_words = error_line.split()
-                    if len(error_words) == 0:
-                        continue
+                if error_count.isdigit():
                     try:
-                        error_count = error_words[0]
-                    except IndexError:
-                        print(
-                            "index error when trying to process line '{}' for {}"
-                            .format(" ".join(error_words), diag))
-                        broken_diag_files.append(diag)
-                        break
+                        error_count = int(error_words[0])
+                    except ValueError:
+                        continue
+                    error_message = " ".join(error_words[2:])
+                    try:
+                        total_errors[error_message] += error_count
+                    except KeyError:
+                        total_errors[error_message] = error_count
 
-                    if error_count.isdigit():
-                        try:
-                            error_count = int(error_words[0])
-                        except ValueError:
-                            continue
-                        error_message = " ".join(error_words[2:])
-                        try:
-                            total_errors[error_message] += error_count
-                        except KeyError:
-                            total_errors[error_message] = error_count
+        if error_start == -1:
+            broken_diag_files.append(diag)
 
-    if len(broken_diag_files) > 0:
-        print("unable to find error summaries for the following diag files")
-        for k in range(len(broken_diag_files)):
-            print("  {}_{}.diag".format(root, broken_diag_files[k]))
+    if len(broken_diag_files) == len(diag_files):
+        print(f"Unable to find any error summaries for {root + wd}")
+        return total_errors
 
     if print_errors:
         n_reported = len(diag_files) - len(broken_diag_files)
-        print("Total errors reported from {} processors per process for {}:\n".
-              format(n_reported, wd + root))
+        print(f"Total errors reported from {n_reported} of {len(diag_files)} processes for {wd + root}, which {exit_msg}:")
         for key in total_errors.keys():
-            n_error = int(total_errors[key]) // n_reported
+            n_error = int(total_errors[key])
             if n_error < 1:
                 n_error = 1
             print("  {:6d} -- {}".format(n_error, key))
