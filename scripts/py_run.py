@@ -20,11 +20,12 @@ from sys import exit
 from typing import List, Tuple
 
 import pypython
-from pypython import grid, simulation, util
+from pypython import simulation, util
+from pypython.simulation import grid
 from pypython.error import EXIT_FAIL
-from pypython.extra.logging import (close_logfile, init_logfile, log,
-                                    logsilent)
-from pypython.extra.mailnotifs import send_notification
+from pypython.util.logging import (close_logfile, init_logfile, log,
+                                   logsilent)
+from pypython.util.mailnotifs import send_notification
 
 CONVERGED = \
     r"""
@@ -184,7 +185,7 @@ def setup_script() -> None:
 
     log(msg)
     if RUNTIME_FLAGS:
-        log("\nUsing these extra python flags:\n\t{}".format(RUNTIME_FLAGS))
+        log("\nUsing these util python flags:\n\t{}".format(RUNTIME_FLAGS))
 
     return
 
@@ -703,7 +704,7 @@ def main() -> None:
     # Find models to run by searching recursively from the calling directory
     # for .pf files
 
-    parameter_files = pypython.get("*.pf")
+    parameter_files = pypython.get_file("*.pf")
     n_models = len(parameter_files)
 
     if not n_models:

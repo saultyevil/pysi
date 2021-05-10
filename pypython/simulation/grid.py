@@ -135,7 +135,7 @@ def create_grid(path: str,
     grid_values: List[str]
         A list of values for the simulation grid for the parameter
     extra_name: str [optional]
-        Adds an extra name to the output grid parameter file names
+        Adds an util name to the output grid parameter file names
     backup: bool [optional]
         Create a back up of the original parameter file
     verbose: bool [optional]

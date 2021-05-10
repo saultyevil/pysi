@@ -9,10 +9,10 @@ import argparse as ap
 import numpy as np
 from matplotlib import pyplot as plt
 
-from pypython import smooth
-from pypython import createspectrum, plot, util
+from pypython import smooth_array
+from pypython import plot
 from pypython.physics import convert
-from pypython.spectrum import Spectrum
+from pypython.spectrum import Spectrum, create
 
 
 def setup_script() -> tuple:
@@ -63,7 +63,7 @@ def setup_script() -> tuple:
                           "--extract_line",
                           nargs="+",
                           type=int,
-                          default=(createspectrum.UNFILTERED_SPECTRUM, ),
+                          default=(create.UNFILTERED_SPECTRUM,),
                           help="The line number to only extract.")
     create_p.add_argument(
         "-n",
@@ -102,7 +102,7 @@ def setup_script() -> tuple:
                         "--extract_line",
                         nargs="+",
                         type=int,
-                        default=(createspectrum.UNFILTERED_SPECTRUM, ),
+                        default=(create.UNFILTERED_SPECTRUM,),
                         help="The line number to only extract.")
     plot_p.add_argument("-xl",
                         "--xmin",
@@ -248,7 +248,7 @@ def plot(root: str,
             index = 1
 
         ax.plot(filtered_spectrum[:-1, index],
-                smooth(filtered_spectrum[:-1, i + 2], sm),
+                smooth_array(filtered_spectrum[:-1, i + 2], sm),
                 linewidth=1.4,
                 alpha=0.75,
                 label="Filtered Spectrum")
@@ -261,7 +261,7 @@ def plot(root: str,
         ax.set_ylim(
             plot.get_y_lims_for_x_lims(
                 filtered_spectrum[:-1, index],
-                smooth(filtered_spectrum[:-1, i + 2], sm), xmin,
+                smooth_array(filtered_spectrum[:-1, i + 2], sm), xmin,
                 xmax))
 
         ax.legend(loc="lower right", fontsize=15)
@@ -282,7 +282,7 @@ def plot(root: str,
 
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 
-        if extract_line[0] != createspectrum.UNFILTERED_SPECTRUM:
+        if extract_line[0] != create.UNFILTERED_SPECTRUM:
             name = "{}/{}_line".format(wd, root)
             for line in extract_line:
                 name += "_{}".format(line)
@@ -353,17 +353,17 @@ def main(setup: tuple = None):
         xmax = convert.angstrom_to_hz(w_xmin)
 
     if mode == "create":
-        createspectrum.create_spectrum(root,
-                                       wd,
-                                       extract_nres,
-                                       freq_min=xmin,
-                                       freq_max=xmax,
-                                       n_bins=n_bins,
-                                       d_norm_pc=d_norm_pc,
-                                       spec_cycle_norm=spec_cycle_norm,
-                                       n_cores_norm=n_cores_norm)
+        create.create_spectrum(root,
+                               wd,
+                               extract_nres,
+                               freq_min=xmin,
+                               freq_max=xmax,
+                               n_bins=n_bins,
+                               d_norm_pc=d_norm_pc,
+                               spec_cycle_norm=spec_cycle_norm,
+                               n_cores_norm=n_cores_norm)
     else:
-        if extract_nres[0] != createspectrum.UNFILTERED_SPECTRUM:
+        if extract_nres[0] != create.UNFILTERED_SPECTRUM:
             name = "{}/{}_line".format(wd, root)
             for line in extract_nres:
                 name += "_{}".format(line)

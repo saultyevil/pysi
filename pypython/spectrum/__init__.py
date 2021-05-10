@@ -20,7 +20,7 @@ from .physics.constants import PARSEC
 from .plot import (ax_add_line_ids, common_lines, get_y_lims_for_x_lims,
                    normalize_figure_style, photoionization_edges,
                    remove_extra_axes, subplot_dims)
-from .util import get_root_from_filepath, smooth_array
+from . import get_root, smooth_array
 
 UNITS_LNU = "erg/s/Hz"
 UNITS_FNU = "erg/s/cm^-2/Hz"
@@ -424,45 +424,6 @@ class Spectrum:
             msg += f"Optical depth inclinations {self.inclinations['tau_spec']}\n"
 
         return textwrap.dedent(msg)
-
-
-# Utility functions ------------------------------------------------------------
-
-
-def get_spectrum_files(this_root: str = None,
-                       cd: str = ".",
-                       ignore_delay_dump_spec: bool = True) -> List[str]:
-    """Find root.spec files recursively in the provided directory.
-
-    Parameters
-    ----------
-    this_root: str [optional]
-        If root is set, then only .spec files with this root name will be
-        returned
-    cd: str [optional]
-        The path to recursively search from
-    ignore_delay_dump_spec: [optional] bool
-        When True, root.delay_dump.spec files will be ignored
-
-    Returns
-    -------
-    spec_files: List[str]
-        The file paths of various .spec files"""
-
-    spec_files = []
-
-    for filepath in Path(cd).glob("**/*.spec"):
-        str_filepath = str(filepath)
-        if ignore_delay_dump_spec and str_filepath.find(
-                ".delay_dump.spec") != -1:
-            continue
-        if this_root:
-            root, cd = get_root_from_filepath(str_filepath)
-            if root != this_root:
-                continue
-        spec_files.append(str_filepath)
-
-    return spec_files
 
 
 # Plotting functions -----------------------------------------------------------
@@ -1207,7 +1168,7 @@ def plot_multiple_model_spectra(
 
     spectrum_objects = []
     for spectrum in spectra_filepaths:
-        root, cd = get_root_from_filepath(spectrum)
+        root, cd = get_root(spectrum)
         spectrum_objects.append(Spectrum(root, cd, smooth=smooth_amount))
 
     if inclination_angle == "all":

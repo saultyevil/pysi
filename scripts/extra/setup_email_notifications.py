@@ -2,7 +2,7 @@
 
 from socket import gethostname
 
-from pypython.extra import mailnotifs
+from pypython.util import mailnotifs
 
 print("Setting up email notifications by sending a message...")
 

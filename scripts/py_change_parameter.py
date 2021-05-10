@@ -10,8 +10,8 @@ files. If a root name is provided, however, then the script will only operate
 import argparse as ap
 from typing import List
 
-from pypython import get
-from pypython import grid, util
+from pypython import get_file
+from pypython.simulation import grid
 
 
 def change_pfs(filepaths: List[str], parameter: str, value: str) -> None:
@@ -54,7 +54,7 @@ def main():
     else:
         root = args.root
 
-    change_pfs(get(f"*/{root}.pf"), args.parameter, args.value)
+    change_pfs(get_file(f"*/{root}.pf"), args.parameter, args.value)
 
     return
 

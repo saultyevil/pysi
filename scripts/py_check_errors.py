@@ -7,7 +7,7 @@ todo: this will only work for a simulation which didn't crash.......... accordin
 """
 
 from pypython.simulation import model_error_summary
-from pypython import get, get_root
+from pypython import get_file, get_root
 
 COL_LEN = 80
 
@@ -15,7 +15,7 @@ COL_LEN = 80
 def main():
     """Main function of the script"""
 
-    pfs = get("*.pf")
+    pfs = get_file("*.pf")
 
     for i in range(len(pfs)):
         print("-" * 80)

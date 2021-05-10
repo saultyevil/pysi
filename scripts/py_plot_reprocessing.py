@@ -16,7 +16,7 @@ from pypython import plot
 from pypython.physics.constants import PARSEC, PI
 from pypython.spectrum import Spectrum
 from pypython.util import get_cpu_count
-from pypython import smooth
+from pypython import smooth_array
 
 
 def setup_script() -> tuple:
@@ -117,12 +117,12 @@ def create_plot(
     fig, ax = plt.subplots(figsize=(12, 7))
     ax2 = ax.twinx()
     ax2.loglog(cont_spec_freq,
-               smooth(cont_spec_flux, sm),
+               smooth_array(cont_spec_flux, sm),
                "k--",
                zorder=0,
                alpha=bgalpha)
     ax2.loglog(emerg_spec_freq,
-               smooth(emerg_spec_flux, sm),
+               smooth_array(emerg_spec_flux, sm),
                "k-",
                zorder=1,
                alpha=bgalpha)

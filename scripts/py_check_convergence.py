@@ -10,7 +10,7 @@ from typing import List
 import numpy as np
 from matplotlib import pyplot as plt
 
-from pypython import get, get_root
+from pypython import get_file, get_root
 from pypython import plot, simulation, util
 
 COL_WIDTH = 80
@@ -133,7 +133,7 @@ def main():
 
     print("-" * COL_WIDTH, "\n")
 
-    parameter_files = get("*.pf")
+    parameter_files = get_file("*.pf")
 
     if len(parameter_files) == 0:
         print("\nCan't find any Python simulations\n")

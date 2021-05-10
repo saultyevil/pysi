@@ -32,7 +32,7 @@ def get_input() -> Tuple[str, int, str]:
 
 def read_photon_file(fname: str = "python.ext_0.txt",
                      myheader: List[str] = None) -> pd.DataFrame:
-    """Read in the Python photon extra diagnostic file."""
+    """Read in the Python photon util diagnostic file."""
 
     header = [
         "PHOTON", "wcycle", "np", "freq", "w", "x", "y", "z", "nx", "ny", "nz",

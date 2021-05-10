@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Functions for helping plotting with matplotlib.
-"""
 
 from typing import List, Tuple, Union
 
@@ -10,7 +7,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from pypython.error import DimensionError
-from .physics.constants import ANGSTROM, C
+from ..physics.constants import ANGSTROM, C
 
 
 def normalize_figure_style():

@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Utility functions to ease the pain of using Python or a Unix environment whilst
-trying to do computational astrophysics.
-"""
 
 import textwrap
 from typing import List
 
 from psutil import cpu_count
 
-from . import get, get_root
+from .. import get_file, get_root
+
+
+name = "util"
 
 
 def create_run_script(commands: List[str]) -> None:
@@ -23,7 +22,7 @@ def create_run_script(commands: List[str]) -> None:
         The commands which are going to be run."""
 
     paths = []
-    pf_fp = get("*.pf")
+    pf_fp = get_file("*.pf")
     for fp in pf_fp:
         root, path = get_root(fp)
         paths.append(path)
@@ -145,3 +144,4 @@ def get_file_len(filename: str) -> int:
             pass
 
     return i + 1
+

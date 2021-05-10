@@ -14,9 +14,18 @@ import automodinit
 import numpy as np
 from scipy.signal import boxcar, convolve
 
+import spectrum
+import wind
 
 name = "pypython"
 
+
+# Classes ------------------
+
+Wind = wind.Wind
+Spectrum = spectrum.Spectrum
+
+# Functions ----------------
 
 def cleanup_data(fp: str = ".", verbose: bool = False):
     """Search recursively from the specified directory for symbolic links named
@@ -76,7 +85,7 @@ def cleanup_data(fp: str = ".", verbose: bool = False):
     return n_del
 
 
-def get(pattern: str, fp: str = "."):
+def get_file(pattern: str, fp: str = "."):
     """Find files of the given pattern recursively.
 
     Parameters
@@ -158,8 +167,8 @@ def get_root(fp: str) -> Tuple[str, str]:
     return root, fp
 
 
-def smooth(array: Union[np.ndarray, List[Union[float, int]]],
-           width: Union[int, float]) -> np.ndarray:
+def smooth_array(array: Union[np.ndarray, List[Union[float, int]]],
+                 width: Union[int, float]) -> np.ndarray:
     """Smooth a 1D array of data using a boxcar filter.
 
     Parameters

@@ -10,8 +10,8 @@ on pf files which have the same root name.
 import argparse as ap
 from typing import List
 
-from pypython import get
-from pypython import grid, util
+from pypython import get_file
+from pypython.simulation import grid
 
 
 def add_parameter(filepaths: List[str], parameter: str, value: str):
@@ -55,7 +55,7 @@ def main():
     else:
         root = args.root
 
-    add_parameter(get(f"*/{root}.pf"), args.parameter,
+    add_parameter(get_file(f"*/{root}.pf"), args.parameter,
                   args.value)
 
     return
