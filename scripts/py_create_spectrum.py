@@ -9,8 +9,7 @@ import argparse as ap
 import numpy as np
 from matplotlib import pyplot as plt
 
-from pypython import smooth_array
-from pypython import plot
+from pypython import plot, smooth_array
 from pypython.physics import convert
 from pypython.spectrum import Spectrum, create
 
@@ -63,7 +62,7 @@ def setup_script() -> tuple:
                           "--extract_line",
                           nargs="+",
                           type=int,
-                          default=(create.UNFILTERED_SPECTRUM,),
+                          default=(create.UNFILTERED_SPECTRUM, ),
                           help="The line number to only extract.")
     create_p.add_argument(
         "-n",
@@ -102,7 +101,7 @@ def setup_script() -> tuple:
                         "--extract_line",
                         nargs="+",
                         type=int,
-                        default=(create.UNFILTERED_SPECTRUM,),
+                        default=(create.UNFILTERED_SPECTRUM, ),
                         help="The line number to only extract.")
     plot_p.add_argument("-xl",
                         "--xmin",
@@ -261,8 +260,7 @@ def plot(root: str,
         ax.set_ylim(
             plot.get_y_lims_for_x_lims(
                 filtered_spectrum[:-1, index],
-                smooth_array(filtered_spectrum[:-1, i + 2], sm), xmin,
-                xmax))
+                smooth_array(filtered_spectrum[:-1, i + 2], sm), xmin, xmax))
 
         ax.legend(loc="lower right", fontsize=15)
         ax.set_xlabel(r"Wavelength [$\AA$]", fontsize=15)

@@ -1,16 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from pypython.plot import (normalize_figure_style, ax_add_line_ids, common_lines,
-                           photoionization_edges, subplot_dims, remove_extra_axes,
-                           get_y_lims_for_x_lims)
+from typing import List, Tuple, Union
+
+import numpy as np
+from matplotlib import pyplot as plt
+
+from pypython import (UNITS_FLAMBDA, UNITS_FNU, UNITS_LNU, Spectrum, get_root,
+                      smooth_array)
 from pypython.error import InvalidParameter
 from pypython.physics.constants import PARSEC
-from pypython import smooth_array, Spectrum, get_root
-from pypython import UNITS_LNU, UNITS_FNU, UNITS_FLAMBDA
-import numpy as np
-from typing import Tuple, Union, List
-from matplotlib import pyplot as plt
+from pypython.plot import (ax_add_line_ids, common_lines,
+                           get_y_lims_for_x_lims, normalize_figure_style,
+                           photoionization_edges, remove_extra_axes,
+                           subplot_dims)
 
 
 MIN_SPEC_COMP_FLUX = 1e-15
@@ -19,12 +22,13 @@ DEFAULT_PYTHON_DISTANCE = 100 * PARSEC
 
 def _plot_panel_subplot(ax: plt.Axes, x_values: np.ndarray, spectrum: Spectrum,
                         units: str, things_to_plot: Union[List[str], str],
-                        xlims: Tuple[Union[float, int, None],
-                                     Union[float, int, None]], sm: int,
+                        x_limits: Tuple[Union[float, int, None],
+                                        Union[float, int, None]], sm: int,
                         alpha: float, scale: str, frequency_space: bool,
                         skip_sparse: bool) -> plt.Axes:
     """Create a subplot panel for a figure given the spectrum components names
     in the list dname.
+    todo: switch x_limits to xmin and xmax inputs
 
     Parameters
     ----------
@@ -38,7 +42,7 @@ def _plot_panel_subplot(ax: plt.Axes, x_values: np.ndarray, spectrum: Spectrum,
         The units of the spectrum
     things_to_plot: list[str]
         The name of the spectrum components to add to the subplot panel
-    xlims: Tuple[float, float]
+    x_limits: Tuple[float, float]
         The lower and upper x-axis boundaries (xlower, xupper)
     sm: int
         The size of the boxcar filter to smooth the spectrum components
@@ -99,7 +103,7 @@ def _plot_panel_subplot(ax: plt.Axes, x_values: np.ndarray, spectrum: Spectrum,
     if n_skip == len(things_to_plot):
         return ax
 
-    ax.set_xlim(xlims[0], xlims[1])
+    ax.set_xlim(x_limits[0], x_limits[1])
     if frequency_space:
         ax.set_xlabel(r"Frequency (Hz)")
         if units == UNITS_LNU:
@@ -509,7 +513,7 @@ def plot_spectrum_components(
 
 def plot_spectrum_inclinations_in_subpanels(
         root: str,
-        wd: str,
+        fp: str,
         xmin: float = None,
         xmax: float = None,
         smooth_amount: int = 5,
@@ -525,7 +529,7 @@ def plot_spectrum_inclinations_in_subpanels(
     ----------
     root: str
         The root name of the Python simulation
-    wd: str
+    fp: str
         The absolute or relative path containing the Python simulation
     xmin: float [optional]
         The lower x boundary for the figure
@@ -551,7 +555,7 @@ def plot_spectrum_inclinations_in_subpanels(
     ax: pyplot.Axes
         The pyplot.Axes object for the created figure"""
 
-    spectrum = Spectrum(root, wd)
+    spectrum = Spectrum(root, fp)
     spectrum_units = spectrum.units
     spectrum_inclinations = spectrum.inclinations
     n_inclinations = spectrum.n_inclinations
@@ -619,7 +623,7 @@ def plot_spectrum_inclinations_in_subpanels(
 
 def plot_single_spectrum_inclination(
         root: str,
-        wd: str,
+        fp: str,
         inclination: Union[str, float, int],
         xmin: float = None,
         xmax: float = None,
@@ -634,7 +638,7 @@ def plot_single_spectrum_inclination(
     ----------
     root: str
         The root name of the Python simulation
-    wd: str
+    fp: str
         The absolute or relative path containing the Python simulation
     inclination: str, float, int
         The specific inclination angle to plot for
@@ -660,7 +664,7 @@ def plot_single_spectrum_inclination(
 
     normalize_figure_style()
 
-    s = Spectrum(root, wd, smooth=smooth_amount)
+    s = Spectrum(root, fp, smooth=smooth_amount)
 
     if frequency_space:
         x = s["Freq."]
@@ -702,9 +706,9 @@ def plot_multiple_model_spectra(
         output_name: str,
         spectra_filepaths: list,
         inclination_angle: str,
-        wd: str = ".",
-        x_min: float = None,
-        x_max: float = None,
+        fp: str = ".",
+        xmin: float = None,
+        xmax: float = None,
         frequency_space: bool = False,
         axes_scales: str = "logy",
         smooth_amount: int = 5,
@@ -723,11 +727,11 @@ def plot_multiple_model_spectra(
         A list of spectrum file paths.
     inclination_angle: str
         The inclination angle(s) to plot
-    wd: [optional] str
+    fp: [optional] str
         The working directory containing the Python simulation
-    x_min: [optional] float
+    xmin: [optional] float
         The smallest value on the x axis.
-    x_max: [optional] float
+    xmax: [optional] float
         The largest value on the x axis.
     frequency_space: [optional] bool
         Create the plot in frequency space and use nu F_nu instead.
@@ -796,19 +800,16 @@ def plot_multiple_model_spectra(
             except KeyError:
                 continue
 
-            ax[i].plot(x,
-                       y,
-                       label=spectrum.fp.replace("_", r"\_"),
-                       alpha=0.75)
+            ax[i].plot(x, y, label=spectrum.fp.replace("_", r"\_"), alpha=0.75)
 
             # Calculate the y-axis limits to keep all spectra within the
             # plot area
 
-            if not x_min:
-                x_min = x.min()
-            if not x_max:
-                x_max = x.max()
-            this_y_min, this_y_max = get_y_lims_for_x_lims(x, y, x_min, x_max)
+            if not xmin:
+                xmin = x.min()
+            if not xmax:
+                xmax = x.max()
+            this_y_min, this_y_max = get_y_lims_for_x_lims(x, y, xmin, xmax)
             if this_y_min < y_min:
                 y_min = this_y_min
             if this_y_max > y_max:
@@ -822,11 +823,11 @@ def plot_multiple_model_spectra(
         ax[i].set_title(f"{inclinations[i]}" + r"$^{\circ}$")
 
         x_lims = list(ax[i].get_xlim())
-        if not x_min:
-            x_min = x_lims[0]
-        if not x_max:
-            x_max = x_lims[1]
-        ax[i].set_xlim(x_min, x_max)
+        if not xmin:
+            xmin = x_lims[0]
+        if not xmax:
+            xmax = x_lims[1]
+        ax[i].set_xlim(xmin, xmax)
         ax[i].set_ylim(y_min, y_max)
 
         if axes_scales == "loglog" or axes_scales == "logx":
@@ -853,9 +854,9 @@ def plot_multiple_model_spectra(
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 
     if inclination_angle != "all":
-        name = "{}/{}_i{}".format(wd, output_name, inclination_angle)
+        name = "{}/{}_i{}".format(fp, output_name, inclination_angle)
     else:
-        name = "{}/{}".format(wd, output_name)
+        name = "{}/{}".format(fp, output_name)
 
     fig.savefig("{}.{}".format(name, file_ext))
     if file_ext == "pdf" or file_ext == "eps":

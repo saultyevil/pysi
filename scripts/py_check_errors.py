@@ -6,8 +6,8 @@ for a bunch of simulations.
 todo: this will only work for a simulation which didn't crash.......... according to past me at least.
 """
 
-from pypython.simulation import model_error_summary
 from pypython import get_file, get_root
+from pypython.simulation import model_error_summary
 
 COL_LEN = 80
 

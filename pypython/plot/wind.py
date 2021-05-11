@@ -1,20 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from typing import Union, List, Tuple
-from matplotlib import pyplot as plt
-import numpy as np
+from typing import List, Tuple, Union
 
-from . import normalize_figure_style
+import numpy as np
+from matplotlib import pyplot as plt
+
 # from pypython import Wind
 from pypython.physics.constants import PI
+
+from . import normalize_figure_style
 
 
 def plot_wind(wind,
               parameter: Union[str, np.ndarray],
-              use_indices: bool = False,
-              log_parameter: bool = True,
-              ion_fraction: bool = True,
+              use_cell_coordinates: bool = True,
               inclinations_to_plot: List[str] = None,
               scale: str = "loglog",
               vmin: float = None,
@@ -32,8 +32,6 @@ def plot_wind(wind,
     parameter: np.ndarray
         The wind parameter to be plotted, in the same shape as the coordinate
         arrays. Can also be the name of the variable.
-    log_parameter: bool [optional]
-        Plot the wind parameter as log_10(parameters).
     ion_fraction: bool [optional]
         Plot ions as a fraction [True] or a density.
     inclinations_to_plot: List[str] [optional]
@@ -62,9 +60,7 @@ def plot_wind(wind,
         The (updated) axes array for the plot.
     """
     if type(parameter) is str:
-        parameter_points = wind.get(parameter, ion_fraction)
-        if log_parameter:
-            parameter_points = np.log10(parameter_points)
+        parameter_points = wind.get(parameter)
     elif type(parameter) in [np.ndarray, np.ma.core.MaskedArray]:
         parameter_points = parameter
     else:
@@ -74,28 +70,28 @@ def plot_wind(wind,
     # Finally plot the variable depending on the coordinate type
 
     if wind.coord_system == "spherical":
-        if use_indices:
-            n = wind["i"]
-        else:
+        if use_cell_coordinates:
             n = wind["r"]
-        fig, ax = plot_1d_wind(n, parameter_points, "logx", fig, ax, i, j)
-    elif wind.coord_system == "polar":
-        if use_indices:
+        else:
+            n = wind["i"]
+        fig, ax = plot_1d_wind(n, parameter_points, "loglog", fig, ax, i, j)
+    elif wind.coord_system == "rectilinear":
+        if use_cell_coordinates:
+            n = wind["r"]
+            m = wind["z"]
+        else:
+            n = wind["i"]
+            m = wind["j"]
+        fig, ax = plot_2d_wind(n, m, parameter_points, wind.coord_system,
+                               inclinations_to_plot, scale, vmin, vmax, fig,
+                               ax, i, j)
+    else:
+        if use_cell_coordinates:
             raise ValueError("use_indices cannot be used with polar winds")
         fig, ax = plot_2d_wind(np.deg2rad(wind["theta"]), np.log10(wind["r"]),
                                parameter_points, wind.coord_system,
                                inclinations_to_plot, scale, vmin, vmax, fig,
                                ax, i, j)
-    else:
-        if use_indices:
-            n = wind["i"]
-            m = wind["j"]
-        else:
-            n = wind["x"]
-            m = wind["z"]
-        fig, ax = plot_2d_wind(n, m, parameter_points, wind.coord_system,
-                               inclinations_to_plot, scale, vmin, vmax, fig, ax,
-                               i, j)
 
     return fig, ax
 

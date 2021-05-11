@@ -8,7 +8,6 @@ from psutil import cpu_count
 
 from .. import get_file, get_root
 
-
 name = "util"
 
 
@@ -144,4 +143,3 @@ def get_file_len(filename: str) -> int:
             pass
 
     return i + 1
-

@@ -21,10 +21,9 @@ from typing import List, Tuple
 
 import pypython
 from pypython import simulation, util
-from pypython.simulation import grid
 from pypython.error import EXIT_FAIL
-from pypython.util.logging import (close_logfile, init_logfile, log,
-                                   logsilent)
+from pypython.simulation import grid
+from pypython.util.logging import close_logfile, init_logfile, log, logsilent
 from pypython.util.mailnotifs import send_notification
 
 CONVERGED = \
@@ -591,9 +590,8 @@ def run_all_models(parameter_files: List[str], use_mpi: bool,
             send_notification(
                 "ejp1n17@soton.ac.uk",
                 "{}: Model {}/{} has started running".format(
-                    host, i + 1,
-                    n_models), "The model {} has started running on {}".format(
-                        path, host))
+                    host, i + 1, n_models),
+                "The model {} has started running on {}".format(path, host))
 
         rc = run_single_model(root,
                               fp,

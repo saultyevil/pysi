@@ -7,6 +7,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from pypython.error import DimensionError
+
 from ..physics.constants import ANGSTROM, C
 
 

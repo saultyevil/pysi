@@ -10,8 +10,7 @@ from typing import List
 import numpy as np
 from matplotlib import pyplot as plt
 
-from pypython import get_file, get_root
-from pypython import plot, simulation, util
+from pypython import get_file, get_root, plot, simulation, util
 
 COL_WIDTH = 80
 

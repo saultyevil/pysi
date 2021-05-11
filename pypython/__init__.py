@@ -1,32 +1,30 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import copy
 import re
 import textwrap
 import time
-from os import path, listdir, remove
+from enum import Enum
+from os import listdir, path, remove
 from pathlib import Path
 from platform import system
 from shutil import which
 from subprocess import PIPE, Popen
 from typing import List, Tuple, Union
-import copy
-from matplotlib import pyplot as plt
-from enum import Enum
 
 import numpy as np
+from matplotlib import pyplot as plt
 from scipy.signal import boxcar, convolve
 
 from pypython.math import vector
-from pypython.plot import normalize_figure_style, ax_add_line_ids, common_lines
-from pypython.physics.constants import CMS_TO_KMS, VLIGHT, PI
+from pypython.physics.constants import CMS_TO_KMS, PI, VLIGHT
+from pypython.plot import ax_add_line_ids, common_lines, normalize_figure_style
 from pypython.plot.wind import plot_1d_wind, plot_2d_wind
 
 name = "pypython"
 
-
 # Spectrum class --------------
-
 
 UNITS_LNU = "erg/s/Hz"
 UNITS_FNU = "erg/s/cm^-2/Hz"
@@ -434,6 +432,7 @@ class Spectrum:
 
 # Wind class ------------------
 
+
 class Wind:
     """A class to store 1D and 2D Python wind tables. Contains methods to
     extract variables, as well as convert various indices into other indices.
@@ -813,6 +812,15 @@ class Wind:
                             self.variables[element][ion_type][ion])
 
     def _get_element_variable(self, element_name: str, ion_name: str):
+        """Helper function to get the fraction or density of an ion depending on
+        the final character of the requested variable.
+        Parameters
+        ----------
+        element_name: str
+            The element symbol, i.e. H, He.
+        ion_name: str
+            The name of the element, in the format i_01, i_01f, i_01d, etc.
+        """
 
         ion_frac_or_den = ion_name[-1]
         if not ion_frac_or_den.isdigit():
@@ -822,16 +830,16 @@ class Wind:
             elif ion_frac_or_den == "f":
                 variable = self.variables[element_name]["fraction"][ion_name]
             else:
-                raise ValueError(f"{ion_frac_or_den} is an unknown ion type, try f or d")
+                raise ValueError(
+                    f"{ion_frac_or_den} is an unknown ion type, try f or d")
         else:
             variable = self.variables[element_name]["density"][ion_name]
 
         return variable
 
-    def get(self, parameter: str,) -> Union[np.ndarray, np.ma.core.MaskedArray]:
+    def get(self, parameter: str) -> Union[np.ndarray, np.ma.core.MaskedArray]:
         """Get a parameter array. This is just another way to access the
         dictionary self.variables.
-
         Parameters
         ----------
         parameter: str
@@ -849,7 +857,6 @@ class Wind:
     def get_sight_line_coordinates(self, theta: float):
         """Get the vertical z coordinates for a given set of x coordinates and
         inclination angle.
-
         Parameters
         ----------
         theta: float
@@ -858,10 +865,7 @@ class Wind:
         return np.array(self.m_coords,
                         dtype=np.float64) * np.tan(PI / 2 - np.deg2rad(theta))
 
-    def get_variable_along_sight_line(self,
-                                      theta: float,
-                                      parameter: str,
-                                      fraction: bool = False):
+    def get_variable_along_sight_line(self, theta, parameter):
         """Extract a variable along a given sight line.
 
         Parameters
@@ -909,7 +913,8 @@ class Wind:
             n_points = self.variables["i"]
             m_points = self.variables["i"]
         else:
-            raise ValueError("Cannot plot with the cell indices for polar winds")
+            raise ValueError(
+                "Cannot plot with the cell indices for polar winds")
 
         return n_points, m_points
 
@@ -943,8 +948,11 @@ class Wind:
         if self.coord_system == "spherical":
             fig, ax = plot_1d_wind(n_points, variable, scale=scale)
         else:
-            fig, ax = plot_2d_wind(n_points, m_points, variable,
-                                   self.coord_system, scale=scale)
+            fig, ax = plot_2d_wind(n_points,
+                                   m_points,
+                                   variable,
+                                   self.coord_system,
+                                   scale=scale)
 
         # Finally, label the axes with what we actually plotted
 

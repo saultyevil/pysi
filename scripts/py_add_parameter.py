@@ -55,8 +55,7 @@ def main():
     else:
         root = args.root
 
-    add_parameter(get_file(f"*/{root}.pf"), args.parameter,
-                  args.value)
+    add_parameter(get_file(f"*/{root}.pf"), args.parameter, args.value)
 
     return
 

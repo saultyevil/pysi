@@ -11,8 +11,7 @@ from typing import Tuple
 
 from matplotlib import pyplot as plt
 
-from pypython import get_file
-from pypython import spectrum
+from pypython import get_file, spectrum
 from pypython.error import EXIT_FAIL
 
 
