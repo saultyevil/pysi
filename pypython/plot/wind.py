@@ -1,8 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-def plot_wind(wind: Wind,
+from typing import Union, List, Tuple
+from matplotlib import pyplot as plt
+import numpy as np
+
+from . import normalize_figure_style
+# from pypython import Wind
+from pypython.physics.constants import PI
+
+
+def plot_wind(wind,
               parameter: Union[str, np.ndarray],
+              use_indices: bool = False,
               log_parameter: bool = True,
               ion_fraction: bool = True,
               inclinations_to_plot: List[str] = None,
@@ -64,17 +74,28 @@ def plot_wind(wind: Wind,
     # Finally plot the variable depending on the coordinate type
 
     if wind.coord_system == "spherical":
-        fig, ax = plot_1d_wind(wind["r"], parameter_points, "logx", fig, ax, i,
-                               j)
+        if use_indices:
+            n = wind["i"]
+        else:
+            n = wind["r"]
+        fig, ax = plot_1d_wind(n, parameter_points, "logx", fig, ax, i, j)
     elif wind.coord_system == "polar":
+        if use_indices:
+            raise ValueError("use_indices cannot be used with polar winds")
         fig, ax = plot_2d_wind(np.deg2rad(wind["theta"]), np.log10(wind["r"]),
                                parameter_points, wind.coord_system,
                                inclinations_to_plot, scale, vmin, vmax, fig,
                                ax, i, j)
     else:
-        fig, ax = plot_2d_wind(wind["x"], wind["z"], parameter_points,
-                               wind.coord_system, inclinations_to_plot, scale,
-                               vmin, vmax, fig, ax, i, j)
+        if use_indices:
+            n = wind["i"]
+            m = wind["j"]
+        else:
+            n = wind["x"]
+            m = wind["z"]
+        fig, ax = plot_2d_wind(n, m, parameter_points, wind.coord_system,
+                               inclinations_to_plot, scale, vmin, vmax, fig, ax,
+                               i, j)
 
     return fig, ax
 

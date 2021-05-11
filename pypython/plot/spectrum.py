@@ -1,6 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from pypython.plot import (normalize_figure_style, ax_add_line_ids, common_lines,
+                           photoionization_edges, subplot_dims, remove_extra_axes,
+                           get_y_lims_for_x_lims)
+from pypython.error import InvalidParameter
+from pypython.physics.constants import PARSEC
+from pypython import smooth_array, Spectrum, get_root
+from pypython import UNITS_LNU, UNITS_FNU, UNITS_FLAMBDA
+import numpy as np
+from typing import Tuple, Union, List
+from matplotlib import pyplot as plt
+
 
 MIN_SPEC_COMP_FLUX = 1e-15
 DEFAULT_PYTHON_DISTANCE = 100 * PARSEC
@@ -770,7 +781,7 @@ def plot_multiple_model_spectra(
 
             # Ignore spectra which are from continuum only models...
 
-            if spectrum.filepath.find("continuum") != -1:
+            if spectrum.fp.find("continuum") != -1:
                 continue
 
             if frequency_space:
@@ -787,7 +798,7 @@ def plot_multiple_model_spectra(
 
             ax[i].plot(x,
                        y,
-                       label=spectrum.filepath.replace("_", r"\_"),
+                       label=spectrum.fp.replace("_", r"\_"),
                        alpha=0.75)
 
             # Calculate the y-axis limits to keep all spectra within the

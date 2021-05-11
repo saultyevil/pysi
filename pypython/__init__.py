@@ -2,17 +2,25 @@
 # -*- coding: utf-8 -*-
 
 import re
+import textwrap
 import time
-from os import listdir, remove
+from os import path, listdir, remove
 from pathlib import Path
 from platform import system
 from shutil import which
 from subprocess import PIPE, Popen
 from typing import List, Tuple, Union
+import copy
+from matplotlib import pyplot as plt
+from enum import Enum
 
 import numpy as np
 from scipy.signal import boxcar, convolve
 
+from pypython.math import vector
+from pypython.plot import normalize_figure_style, ax_add_line_ids, common_lines
+from pypython.physics.constants import CMS_TO_KMS, VLIGHT, PI
+from pypython.plot.wind import plot_1d_wind, plot_2d_wind
 
 name = "pypython"
 
@@ -53,17 +61,17 @@ class Spectrum:
         smooth: int [optional]
             The amount of smoothing to use.
         delim: str [optional]
-            The deliminator in the spectrum file."""
+            The deliminator in the spectrum file.
+        """
 
         self.root = root
-        self.cd = cd
-        self.logspec = log
 
+        self.fp = cd
+        self.logspec = log
         if log and not default.startswith("log_"):
             default = "log_" + default
-
-        if self.cd[-1] != "/":
-            self.cd += "/"
+        if self.fp[-1] != "/":
+            self.fp += "/"
 
         self.all_spectrum = {}
         self.all_columns = {}
@@ -122,12 +130,12 @@ class Spectrum:
         ]
 
         for spec_type in files_to_read:
-            fpath = self.cd + self.root + "."
+            fpath = self.fp + self.root + "."
             if self.logspec and spec_type != "spec_tau":
                 fpath += "log_"
             fpath += spec_type
 
-            if not os.path.exists(fpath):
+            if not path.exists(fpath):
                 continue
 
             n_read += 1
@@ -189,7 +197,7 @@ class Spectrum:
             self.all_n_inclinations[spec_type] = len(inclinations)
 
         if n_read == 0:
-            raise IOError(f"Unable to open any spectrum files in {self.cd}")
+            raise IOError(f"Unable to open any spectrum files in {self.fp}")
 
     def smooth(self,
                width: int = 5,
@@ -225,7 +233,7 @@ class Spectrum:
             to_smooth = to_smooth,
         else:
             raise ValueError(
-                f"unknown format for to_smooth, must be a tuple of strings or string"
+                "unknown format for to_smooth, must be a tuple of strings or string"
             )
 
         # Loop over each available spectrum and smooth it
@@ -413,7 +421,7 @@ class Spectrum:
     def __str__(self):
         """Print the basic details about the spectrum."""
 
-        msg = f"Spectrum for the model {self.root} in {self.cd}\n"
+        msg = f"Spectrum for the model {self.root} in {self.fp}\n"
         msg += f"Available spectra: {self.available}\n"
         msg += f"Current spectrum {self.current}\n"
         if "spec" in self.available or "log_spec" in self.available:
@@ -445,15 +453,21 @@ class Wind:
             The root name of the Python simulation.
         cd: str
             The directory containing the model.
-        mask_cells: bool [optional]
+        mask: bool [optional]
             Store the wind parameters as masked arrays.
         delim: str [optional]
             The delimiter used in the wind table files.
         """
+
+        # class CoordSystem(Enum):
+        #     SPHERICAL = 1
+        #     POLAR = 2
+        #     RECTILINEAR = 3
+
         self.root = root
-        self.cd = cd
-        if self.cd[-1] != "/":
-            self.cd += "/"
+        self.fp = cd
+        if self.fp[-1] != "/":
+            self.fp += "/"
         self.nx = 1
         self.nz = 1
         self.n_elem = 1
@@ -481,7 +495,7 @@ class Wind:
         elif velocity_units == "cms":
             self.velocity_conversion_factor = 1
         else:
-            self.velocity_conversion_factor = 1 / C
+            self.velocity_conversion_factor = 1 / VLIGHT
 
         # The next method reads in the wind and initializes the above members.
         # If no wind tables can be found in read_in_wind_parameters, an IOError
@@ -492,8 +506,8 @@ class Wind:
             self.read_in_wind_parameters(delim)
         except IOError:
             print("trying to run windsave2table to generate wind tables")
-            create_wind_save_tables(self.root, self.cd, ion_density=True)
-            create_wind_save_tables(self.root, self.cd, ion_density=False)
+            create_wind_save_tables(self.root, self.fp, ion_density=True)
+            create_wind_save_tables(self.root, self.fp, ion_density=False)
             self.read_in_wind_parameters(delim)
         self.read_in_wind_ions(delim)
         self.columns = self.parameters + self.elements
@@ -513,7 +527,7 @@ class Wind:
         # data
 
         if mask:
-            self.mask_non_inwind_cells()
+            self.create_masked_arrays()
 
     def read_in_wind_parameters(self, delim: str = None):
         """Read in the wind parameters.
@@ -533,14 +547,14 @@ class Wind:
         files_to_read = ["master", "heat", "gradient", "converge"]
 
         for table in files_to_read:
-            fpath = self.cd + self.root + "." + table + ".txt"
-            if not os.path.exists(fpath):
-                fpath = self.cd + "tables/" + self.root + "." + table + ".txt"
-                if not os.path.exists(fpath):
+            fp = self.fp + self.root + "." + table + ".txt"
+            if not path.exists(fp):
+                fp = self.fp + "tables/" + self.root + "." + table + ".txt"
+                if not path.exists(fp):
                     continue
             n_read += 1
 
-            with open(fpath, "r") as f:
+            with open(fp, "r") as f:
                 wind_file = f.readlines()
 
             # Read in the wind_save table, ignoring empty lines and comments.
@@ -573,7 +587,7 @@ class Wind:
 
         if n_read == 0:
             raise IOError(
-                f"Unable to open any wind tables for root {self.root} directory {self.cd}"
+                f"Unable to open any wind tables for root {self.root} directory {self.fp}"
             )
 
         # Determine the number of nx and nz elements. There is a basic check to
@@ -675,13 +689,13 @@ class Wind:
 
             for ion_type, ion_type_index_name in zip(ion_types_to_get,
                                                      ion_types_index_names):
-                fpath = self.cd + self.root + "." + element + "." + ion_type + ".txt"
-                if not os.path.exists(fpath):
-                    fpath = self.cd + "tables/" + self.root + "." + element + "." + ion_type + ".txt"
-                    if not os.path.exists(fpath):
+                fp = self.fp + self.root + "." + element + "." + ion_type + ".txt"
+                if not path.exists(fp):
+                    fp = self.fp + "tables/" + self.root + "." + element + "." + ion_type + ".txt"
+                    if not path.exists(fp):
                         continue
                 n_elements_read += 1
-                with open(fpath, "r") as f:
+                with open(fp, "r") as f:
                     ion_file = f.readlines()
 
                 # Read in ion the ion file. this can be done in a list
@@ -760,7 +774,7 @@ class Wind:
         self.variables["v_rot"] = v_rot * self.velocity_conversion_factor
         self.variables["v_r"] = v_r * self.velocity_conversion_factor
 
-    def mask_non_inwind_cells(self):
+    def create_masked_arrays(self):
         """Convert each array into a masked array, where the mask is defined by
         the inwind variable.
         """
@@ -798,10 +812,23 @@ class Wind:
                             self.variables["inwind"] < 0,
                             self.variables[element][ion_type][ion])
 
-    def get(self,
-            parameter: str,
-            fraction: bool = True
-            ) -> Union[np.ndarray, np.ma.core.MaskedArray]:
+    def _get_element_variable(self, element_name: str, ion_name: str):
+
+        ion_frac_or_den = ion_name[-1]
+        if not ion_frac_or_den.isdigit():
+            ion_name = ion_name[:-1]
+            if ion_frac_or_den == "d":
+                variable = self.variables[element_name]["density"][ion_name]
+            elif ion_frac_or_den == "f":
+                variable = self.variables[element_name]["fraction"][ion_name]
+            else:
+                raise ValueError(f"{ion_frac_or_den} is an unknown ion type, try f or d")
+        else:
+            variable = self.variables[element_name]["density"][ion_name]
+
+        return variable
+
+    def get(self, parameter: str,) -> Union[np.ndarray, np.ma.core.MaskedArray]:
         """Get a parameter array. This is just another way to access the
         dictionary self.variables.
 
@@ -809,24 +836,17 @@ class Wind:
         ----------
         parameter: str
             The name of the parameter to get.
-        fraction: bool [optional]
-            Return an ion fraction or density.
         """
-
-        element_check = parameter[:2].replace("_", "")
-        ion_check = parameter[2:].replace("_", "")
-
-        if element_check in self.elements:
-            if fraction:
-                variable = self.variables[element_check]["fraction"][ion_check]
-            else:
-                variable = self.variables[element_check]["density"][ion_check]
+        element_name = parameter[:2].replace("_", "")
+        ion_name = parameter[2:].replace("_", "")
+        if element_name in self.elements:
+            variable = self._get_element_variable(element_name, ion_name)
         else:
             variable = self.variables[parameter]
 
         return variable
 
-    def get_sightline_coordinates(self, theta: float):
+    def get_sight_line_coordinates(self, theta: float):
         """Get the vertical z coordinates for a given set of x coordinates and
         inclination angle.
 
@@ -838,12 +858,14 @@ class Wind:
         return np.array(self.m_coords,
                         dtype=np.float64) * np.tan(PI / 2 - np.deg2rad(theta))
 
-    def get_variable_along_sightline(self,
-                                     theta: float,
-                                     parameter: str,
-                                     fraction: bool = False):
+    def get_variable_along_sight_line(self,
+                                      theta: float,
+                                      parameter: str,
+                                      fraction: bool = False):
         """Extract a variable along a given sight line.
-        todo: i think this only works with rectilinear grids, not polar.
+
+        Parameters
+        ----------
         """
         if self.coord_system == "polar":
             raise NotImplementedError()
@@ -852,9 +874,9 @@ class Wind:
             theta = float(theta)
 
         z_array = np.array(self.n_coords, dtype=np.float64)
-        z_coords = self.get_sightline_coordinates(theta)
+        z_coords = self.get_sight_line_coordinates(theta)
         values = np.zeros_like(z_coords, dtype=np.float64)
-        w_array = self.get(parameter, fraction)
+        w_array = self.get(parameter)
 
         # This is the actual work which extracts along a sight line
 
@@ -864,52 +886,75 @@ class Wind:
 
         return np.array(self.m_coords), z_array, values
 
+    def _get_wind_coordinates(self):
+
+        if self.coord_system == "spherical":
+            n_points = self.variables["r"]
+            m_points = np.zeros_like(n_points)
+        elif self.coord_system == "rectilinear":
+            n_points = self.variables["x"]
+            m_points = self.variables["z"]
+        else:
+            m_points = np.log10(self.variables["r"])
+            n_points = np.deg2rad(self.variables["theta"])
+
+        return n_points, m_points
+
+    def _get_wind_indices(self):
+
+        if self.coord_system == "spherical":
+            n_points = self.variables["i"]
+            m_points = np.zeros_like(n_points)
+        elif self.coord_system == "rectilinear":
+            n_points = self.variables["i"]
+            m_points = self.variables["i"]
+        else:
+            raise ValueError("Cannot plot with the cell indices for polar winds")
+
+        return n_points, m_points
+
     def plot(self,
              variable_name: str,
+             use_cell_coordinates: bool = True,
              fraction: bool = False,
-             log_variable: bool = True):
+             scale: str = "loglog"):
         """Create a plot of the wind for the given variable.
         Parameters
         ----------
         variable_name: str
             The name of the variable to plot. Ions are accessed as, i.e.,
             H_i01, He_i02, etc.
+        use_cell_coordinates: bool [optional]
+            Plot using the cell coordinates instead of cell index numbers
         fraction: bool [optional]
             Plot ion fractions instead of density
-        log_variable: bool [optional
-            Plot the log10 of the variable.
+        scale: str [optional]
+            The type of scaling for the axes
         """
-        variable = self.get(variable_name, fraction)
-        if log_variable:
-            variable = np.log10(variable)
+        variable = self.get(variable_name)
 
         # Next, we have to make sure we get the correct coordinates
 
-        if self.coord_system == "spherical":
-            m_points = self.variables["r"]
-        elif self.coord_system == "rectilinear":
-            m_points = self.variables["x"]
-            n_points = self.variables["z"]
+        if use_cell_coordinates:
+            n_points, m_points = self._get_wind_coordinates()
         else:
-            n_points = np.log10(self.variables["r"])
-            m_points = np.deg2rad(self.variables["theta"])
+            n_points, m_points = self._get_wind_indices()
 
         if self.coord_system == "spherical":
-            fig, ax = plot_1d_wind(m_points, variable)
+            fig, ax = plot_1d_wind(n_points, variable, scale=scale)
         else:
-            fig, ax = plot_2d_wind(m_points, n_points, variable,
-                                   self.coord_system)
+            fig, ax = plot_2d_wind(n_points, m_points, variable,
+                                   self.coord_system, scale=scale)
 
         # Finally, label the axes with what we actually plotted
 
         if len(ax) == 1:
+            ax = ax[0, 0]
             title = f"{variable_name}".replace("_", " ")
-            if log_variable:
-                title = r"$\log_{10}($" + title + r"$)$"
             if self.coord_system == "spherical":
-                ax[0, 0].set_ylabel(title)
+                ax.set_ylabel(title)
             else:
-                ax[0, 0].set_title(title)
+                ax.set_title(title)
 
         return fig, ax
 
@@ -942,7 +987,7 @@ class Wind:
         """Print basic details about the wind.
         """
         txt = "root: {}\nfilepath: {}\ncoordinate system:{}\nparameters: {}\nelements: {}\n".format(
-            self.root, self.cd, self.coord_system, self.parameters,
+            self.root, self.fp, self.coord_system, self.parameters,
             self.elements)
 
         return txt

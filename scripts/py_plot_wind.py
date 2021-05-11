@@ -125,7 +125,7 @@ def plot_wind_parameters(
             wind_index += 1
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
-    fig.savefig(w.cd + "/" + w.root + "_wind_parameters.png", dpi=300)
+    fig.savefig(w.fp + "/" + w.root + "_wind_parameters.png", dpi=300)
 
     if display:
         plt.show()
@@ -182,7 +182,7 @@ def plot_wind_velocity(w: wind.Wind,
             wind_index += 1
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
-    fig.savefig(w.cd + "/" + w.root + "_wind_velocities.png", dpi=300)
+    fig.savefig(w.fp + "/" + w.root + "_wind_velocities.png", dpi=300)
 
     if display:
         plt.show()
@@ -244,7 +244,7 @@ def plot_wind_ions(w: wind.Wind,
 
         fig.suptitle(title)
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
-        fig.savefig(w.cd + "/" + w.root + "_" + element + "_ions.png", dpi=300)
+        fig.savefig(w.fp + "/" + w.root + "_" + element + "_ions.png", dpi=300)
 
         if display:
             plt.show()
