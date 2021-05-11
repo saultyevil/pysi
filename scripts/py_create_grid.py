@@ -61,8 +61,7 @@ def create_grid(pf, parameter, grid, ncores, thours, names, flags):
         if line == "/":  # todo: switch to using rfind
             sl = i  # This will find the index of the final /
     pl = pf.find(".pf")
-    root = pf[sl:
-              pl]  # Now we can extract just the root name from the file path
+    root = pf[sl:pl]  # Now we can extract just the root name from the file path
     shutil.copyfile(pf, pf + ".bak")
 
     with open(pf, "r") as f:
@@ -117,8 +116,7 @@ def run_grid():
         grid.append("{:.4e}".format(tmp[i]))
     print(parameter, grid)
 
-    print(
-        "ENSURE THAT THE SCRIPT HAS BEEN EDITED APPROPRIATELY BEFORE RUNNING")
+    print("ENSURE THAT THE SCRIPT HAS BEEN EDITED APPROPRIATELY BEFORE RUNNING")
     input("Press a enter to continue...")
 
     print("Running grid of {} simulations:".format(len(grid)))

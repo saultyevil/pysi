@@ -19,6 +19,5 @@ from pypython.error import InvalidParameter
 
 from . import get_root, smooth_array
 from .physics.constants import PARSEC
-from .plot import (ax_add_line_ids, common_lines, get_y_lims_for_x_lims,
-                   normalize_figure_style, photoionization_edges,
+from .plot import (ax_add_line_ids, common_lines, get_y_lims_for_x_lims, normalize_figure_style, photoionization_edges,
                    remove_extra_axes, subplot_dims)

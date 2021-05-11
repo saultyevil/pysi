@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from sys import argv, exit
+from sys import argv
 from subprocess import run
 from pathlib import Path
 
@@ -13,9 +13,10 @@ def format_source(fp):
     fp: str
         The file path to search recursively for python files.
     """
+    style = "'{based_on_style: pep8, column_limit: 120}'"
     for file in Path(fp).rglob("*.py"):
         print("  -", str(file))
-        run(f"isort {file} > /dev/null; yapf -i {file} > /dev/null", shell=True)
+        run(f"isort {file} > /dev/null; yapf -i --style={style} {file} > /dev/null", shell=True)
 
 
 def strip_type_hints(fp):

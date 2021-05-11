@@ -184,11 +184,7 @@ def read_delay_dump(root, cd=".", mode_dev=False):
             "LineRes.": np.int32
         }
 
-    output = pd.read_csv(filename,
-                         names=list(names.keys()),
-                         dtype=names,
-                         delim_whitespace=True,
-                         comment="#")
+    output = pd.read_csv(filename, names=list(names.keys()), dtype=names, delim_whitespace=True, comment="#")
 
     return output
 
@@ -231,8 +227,7 @@ def convert_weight_to_flux(spectrum, spec_cycle_norm, d_norm_pc):
 
 
 @jit(nopython=True)
-def bin_photon_weights(spectrum, freq_min, freq_max, photon_freqs,
-                       photon_weights, photon_spc_i, photon_nres,
+def bin_photon_weights(spectrum, freq_min, freq_max, photon_freqs, photon_weights, photon_spc_i, photon_nres,
                        photon_line_nres, extract_nres, logbins):
     """Bin the photons into frequency bins using jit to attempt to speed
     everything up.
@@ -427,9 +422,8 @@ def create_spectrum_process_breakdown(root,
 
 
 @jit(nopython=True)
-def wind_bin_photon_weights(n_photons, nres, photon_x, photon_y, photon_z,
-                            photon_nres, photon_weight, x_points, z_points, nx,
-                            nz):
+def wind_bin_photon_weights(n_photons, nres, photon_x, photon_y, photon_z, photon_nres, photon_weight, x_points,
+                            z_points, nx, nz):
     """Bin photon weights by extract location"""
 
     hist2d_weight = np.zeros((nx, nz))
@@ -490,10 +484,10 @@ def wind_bin_interaction_weight(root, nres, cd=".", n_cores=1):
         print("photon dataframe is empty")
         exit(1)
 
-    hist2d_weight, hist2d_count = wind_bin_photon_weights(
-        len(photons), nres, photons["LastX"].values, photons["LastY"].values,
-        photons["LastZ"].values, photons["Res."].values,
-        photons["Weight"].values, x_points, z_points, w.nx, w.nz)
+    hist2d_weight, hist2d_count = wind_bin_photon_weights(len(photons), nres, photons["LastX"].values,
+                                                          photons["LastY"].values, photons["LastZ"].values,
+                                                          photons["Res."].values, photons["Weight"].values, x_points,
+                                                          z_points, w.nx, w.nz)
 
     hist2d_weight /= n_cores
 
@@ -565,8 +559,7 @@ def create_spectrum(root,
         fluxes for each inclination angle in the other columns."""
 
     if type(extract_nres) != tuple:
-        print("extract_nres is not a tuple but is of type {}".format(
-            type(extract_nres)))
+        print("extract_nres is not a tuple but is of type {}".format(type(extract_nres)))
         exit(EXIT_FAIL)
 
     # If the frequency bins have been provided, we need to do some checks to make
@@ -577,9 +570,7 @@ def create_spectrum(root,
             freq_bins = np.array(freq_bins, dtype=np.float64)
         is_increasing = np.all(np.diff(freq_bins) > 0)
         if not is_increasing:
-            raise ValueError(
-                "the values for the frequency bins provided are not increasing"
-            )
+            raise ValueError("the values for the frequency bins provided are not increasing")
         n_bins = len(freq_bins)
 
     if dumped_photons is None:
@@ -601,15 +592,9 @@ def create_spectrum(root,
         if not freq_max:
             freq_max = np.max(dumped_photons["Freq."])
         if logbins:
-            spectrum[:, 0] = np.logspace(np.log10(freq_min),
-                                         np.log10(freq_max),
-                                         n_bins,
-                                         endpoint=True)
+            spectrum[:, 0] = np.logspace(np.log10(freq_min), np.log10(freq_max), n_bins, endpoint=True)
         else:
-            spectrum[:, 0] = np.linspace(freq_min,
-                                         freq_max,
-                                         n_bins,
-                                         endpoint=True)
+            spectrum[:, 0] = np.linspace(freq_min, freq_max, n_bins, endpoint=True)
 
     # This function now constructs a spectrum given the photon frequencies and
     # weights as well as any other normalization constants
@@ -617,12 +602,9 @@ def create_spectrum(root,
     freq_min = np.min(spectrum[:, 0])
     freq_max = np.max(spectrum[:, 0])
 
-    spectrum = bin_photon_weights(
-        spectrum, freq_min, freq_max, dumped_photons["Freq."].values,
-        dumped_photons["Weight"].values,
-        dumped_photons["Spec."].values.astype(int) + 1,
-        dumped_photons["Res."].values.astype(int), line_res, extract_nres,
-        logbins)
+    spectrum = bin_photon_weights(spectrum, freq_min, freq_max, dumped_photons["Freq."].values,
+                                  dumped_photons["Weight"].values, dumped_photons["Spec."].values.astype(int) + 1,
+                                  dumped_photons["Res."].values.astype(int), line_res, extract_nres, logbins)
 
     spectrum[:, 1:] /= n_cores_norm
 
@@ -633,15 +615,14 @@ def create_spectrum(root,
     n_bins -= 2
     spectrum = spectrum[1:-1, :]
 
-    spectrum, inclinations = write_delay_dump_spectrum_to_file(
-        root,
-        wd,
-        spectrum,
-        extract_nres,
-        n_spec,
-        n_bins,
-        d_norm_pc,
-        return_inclinations=True)
+    spectrum, inclinations = write_delay_dump_spectrum_to_file(root,
+                                                               wd,
+                                                               spectrum,
+                                                               extract_nres,
+                                                               n_spec,
+                                                               n_bins,
+                                                               d_norm_pc,
+                                                               return_inclinations=True)
 
     if output_numpy:
         return spectrum
@@ -706,13 +687,12 @@ def get_photon_db(root, cd=".", dd_dev=False, commitfreq=1000000):
 
     if dd_dev:
         colnames = [
-            "Freq", "Lambda", "Weight", "LastX", "LastY", "LastZ", "Scat",
-            "RScat", "Delay", "Spec", "Orig", "Res"
+            "Freq", "Lambda", "Weight", "LastX", "LastY", "LastZ", "Scat", "RScat", "Delay", "Spec", "Orig", "Res"
         ]
     else:
         colnames = [
-            "Np", "Freq", "Lambda", "Weight", "LastX", "LastY", "LastZ",
-            "Scat", "RScat", "Delay", "Spec", "Orig", "Res", "LineRes"
+            "Np", "Freq", "Lambda", "Weight", "LastX", "LastY", "LastZ", "Scat", "RScat", "Delay", "Spec", "Orig",
+            "Res", "LineRes"
         ]
     ncols = len(colnames)
 
@@ -729,13 +709,10 @@ def get_photon_db(root, cd=".", dd_dev=False, commitfreq=1000000):
                 try:
                     values = [float(i) for i in line.split()]
                 except ValueError:
-                    print(
-                        "Line {} has values which cannot be converted into a number"
-                        .format(n))
+                    print("Line {} has values which cannot be converted into a number".format(n))
                     continue
                 if len(values) != ncols:
-                    print("Line {} has unknown format with {} columns:\n{}".
-                          format(n, len(values), line))
+                    print("Line {} has unknown format with {} columns:\n{}".format(n, len(values), line))
                     continue
                 if dd_dev:
                     session.add(

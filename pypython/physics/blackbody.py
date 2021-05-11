@@ -8,8 +8,7 @@ from typing import Union
 
 import numpy as np
 
-from .constants import (ANGSTROM, BOLTZMANN, VLIGHT, WIEN_FREQUENCY,
-                        WIEN_WAVELENGTH, H)
+from .constants import (ANGSTROM, BOLTZMANN, VLIGHT, WIEN_FREQUENCY, WIEN_WAVELENGTH, H)
 
 
 def planck_nu(temperature, frequency):

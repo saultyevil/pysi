@@ -151,9 +151,7 @@ def get_y_lims_for_x_lims(x, y, xmin, xmax, scale=10):
     n = get_y_lims_for_x_lims.__name__
 
     if x.shape[0] != y.shape[0]:
-        raise DimensionError(
-            "{}: x and y are of different dimensions x {} y {}".format(
-                n, x.shape, y.shape))
+        raise DimensionError("{}: x and y are of different dimensions x {} y {}".format(n, x.shape, y.shape))
 
     if not xmin or not xmax:
         return None, None
@@ -262,14 +260,7 @@ def photoionization_edges(freq=False):
     return edges
 
 
-def ax_add_line_ids(ax,
-                    lines,
-                    linestyle="dashed",
-                    ynorm=0.90,
-                    logx=False,
-                    offset=25,
-                    rotation="vertical",
-                    fontsize=10):
+def ax_add_line_ids(ax, lines, linestyle="dashed", ynorm=0.90, logx=False, offset=25, rotation="vertical", fontsize=10):
     """Add labels for line transitions or other regions of interest onto a
     matplotlib figure. Labels are placed at the top of the panel and dashed
     lines, with zorder = 0, are drawn from top to bottom.
@@ -321,8 +312,7 @@ def ax_add_line_ids(ax,
         # Calculate the x location of the label in axes coordinates
 
         if logx:
-            xnorm = (np.log10(x) - np.log10(xlims[0])) / (np.log10(xlims[1]) -
-                                                          np.log10(xlims[0]))
+            xnorm = (np.log10(x) - np.log10(xlims[0])) / (np.log10(xlims[1]) - np.log10(xlims[0]))
         else:
             xnorm = (x - xlims[0]) / (xlims[1] - xlims[0])
 

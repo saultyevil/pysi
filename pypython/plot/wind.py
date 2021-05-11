@@ -82,27 +82,18 @@ def plot_wind(wind,
         else:
             n = wind["i"]
             m = wind["j"]
-        fig, ax = plot_2d_wind(n, m, parameter_points, wind.coord_system,
-                               inclinations_to_plot, scale, vmin, vmax, fig,
+        fig, ax = plot_2d_wind(n, m, parameter_points, wind.coord_system, inclinations_to_plot, scale, vmin, vmax, fig,
                                ax, i, j)
     else:
         if use_cell_coordinates:
             raise ValueError("use_indices cannot be used with polar winds")
-        fig, ax = plot_2d_wind(np.deg2rad(wind["theta"]), np.log10(wind["r"]),
-                               parameter_points, wind.coord_system,
-                               inclinations_to_plot, scale, vmin, vmax, fig,
-                               ax, i, j)
+        fig, ax = plot_2d_wind(np.deg2rad(wind["theta"]), np.log10(wind["r"]), parameter_points, wind.coord_system,
+                               inclinations_to_plot, scale, vmin, vmax, fig, ax, i, j)
 
     return fig, ax
 
 
-def plot_1d_wind(m_points,
-                 parameter_points,
-                 scale="logx",
-                 fig=None,
-                 ax=None,
-                 i=0,
-                 j=0):
+def plot_1d_wind(m_points, parameter_points, scale="logx", fig=None, ax=None, i=0, j=0):
     """Plot a 1D wind.
 
     Parameters
@@ -136,9 +127,7 @@ def plot_1d_wind(m_points,
         fig, ax = plt.subplots(figsize=(7, 5), squeeze=False)
 
     if scale not in ["logx", "logy", "loglog", "linlin"]:
-        print(
-            f"unknown axes scaling {scale}. Allowed: [logx, logy, loglog, linlin]"
-        )
+        print(f"unknown axes scaling {scale}. Allowed: [logx, logy, loglog, linlin]")
         exit(1)
 
     ax[i, j].plot(m_points, parameter_points)
@@ -211,27 +200,16 @@ def plot_2d_wind(m_points,
         if coordinate_system == "rectilinear":
             fig, ax = plt.subplots(figsize=(7, 5), squeeze=False)
         elif coordinate_system == "polar":
-            fig, ax = plt.subplots(figsize=(7, 5),
-                                   squeeze=False,
-                                   subplot_kw={"projection": "polar"})
+            fig, ax = plt.subplots(figsize=(7, 5), squeeze=False, subplot_kw={"projection": "polar"})
         else:
-            print(
-                f"unknown wind projection {coordinate_system}. Expected rectilinear or polar"
-            )
+            print(f"unknown wind projection {coordinate_system}. Expected rectilinear or polar")
             exit(1)
 
     if scale not in ["logx", "logy", "loglog", "linlin"]:
-        print(
-            f"unknown axes scaling {scale}. Allowed: [logx, logy, loglog, linlin]"
-        )
+        print(f"unknown axes scaling {scale}. Allowed: [logx, logy, loglog, linlin]")
         exit(1)
 
-    im = ax[i, j].pcolormesh(m_points,
-                             n_points,
-                             parameter_points,
-                             shading="auto",
-                             vmin=vmin,
-                             vmax=vmax)
+    im = ax[i, j].pcolormesh(m_points, n_points, parameter_points, shading="auto", vmin=vmin, vmax=vmax)
     fig.colorbar(im, ax=ax[i, j])
 
     # this plots lines representing sight lines for different observers of
@@ -241,16 +219,12 @@ def plot_2d_wind(m_points,
         n_coords = np.unique(m_points)
         for inclination in inclinations_to_plot:
             if coordinate_system == "rectilinear":
-                m_coords = n_coords * np.tan(0.5 * PI -
-                                             np.deg2rad(float(inclination)))
+                m_coords = n_coords * np.tan(0.5 * PI - np.deg2rad(float(inclination)))
             else:
                 x_coords = np.logspace(np.log10(0), np.max(n_points))
-                m_coords = x_coords * np.tan(
-                    0.5 * PI - np.deg2rad(90 - float(inclination)))
+                m_coords = x_coords * np.tan(0.5 * PI - np.deg2rad(90 - float(inclination)))
                 m_coords = np.sqrt(x_coords**2 + m_coords**2)
-            ax[0, 0].plot(n_coords,
-                          m_coords,
-                          label=inclination + r"$^{\circ}$")
+            ax[0, 0].plot(n_coords, m_coords, label=inclination + r"$^{\circ}$")
         ax[0, 0].legend(loc="lower left")
 
     # Clean up the axes with labs and set up scales, limits etc

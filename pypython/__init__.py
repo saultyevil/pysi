@@ -35,13 +35,7 @@ class Spectrum:
     """A class to store PYTHON .spec and .log_spec files.
     The PYTHON spectrum is read in and stored within a dict, where each column
     name is a key and the data is stored as a numpy array."""
-    def __init__(self,
-                 root,
-                 cd=".",
-                 default=None,
-                 log=False,
-                 smooth=None,
-                 delim=None):
+    def __init__(self, root, cd=".", default=None, log=False, smooth=None, delim=None):
         """Initialise a Spectrum object. This method will construct the file path
         of the spectrum file given the root, containing directory and whether
         the logarithmic spectrum is used or not. The spectrum is then read in.
@@ -96,9 +90,7 @@ class Spectrum:
             if default in self.available:
                 self.current = default
             else:
-                raise ValueError(
-                    f"{self.root}.{default} is not available as it has not been read in"
-                )
+                raise ValueError(f"{self.root}.{default} is not available as it has not been read in")
         else:
             self.current = self.available[0]
 
@@ -123,9 +115,7 @@ class Spectrum:
             between delimited with commas instead of spaces."""
 
         n_read = 0
-        files_to_read = [
-            "spec", "spec_tot", "spec_tot_wind", "spec_wind", "spec_tau"
-        ]
+        files_to_read = ["spec", "spec_tot", "spec_tot_wind", "spec_wind", "spec_tau"]
 
         for spec_type in files_to_read:
             fpath = self.fp + self.root + "."
@@ -222,25 +212,21 @@ class Spectrum:
                 return
 
         if to_smooth is None:
-            to_smooth = ("Created", "WCreated", "Emitted", "CenSrc", "Disk",
-                         "Wind", "HitSurf", "Scattered") + tuple(
-                             self.inclinations)
+            to_smooth = ("Created", "WCreated", "Emitted", "CenSrc", "Disk", "Wind", "HitSurf", "Scattered") + tuple(
+                self.inclinations)
         elif type(to_smooth) is str:
             to_smooth = to_smooth,
         else:
-            raise ValueError(
-                "unknown format for to_smooth, must be a tuple of strings or string"
-            )
+            raise ValueError("unknown format for to_smooth, must be a tuple of strings or string")
 
         # Loop over each available spectrum and smooth it
 
         for key in self.available:
             for thing_to_smooth in to_smooth:
                 try:
-                    self.spectrum[key][thing_to_smooth] = convolve(
-                        self.spectrum[key][thing_to_smooth],
-                        boxcar(width) / float(width),
-                        mode="same")
+                    self.spectrum[key][thing_to_smooth] = convolve(self.spectrum[key][thing_to_smooth],
+                                                                   boxcar(width) / float(width),
+                                                                   mode="same")
                 except KeyError:
                     continue
 
@@ -272,8 +258,7 @@ class Spectrum:
         if self.units == UNITS_FLAMBDA:
             ax.plot(self.spectrum["Lambda"], self.spectrum[name], label=name)
             ax.set_xlabel(r"Wavelength [\AA]")
-            ax.set_ylabel(
-                r"Flux Density 100 pc [erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
+            ax.set_ylabel(r"Flux Density 100 pc [erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
             if label_lines:
                 ax = ax_add_line_ids(ax, common_lines(False), logx=True)
         else:
@@ -282,8 +267,7 @@ class Spectrum:
             if self.units == UNITS_LNU:
                 ax.set_ylabel(r"Luminosity 100 pc [erg s$^{-1}$ Hz$^{-1}$]")
             else:
-                ax.set_ylabel(
-                    r"Flux Density 100 pc [erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
+                ax.set_ylabel(r"Flux Density 100 pc [erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
             if label_lines:
                 ax = ax_add_line_ids(ax, common_lines(True), logx=True)
 
@@ -363,9 +347,7 @@ class Spectrum:
         else:
             # todo: update with more functions to plot spec_tot w/o name etc
             if "spec" not in self.available and "log_spec" not in self.available:
-                raise IOError(
-                    f"Unable to plot without parameter 'name' as there is no {self.root}.spec file"
-                )
+                raise IOError(f"Unable to plot without parameter 'name' as there is no {self.root}.spec file")
             fig, ax = self._spec_plot_all(label_lines)
 
         self.current = ot
@@ -384,9 +366,7 @@ class Spectrum:
             name = "log_" + name
 
         if name not in self.available:
-            raise ValueError(
-                f"Spectrum {name} is not available: available {self.available}"
-            )
+            raise ValueError(f"Spectrum {name} is not available: available {self.available}")
 
         self.current = name
         self.spectrum = self.all_spectrum[self.current]
@@ -433,12 +413,7 @@ class Wind:
     extract variables, as well as convert various indices into other indices.
     todo: add dot notation for accessing dictionaries.
     """
-    def __init__(self,
-                 root,
-                 cd=".",
-                 velocity_units="kms",
-                 mask=True,
-                 delim=None):
+    def __init__(self, root, cd=".", velocity_units="kms", mask=True, delim=None):
         """Initialize the Wind object.
 
         Parameters
@@ -478,9 +453,7 @@ class Wind:
         # Set up the velocity units and conversion factors
 
         if velocity_units not in ["cms", "kms", "c"]:
-            print(
-                f"unknown velocity units {velocity_units}. Allowed units [kms, cms, c]"
-            )
+            print(f"unknown velocity units {velocity_units}. Allowed units [kms, cms, c]")
             exit(1)
 
         self.velocity_units = velocity_units
@@ -574,15 +547,12 @@ class Wind:
             if wind_list[0][0].isdigit() is False:
                 wind_columns += wind_list[0]
             else:
-                wind_columns += list(
-                    np.arrange(len(wind_list[0]), dtype=np.str))
+                wind_columns += list(np.arrange(len(wind_list[0]), dtype=np.str))
 
             wind_all.append(np.array(wind_list[1:], dtype=np.float64))
 
         if n_read == 0:
-            raise IOError(
-                f"Unable to open any wind tables for root {self.root} directory {self.fp}"
-            )
+            raise IOError(f"Unable to open any wind tables for root {self.root} directory {self.fp}")
 
         # Determine the number of nx and nz elements. There is a basic check to
         # only check for nz if a j column exists, i.e. if it is a 2d model.
@@ -652,9 +622,7 @@ class Wind:
             elements_to_get = ("H", "He", "C", "N", "O", "Si", "Fe")
         else:
             if type(elements_to_get) not in [str, list, tuple]:
-                print(
-                    "ions_to_get should be a tuple/list of strings or a string"
-                )
+                print("ions_to_get should be a tuple/list of strings or a string")
                 exit(1)
 
         # Read in each ion file, one by one. The ions will be stored in the
@@ -678,8 +646,7 @@ class Wind:
 
             self.variables[element] = {}
 
-            for ion_type, ion_type_index_name in zip(ion_types_to_get,
-                                                     ion_types_index_names):
+            for ion_type, ion_type_index_name in zip(ion_types_to_get, ion_types_index_names):
                 fp = self.fp + self.root + "." + element + "." + ion_type + ".txt"
                 if not path.exists(fp):
                     fp = self.fp + "tables/" + self.root + "." + element + "." + ion_type + ".txt"
@@ -718,13 +685,10 @@ class Wind:
 
                 self.variables[element][ion_type_index_name] = {}
                 for index, col in enumerate(columns):
-                    self.variables[element][ion_type_index_name][
-                        col] = wind[:, index].reshape(self.nx, self.nz)
+                    self.variables[element][ion_type_index_name][col] = wind[:, index].reshape(self.nx, self.nz)
 
         if n_elements_read == 0 and len(self.columns) == 0:
-            raise IOError(
-                "Unable to open any parameter or ion tables: Have you run windsave2table?"
-            )
+            raise IOError("Unable to open any parameter or ion tables: Have you run windsave2table?")
 
     def project_cartesian_velocity_to_cylindrical(self):
         """Project the cartesian velocities of the wind into cylindrical
@@ -737,9 +701,7 @@ class Wind:
 
         for i in range(n1):
             for j in range(n2):
-                cart_point = [
-                    self.variables["x"][i, j], 0, self.variables["z"][i, j]
-                ]
+                cart_point = [self.variables["x"][i, j], 0, self.variables["z"][i, j]]
                 # todo: don't think I need to do this check anymore
                 if self.variables["inwind"][i, j] < 0:
                     v_l[i, j] = 0
@@ -747,17 +709,14 @@ class Wind:
                     v_r[i, j] = 0
                 else:
                     cart_velocity_vector = [
-                        self.variables["v_x"][i, j],
-                        self.variables["v_y"][i, j], self.variables["v_z"][i,
-                                                                           j]
+                        self.variables["v_x"][i, j], self.variables["v_y"][i, j], self.variables["v_z"][i, j]
                     ]
                     cyl_velocity_vector = vector.project_cartesian_to_cylindrical_coordinates(
                         cart_point, cart_velocity_vector)
                     if type(cyl_velocity_vector) is int:
                         # todo: some error has happened, print a warning...
                         continue
-                    v_l[i, j] = np.sqrt(cyl_velocity_vector[0]**2 +
-                                        cyl_velocity_vector[2]**2)
+                    v_l[i, j] = np.sqrt(cyl_velocity_vector[0]**2 + cyl_velocity_vector[2]**2)
                     v_rot[i, j] = cyl_velocity_vector[1]
                     v_r[i, j] = cyl_velocity_vector[0]
 
@@ -776,10 +735,7 @@ class Wind:
         # be done for the wind ions as they don't have the below items in their
         # data structures
 
-        for item_to_remove in [
-                "x", "z", "r", "theta", "xcen", "zcen", "rcen", "theta_cen",
-                "i", "j", "inwind"
-        ]:
+        for item_to_remove in ["x", "z", "r", "theta", "xcen", "zcen", "rcen", "theta_cen", "i", "j", "inwind"]:
             try:
                 to_mask_wind.remove(item_to_remove)
             except ValueError:
@@ -789,8 +745,7 @@ class Wind:
         # enough.
 
         for col in to_mask_wind:
-            self.variables[col] = np.ma.masked_where(
-                self.variables["inwind"] < 0, self.variables[col])
+            self.variables[col] = np.ma.masked_where(self.variables["inwind"] < 0, self.variables[col])
 
         # Now, create masked arrays for the wind ions. Have to do it for each
         # element and each ion type and each ion. This is probably slow :)
@@ -798,10 +753,8 @@ class Wind:
         for element in self.elements:
             for ion_type in self.variables[element].keys():
                 for ion in self.variables[element][ion_type].keys():
-                    self.variables[element][ion_type][
-                        ion] = np.ma.masked_where(
-                            self.variables["inwind"] < 0,
-                            self.variables[element][ion_type][ion])
+                    self.variables[element][ion_type][ion] = np.ma.masked_where(self.variables["inwind"] < 0,
+                                                                                self.variables[element][ion_type][ion])
 
     def _get_element_variable(self, element_name, ion_name):
         """Helper function to get the fraction or density of an ion depending on
@@ -822,8 +775,7 @@ class Wind:
             elif ion_frac_or_den == "f":
                 variable = self.variables[element_name]["fraction"][ion_name]
             else:
-                raise ValueError(
-                    f"{ion_frac_or_den} is an unknown ion type, try f or d")
+                raise ValueError(f"{ion_frac_or_den} is an unknown ion type, try f or d")
         else:
             variable = self.variables[element_name]["density"][ion_name]
 
@@ -854,8 +806,7 @@ class Wind:
         theta: float
             The angle of the sight line to extract from. Given in degrees.
         """
-        return np.array(self.m_coords,
-                        dtype=np.float64) * np.tan(PI / 2 - np.deg2rad(theta))
+        return np.array(self.m_coords, dtype=np.float64) * np.tan(PI / 2 - np.deg2rad(theta))
 
     def get_variable_along_sight_line(self, theta, parameter):
         """Extract a variable along a given sight line.
@@ -905,16 +856,11 @@ class Wind:
             n_points = self.variables["i"]
             m_points = self.variables["i"]
         else:
-            raise ValueError(
-                "Cannot plot with the cell indices for polar winds")
+            raise ValueError("Cannot plot with the cell indices for polar winds")
 
         return n_points, m_points
 
-    def plot(self,
-             variable_name,
-             use_cell_coordinates=True,
-             fraction=False,
-             scale="loglog"):
+    def plot(self, variable_name, use_cell_coordinates=True, fraction=False, scale="loglog"):
         """Create a plot of the wind for the given variable.
         Parameters
         ----------
@@ -940,11 +886,7 @@ class Wind:
         if self.coord_system == "spherical":
             fig, ax = plot_1d_wind(n_points, variable, scale=scale)
         else:
-            fig, ax = plot_2d_wind(n_points,
-                                   m_points,
-                                   variable,
-                                   self.coord_system,
-                                   scale=scale)
+            fig, ax = plot_2d_wind(n_points, m_points, variable, self.coord_system, scale=scale)
 
         # Finally, label the axes with what we actually plotted
 
@@ -987,8 +929,7 @@ class Wind:
         """Print basic details about the wind.
         """
         txt = "root: {}\nfilepath: {}\ncoordinate system:{}\nparameters: {}\nelements: {}\n".format(
-            self.root, self.fp, self.coord_system, self.parameters,
-            self.elements)
+            self.root, self.fp, self.coord_system, self.parameters, self.elements)
 
         return txt
 
@@ -1022,8 +963,7 @@ def cleanup_data(fp=".", verbose=False):
 
     # - type l will only search for symbolic links
     cmd = "cd {}; find . -type l -name 'data'".format(fp)
-    stdout, stderr = Popen(cmd, stdout=PIPE, stderr=PIPE,
-                           shell=True).communicate()
+    stdout, stderr = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
     stdout = stdout.decode("utf-8")
     stderr = stderr.decode("utf-8")
 
@@ -1032,9 +972,7 @@ def cleanup_data(fp=".", verbose=False):
         print(stderr)
 
     if stdout and verbose:
-        print(
-            "deleting data symbolic links in the following directories:\n\n{}".
-            format(stdout[:-1]))
+        print("deleting data symbolic links in the following directories:\n\n{}".format(stdout[:-1]))
     else:
         print("no data symlinks to delete")
         return n_del
@@ -1044,8 +982,7 @@ def cleanup_data(fp=".", verbose=False):
     for directory in directories:
         current = fp + directory[1:]
         cmd = "rm {}".format(current)
-        stdout, stderr = Popen(cmd, stdout=PIPE, stderr=PIPE,
-                               shell=True).communicate()
+        stdout, stderr = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
         if stderr:
             print(stderr.decode("utf-8"))
         else:
@@ -1067,14 +1004,8 @@ def get_file(pattern, fp="."):
 
     files = [str(file_) for file_ in Path(f"{fp}").rglob(pattern)]
     if ".pf" in pattern:
-        files = [
-            file_ for file_ in files
-            if "out.pf" not in file_ and "py_wind" not in file_
-        ]
-    files.sort(key=lambda var: [
-        int(x) if x.isdigit() else x
-        for x in re.findall(r'[^0-9]|[0-9]+', var)
-    ])
+        files = [file_ for file_ in files if "out.pf" not in file_ and "py_wind" not in file_]
+    files.sort(key=lambda var: [int(x) if x.isdigit() else x for x in re.findall(r'[^0-9]|[0-9]+', var)])
 
     return files
 
@@ -1121,9 +1052,7 @@ def get_root(fp):
         The directory path containing the provided Python .pf file
     """
     if type(fp) is not str:
-        raise TypeError(
-            "expected a string as input for the file path, not whatever you put"
-        )
+        raise TypeError("expected a string as input for the file path, not whatever you put")
 
     dot = fp.rfind(".")
     slash = fp.rfind("/")
@@ -1164,9 +1093,7 @@ def smooth_array(array, width):
     if type(array) is not np.ndarray:
         array = np.array(array)
 
-    array = np.reshape(
-        array,
-        (len(array), ))  # todo: why do I have to do this? safety probably
+    array = np.reshape(array, (len(array), ))  # todo: why do I have to do this? safety probably
 
     return convolve(array, boxcar(width) / float(width), mode="same")
 
@@ -1249,10 +1176,7 @@ def run_py_wind_commands(root, commands, fp="."):
         for i in range(len(commands)):
             f.write("{}\n".format(commands[i]))
 
-    sh = Popen("cd {}; py_wind {} < .tmpcmds.txt".format(fp, root),
-               stdout=PIPE,
-               stderr=PIPE,
-               shell=True)
+    sh = Popen("cd {}; py_wind {} < .tmpcmds.txt".format(fp, root), stdout=PIPE, stderr=PIPE, shell=True)
     stdout, stderr = sh.communicate()
     if stderr:
         print(stderr.decode("utf-8"))

@@ -14,8 +14,7 @@ import pandas as pd
 
 from .blackbody import planck_lambda, planck_nu
 from .blackhole import gravitational_radius, innermost_stable_circular_orbit
-from .constants import (MPROT, MSOL, MSOL_PER_YEAR, PI, STEFAN_BOLTZMANN,
-                        THOMPSON, C, G)
+from .constants import (MPROT, MSOL, MSOL_PER_YEAR, PI, STEFAN_BOLTZMANN, THOMPSON, C, G)
 
 
 def alpha_disc_effective_temperature(ri, r_co, m_co, mdot):
@@ -75,10 +74,8 @@ def modified_eddigton_alpha_disc_effective_temperature(ri, m_co, mdot):
 
     with np.errstate(all="ignore"):
         fnt = 1 - np.sqrt(risco / ri)
-        teff4 = (3 * G * m_co * mdot * fnt) / (8 * PI * ri**3 *
-                                               STEFAN_BOLTZMANN)
-        teff4 *= (0.5 + (0.25 + 6 * fnt * (mdot * C**2 / ledd)**2 *
-                         (ri / rg)**-2)**0.5)**-1
+        teff4 = (3 * G * m_co * mdot * fnt) / (8 * PI * ri**3 * STEFAN_BOLTZMANN)
+        teff4 *= (0.5 + (0.25 + 6 * fnt * (mdot * C**2 / ledd)**2 * (ri / rg)**-2)**0.5)**-1
 
     return teff4**0.25
 
@@ -121,15 +118,7 @@ def eddington_luminosity_limit(mbh):
     return (4 * PI * G * mbh * C * MPROT) / THOMPSON
 
 
-def create_disc_spectrum(m_co,
-                         mdot,
-                         r_in,
-                         r_out,
-                         freq_min,
-                         freq_max,
-                         freq_units=True,
-                         n_freq=5000,
-                         n_rings=1000):
+def create_disc_spectrum(m_co, mdot, r_in, r_out, freq_min, freq_max, freq_units=True, n_freq=5000, n_rings=1000):
     """Create a crude accretion disc spectrum. This works by approximating an
     accretion disc as being a collection of annuli radiating at different
     temperatures and treats them as a blackbody. The emerging spectrum is then

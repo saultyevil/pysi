@@ -37,20 +37,9 @@ def setup_script():
     p = ap.ArgumentParser(description=__doc__)
 
     p.add_argument("root", type=str, help="The root name of the simulation.")
-    p.add_argument("-wd",
-                   "--working_directory",
-                   default=".",
-                   help="The directory containing the simulation.")
-    p.add_argument("-xl",
-                   "--xmin",
-                   type=float,
-                   default=None,
-                   help="The lower x-axis boundary to display.")
-    p.add_argument("-xu",
-                   "--xmax",
-                   type=float,
-                   default=None,
-                   help="The upper x-axis boundary to display.")
+    p.add_argument("-wd", "--working_directory", default=".", help="The directory containing the simulation.")
+    p.add_argument("-xl", "--xmin", type=float, default=None, help="The lower x-axis boundary to display.")
+    p.add_argument("-xu", "--xmax", type=float, default=None, help="The upper x-axis boundary to display.")
     p.add_argument("-s",
                    "--scales",
                    default="logy",
@@ -66,20 +55,13 @@ def setup_script():
                    action="store_true",
                    default=False,
                    help="Create the figure in frequency space.")
-    p.add_argument("-e",
-                   "--ext",
-                   default="png",
-                   help="The file extension for the output figure.")
-    p.add_argument("--display",
-                   action="store_true",
-                   default=False,
-                   help="Display the plot before exiting the script.")
+    p.add_argument("-e", "--ext", default="png", help="The file extension for the output figure.")
+    p.add_argument("--display", action="store_true", default=False, help="Display the plot before exiting the script.")
 
     args = p.parse_args()
 
-    setup = (args.root, args.working_directory, args.xmin, args.xmax,
-             args.frequency_space, args.absorption_edges, args.scales,
-             args.ext, args.display)
+    setup = (args.root, args.working_directory, args.xmin, args.xmax, args.frequency_space, args.absorption_edges,
+             args.scales, args.ext, args.display)
 
     return setup
 
@@ -147,13 +129,11 @@ def main(setup=None):
     if setup:
         root, wd, xmin, xmax, frequency_space, absorption_edges, axes_scales, file_ext, display = setup
     else:
-        root, wd, xmin, xmax, frequency_space, absorption_edges, axes_scales, file_ext, display = setup_script(
-        )
+        root, wd, xmin, xmax, frequency_space, absorption_edges, axes_scales, file_ext, display = setup_script()
 
     root = root.replace("/", "")
 
-    fig, ax = plot_optical_depth_spectrum(root, wd, xmin, xmax, axes_scales,
-                                          absorption_edges, frequency_space,
+    fig, ax = plot_optical_depth_spectrum(root, wd, xmin, xmax, axes_scales, absorption_edges, frequency_space,
                                           file_ext, display)
 
     return fig, ax

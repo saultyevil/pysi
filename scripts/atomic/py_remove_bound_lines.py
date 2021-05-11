@@ -16,13 +16,9 @@ def setup_script():
 
     p = ap.ArgumentParser(description=__doc__)
 
-    p.add_argument("atomic_number",
-                   type=int,
-                   help="The atomic number of the ion to remove.")
+    p.add_argument("atomic_number", type=int, help="The atomic number of the ion to remove.")
 
-    p.add_argument("ionisation_state",
-                   type=int,
-                   help="The ionization state of the ion to remove.")
+    p.add_argument("ionisation_state", type=int, help="The ionization state of the ion to remove.")
 
     args = p.parse_args()
 

@@ -6,21 +6,17 @@ from typing import List, Tuple, Union
 import numpy as np
 from matplotlib import pyplot as plt
 
-from pypython import (UNITS_FLAMBDA, UNITS_FNU, UNITS_LNU, Spectrum, get_root,
-                      smooth_array)
+from pypython import (UNITS_FLAMBDA, UNITS_FNU, UNITS_LNU, Spectrum, get_root, smooth_array)
 from pypython.error import InvalidParameter
 from pypython.physics.constants import PARSEC
-from pypython.plot import (ax_add_line_ids, common_lines,
-                           get_y_lims_for_x_lims, normalize_figure_style,
-                           photoionization_edges, remove_extra_axes,
-                           subplot_dims)
+from pypython.plot import (ax_add_line_ids, common_lines, get_y_lims_for_x_lims, normalize_figure_style,
+                           photoionization_edges, remove_extra_axes, subplot_dims)
 
 MIN_SPEC_COMP_FLUX = 1e-15
 DEFAULT_PYTHON_DISTANCE = 100 * PARSEC
 
 
-def _plot_panel_subplot(ax, x_values, spectrum, units, things_to_plot,
-                        x_limits, sm, alpha, scale, frequency_space,
+def _plot_panel_subplot(ax, x_values, spectrum, units, things_to_plot, x_limits, sm, alpha, scale, frequency_space,
                         skip_sparse):
     """Create a subplot panel for a figure given the spectrum components names
     in the list dname.
@@ -171,11 +167,9 @@ def plot(x,
     normalize_figure_style()
 
     if fig and not ax:
-        raise InvalidParameter(
-            "fig has been provided, but ax has not. Both are required.")
+        raise InvalidParameter("fig has been provided, but ax has not. Both are required.")
     if not fig and ax:
-        raise InvalidParameter(
-            "fig has not been provided, but ax has. Both are required.")
+        raise InvalidParameter("fig has not been provided, but ax has. Both are required.")
     if not fig and not ax:
         fig, ax = plt.subplots(1, 1, figsize=(12, 5))
     if label is None:
@@ -272,8 +266,7 @@ def plot_optical_depth(root,
     spectrum = Spectrum(root, wd, "spec_tau")
     spec_angles = spectrum.inclinations
     n_angles = len(spec_angles)
-    n_plots = len(
-        inclinations)  # Really have no clue what this does in hindsight...
+    n_plots = len(inclinations)  # Really have no clue what this does in hindsight...
 
     # Ignore all if other inclinations are passed - assume it was a mistake to pass all
 
@@ -299,8 +292,7 @@ def plot_optical_depth(root,
     # This loop will plot the inclinations provided by the user
 
     for i in range(n_plots):
-        if inclinations[0] != "all" and inclinations[
-                i] not in spec_angles:  # Skip inclinations which don't exist
+        if inclinations[0] != "all" and inclinations[i] not in spec_angles:  # Skip inclinations which don't exist
             continue
         ii = str(inclinations[i])
         label = ii + r"$^{\circ}$"
@@ -375,11 +367,7 @@ def plot_spectrum_physics_process_contributions(contribution_spectra,
     fig, ax = plt.subplots(figsize=(12, 8))
 
     for name, spectrum in contribution_spectra.items():
-        ax.plot(spectrum["Lambda"],
-                smooth_array(spectrum[inclination], sm),
-                label=name,
-                linewidth=lw,
-                alpha=alpha)
+        ax.plot(spectrum["Lambda"], smooth_array(spectrum[inclination], sm), label=name, linewidth=lw, alpha=alpha)
 
     if scale == "logx" or scale == "loglog":
         ax.set_xscale("log")
@@ -486,14 +474,10 @@ def plot_spectrum_components(root,
         x = spectrum["Lambda"]
     xlims = (None, None)
 
-    ax[0] = _plot_panel_subplot(ax[0], x, spectrum, spectrum.units,
-                                ["Created", "WCreated", "Emitted"], xlims,
-                                smooth_amount, alpha, scale, frequency_space,
-                                True)
-    ax[1] = _plot_panel_subplot(ax[1], x, spectrum, spectrum.units,
-                                ["CenSrc", "Disk", "Wind", "HitSurf"], xlims,
-                                smooth_amount, alpha, scale, frequency_space,
-                                True)
+    ax[0] = _plot_panel_subplot(ax[0], x, spectrum, spectrum.units, ["Created", "WCreated", "Emitted"], xlims,
+                                smooth_amount, alpha, scale, frequency_space, True)
+    ax[1] = _plot_panel_subplot(ax[1], x, spectrum, spectrum.units, ["CenSrc", "Disk", "Wind", "HitSurf"], xlims,
+                                smooth_amount, alpha, scale, frequency_space, True)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 
@@ -561,12 +545,8 @@ def plot_spectrum_inclinations_in_subpanels(root,
 
     normalize_figure_style()
 
-    fig, ax = plt.subplots(plot_dimensions[0],
-                           plot_dimensions[1],
-                           figsize=size,
-                           squeeze=False)
-    fig, ax = remove_extra_axes(fig, ax, n_inclinations,
-                                plot_dimensions[0] * plot_dimensions[1])
+    fig, ax = plt.subplots(plot_dimensions[0], plot_dimensions[1], figsize=size, squeeze=False)
+    fig, ax = remove_extra_axes(fig, ax, n_inclinations, plot_dimensions[0] * plot_dimensions[1])
 
     # Use either frequency or wavelength and set the plot limits respectively
 
@@ -587,10 +567,8 @@ def plot_spectrum_inclinations_in_subpanels(root,
             if inclination_index > n_inclinations - 1:
                 break
             name = str(spectrum_inclinations[inclination_index])
-            ax[i,
-               j] = _plot_panel_subplot(ax[i, j], x, spectrum, spectrum_units,
-                                        name, xlims, smooth_amount, 1, scale,
-                                        frequency_space, False)
+            ax[i, j] = _plot_panel_subplot(ax[i, j], x, spectrum, spectrum_units, name, xlims, smooth_amount, 1, scale,
+                                           frequency_space, False)
             ymin, ymax = get_y_lims_for_x_lims(x, spectrum[name], xmin, xmax)
             ax[i, j].set_ylim(ymin, ymax)
 
@@ -599,9 +577,7 @@ def plot_spectrum_inclinations_in_subpanels(root,
                     logx = True
                 else:
                     logx = False
-                ax[i, j] = ax_add_line_ids(ax[i, j],
-                                           common_lines(frequency_space),
-                                           logx=logx)
+                ax[i, j] = ax_add_line_ids(ax[i, j], common_lines(frequency_space), logx=logx)
             inclination_index += 1
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
@@ -831,8 +807,7 @@ def plot_multiple_model_spectra(output_name,
             ax[i].set_ylabel(r"$\nu F_{\nu}$ (erg s$^{-1}$ cm$^{-2}$")
         else:
             ax[i].set_xlabel(r"Wavelength [$\AA$]")
-            ax[i].set_ylabel(
-                r"$F_{\lambda}$ (erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)")
+            ax[i].set_ylabel(r"$F_{\lambda}$ (erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)")
 
         if plot_common_lines:
             if axes_scales == "logx" or axes_scales == "loglog":

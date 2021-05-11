@@ -37,18 +37,9 @@ def parse_arguments():
     p.add_argument("name", help="The name of the slurm file, i.e. name.slurm.")
     p.add_argument("root", help="The root name of the model.")
     p.add_argument("ncores", type=int, help="The number of CPUs to use.")
-    p.add_argument("thours",
-                   type=int,
-                   help="The number of hours of run time allowed.")
-    p.add_argument(
-        "tminutes",
-        type=int,
-        help="The number of minutes of additional run time allowed.")
-    p.add_argument(
-        "-f",
-        "--flags",
-        default="",
-        help="Any flags to pass to the py_run.py Python running script.")
+    p.add_argument("thours", type=int, help="The number of hours of run time allowed.")
+    p.add_argument("tminutes", type=int, help="The number of minutes of additional run time allowed.")
+    p.add_argument("-f", "--flags", default="", help="Any flags to pass to the py_run.py Python running script.")
     p.add_argument("-sc",
                    "--split_cycle",
                    action="store_true",
@@ -63,11 +54,9 @@ def parse_arguments():
 def main():
     """Main function of the script."""
 
-    name, n_cores, t_hours, t_minutes, split_cycle, root, flags = parse_arguments(
-    )
+    name, n_cores, t_hours, t_minutes, split_cycle, root, flags = parse_arguments()
     flags += " -t {} ".format(int(t_hours * 3600 + t_minutes * 60))
-    create_slurm_file(name, n_cores, split_cycle, t_hours, t_minutes, root,
-                      flags)
+    create_slurm_file(name, n_cores, split_cycle, t_hours, t_minutes, root, flags)
 
     return
 

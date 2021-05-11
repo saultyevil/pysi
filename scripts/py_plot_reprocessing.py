@@ -37,43 +37,28 @@ def setup_script():
     p = ap.ArgumentParser(description=__doc__)
 
     p.add_argument("root", help="The root name of simulation.")
-    p.add_argument("-wd",
-                   "--working_directory",
-                   default=".",
-                   help="The directory containing the simulation.")
-    p.add_argument(
-        "-n",
-        "--ncores",
-        type=int,
-        default=0,
-        help=
-        "The number of cores to use to create the continuum spectrum if required."
-    )
+    p.add_argument("-wd", "--working_directory", default=".", help="The directory containing the simulation.")
+    p.add_argument("-n",
+                   "--ncores",
+                   type=int,
+                   default=0,
+                   help="The number of cores to use to create the continuum spectrum if required.")
     p.add_argument("-sm",
                    "--smooth_amount",
                    type=int,
                    default=50,
                    help="The amount of smoothing to use on the spectra.")
-    p.add_argument("--display",
-                   action="store_true",
-                   default=False,
-                   help="Display the figure.")
+    p.add_argument("--display", action="store_true", default=False, help="Display the figure.")
 
     args = p.parse_args()
 
-    setup = (args.root, args.working_directory,
-             args.ncores if args.ncores > 0 else get_cpu_count(),
-             args.smooth_amount, args.display)
+    setup = (args.root, args.working_directory, args.ncores if args.ncores > 0 else get_cpu_count(), args.smooth_amount,
+             args.display)
 
     return setup
 
 
-def create_plot(root,
-                spectrum,
-                optical_depth_spectrum,
-                sm=1,
-                bgalpha=0.50,
-                display=False):
+def create_plot(root, spectrum, optical_depth_spectrum, sm=1, bgalpha=0.50, display=False):
     """Create a figure to show how the underlying continuum is being reprocessed.
 
     Parameters
@@ -103,27 +88,17 @@ def create_plot(root,
     # todo: check units of spectrum before doing this
 
     emerg_spec_freq = spectrum["Freq."]
-    emerg_spec_flux = spectrum["Emitted"] * 4 * PI * (
-        100 * PARSEC)**2 * spectrum["Lambda"]
+    emerg_spec_flux = spectrum["Emitted"] * 4 * PI * (100 * PARSEC)**2 * spectrum["Lambda"]
     cont_spec_freq = spectrum["Freq."]
-    cont_spec_flux = spectrum["Created"] * 4 * PI * (
-        100 * PARSEC)**2 * spectrum["Lambda"]
+    cont_spec_flux = spectrum["Created"] * 4 * PI * (100 * PARSEC)**2 * spectrum["Lambda"]
 
     # Plot the spectra, these spectra are plotted on ax2 to have a separates y
     # axis on loglog scale
 
     fig, ax = plt.subplots(figsize=(12, 7))
     ax2 = ax.twinx()
-    ax2.loglog(cont_spec_freq,
-               smooth_array(cont_spec_flux, sm),
-               "k--",
-               zorder=0,
-               alpha=bgalpha)
-    ax2.loglog(emerg_spec_freq,
-               smooth_array(emerg_spec_flux, sm),
-               "k-",
-               zorder=1,
-               alpha=bgalpha)
+    ax2.loglog(cont_spec_freq, smooth_array(cont_spec_flux, sm), "k--", zorder=0, alpha=bgalpha)
+    ax2.loglog(emerg_spec_freq, smooth_array(emerg_spec_flux, sm), "k-", zorder=1, alpha=bgalpha)
     ax2.set_ylabel(r"$\nu L_{\nu}$ [ergs s$^{-1}$]")
 
     # Plot the optical depths, again as a function of frequency
@@ -134,9 +109,7 @@ def create_plot(root,
             # I think this is to check that we're not going to plot a sightline
             # which has no optical depth values
             continue
-        ax.loglog(optical_depth_freq,
-                  od,
-                  label=r"$\tau($" + "i = {}".format(sl) + r"$^{\circ} )$")
+        ax.loglog(optical_depth_freq, od, label=r"$\tau($" + "i = {}".format(sl) + r"$^{\circ} )$")
 
     ax.legend(loc="lower left")
     ax.set_ylabel(r"Continuum Optical Depth $\tau$")

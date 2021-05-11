@@ -40,49 +40,23 @@ def setup_script():
     p = ap.ArgumentParser(description=__doc__)
 
     p.add_argument("root", type=str, help="The root name of the simulation.")
-    p.add_argument("-wd",
-                   "--working_directory",
-                   default=".",
-                   help="The directory containing the simulation.")
-    p.add_argument("-xl",
-                   "--xmin",
-                   type=float,
-                   default=None,
-                   help="The lower x-axis boundary to display.")
-    p.add_argument("-xu",
-                   "--xmax",
-                   type=float,
-                   default=None,
-                   help="The upper x-axis boundary to display.")
+    p.add_argument("-wd", "--working_directory", default=".", help="The directory containing the simulation.")
+    p.add_argument("-xl", "--xmin", type=float, default=None, help="The lower x-axis boundary to display.")
+    p.add_argument("-xu", "--xmax", type=float, default=None, help="The upper x-axis boundary to display.")
     p.add_argument("-f",
                    "--frequency_space",
                    action="store_true",
                    default=False,
                    help="Create the figure in frequency space.")
-    p.add_argument("-p",
-                   "--polar",
-                   action="store_true",
-                   default=False,
-                   help="Plot using polar projection.")
-    p.add_argument("-sm",
-                   "--smooth_amount",
-                   type=int,
-                   default=5,
-                   help="The size of the boxcar smoothing filter.")
-    p.add_argument("-e",
-                   "--ext",
-                   default="png",
-                   help="The file extension for the output figure.")
-    p.add_argument("--display",
-                   action="store_true",
-                   default=False,
-                   help="Display the plot before exiting the script.")
+    p.add_argument("-p", "--polar", action="store_true", default=False, help="Plot using polar projection.")
+    p.add_argument("-sm", "--smooth_amount", type=int, default=5, help="The size of the boxcar smoothing filter.")
+    p.add_argument("-e", "--ext", default="png", help="The file extension for the output figure.")
+    p.add_argument("--display", action="store_true", default=False, help="Display the plot before exiting the script.")
 
     args = p.parse_args()
 
-    setup = (args.root, args.working_directory, args.xmin, args.xmax,
-             args.frequency_space, args.polar, args.smooth_amount, args.ext,
-             args.display)
+    setup = (args.root, args.working_directory, args.xmin, args.xmax, args.frequency_space, args.polar,
+             args.smooth_amount, args.ext, args.display)
 
     return setup
 
@@ -111,30 +85,26 @@ def plot(setup=None):
     if setup:
         root, wd, xmin, xmax, frequency_space, polar_coords, smooth_amount, file_ext, display = setup
     else:
-        root, wd, xmin, xmax, frequency_space, polar_coords, smooth_amount, file_ext, display = setup_script(
-        )
+        root, wd, xmin, xmax, frequency_space, polar_coords, smooth_amount, file_ext, display = setup_script()
 
     # Create plots for the wind - only create velocity plots for rectilinear
     # at the moment - and remove the data folder afterwards
 
     try:
-        py_plot_wind.main((root, wd, polar_coords, False, "loglog", False,
-                           file_ext, display))
+        py_plot_wind.main((root, wd, polar_coords, False, "loglog", False, file_ext, display))
     except Exception as e:
         print("Problem when plotting model wind")
         print(e)
 
     # Create plots for the different spectra
     try:
-        py_plot_spectrum.main((root, wd, xmin, xmax, frequency_space, True,
-                               "logy", smooth_amount, file_ext, display))
+        py_plot_spectrum.main((root, wd, xmin, xmax, frequency_space, True, "logy", smooth_amount, file_ext, display))
     except Exception as e:
         print("Problem when plotting model spectra")
         print(e)
 
     try:
-        py_plot_optical_depth.main(
-            (root, wd, xmin, xmax, False, True, "loglog", file_ext, display))
+        py_plot_optical_depth.main((root, wd, xmin, xmax, False, True, "loglog", file_ext, display))
     except Exception as e:
         print("Problem with plotting optical depth spectrum")
         print(e)

@@ -29,20 +29,9 @@ def setup_script():
     p = ap.ArgumentParser(description=__doc__)
 
     p.add_argument("root", type=str, help="The root name of the simulation.")
-    p.add_argument("-wd",
-                   "--working_directory",
-                   default=".",
-                   help="The directory containing the simulation.")
-    p.add_argument("-xl",
-                   "--xmin",
-                   type=float,
-                   default=None,
-                   help="The lower x-axis boundary to display.")
-    p.add_argument("-xu",
-                   "--xmax",
-                   type=float,
-                   default=None,
-                   help="The upper x-axis boundary to display.")
+    p.add_argument("-wd", "--working_directory", default=".", help="The directory containing the simulation.")
+    p.add_argument("-xl", "--xmin", type=float, default=None, help="The lower x-axis boundary to display.")
+    p.add_argument("-xu", "--xmax", type=float, default=None, help="The upper x-axis boundary to display.")
     p.add_argument("-s",
                    "--scales",
                    default="logy",
@@ -58,25 +47,14 @@ def setup_script():
                    action="store_true",
                    default=False,
                    help="Create the figure in frequency space.")
-    p.add_argument("-sm",
-                   "--smooth_amount",
-                   type=int,
-                   default=5,
-                   help="The size of the boxcar smoothing filter.")
-    p.add_argument("-e",
-                   "--ext",
-                   default="png",
-                   help="The file extension for the output figure.")
-    p.add_argument("--display",
-                   action="store_true",
-                   default=False,
-                   help="Display the plot before exiting the script.")
+    p.add_argument("-sm", "--smooth_amount", type=int, default=5, help="The size of the boxcar smoothing filter.")
+    p.add_argument("-e", "--ext", default="png", help="The file extension for the output figure.")
+    p.add_argument("--display", action="store_true", default=False, help="Display the plot before exiting the script.")
 
     args = p.parse_args()
 
-    setup = (args.root, args.working_directory, args.xmin, args.xmax,
-             args.frequency_space, args.common_lines, args.scales,
-             args.smooth_amount, args.ext, args.display)
+    setup = (args.root, args.working_directory, args.xmin, args.xmax, args.frequency_space, args.common_lines,
+             args.scales, args.smooth_amount, args.ext, args.display)
 
     return setup
 
@@ -195,16 +173,15 @@ def plot_all_spectrum_inclinations_in_one_panel(root,
     return fig, ax
 
 
-def plot_spectrum_inclinations_on_one_figure_in_subpanels(
-        root,
-        cd="./",
-        xmin=None,
-        xmax=None,
-        smooth_amount=5,
-        frequency_space=False,
-        axes_scales="logy",
-        common_lines=True,
-        file_ext="png"):
+def plot_spectrum_inclinations_on_one_figure_in_subpanels(root,
+                                                          cd="./",
+                                                          xmin=None,
+                                                          xmax=None,
+                                                          smooth_amount=5,
+                                                          frequency_space=False,
+                                                          axes_scales="logy",
+                                                          common_lines=True,
+                                                          file_ext="png"):
     """Plot each separate spectrum in an individual panel, on one figure.
 
     Parameters
@@ -236,9 +213,8 @@ def plot_spectrum_inclinations_on_one_figure_in_subpanels(
     ax: plt.Axes
         The matplotlib Axes objects for the plot panels."""
 
-    fig, ax = spec.plot_spectrum_inclinations_in_subpanels(
-        root, cd, xmin, xmax, smooth_amount, common_lines, frequency_space,
-        axes_scales)
+    fig, ax = spec.plot_spectrum_inclinations_in_subpanels(root, cd, xmin, xmax, smooth_amount, common_lines,
+                                                           frequency_space, axes_scales)
     fig.savefig("{}/{}_spectra.{}".format(cd, root, file_ext))
 
     return fig, ax
@@ -307,24 +283,15 @@ def plot_spectrum_inclination_in_individual_figures(root,
         # Convert into lambda F_lambda which is (I hope) the same as nu F_nu
         if frequency_space:
             y *= spectrum["Lambda"]
-        fig, ax = spec.plot(x,
-                            y,
-                            xmin,
-                            xmax,
-                            xlabel,
-                            ylabel,
-                            axes_scales,
-                            alpha=alpha)
+        fig, ax = spec.plot(x, y, xmin, xmax, xlabel, ylabel, axes_scales, alpha=alpha)
         if axes_scales == "loglog" or axes_scales == "logx":
             logx = True
         else:
             logx = False
         ax = plot.ax_add_line_ids(ax, plot.common_lines(), logx=logx)
-        ax.set_title("Inclination i = {}".format(str(inclination)) +
-                     r"$^{\circ}$")
+        ax.set_title("Inclination i = {}".format(str(inclination)) + r"$^{\circ}$")
         fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
-        fig.savefig("{}/{}_i{}_spectrum.{}".format(cd, root, str(inclination),
-                                                   file_ext))
+        fig.savefig("{}/{}_i{}_spectrum.{}".format(cd, root, str(inclination), file_ext))
 
     return
 
@@ -368,29 +335,24 @@ def main(setup=None):
     root = root.replace("/", "")
 
     try:
-        plot_all_spectrum_inclinations_in_one_panel(root, cd, xmin, xmax,
-                                                    smooth_amount,
-                                                    frequency_space,
-                                                    axes_scales, common_lines,
-                                                    file_ext)
+        plot_all_spectrum_inclinations_in_one_panel(root, cd, xmin, xmax, smooth_amount, frequency_space, axes_scales,
+                                                    common_lines, file_ext)
     except IOError:
         pass
     except Exception as e:
         print(e)
 
     try:
-        plot_spectrum_inclinations_on_one_figure_in_subpanels(
-            root, cd, xmin, xmax, smooth_amount, frequency_space, axes_scales,
-            False, file_ext)
+        plot_spectrum_inclinations_on_one_figure_in_subpanels(root, cd, xmin, xmax, smooth_amount, frequency_space,
+                                                              axes_scales, False, file_ext)
     except IOError:
         pass
     except Exception as e:
         print(e)
 
     try:
-        plot_spectrum_inclination_in_individual_figures(
-            root, cd, xmin, xmax, smooth_amount, frequency_space, axes_scales,
-            file_ext)
+        plot_spectrum_inclination_in_individual_figures(root, cd, xmin, xmax, smooth_amount, frequency_space,
+                                                        axes_scales, file_ext)
     except IOError:
         pass
     except Exception as e:
@@ -400,9 +362,7 @@ def main(setup=None):
 
     alpha = 0.75
     try:
-        fig, ax = spec.plot_spectrum_components(root, cd, False, False, xmin,
-                                                xmax, smooth_amount,
-                                                axes_scales, alpha,
+        fig, ax = spec.plot_spectrum_components(root, cd, False, False, xmin, xmax, smooth_amount, axes_scales, alpha,
                                                 frequency_space, display)
         fig.savefig("{}/{}_spectrum_components.{}".format(cd, root, file_ext))
     except IOError:
@@ -412,9 +372,7 @@ def main(setup=None):
 
     # log_spec_tot - all photons
     try:
-        fig, ax = spec.plot_spectrum_components(root, cd, True, False, xmin,
-                                                xmax, smooth_amount,
-                                                axes_scales, alpha,
+        fig, ax = spec.plot_spectrum_components(root, cd, True, False, xmin, xmax, smooth_amount, axes_scales, alpha,
                                                 frequency_space, display)
         fig.savefig("{}/{}_spec_tot.{}".format(cd, root, file_ext))
     except IOError:
@@ -424,9 +382,7 @@ def main(setup=None):
 
     # log_spec_tot_wind - anything which is "inwind"
     try:
-        fig, ax = spec.plot_spectrum_components(root, cd, False, True, xmin,
-                                                xmax, smooth_amount,
-                                                axes_scales, alpha,
+        fig, ax = spec.plot_spectrum_components(root, cd, False, True, xmin, xmax, smooth_amount, axes_scales, alpha,
                                                 frequency_space, display)
         fig.savefig("{}/{}_spec_tot_wind.{}".format(cd, root, file_ext))
     except IOError:

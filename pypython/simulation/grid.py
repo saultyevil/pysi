@@ -9,11 +9,7 @@ from shutil import copyfile
 from typing import List
 
 
-def update_single_parameter(path,
-                            parameter_name,
-                            new_value,
-                            backup=True,
-                            verbose=False):
+def update_single_parameter(path, parameter_name, new_value, backup=True, verbose=False):
     """Change the value of a parameter in a Python parameter file. If the old and
     new parameter value are the same, the script will still update the parameter
     file.
@@ -32,9 +28,7 @@ def update_single_parameter(path,
         Enable verbose output to the screen"""
 
     if path.find(".pf") == -1:
-        raise IOError(
-            "provided parameter file path {} is not a .pf parameter file".
-            format(path))
+        raise IOError("provided parameter file path {} is not a .pf parameter file".format(path))
 
     if backup:
         copyfile(path, path + ".bak")
@@ -58,12 +52,10 @@ def update_single_parameter(path,
 
     if old and new:
         if verbose:
-            print("changed parameter {} from {} to {}".format(
-                parameter_name, old.replace("\n", ""), new.replace("\n", "")))
+            print("changed parameter {} from {} to {}".format(parameter_name, old.replace("\n", ""),
+                                                              new.replace("\n", "")))
     else:
-        print(
-            "unable to update: could not find parameter {} in file {}".format(
-                parameter_name, path))
+        print("unable to update: could not find parameter {} in file {}".format(parameter_name, path))
         return
 
     with open(path, "w") as f:
@@ -90,9 +82,7 @@ def add_single_parameter(path, parameter_name, new_value, backup=True):
         Create a back up of the original parameter file"""
 
     if path.find(".pf") == -1:
-        raise IOError(
-            "provided parameter file path {} is not a .pf parameter file".
-            format(path))
+        raise IOError("provided parameter file path {} is not a .pf parameter file".format(path))
 
     if backup:
         copyfile(path, path + ".bak")
@@ -112,12 +102,7 @@ def add_single_parameter(path, parameter_name, new_value, backup=True):
     return
 
 
-def create_grid(path,
-                parameter_name,
-                grid_values,
-                extra_name=None,
-                backup=True,
-                verbose=False):
+def create_grid(path, parameter_name, grid_values, extra_name=None, backup=True, verbose=False):
     """Creates a bunch of new parameter files with the choice of values for a
     given parameter. This will only work for one parameter at a time and one
     parameter file. By default, a back up of the original parameter file is made
@@ -151,8 +136,7 @@ def create_grid(path,
 
     ext = path.find(".pf")
     if ext == -1:
-        raise IOError(
-            "provided file path {} is not a .pf parameter file".format(path))
+        raise IOError("provided file path {} is not a .pf parameter file".format(path))
 
     for i in range(n_grid):
         path = path[:ext]
@@ -161,11 +145,7 @@ def create_grid(path,
         path += "_{}".format(grid_values[i]) + ".pf"
         print(path)
         copyfile(path, path)
-        update_single_parameter(path,
-                                parameter_name,
-                                grid_values[i],
-                                backup=False,
-                                verbose=verbose)
+        update_single_parameter(path, parameter_name, grid_values[i], backup=False, verbose=verbose)
         grid.append(path)
 
     return grid

@@ -49,8 +49,7 @@ def main():
     """
 
     root, icell, jcell = setup_script()
-    input_files = sorted(glob.glob("./{}*.0.master.txt".format(root)),
-                         key=str.lower)
+    input_files = sorted(glob.glob("./{}*.0.master.txt".format(root)), key=str.lower)
     if len(input_files) == 0:
         print("Couldn't find any input you dumb fuck try again idiot")
         return
@@ -63,9 +62,7 @@ def main():
     c4 = []
     ntot = []
     ne = []
-    title = [
-        "converge", "converging", "te", "tr", "ip", "c4 frac", "ntot", "ne"
-    ]
+    title = ["converge", "converging", "te", "tr", "ip", "c4 frac", "ntot", "ne"]
     plot = [converge, converging, te, tr, ip, c4, ntot, ne]
 
     for file in input_files:
@@ -90,11 +87,7 @@ def main():
 
     nrows = 4
     ncols = 2
-    fig, ax = plt.subplots(nrows,
-                           ncols,
-                           figsize=(13, 15),
-                           squeeze=False,
-                           sharex="col")
+    fig, ax = plt.subplots(nrows, ncols, figsize=(13, 15), squeeze=False, sharex="col")
     cycles = np.arange(1, len(converge) + 1)
 
     ii = 0
@@ -105,11 +98,7 @@ def main():
             ax[i, j].plot(cycles, plot[ii], "k-")
             if title[ii] in ["te", "tr", "ip", "c4 frac", "ne"]:
                 ax[i, j].set_yscale("log")
-            ax[i, j].text(0.75,
-                          0.1,
-                          title[ii],
-                          transform=ax[i, j].transAxes,
-                          fontsize=14)
+            ax[i, j].text(0.75, 0.1, title[ii], transform=ax[i, j].transAxes, fontsize=14)
             ax[i, j].set_xlim(1, len(converge) + 1)
             ii += 1
 

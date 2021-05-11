@@ -40,9 +40,7 @@ def create_email_message(sender, to, subject, message):
     message["to"] = to
     message["from"] = sender
     message["subject"] = subject
-    message = {
-        "raw": base64.urlsafe_b64encode(message.as_string().encode()).decode()
-    }
+    message = {"raw": base64.urlsafe_b64encode(message.as_string().encode()).decode()}
 
     return message
 
@@ -73,10 +71,7 @@ def send_email_message(service, msg, user):
     return {}
 
 
-def send_notification(to,
-                      subject,
-                      notification,
-                      sender="mcrtpythonupdates@gmail.com"):
+def send_notification(to, subject, notification, sender="mcrtpythonupdates@gmail.com"):
     """Send a notification email to the user. Requires access to the Gmail API.
 
     Parameters
@@ -116,12 +111,10 @@ def send_notification(to,
             credentials.refresh(Request())
         else:
             try:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    "credentials.json", scope)
+                flow = InstalledAppFlow.from_client_secrets_file("credentials.json", scope)
             except FileNotFoundError:
                 try:
-                    flow = InstalledAppFlow.from_client_secrets_file(
-                        os.path.expanduser("~/credentials.json"), scope)
+                    flow = InstalledAppFlow.from_client_secrets_file(os.path.expanduser("~/credentials.json"), scope)
                 except FileNotFoundError:
                     return {}
 

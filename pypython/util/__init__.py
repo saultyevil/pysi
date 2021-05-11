@@ -42,13 +42,7 @@ def create_run_script(commands):
         f.write(file)
 
 
-def create_slurm_file(name,
-                      n_cores,
-                      split_cycle,
-                      n_hours,
-                      n_minutes,
-                      flags,
-                      fp="."):
+def create_slurm_file(name, n_cores, split_cycle, n_hours, n_minutes, flags, fp="."):
     """Create a slurm file in the directory fp with the name root.slurm. All
     of the script flags are passed using the flags variable.
 
@@ -118,9 +112,7 @@ def get_cpu_count(enable_smt=False):
     try:
         n_cores = cpu_count(logical=enable_smt)
     except NotImplementedError:
-        print(
-            "unable to determine number of CPU cores, psutil.cpu_count not implemented for your system"
-        )
+        print("unable to determine number of CPU cores, psutil.cpu_count not implemented for your system")
 
     return n_cores
 

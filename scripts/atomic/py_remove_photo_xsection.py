@@ -19,13 +19,9 @@ def command_line():
                    choices=["outershell", "innershell", "topbase"],
                    help="The name of the atomic data to modify.")
 
-    p.add_argument("atomic_number",
-                   type=int,
-                   help="The atomic number of the ion to remove.")
+    p.add_argument("atomic_number", type=int, help="The atomic number of the ion to remove.")
 
-    p.add_argument("ionisation_state",
-                   type=int,
-                   help="The ionization state of the ion to remove.")
+    p.add_argument("ionisation_state", type=int, help="The ionization state of the ion to remove.")
 
     args = p.parse_args()
 

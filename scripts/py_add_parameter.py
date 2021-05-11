@@ -42,11 +42,7 @@ def main():
 
     p.add_argument("parameter", help="Name of the parameter to add.")
     p.add_argument("value", help="The value for the new parameter.")
-    p.add_argument(
-        "--root",
-        default=None,
-        help=
-        "Add the parameter to parameter files with this specific root name.")
+    p.add_argument("--root", default=None, help="Add the parameter to parameter files with this specific root name.")
 
     args = p.parse_args()
 

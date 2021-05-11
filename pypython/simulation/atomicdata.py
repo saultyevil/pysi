@@ -11,10 +11,7 @@ from sys import exit
 from pypython.error import EXIT_FAIL
 
 
-def remove_photoionization_edge(data,
-                                atomic_number,
-                                ionization_state,
-                                new_value=9e99):
+def remove_photoionization_edge(data, atomic_number, ionization_state, new_value=9e99):
     """Remove a transition or element from some atomic data. Creates a new atomic
     data file which is placed in the current working or given directory.
 
@@ -41,8 +38,7 @@ def remove_photoionization_edge(data,
     ]
 
     if data not in allowed_data:
-        print("atomic data {} is unknown, known types are {}".format(
-            data, allowed_data))
+        print("atomic data {} is unknown, known types are {}".format(data, allowed_data))
         exit(EXIT_FAIL)
 
     filename = getenv("PYTHON") + "/xdata/atomic/"
@@ -72,8 +68,7 @@ def remove_photoionization_edge(data,
     while i < (len(lines)):
         line = lines[i].split() + ["\n"]
 
-        if line[0] == stop and line[1] == atomic_number and line[
-                2] == ionization_state:
+        if line[0] == stop and line[1] == atomic_number and line[2] == ionization_state:
             line[5] = new_value
             new.append(" ".join(line))
 

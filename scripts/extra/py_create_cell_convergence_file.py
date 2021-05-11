@@ -32,22 +32,15 @@ def setup_script():
         Either 0 or 1 depending on if you want a converging or non-converging cells.
     """
 
-    pd.set_option('display.expand_frame_repr',
-                  False)  # Expand the Pandas table to streeeetch
+    pd.set_option('display.expand_frame_repr', False)  # Expand the Pandas table to streeeetch
 
     p = ap.ArgumentParser(description=__doc__)
 
     p.add_argument("root", help="Root name of the wind_save file")
 
-    p.add_argument(
-        "nfails",
-        type=int,
-        help="Extract cells which failed this number of convergence checks")
+    p.add_argument("nfails", type=int, help="Extract cells which failed this number of convergence checks")
 
-    p.add_argument("converging",
-                   nargs="?",
-                   type=int,
-                   help="Extract cells with the corresponding converging flag")
+    p.add_argument("converging", nargs="?", type=int, help="Extract cells with the corresponding converging flag")
 
     args = p.parse_args()
 
@@ -71,15 +64,10 @@ def main():
     master = master[master["inwind"] == 0]
     screen_output = master[master["converge"] == nfails]
     try:
-        screen_output = screen_output[screen_output["converging"] ==
-                                      converging]
+        screen_output = screen_output[screen_output["converging"] == converging]
     except KeyError:
-        print(
-            "Can't find converging flag: probably doesn't exist... so skipping."
-        )
-    screen_output.to_csv("{}_nfails{}_converging{}.txt".format(
-        root, nfails, converging),
-                         sep=" ")
+        print("Can't find converging flag: probably doesn't exist... so skipping.")
+    screen_output.to_csv("{}_nfails{}_converging{}.txt".format(root, nfails, converging), sep=" ")
     print(screen_output)
 
     return screen_output

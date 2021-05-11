@@ -122,8 +122,7 @@ def main():
     add_to_queue = setup()
     slurm_files = find_slurm_files()
 
-    print("The following {} .slurm files will be added to the queue:\n".format(
-        len(slurm_files)))
+    print("The following {} .slurm files will be added to the queue:\n".format(len(slurm_files)))
     for n, file in enumerate(slurm_files):
         print("{}\t{}".format(n + 1, file))
     print("")
