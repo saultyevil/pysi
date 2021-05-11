@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Error codes and custom exceptions.
+Error codes and custom exceptions for pypython. These are pretty basic, and
+don't do much.
 """
 
 EXIT_SUCCESS = 0
