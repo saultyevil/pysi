@@ -10,9 +10,8 @@ import numpy as np
 from .constants import BOLTZMANN, MELEC, PI, H
 
 
-def saha_population_ratio(electron_density: float, g_upper: float,
-                          g_lower: float, energy_upper: float,
-                          energy_lower: float, temperature: float) -> float:
+def saha_population_ratio(electron_density, g_upper, g_lower, energy_upper,
+                          energy_lower, temperature):
     """Calculate the ratio of two level populations n_i+1 / n_i, using the
     Saha-Boltzmann equation.
 

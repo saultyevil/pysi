@@ -36,12 +36,12 @@ class Spectrum:
     The PYTHON spectrum is read in and stored within a dict, where each column
     name is a key and the data is stored as a numpy array."""
     def __init__(self,
-                 root: str,
-                 cd: str = ".",
-                 default: str = None,
-                 log: bool = False,
-                 smooth: int = None,
-                 delim: str = None):
+                 root,
+                 cd=".",
+                 default=None,
+                 log=False,
+                 smooth=None,
+                 delim=None):
         """Initialise a Spectrum object. This method will construct the file path
         of the spectrum file given the root, containing directory and whether
         the logarithmic spectrum is used or not. The spectrum is then read in.
@@ -111,7 +111,7 @@ class Spectrum:
         if smooth:
             self.smooth(smooth)
 
-    def read_in_spectra(self, delim: str = None):
+    def read_in_spectra(self, delim=None):
         """Read in a spectrum file given in self.filepath. The spectrum is stored
         as a dictionary in self.spectrum where each key is the name of the
         columns.
@@ -197,9 +197,7 @@ class Spectrum:
         if n_read == 0:
             raise IOError(f"Unable to open any spectrum files in {self.fp}")
 
-    def smooth(self,
-               width: int = 5,
-               to_smooth: Union[List[str], Tuple[str], str] = None):
+    def smooth(self, width=5, to_smooth=None):
         """Smooth the spectrum flux/luminosity bins.
 
         Parameters
@@ -251,10 +249,7 @@ class Spectrum:
 
         self.spectrum = copy.deepcopy(self.unsmoothed)
 
-    def _plot_specific(self,
-                       name: str,
-                       label_lines: bool = False,
-                       ax_update: plt.Axes = None):
+    def _plot_specific(self, name, label_lines=False, ax_update=None):
         """Plot a specific column in a spectrum file.
 
         Parameters
@@ -298,7 +293,7 @@ class Spectrum:
         else:
             return ax
 
-    def _spec_plot_all(self, label_lines: bool = False):
+    def _spec_plot_all(self, label_lines=False):
         """Plot the spectrum components and observer spectra on a 1x2 panel
         plot. The left panel has the components, whilst the right panel has
         the observer spectrum.
@@ -338,7 +333,7 @@ class Spectrum:
 
         return fig, ax
 
-    def plot(self, name: str = None, label_lines: bool = False):
+    def plot(self, name=None, label_lines=False):
         """Plot the spectra or a single component in a single figure. By default
         this creates a 1 x 2 of the components on the left and the observer
         spectra on the right. Useful for when in an interactive session.
@@ -439,11 +434,11 @@ class Wind:
     todo: add dot notation for accessing dictionaries.
     """
     def __init__(self,
-                 root: str,
-                 cd: str = ".",
-                 velocity_units: str = "kms",
-                 mask: bool = True,
-                 delim: str = None):
+                 root,
+                 cd=".",
+                 velocity_units="kms",
+                 mask=True,
+                 delim=None):
         """Initialize the Wind object.
 
         Parameters
@@ -528,7 +523,7 @@ class Wind:
         if mask:
             self.create_masked_arrays()
 
-    def read_in_wind_parameters(self, delim: str = None):
+    def read_in_wind_parameters(self, delim=None):
         """Read in the wind parameters.
 
         Parameters
@@ -642,10 +637,7 @@ class Wind:
             self.coord_system = "rectilinear"
             self.axes = ["x", "z", "x_cen", "z_cen"]
 
-    def read_in_wind_ions(self,
-                          delim: str = None,
-                          elements_to_get: Union[List[str], Tuple[str],
-                                                 str] = None):
+    def read_in_wind_ions(self, delim=None, elements_to_get=None):
         """Read in the ion parameters.
 
         Parameters
@@ -811,7 +803,7 @@ class Wind:
                             self.variables["inwind"] < 0,
                             self.variables[element][ion_type][ion])
 
-    def _get_element_variable(self, element_name: str, ion_name: str):
+    def _get_element_variable(self, element_name, ion_name):
         """Helper function to get the fraction or density of an ion depending on
         the final character of the requested variable.
         Parameters
@@ -837,7 +829,7 @@ class Wind:
 
         return variable
 
-    def get(self, parameter: str) -> Union[np.ndarray, np.ma.core.MaskedArray]:
+    def get(self, parameter):
         """Get a parameter array. This is just another way to access the
         dictionary self.variables.
         Parameters
@@ -854,7 +846,7 @@ class Wind:
 
         return variable
 
-    def get_sight_line_coordinates(self, theta: float):
+    def get_sight_line_coordinates(self, theta):
         """Get the vertical z coordinates for a given set of x coordinates and
         inclination angle.
         Parameters
@@ -919,10 +911,10 @@ class Wind:
         return n_points, m_points
 
     def plot(self,
-             variable_name: str,
-             use_cell_coordinates: bool = True,
-             fraction: bool = False,
-             scale: str = "loglog"):
+             variable_name,
+             use_cell_coordinates=True,
+             fraction=False,
+             scale="loglog"):
         """Create a plot of the wind for the given variable.
         Parameters
         ----------
@@ -966,12 +958,12 @@ class Wind:
 
         return fig, ax
 
-    def get_elem_number_from_ij(self, i: int, j: int):
+    def get_elem_number_from_ij(self, i, j):
         """Get the wind element number for a given i and j index.
         """
         return self.nz * i + j
 
-    def get_ij_from_elem_number(self, elem: int):
+    def get_ij_from_elem_number(self, elem):
         """Get the i and j index for a given wind element number.
         """
         return np.unravel_index(elem, (self.nx, self.nz))
@@ -1004,7 +996,7 @@ class Wind:
 # Functions ----------------
 
 
-def cleanup_data(fp: str = ".", verbose: bool = False):
+def cleanup_data(fp=".", verbose=False):
     """Search recursively from the specified directory for symbolic links named
     data. This script will only work on Unix systems where the find command is
     available.
@@ -1062,7 +1054,7 @@ def cleanup_data(fp: str = ".", verbose: bool = False):
     return n_del
 
 
-def get_file(pattern: str, fp: str = "."):
+def get_file(pattern, fp="."):
     """Find files of the given pattern recursively.
 
     Parameters
@@ -1087,7 +1079,7 @@ def get_file(pattern: str, fp: str = "."):
     return files
 
 
-def get_array_index(x: np.ndarray, target: float) -> int:
+def get_array_index(x, target):
     """Return the index for a given value in an array. This function will not
     be happy if you pass an array with duplicate values. It will always return
     the first instance of the duplicate array.
@@ -1113,7 +1105,7 @@ def get_array_index(x: np.ndarray, target: float) -> int:
     return index
 
 
-def get_root(fp: str) -> Tuple[str, str]:
+def get_root(fp):
     """Get the root name of a Python simulation, extracting it from a file path.
 
     Parameters
@@ -1144,8 +1136,7 @@ def get_root(fp: str) -> Tuple[str, str]:
     return root, fp
 
 
-def smooth_array(array: Union[np.ndarray, List[Union[float, int]]],
-                 width: Union[int, float]) -> np.ndarray:
+def smooth_array(array, width):
     """Smooth a 1D array of data using a boxcar filter.
 
     Parameters
@@ -1180,10 +1171,7 @@ def smooth_array(array: Union[np.ndarray, List[Union[float, int]]],
     return convolve(array, boxcar(width) / float(width), mode="same")
 
 
-def create_wind_save_tables(root: str,
-                            fp: str = ".",
-                            ion_density: bool = False,
-                            verbose: bool = False) -> None:
+def create_wind_save_tables(root, fp=".", ion_density=False, verbose=False):
     """Run windsave2table in a directory to create the standard data tables. The
     function can also create a root.all.complete.txt file which merges all the
     data tables together into one (a little big) file.
@@ -1238,9 +1226,7 @@ def create_wind_save_tables(root: str,
     return
 
 
-def run_py_wind_commands(root: str,
-                         commands: List[str],
-                         fp: str = ".") -> List[str]:
+def run_py_wind_commands(root, commands, fp="."):
     """Run py_wind with the provided commands.
 
     Parameters

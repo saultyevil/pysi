@@ -29,7 +29,7 @@ def setup_script():
     return setup
 
 
-def read_diag(sinks: tuple, fname: str) -> tuple:
+def read_diag(sinks, fname):
     """Read the provided diag file for the sinks of luminosity.
     todo: finish documentation
 

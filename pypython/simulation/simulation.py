@@ -11,11 +11,10 @@ from glob import glob
 from typing import List, Tuple, Union
 
 
-def check_model_convergence(
-        root: str,
-        wd: str = ".",
-        return_per_cycle: bool = False,
-        return_converging: bool = False) -> Union[float, list, List[float]]:
+def check_model_convergence(root,
+                            wd=".",
+                            return_per_cycle=False,
+                            return_converging=False):
     """Check the convergence of a Python simulation by parsing the
     !!Check_convergence line in the Python diag file.
 
@@ -96,10 +95,7 @@ def check_model_convergence(
     return convergence
 
 
-def model_convergence_components(
-    root: str,
-    wd: str = "."
-) -> Tuple[List[float], List[float], List[float], List[float]]:
+def model_convergence_components(root, wd="."):
     """Returns a break down in terms of the number of cells which have passed
     the convergence checks on radiation temperature, electron temperature and
     heating and cooling balance.
@@ -172,10 +168,7 @@ def model_convergence_components(
     return n_tr, n_te, n_te_max, n_hc
 
 
-def model_error_summary(root: str,
-                        wd: str = ".",
-                        n_cores: int = -1,
-                        print_errors: bool = False) -> dict:
+def model_error_summary(root, wd=".", n_cores=-1, print_errors=False):
     """Return a dictionary containing each error found in the error summary for
     each processor for a Python simulation.
     todo: create a mode where a dict is returned for each MPI process

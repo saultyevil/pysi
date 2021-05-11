@@ -12,8 +12,7 @@ from .constants import (ANGSTROM, BOLTZMANN, VLIGHT, WIEN_FREQUENCY,
                         WIEN_WAVELENGTH, H)
 
 
-def planck_nu(temperature: float,
-              frequency: Union[np.ndarray, float]) -> Union[np.ndarray, float]:
+def planck_nu(temperature, frequency):
     """Calculate the monochromatic intensity for a black body given a temperature
     and frequency of interest.
 
@@ -37,8 +36,7 @@ def planck_nu(temperature: float,
     return b_nu
 
 
-def planck_lambda(temperature: float,
-                  lamda: Union[np.ndarray, float]) -> Union[np.ndarray, float]:
+def planck_lambda(temperature, lamda):
     """Calculate the monochromatic intensity for a black body given a temperature
     and frequency of interest.
 
@@ -64,7 +62,7 @@ def planck_lambda(temperature: float,
     return b_lamda
 
 
-def wein_law(temperature: float, freq_space: bool = False):
+def wein_law(temperature, freq_space=False):
     """Calculate the peak wavelength of a blackbody curve.
 
     Parameters

@@ -18,7 +18,7 @@ from pypython.spectrum import Spectrum
 from pypython.util import get_cpu_count
 
 
-def setup_script() -> tuple:
+def setup_script():
     """Setup the script.
 
     Returns
@@ -68,13 +68,12 @@ def setup_script() -> tuple:
     return setup
 
 
-def create_plot(
-        root: str,
-        spectrum: Spectrum,
-        optical_depth_spectrum: Spectrum,
-        sm: int = 1,
-        bgalpha: float = 0.50,
-        display: bool = False) -> Tuple[plt.Figure, plt.Axes, plt.Axes]:
+def create_plot(root,
+                spectrum,
+                optical_depth_spectrum,
+                sm=1,
+                bgalpha=0.50,
+                display=False):
     """Create a figure to show how the underlying continuum is being reprocessed.
 
     Parameters
@@ -160,7 +159,7 @@ def create_plot(
     return fig, ax, ax2
 
 
-def main(setup: tuple = None):
+def main(setup=None):
     """Main function of the script.
 
     Parameters

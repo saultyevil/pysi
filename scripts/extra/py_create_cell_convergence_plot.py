@@ -16,7 +16,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 
-def setup_script() -> Union[str, int, int]:
+def setup_script():
     """
     Parse the cell number from the command line and other setup options.
 

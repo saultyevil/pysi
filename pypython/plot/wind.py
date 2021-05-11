@@ -13,16 +13,16 @@ from . import normalize_figure_style
 
 
 def plot_wind(wind,
-              parameter: Union[str, np.ndarray],
-              use_cell_coordinates: bool = True,
-              inclinations_to_plot: List[str] = None,
-              scale: str = "loglog",
-              vmin: float = None,
-              vmax: float = None,
-              fig: plt.Figure = None,
-              ax: plt.Axes = None,
-              i: int = 0,
-              j: int = 0) -> Tuple[plt.Figure, Union[np.ndarray, plt.Axes]]:
+              parameter,
+              use_cell_coordinates=True,
+              inclinations_to_plot=None,
+              scale="loglog",
+              vmin=None,
+              vmax=None,
+              fig=None,
+              ax=None,
+              i=0,
+              j=0):
     """Wrapper function for plotting a wind. Will decide if a wind is 1D or 2D
     and call the appropriate function.
     Parameters
@@ -96,13 +96,13 @@ def plot_wind(wind,
     return fig, ax
 
 
-def plot_1d_wind(m_points: np.ndarray,
-                 parameter_points: np.ndarray,
-                 scale: str = "logx",
-                 fig: plt.Figure = None,
-                 ax: plt.Axes = None,
-                 i: int = 0,
-                 j: int = 0) -> Tuple[plt.Figure, Union[np.ndarray, plt.Axes]]:
+def plot_1d_wind(m_points,
+                 parameter_points,
+                 scale="logx",
+                 fig=None,
+                 ax=None,
+                 i=0,
+                 j=0):
     """Plot a 1D wind.
 
     Parameters
@@ -155,18 +155,18 @@ def plot_1d_wind(m_points: np.ndarray,
     return fig, ax
 
 
-def plot_2d_wind(m_points: np.ndarray,
-                 n_points: np.ndarray,
-                 parameter_points: np.ndarray,
-                 coordinate_system: str = "rectilinear",
-                 inclinations_to_plot: List[str] = None,
-                 scale: str = "loglog",
-                 vmin: float = None,
-                 vmax: float = None,
-                 fig: plt.Figure = None,
-                 ax: plt.Axes = None,
-                 i: int = 0,
-                 j: int = 0) -> Tuple[plt.Figure, Union[np.ndarray, plt.Axes]]:
+def plot_2d_wind(m_points,
+                 n_points,
+                 parameter_points,
+                 coordinate_system="rectilinear",
+                 inclinations_to_plot=None,
+                 scale="loglog",
+                 vmin=None,
+                 vmax=None,
+                 fig=None,
+                 ax=None,
+                 i=0,
+                 j=0):
     """Plot a 2D wind using a contour plot.
 
     Parameters

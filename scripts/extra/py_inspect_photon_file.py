@@ -14,7 +14,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 
-def get_input() -> Tuple[str, int, str]:
+def get_input():
     """Get the input choices from the command line."""
 
     p = ap.ArgumentParser(description=__doc__)
@@ -30,8 +30,7 @@ def get_input() -> Tuple[str, int, str]:
     return args.mode, args.wcycle, args.extract
 
 
-def read_photon_file(fname: str = "python.ext_0.txt",
-                     myheader: List[str] = None) -> pd.DataFrame:
+def read_photon_file(fname="python.ext_0.txt", myheader=None):
     """Read in the Python photon util diagnostic file."""
 
     header = [
@@ -46,8 +45,7 @@ def read_photon_file(fname: str = "python.ext_0.txt",
     return df
 
 
-def extract_photons(df: pd.DataFrame, wcycle: int, column: str,
-                    extract: Union[str, int, float]) -> pd.DataFrame:
+def extract_photons(df, wcycle, column, extract):
     """Extract photons from a certain cycle and with a certain comment and
     change the data type to numeric."""
 
@@ -75,9 +73,7 @@ def extract_photons(df: pd.DataFrame, wcycle: int, column: str,
     return df
 
 
-def bin_photon_weights_in_frequency(freq: np.ndarray,
-                                    w: np.ndarray,
-                                    nbins: int = 100) -> np.ndarray:
+def bin_photon_weights_in_frequency(freq, w, nbins=100):
     """Bin the photon weights into frequency bins."""
 
     freq_min = freq.min()
@@ -98,7 +94,7 @@ def bin_photon_weights_in_frequency(freq: np.ndarray,
     return hist
 
 
-def plot_photon_frequency_distribution() -> None:
+def plot_photon_frequency_distribution():
     """Plot the photons weights binned in frequency space"""
 
     ncycles = 10
@@ -231,7 +227,7 @@ def plot_weight_hist():
     return
 
 
-def extract_scattered_photons(wcycle: int, nscats: str):
+def extract_scattered_photons(wcycle, nscats):
     """Extract a photon which has scattered nscats time from the ionisation
     cycle wcycle."""
 

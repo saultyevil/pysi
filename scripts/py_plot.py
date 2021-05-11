@@ -17,7 +17,7 @@ import py_plot_wind
 import pypython
 
 
-def setup_script() -> tuple:
+def setup_script():
     """Parse the different modes this script can be run from the command line.
 
     Returns
@@ -87,7 +87,7 @@ def setup_script() -> tuple:
     return setup
 
 
-def plot(setup: tuple = None):
+def plot(setup=None):
     """Creates a bunch of plots using some parameters which can be controlled at
     run time, but also assumes a few default parameters. Refer to the
     documentation for the script for more detail.

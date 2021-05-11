@@ -12,7 +12,7 @@ from typing import Tuple
 from pypython.util import create_slurm_file
 
 
-def parse_arguments() -> Tuple[str, int, int, int, bool, str, str]:
+def parse_arguments():
     """Parse arguments from the command line.
 
     Returns
@@ -60,7 +60,7 @@ def parse_arguments() -> Tuple[str, int, int, int, bool, str, str]:
     return args.name, args.ncores, args.thours, args.tminutes, args.split_cycle, args.root, args.flags
 
 
-def main() -> None:
+def main():
     """Main function of the script."""
 
     name, n_cores, t_hours, t_minutes, split_cycle, root, flags = parse_arguments(

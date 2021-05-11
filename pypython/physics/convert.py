@@ -8,7 +8,7 @@ frequency to wavelength, or to convert from one set of units to another.
 from .constants import ANGSTROM, C
 
 
-def angstrom_to_hz(wl: float) -> float:
+def angstrom_to_hz(wl):
     """Convert a wavelength from Angstroms into a frequency.
 
     Parameters
@@ -23,7 +23,7 @@ def angstrom_to_hz(wl: float) -> float:
     return C / (wl * ANGSTROM)
 
 
-def hz_to_angstrom(freq: float) -> float:
+def hz_to_angstrom(freq):
     """Convert a frequency in Hz to a wavelength in Angstroms.
 
     Parameters

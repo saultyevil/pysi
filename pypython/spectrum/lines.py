@@ -19,12 +19,11 @@ def fit_gaussian():
     return NotImplementedError
 
 
-def measure_equivalent_width(
-        wavelength: np.ndarray,
-        flux: np.ndarray,
-        display_xmin: float,
-        display_xmax: float,
-        ret_fit: bool = False) -> Union[float, Tuple[float, np.poly1d]]:
+def measure_equivalent_width(wavelength,
+                             flux,
+                             display_xmin,
+                             display_xmax,
+                             ret_fit=False):
     """Measure the equivalent width for an emission or absorption line. A matplotlib
     window will pop up, allowing the user to click on either side of the line
     feature where it ends. A continuum is then fit using a linear fit."""

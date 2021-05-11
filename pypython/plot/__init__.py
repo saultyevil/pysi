@@ -47,7 +47,7 @@ def normalize_figure_style():
     return parameters
 
 
-def subplot_dims(n_plots: int) -> Tuple[int, int]:
+def subplot_dims(n_plots):
     """Return the dimensions for a plot with multiple subplot panels.
     todo: include more plot subdivisions
 
@@ -79,9 +79,7 @@ def subplot_dims(n_plots: int) -> Tuple[int, int]:
     return n_rows, n_cols
 
 
-def remove_extra_axes(
-        fig: plt.Figure, ax: Union[plt.Axes, np.ndarray], n_wanted: int,
-        n_panel: int) -> Tuple[plt.Figure, Union[plt.Axes, np.ndarray]]:
+def remove_extra_axes(fig, ax, n_wanted, n_panel):
     """Remove additional axes which are included in a plot. This can be used if you
     have 4 x 2 = 8 panels but only want to use 7 of tha panels. The 8th panel
     will be removed.
@@ -125,12 +123,7 @@ def remove_extra_axes(
     return fig, ax
 
 
-def get_y_lims_for_x_lims(x: np.array,
-                          y: np.array,
-                          xmin: float,
-                          xmax: float,
-                          scale: float = 10
-                          ) -> Union[Tuple[float, float], Tuple[None, None]]:
+def get_y_lims_for_x_lims(x, y, xmin, xmax, scale=10):
     """Determine the lower and upper y limits for a matplotlib plot given a
     restricted x range, since matplotlib doesn't do this automatically.
 
@@ -184,7 +177,7 @@ def get_y_lims_for_x_lims(x: np.array,
     return ymin, ymax
 
 
-def common_lines(freq: bool = False) -> list:
+def common_lines(freq=False):
     """Return a list containing the names of line transitions and the
     wavelength of the transition in Angstroms. Instead of returning the
     wavelength, the frequency can be returned instead. It is also possible to
@@ -236,7 +229,7 @@ def common_lines(freq: bool = False) -> list:
     return lines
 
 
-def photoionization_edges(freq: bool = False) -> list:
+def photoionization_edges(freq=False):
     """Return a list containing the names of line transitions and the
     wavelength of the transition in Angstroms. Instead of returning the
     wavelength, the frequency can be returned instead. It is also possible to
@@ -269,14 +262,14 @@ def photoionization_edges(freq: bool = False) -> list:
     return edges
 
 
-def ax_add_line_ids(ax: plt.Axes,
-                    lines: list,
-                    linestyle: str = "dashed",
-                    ynorm: float = 0.90,
-                    logx: bool = False,
-                    offset: float = 25,
-                    rotation: str = "vertical",
-                    fontsize: int = 10) -> plt.Axes:
+def ax_add_line_ids(ax,
+                    lines,
+                    linestyle="dashed",
+                    ynorm=0.90,
+                    logx=False,
+                    offset=25,
+                    rotation="vertical",
+                    fontsize=10):
     """Add labels for line transitions or other regions of interest onto a
     matplotlib figure. Labels are placed at the top of the panel and dashed
     lines, with zorder = 0, are drawn from top to bottom.

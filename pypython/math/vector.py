@@ -11,7 +11,7 @@ import numpy as np
 from pypython.error import EXIT_FAIL
 
 
-def renormalize_vector(a: np.ndarray, scalar: Union[float, int]) -> np.ndarray:
+def renormalize_vector(a, scalar):
     """This function is used to renormalise a 3-vector quantity.
 
     Parameters
@@ -42,9 +42,7 @@ def renormalize_vector(a: np.ndarray, scalar: Union[float, int]) -> np.ndarray:
     return a
 
 
-def project_cartesian_to_cylindrical_coordinates(
-        a: Union[np.ndarray, List[float]],
-        b: Union[np.ndarray, List[float]]) -> np.ndarray:
+def project_cartesian_to_cylindrical_coordinates(a, b):
     """Attempt to project a vector from cartesian into cylindrical coordinates.
 
     Parameters

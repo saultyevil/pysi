@@ -14,7 +14,7 @@ from pypython import get_file
 from pypython.simulation import grid
 
 
-def change_pfs(filepaths: List[str], parameter: str, value: str) -> None:
+def change_pfs(filepaths, parameter, value):
     """Iterate over a list of pfs, and update the parameter given by the variable
     parameter with the new value given by value. This function will also
     print out verbose, because it seems most sensible to be loud about this.

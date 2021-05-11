@@ -90,7 +90,7 @@ def setup_script():
     return setup
 
 
-def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
+def main(setup=None):
     """The main function of the script.
 
     Parameters
@@ -104,7 +104,7 @@ def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
         output_name, wd, inclination, root, x_min, x_max, frequency_space, common_lines, axes_scales, smooth_amount,\
             file_extension, display = setup
     else:
-        output_name, wd, inclination, root, x_min, x_max, frequency_space, common_lines, axes_scales, smooth_amount, \
+        output_name, wd, inclination, root, x_min, x_max, frequency_space, common_lines, axes_scales, smooth_amount,\
             file_extension, display = setup_script()
 
     spectra = get_file("*.spec")

@@ -15,14 +15,14 @@ from pypython import get_file, get_root, plot, simulation, util
 COL_WIDTH = 80
 
 
-def plot_convergence(root: str,
-                     convergence: List[float],
-                     converging: List[float] = None,
-                     tr: List[float] = None,
-                     te: List[float] = None,
-                     te_max: List[float] = None,
-                     hc: List[float] = None,
-                     wd: str = "."):
+def plot_convergence(root,
+                     convergence,
+                     converging=None,
+                     tr=None,
+                     te=None,
+                     te_max=None,
+                     hc=None,
+                     wd="."):
     """Create a detailed plot of the convergence of a Python simulation, including,
     if provided, a breakdown of the different convergence criteria.
 
@@ -84,7 +84,7 @@ def plot_convergence(root: str,
     return
 
 
-def get_convergence(root: str, wd: str = "./") -> None:
+def get_convergence(root, wd="./"):
     """Print out the convergence of a Python simulation and then create a detailed
     plot of the convergence and convergence break down of the simulation.
 

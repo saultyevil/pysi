@@ -35,7 +35,7 @@ def get_input():
     return args.root
 
 
-def check_luminosity_balance(root: str, wd: str = "./"):
+def check_luminosity_balance(root, wd="./"):
     """Check the luminosity before and after trans_phot for a Python simulation.
     This function will also create a plot of the relative change.
 

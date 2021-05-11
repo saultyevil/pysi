@@ -18,7 +18,7 @@ import pandas as pd
 from pypython.util import create_wind_save_tables
 
 
-def setup_script() -> Union[str, int, int]:
+def setup_script():
     """
     Parse setup options from the command line.
 

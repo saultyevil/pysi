@@ -11,10 +11,10 @@ from sys import exit
 from pypython.error import EXIT_FAIL
 
 
-def remove_photoionization_edge(data: str,
-                                atomic_number: int,
-                                ionization_state: int,
-                                new_value: float = 9e99) -> None:
+def remove_photoionization_edge(data,
+                                atomic_number,
+                                ionization_state,
+                                new_value=9e99):
     """Remove a transition or element from some atomic data. Creates a new atomic
     data file which is placed in the current working or given directory.
 
@@ -93,8 +93,7 @@ def remove_photoionization_edge(data: str,
     return
 
 
-def remove_bound_bound_transitions_ion(atomic_number: int,
-                                       ionization_state: int) -> None:
+def remove_bound_bound_transitions_ion(atomic_number, ionization_state):
     """Remove all bound-bound transitions for a single ion from the atomic data.
     This is achieved by setting the oscillator strengths of the transition, f,
     to f = 0, effectively removing the transition.

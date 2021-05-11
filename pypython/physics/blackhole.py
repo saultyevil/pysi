@@ -7,7 +7,7 @@ Calculate various parameters relating to black holes.
 from .constants import GRAV, MSOL, VLIGHT
 
 
-def gravitational_radius(m_bh: float) -> float:
+def gravitational_radius(m_bh):
     """Calculate the gravitational radius of a black hole of given mass Mbh.
 
     Parameters
@@ -22,7 +22,7 @@ def gravitational_radius(m_bh: float) -> float:
     return GRAV * m_bh * MSOL / VLIGHT**2
 
 
-def schwarzschild_radius(m_bh: float) -> float:
+def schwarzschild_radius(m_bh):
     """Calculate the Schwarzschild radius of a black hole of given mass Mbh.
 
     Parameters
@@ -37,7 +37,7 @@ def schwarzschild_radius(m_bh: float) -> float:
     return 2 * gravitational_radius(m_bh)
 
 
-def innermost_stable_circular_orbit(m_bh: float) -> float:
+def innermost_stable_circular_orbit(m_bh):
     """Calculate the radius of the innermost stable circular orbit of a
     black hole of given mass Mbh.
 

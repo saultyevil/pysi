@@ -35,7 +35,7 @@ default_ion_figsize = ((7.5, 4.46), (19.25, 6.46), (13, 14.01), (13, 18.68),
                        (13, 18.68), (19.25, 23.25))
 
 
-def setup_script() -> tuple:
+def setup_script():
     """Parse the different modes this script can be run from the command line.
 
     Returns
@@ -84,12 +84,11 @@ def setup_script() -> tuple:
     return setup
 
 
-def plot_wind_parameters(
-        w: wind.Wind,
-        parameters_to_plot: Tuple[str] = default_wind_parameters,
-        axes_scales: str = "loglog",
-        subplot_kw: dict = None,
-        display: bool = False) -> Tuple[plt.Figure, plt.Axes]:
+def plot_wind_parameters(w,
+                         parameters_to_plot=default_wind_parameters,
+                         axes_scales="loglog",
+                         subplot_kw=None,
+                         display=False):
     """Plot the parameters for the wind.
     Parameters
     ----------
@@ -135,12 +134,12 @@ def plot_wind_parameters(
     return fig, ax
 
 
-def plot_wind_velocity(w: wind.Wind,
-                       wind_velocities_to_plot: Tuple[str],
-                       velocity_units: str,
-                       subplot_kw: dict = None,
-                       axes_scales: str = "loglog",
-                       display: bool = False) -> Tuple[plt.Figure, plt.Axes]:
+def plot_wind_velocity(w,
+                       wind_velocities_to_plot,
+                       velocity_units,
+                       subplot_kw=None,
+                       axes_scales="loglog",
+                       display=False):
     """Plot the velocity for the wind.
     Parameters
     ----------
@@ -192,14 +191,14 @@ def plot_wind_velocity(w: wind.Wind,
     return fig, ax
 
 
-def plot_wind_ions(w: wind.Wind,
-                   ions_to_plot: Tuple[str],
-                   wind_ion_dims: Tuple[List[int]],
-                   wind_ion_size: Tuple[List[int]],
-                   use_ion_density: bool = False,
-                   axes_scales: str = "loglog",
-                   subplot_kw: dict = None,
-                   display: bool = False) -> Tuple[plt.Figure, plt.Axes]:
+def plot_wind_ions(w,
+                   ions_to_plot,
+                   wind_ion_dims,
+                   wind_ion_size,
+                   use_ion_density=False,
+                   axes_scales="loglog",
+                   subplot_kw=None,
+                   display=False):
     """Plot the ions for the wind
     Parameters
     ----------

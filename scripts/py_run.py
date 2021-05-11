@@ -26,7 +26,7 @@ from pypython.simulation import grid
 from pypython.util.logging import close_logfile, init_logfile, log, logsilent
 from pypython.util.mailnotifs import send_notification
 
-CONVERGED = \
+CONVERGED =\
     r"""
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
     It is                                    _
@@ -38,7 +38,7 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 """
 
-NOT_CONVERGED = \
+NOT_CONVERGED =\
     r"""
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
     It is    _                                                 _
@@ -50,7 +50,7 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 """
 
-ITS_A_MYSTERY = \
+ITS_A_MYSTERY =\
     r"""
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ __ _ _ _ _ _ _ _ _
                                                           _
@@ -88,7 +88,7 @@ VERBOSE_ALL = 4
 VERBOSITY = VERBOSE_EXTRA_INFORMATION_TRANSPORT
 
 
-def setup_script() -> None:
+def setup_script():
     """Setup the global variables via command line arguments.
     """
     global VERBOSITY
@@ -189,9 +189,7 @@ def setup_script() -> None:
     return
 
 
-def print_python_output(input_line: str,
-                        n_cores: int,
-                        verbosity: int = VERBOSITY) -> None:
+def print_python_output(input_line, n_cores, verbosity=VERBOSITY):
     """Process the output from a Python simulation and print something to screen.
     The amount printed to screen will vary depending on the verbosity level
     chosen.
@@ -250,7 +248,7 @@ def print_python_output(input_line: str,
 
     # PRINT TOTAL RUN TIME ELAPSED FOR A CYCLE
 
-    elif (line.find("Completed ionization cycle") != -1 or line.find("Completed spectrum cycle") != -1) and \
+    elif (line.find("Completed ionization cycle") != -1 or line.find("Completed spectrum cycle") != -1) and\
             verbosity >= VERBOSE_EXTRA_INFORMATION:
         elapsed_time_seconds = float(split_line[-1])
         elapsed_time = datetime.timedelta(seconds=elapsed_time_seconds // 1)
@@ -258,7 +256,7 @@ def print_python_output(input_line: str,
 
     # PRINT CONVERGENCE
 
-    elif (line.find("converged") != -1 and line.find("converging") != -1) \
+    elif (line.find("converged") != -1 and line.find("converging") != -1)\
             and verbosity >= VERBOSE_EXTRA_INFORMATION:
         try:
             cells_converged = split_line[1]
@@ -270,7 +268,7 @@ def print_python_output(input_line: str,
 
     # PRINT PHOTON TRANSPORT REPORT
 
-    elif line.find("per cent") != -1 and line.find("Photon") != -1 \
+    elif line.find("per cent") != -1 and line.find("Photon") != -1\
             and verbosity >= VERBOSE_EXTRA_INFORMATION_TRANSPORT:
         try:
             if int(split_line[6]) == 0:
@@ -306,7 +304,7 @@ def print_python_output(input_line: str,
         log("         {}".format(line))
 
 
-def restore_backup_pf(root: str, fp: str) -> None:
+def restore_backup_pf(root, fp):
     """Copy a backup parameter file back to the original parameter file
     destination.
 
@@ -324,7 +322,7 @@ def restore_backup_pf(root: str, fp: str) -> None:
     return
 
 
-def convergence_check(root: str, cd: str) -> Tuple[bool, float]:
+def convergence_check(root, cd):
     """Check the convergence of a Python simulation by parsing the master diag
     file. If more than one model is being run, then the convergence of each
     model will be appended to the convergence tracking files.
@@ -367,7 +365,7 @@ def convergence_check(root: str, cd: str) -> Tuple[bool, float]:
     return converged, model_convergence
 
 
-def print_errors(error: dict, root: str) -> None:
+def print_errors(error, root):
     """Print an errors dictionary.
 
     Parameters
@@ -385,13 +383,13 @@ def print_errors(error: dict, root: str) -> None:
     return
 
 
-def run_single_model(root: str,
-                     fp: str,
-                     use_mpi: bool,
-                     n_cores: int,
-                     resume_model: bool = False,
-                     restart_from_spec_cycles: bool = False,
-                     split_cycles: bool = False) -> int:
+def run_single_model(root,
+                     fp,
+                     use_mpi,
+                     n_cores,
+                     resume_model=False,
+                     restart_from_spec_cycles=False,
+                     split_cycles=False):
     """The purpose of this function is to use the Subprocess library to call
     Python. Unfortunately, to cover a wide range of situations with how one
     may want to run Python, this function has become rather complicated and
@@ -541,8 +539,7 @@ def run_single_model(root: str,
     return rc
 
 
-def run_all_models(parameter_files: List[str], use_mpi: bool,
-                   n_cores: int) -> List[int]:
+def run_all_models(parameter_files, use_mpi, n_cores):
     """Run the parts of the scripts requested to by run by the user.
 
     Parameters
@@ -686,7 +683,7 @@ def run_all_models(parameter_files: List[str], use_mpi: bool,
     return return_codes
 
 
-def main() -> None:
+def main():
     """Main function of the script.
     """
     if SEND_NOTIFS:

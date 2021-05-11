@@ -14,7 +14,7 @@ from pypython import get_file
 from pypython.simulation import grid
 
 
-def add_parameter(filepaths: List[str], parameter: str, value: str):
+def add_parameter(filepaths, parameter, value):
     """Iterate over a list of pfs, and add the parameter given to the end of
     the parameter file. This function will also print out verbose, because it
     seems the most sensible to be loud about this.

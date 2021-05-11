@@ -30,16 +30,14 @@ UNFILTERED_SPECTRUM = -999
 Base = declarative_base()
 
 
-def write_delay_dump_spectrum_to_file(
-    root: str,
-    wd: str,
-    spectrum: np.ndarray,
-    extract_nres: tuple,
-    n_spec: int,
-    n_bins: int,
-    d_norm_pc: float,
-    return_inclinations: bool = False
-) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
+def write_delay_dump_spectrum_to_file(root,
+                                      wd,
+                                      spectrum,
+                                      extract_nres,
+                                      n_spec,
+                                      n_bins,
+                                      d_norm_pc,
+                                      return_inclinations=False):
     """Write the generated delay dump spectrum to file
 
     Parameters
@@ -130,9 +128,7 @@ def write_delay_dump_spectrum_to_file(
         return spectrum
 
 
-def read_delay_dump(root: str,
-                    cd: str = ".",
-                    mode_dev: bool = False) -> pd.DataFrame:
+def read_delay_dump(root, cd=".", mode_dev=False):
     """Process the photons which have been dumped to the delay_dump file.
 
     Parameters
@@ -197,8 +193,7 @@ def read_delay_dump(root: str,
     return output
 
 
-def convert_weight_to_flux(spectrum: np.ndarray, spec_cycle_norm: float,
-                           d_norm_pc: float):
+def convert_weight_to_flux(spectrum, spec_cycle_norm, d_norm_pc):
     """Re-normalize the photon weight bins into a Flux per unit wavelength.
 
     spec_cycle_norm fixes the case where less than the specified number of
@@ -236,11 +231,9 @@ def convert_weight_to_flux(spectrum: np.ndarray, spec_cycle_norm: float,
 
 
 @jit(nopython=True)
-def bin_photon_weights(spectrum: np.ndarray, freq_min: float, freq_max: float,
-                       photon_freqs: np.ndarray, photon_weights: np.ndarray,
-                       photon_spc_i: np.ndarray, photon_nres: np.ndarray,
-                       photon_line_nres: np.ndarray, extract_nres: tuple,
-                       logbins: bool):
+def bin_photon_weights(spectrum, freq_min, freq_max, photon_freqs,
+                       photon_weights, photon_spc_i, photon_nres,
+                       photon_line_nres, extract_nres, logbins):
     """Bin the photons into frequency bins using jit to attempt to speed
     everything up.
 
@@ -322,14 +315,14 @@ def bin_photon_weights(spectrum: np.ndarray, freq_min: float, freq_max: float,
     return spectrum
 
 
-def create_spectrum_process_breakdown(root: str,
-                                      wl_min: float,
-                                      wl_max: float,
-                                      n_cores_norm: int = 1,
-                                      spec_cycle_norm: float = 1,
-                                      wd: str = ".",
-                                      nres: int = None,
-                                      mode_line_res: bool = True) -> dict:
+def create_spectrum_process_breakdown(root,
+                                      wl_min,
+                                      wl_max,
+                                      n_cores_norm=1,
+                                      spec_cycle_norm=1,
+                                      wd=".",
+                                      nres=None,
+                                      mode_line_res=True):
     """Get the spectra for the different physical processes which contribute to a
     spectrum. If nres is provided, then only a specific interaction will be
     extracted, otherwise all resonance interactions will.
@@ -434,11 +427,9 @@ def create_spectrum_process_breakdown(root: str,
 
 
 @jit(nopython=True)
-def wind_bin_photon_weights(n_photons: int, nres: int, photon_x: np.ndarray,
-                            photon_y: np.ndarray, photon_z: np.ndarray,
-                            photon_nres: np.ndarray, photon_weight: np.ndarray,
-                            x_points: np.ndarray, z_points: np.ndarray,
-                            nx: int, nz: int) -> Tuple[np.ndarray, np.ndarray]:
+def wind_bin_photon_weights(n_photons, nres, photon_x, photon_y, photon_z,
+                            photon_nres, photon_weight, x_points, z_points, nx,
+                            nz):
     """Bin photon weights by extract location"""
 
     hist2d_weight = np.zeros((nx, nz))
@@ -469,10 +460,7 @@ def wind_bin_photon_weights(n_photons: int, nres: int, photon_x: np.ndarray,
     return hist2d_weight, hist2d_count
 
 
-def wind_bin_interaction_weight(root: str,
-                                nres: int,
-                                cd: str = ".",
-                                n_cores: int = 1) -> np.ndarray:
+def wind_bin_interaction_weight(root, nres, cd=".", n_cores=1):
     """Bin photon weights by extract location.
 
     Parameters
@@ -516,21 +504,20 @@ def wind_bin_interaction_weight(root: str,
     return hist2d_weight, hist2d_count
 
 
-def create_spectrum(
-        root: str,
-        wd: str = ".",
-        extract_nres: tuple = (UNFILTERED_SPECTRUM, ),
-        dumped_photons: pd.DataFrame = None,
-        freq_bins: np.ndarray = None,
-        freq_min: float = None,
-        freq_max: float = None,
-        n_bins: int = 10000,
-        d_norm_pc: float = 100,
-        spec_cycle_norm: float = 1,
-        n_cores_norm: int = 1,
-        logbins: bool = True,
-        mode_dev: bool = False,
-        output_numpy: bool = False) -> Union[np.ndarray, pd.DataFrame]:
+def create_spectrum(root,
+                    wd=".",
+                    extract_nres=(UNFILTERED_SPECTRUM, ),
+                    dumped_photons=None,
+                    freq_bins=None,
+                    freq_min=None,
+                    freq_max=None,
+                    n_bins=10000,
+                    d_norm_pc=100,
+                    spec_cycle_norm=1,
+                    n_cores_norm=1,
+                    logbins=True,
+                    mode_dev=False,
+                    output_numpy=False):
     """Create a spectrum for each inclination angle using the photons which have
     been dumped to the root.delay_dump file.
 
@@ -688,10 +675,7 @@ class Photon(Base):
         return str(self.id)
 
 
-def get_photon_db(root: str,
-                  cd: str = ".",
-                  dd_dev: bool = False,
-                  commitfreq: int = 1000000):
+def get_photon_db(root, cd=".", dd_dev=False, commitfreq=1000000):
     """Create or open a database to store the delay_dump file in an easier to
     query data structure.
 

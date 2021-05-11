@@ -17,8 +17,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import Resource, build
 
 
-def create_email_message(sender: str, to: str, subject: str,
-                         message: str) -> dict:
+def create_email_message(sender, to, subject, message):
     """Create an email message and encode it.
 
     Parameters
@@ -48,8 +47,7 @@ def create_email_message(sender: str, to: str, subject: str,
     return message
 
 
-def send_email_message(service: Resource, msg: dict,
-                       user: str) -> Union[None, dict]:
+def send_email_message(service, msg, user):
     """Send an email message using the API service.
 
     Parameters
@@ -75,10 +73,10 @@ def send_email_message(service: Resource, msg: dict,
     return {}
 
 
-def send_notification(to: str,
-                      subject: str,
-                      notification: str,
-                      sender: str = "mcrtpythonupdates@gmail.com") -> dict:
+def send_notification(to,
+                      subject,
+                      notification,
+                      sender="mcrtpythonupdates@gmail.com"):
     """Send a notification email to the user. Requires access to the Gmail API.
 
     Parameters

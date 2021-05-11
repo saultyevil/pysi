@@ -15,17 +15,13 @@ from pypython.plot import (ax_add_line_ids, common_lines,
                            photoionization_edges, remove_extra_axes,
                            subplot_dims)
 
-
 MIN_SPEC_COMP_FLUX = 1e-15
 DEFAULT_PYTHON_DISTANCE = 100 * PARSEC
 
 
-def _plot_panel_subplot(ax: plt.Axes, x_values: np.ndarray, spectrum: Spectrum,
-                        units: str, things_to_plot: Union[List[str], str],
-                        x_limits: Tuple[Union[float, int, None],
-                                        Union[float, int, None]], sm: int,
-                        alpha: float, scale: str, frequency_space: bool,
-                        skip_sparse: bool) -> plt.Axes:
+def _plot_panel_subplot(ax, x_values, spectrum, units, things_to_plot,
+                        x_limits, sm, alpha, scale, frequency_space,
+                        skip_sparse):
     """Create a subplot panel for a figure given the spectrum components names
     in the list dname.
     todo: switch x_limits to xmin and xmax inputs
@@ -119,18 +115,18 @@ def _plot_panel_subplot(ax: plt.Axes, x_values: np.ndarray, spectrum: Spectrum,
     return ax
 
 
-def plot(x: np.ndarray,
-         y: np.ndarray,
-         xmin: float = None,
-         xmax: float = None,
-         xlabel: str = None,
-         ylabel: str = None,
-         scale: str = "logy",
-         fig: plt.Figure = None,
-         ax: plt.Axes = None,
-         label: str = None,
-         alpha: float = 1.0,
-         display: bool = False) -> Tuple[plt.Figure, plt.Axes]:
+def plot(x,
+         y,
+         xmin=None,
+         xmax=None,
+         xlabel=None,
+         ylabel=None,
+         scale="logy",
+         fig=None,
+         ax=None,
+         label=None,
+         alpha=1.0,
+         display=False):
     """This is a simple plotting function designed to give you the bare minimum.
     It will create a figure and axes object for a single panel and that is
     it. It is mostly designed for quick plotting of models and real data.
@@ -224,15 +220,15 @@ def plot(x: np.ndarray,
     return fig, ax
 
 
-def plot_optical_depth(root: str,
-                       wd: str,
-                       inclinations: List[str] = "all",
-                       xmin: float = None,
-                       xmax: float = None,
-                       scale: str = "loglog",
-                       show_absorption_edge_labels: bool = True,
-                       frequency_space: bool = True,
-                       display: bool = False) -> Tuple[plt.Figure, plt.Axes]:
+def plot_optical_depth(root,
+                       wd,
+                       inclinations="all",
+                       xmin=None,
+                       xmax=None,
+                       scale="loglog",
+                       show_absorption_edge_labels=True,
+                       frequency_space=True,
+                       display=False):
     """Create an optical depth spectrum for a given Python simulation. This figure
     can be created in both wavelength or frequency space and with various
     choices of axes scaling.
@@ -346,22 +342,21 @@ def plot_optical_depth(root: str,
     return fig, ax
 
 
-def plot_spectrum_physics_process_contributions(
-        contribution_spectra: dict,
-        inclination: str,
-        root: str,
-        wd: str = ".",
-        xmin: float = None,
-        xmax: float = None,
-        ymin: float = None,
-        ymax: float = None,
-        scale: str = "logy",
-        line_labels: bool = True,
-        sm: int = 5,
-        lw: int = 2,
-        alpha: float = 0.75,
-        file_ext: str = "png",
-        display: bool = False) -> Tuple[plt.Figure, plt.Axes]:
+def plot_spectrum_physics_process_contributions(contribution_spectra,
+                                                inclination,
+                                                root,
+                                                wd=".",
+                                                xmin=None,
+                                                xmax=None,
+                                                ymin=None,
+                                                ymax=None,
+                                                scale="logy",
+                                                line_labels=True,
+                                                sm=5,
+                                                lw=2,
+                                                alpha=0.75,
+                                                file_ext="png",
+                                                display=False):
     """Description of the function.
     todo: some of these things really need re-naming..... it seems very confusing
 
@@ -416,18 +411,17 @@ def plot_spectrum_physics_process_contributions(
     return fig, ax
 
 
-def plot_spectrum_components(
-        root: str,
-        wd: str,
-        spec_tot: bool = False,
-        wind_tot: bool = False,
-        xmin: float = None,
-        xmax: float = None,
-        smooth_amount: int = 5,
-        scale: str = "loglog",
-        alpha: float = 0.6,
-        frequency_space: bool = False,
-        display: bool = False) -> Tuple[plt.Figure, plt.Axes]:
+def plot_spectrum_components(root,
+                             wd,
+                             spec_tot=False,
+                             wind_tot=False,
+                             xmin=None,
+                             xmax=None,
+                             smooth_amount=5,
+                             scale="loglog",
+                             alpha=0.6,
+                             frequency_space=False,
+                             display=False):
     """Create a figure of the different spectrum components of a Python spectrum
     file. Note that all of the spectrum components added together DO NOT have
     to equal the output spectrum or the emitted spectrum (don't ask).
@@ -511,17 +505,16 @@ def plot_spectrum_components(
     return fig, ax
 
 
-def plot_spectrum_inclinations_in_subpanels(
-        root: str,
-        fp: str,
-        xmin: float = None,
-        xmax: float = None,
-        smooth_amount: int = 5,
-        add_line_ids: bool = True,
-        frequency_space: bool = False,
-        scale: str = "logy",
-        figsize: Tuple[float, float] = None,
-        display: bool = False) -> Tuple[plt.Figure, plt.Axes]:
+def plot_spectrum_inclinations_in_subpanels(root,
+                                            fp,
+                                            xmin=None,
+                                            xmax=None,
+                                            smooth_amount=5,
+                                            add_line_ids=True,
+                                            frequency_space=False,
+                                            scale="logy",
+                                            figsize=None,
+                                            display=False):
     """Creates a figure which plots all of the different inclination angles in
     different panels.
 
@@ -621,16 +614,15 @@ def plot_spectrum_inclinations_in_subpanels(
     return fig, ax
 
 
-def plot_single_spectrum_inclination(
-        root: str,
-        fp: str,
-        inclination: Union[str, float, int],
-        xmin: float = None,
-        xmax: float = None,
-        smooth_amount: int = 5,
-        scale: str = "logy",
-        frequency_space: bool = False,
-        display: bool = False) -> Union[None, Tuple[plt.Figure, plt.Axes]]:
+def plot_single_spectrum_inclination(root,
+                                     fp,
+                                     inclination,
+                                     xmin=None,
+                                     xmax=None,
+                                     smooth_amount=5,
+                                     scale="logy",
+                                     frequency_space=False,
+                                     display=False):
     """Create a plot of an individual spectrum for the provided inclination
     angle.
 
@@ -702,19 +694,18 @@ def plot_single_spectrum_inclination(
     return fig, ax
 
 
-def plot_multiple_model_spectra(
-        output_name: str,
-        spectra_filepaths: list,
-        inclination_angle: str,
-        fp: str = ".",
-        xmin: float = None,
-        xmax: float = None,
-        frequency_space: bool = False,
-        axes_scales: str = "logy",
-        smooth_amount: int = 5,
-        plot_common_lines: bool = False,
-        file_ext: str = "png",
-        display: bool = False) -> Tuple[plt.Figure, plt.Axes]:
+def plot_multiple_model_spectra(output_name,
+                                spectra_filepaths,
+                                inclination_angle,
+                                fp=".",
+                                xmin=None,
+                                xmax=None,
+                                frequency_space=False,
+                                axes_scales="logy",
+                                smooth_amount=5,
+                                plot_common_lines=False,
+                                file_ext="png",
+                                display=False):
     """Plot multiple spectra, from multiple models, given in the list of spectra
     provided.
     todo: when using "all", create separate plot for each inclination

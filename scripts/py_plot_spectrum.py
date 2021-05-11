@@ -17,7 +17,7 @@ from pypython import plot
 from pypython import spectrum as spec
 
 
-def setup_script() -> tuple:
+def setup_script():
     """Parse the different modes this script can be run from the command line.
 
     Returns
@@ -81,16 +81,15 @@ def setup_script() -> tuple:
     return setup
 
 
-def plot_all_spectrum_inclinations_in_one_panel(
-        root: str,
-        cd: str = "./",
-        xmin: float = None,
-        xmax: float = None,
-        smooth_amount: int = 5,
-        frequency_space: bool = False,
-        axes_scales: str = "logy",
-        common_lines: bool = True,
-        file_ext: str = "png") -> Tuple[plt.Figure, plt.Axes]:
+def plot_all_spectrum_inclinations_in_one_panel(root,
+                                                cd="./",
+                                                xmin=None,
+                                                xmax=None,
+                                                smooth_amount=5,
+                                                frequency_space=False,
+                                                axes_scales="logy",
+                                                common_lines=True,
+                                                file_ext="png"):
     """Plot all of the spectra for a model on the same panel, for some comparison
     reasons. This is best done with small wavelength ranges.
 
@@ -197,15 +196,15 @@ def plot_all_spectrum_inclinations_in_one_panel(
 
 
 def plot_spectrum_inclinations_on_one_figure_in_subpanels(
-        root: str,
-        cd: str = "./",
-        xmin: float = None,
-        xmax: float = None,
-        smooth_amount: int = 5,
-        frequency_space: bool = False,
-        axes_scales: str = "logy",
-        common_lines: bool = True,
-        file_ext: str = "png") -> Tuple[plt.Figure, plt.Axes]:
+        root,
+        cd="./",
+        xmin=None,
+        xmax=None,
+        smooth_amount=5,
+        frequency_space=False,
+        axes_scales="logy",
+        common_lines=True,
+        file_ext="png"):
     """Plot each separate spectrum in an individual panel, on one figure.
 
     Parameters
@@ -245,15 +244,14 @@ def plot_spectrum_inclinations_on_one_figure_in_subpanels(
     return fig, ax
 
 
-def plot_spectrum_inclination_in_individual_figures(
-        root: str,
-        cd: str = "./",
-        xmin: float = None,
-        xmax: float = None,
-        smooth_amount: int = 5,
-        frequency_space: bool = False,
-        axes_scales: str = "logy",
-        file_ext: str = "png") -> None:
+def plot_spectrum_inclination_in_individual_figures(root,
+                                                    cd="./",
+                                                    xmin=None,
+                                                    xmax=None,
+                                                    smooth_amount=5,
+                                                    frequency_space=False,
+                                                    axes_scales="logy",
+                                                    file_ext="png"):
     """Plot each separate spectrum as its own figure.
 
     Parameters
@@ -331,7 +329,7 @@ def plot_spectrum_inclination_in_individual_figures(
     return
 
 
-def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
+def main(setup=None):
     """The main function of the script. First, the important wind quantaties are
     plotted. This is then followed by the important ions.
 
@@ -364,7 +362,7 @@ def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
     if setup:
         root, cd, xmin, xmax, frequency_space, common_lines, axes_scales, smooth_amount, file_ext, display = setup
     else:
-        root, cd, xmin, xmax, frequency_space, common_lines, axes_scales, smooth_amount, file_ext, display = \
+        root, cd, xmin, xmax, frequency_space, common_lines, axes_scales, smooth_amount, file_ext, display =\
             setup_script()
 
     root = root.replace("/", "")

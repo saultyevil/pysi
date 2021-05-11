@@ -22,12 +22,7 @@ plt.rcParams['ytick.labelsize'] = 15
 plt.rcParams['axes.labelsize'] = 15
 
 
-def get_spec_model(root: str,
-                   nx: int,
-                   nz: int,
-                   i: int,
-                   j: int,
-                   nbands: int = 4) -> List[str]:
+def get_spec_model(root, nx, nz, i, j, nbands=4):
     """Get the spectral model for a specific cell from py_wind
 
     Parameters
@@ -65,8 +60,7 @@ def get_spec_model(root: str,
     return spectral_models_bands
 
 
-def get_py_wind_everything_output(root: str, nx: int, nz: int, i: int,
-                                  j: int) -> str:
+def get_py_wind_everything_output(root, nx, nz, i, j):
     """Run py_wind to get the "everything" output to be able to parse out the
     spectral model bands.
 
@@ -106,11 +100,7 @@ def get_py_wind_everything_output(root: str, nx: int, nz: int, i: int,
     return stdout.decode("utf-8")
 
 
-def plot_cell_sed(model_bands: List[str],
-                  filename: str,
-                  icell: int,
-                  jcell: int,
-                  smooth_amount: int = 1) -> None:
+def plot_cell_sed(model_bands, filename, icell, jcell, smooth_amount=1):
     """Create a plot of a cell SED given the model bands. Provided by Nick :-).
 
     Parameters
@@ -206,7 +196,7 @@ def plot_cell_sed(model_bands: List[str],
     return
 
 
-def main() -> None:
+def main():
     """Main function of the script. Parses arguments from the command line."""
 
     p = ap.ArgumentParser(description=__doc__)

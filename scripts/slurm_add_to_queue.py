@@ -10,7 +10,7 @@ from subprocess import PIPE, Popen
 from typing import List, Tuple
 
 
-def split_path_and_filename(filepath: str) -> Tuple[str, str]:
+def split_path_and_filename(filepath):
     """Extract the slurm file name and the directory it is in from the entire
     file path.
 
@@ -37,7 +37,7 @@ def split_path_and_filename(filepath: str) -> Tuple[str, str]:
     return slurm_file, directory
 
 
-def add_files_to_slurm_queue(slurm_files: List[str]) -> None:
+def add_files_to_slurm_queue(slurm_files):
     """Add a bunch of slurm files to the slurm queue. Uses subprocess and so
     only works on macOS and Linux.
 
@@ -65,7 +65,7 @@ def add_files_to_slurm_queue(slurm_files: List[str]) -> None:
     return
 
 
-def find_slurm_files(filepath: str = ".") -> List[str]:
+def find_slurm_files(filepath="."):
     """Searches recursively from the calling direction for files which end with
     the extension *.slurm and returns a list of the found files.
 
@@ -96,7 +96,7 @@ def find_slurm_files(filepath: str = ".") -> List[str]:
     return slurm_files
 
 
-def setup() -> bool:
+def setup():
     """Parse the command line for run time arguments.
 
     Returns
@@ -116,7 +116,7 @@ def setup() -> bool:
     return args.add_to_queue
 
 
-def main() -> None:
+def main():
     """Main function of the script."""
 
     add_to_queue = setup()

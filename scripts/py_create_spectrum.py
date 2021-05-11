@@ -14,7 +14,7 @@ from pypython.physics import convert
 from pypython.spectrum import Spectrum, create
 
 
-def setup_script() -> tuple:
+def setup_script():
     """Parse the different modes this script can be run from the command line.
     todo: clean up this sub-parser mess. Probably don't need to be able to plot it in this script...
 
@@ -182,20 +182,20 @@ def setup_script() -> tuple:
     return setup
 
 
-def plot(root: str,
-         wd: str,
-         filtered_spectrum: np.ndarray,
-         extract_line: tuple = (-1, ),
-         sm: int = 1,
-         d_norm_pc: float = 100,
-         xmin: float = None,
-         xmax: float = None,
-         scale: str = "loglog",
-         frequency_space: bool = False,
-         logbins: bool = True,
-         plot_lines: bool = False,
-         file_ext: str = ".png",
-         display: bool = False):
+def plot(root,
+         wd,
+         filtered_spectrum,
+         extract_line=(-1, ),
+         sm=1,
+         d_norm_pc=100,
+         xmin=None,
+         xmax=None,
+         scale="loglog",
+         frequency_space=False,
+         logbins=True,
+         plot_lines=False,
+         file_ext=".png",
+         display=False):
     """Description of the function.
     todo: create a new script for this
 
@@ -298,7 +298,7 @@ def plot(root: str,
     return
 
 
-def main(setup: tuple = None):
+def main(setup=None):
     """
     Main function of the script.
 
@@ -333,10 +333,10 @@ def main(setup: tuple = None):
     # variables required and this is my fault :-)
 
     if setup:
-        mode, root, spec_cycle_norm, n_cores_norm, d_norm_pc, extract_nres, n_bins, wd, w_xmin, w_xmax, \
+        mode, root, spec_cycle_norm, n_cores_norm, d_norm_pc, extract_nres, n_bins, wd, w_xmin, w_xmax,\
             frequency_space, common_lines, axes_scales, smooth_amount, file_ext, logbins, display = setup
     else:
-        mode, root, spec_cycle_norm, n_cores_norm, d_norm_pc, extract_nres, n_bins, wd, w_xmin, w_xmax, \
+        mode, root, spec_cycle_norm, n_cores_norm, d_norm_pc, extract_nres, n_bins, wd, w_xmin, w_xmax,\
             frequency_space, common_lines, axes_scales, smooth_amount, file_ext, logbins, display = setup_script()
 
     # Now we either create, or plot the filtered spectrum if it has already been created

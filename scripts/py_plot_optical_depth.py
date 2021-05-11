@@ -14,7 +14,7 @@ from matplotlib import pyplot as plt
 from pypython import spectrum
 
 
-def setup_script() -> tuple:
+def setup_script():
     """Parse the different modes this script can be run from the command line.
 
     Returns
@@ -84,16 +84,15 @@ def setup_script() -> tuple:
     return setup
 
 
-def plot_optical_depth_spectrum(
-        root: str,
-        wd: str = "./",
-        xmin: float = None,
-        xmax: float = None,
-        scale: str = "loglog",
-        show_absorption_edges: bool = False,
-        frequency_space: bool = False,
-        file_ext: str = "png",
-        display: bool = False) -> Tuple[plt.Figure, plt.Axes]:
+def plot_optical_depth_spectrum(root,
+                                wd="./",
+                                xmin=None,
+                                xmax=None,
+                                scale="loglog",
+                                show_absorption_edges=False,
+                                frequency_space=False,
+                                file_ext="png",
+                                display=False):
     """Description of function.
 
     Parameters
@@ -116,7 +115,7 @@ def plot_optical_depth_spectrum(
     return fig, ax
 
 
-def main(setup: tuple = None) -> Tuple[plt.Figure, plt.Axes]:
+def main(setup=None):
     """The main function of the script. First, the important wind quantities are
     plotted. This is then followed by the important ions.
 

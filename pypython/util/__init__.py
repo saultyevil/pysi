@@ -11,7 +11,7 @@ from .. import get_file, get_root
 name = "util"
 
 
-def create_run_script(commands: List[str]) -> None:
+def create_run_script(commands):
     """Create a shell run script given a list of commands to do. This assumes that
     you want to use a bash interpreter.
 
@@ -42,13 +42,13 @@ def create_run_script(commands: List[str]) -> None:
         f.write(file)
 
 
-def create_slurm_file(name: str,
-                      n_cores: int,
-                      split_cycle: bool,
-                      n_hours: int,
-                      n_minutes: int,
-                      flags: str,
-                      fp: str = ".") -> None:
+def create_slurm_file(name,
+                      n_cores,
+                      split_cycle,
+                      n_hours,
+                      n_minutes,
+                      flags,
+                      fp="."):
     """Create a slurm file in the directory fp with the name root.slurm. All
     of the script flags are passed using the flags variable.
 
@@ -95,7 +95,7 @@ def create_slurm_file(name: str,
         f.write(f"{slurm}")
 
 
-def get_cpu_count(enable_smt: bool = False):
+def get_cpu_count(enable_smt=False):
     """Return the number of CPU cores which can be used when running a Python
     simulation. By default, this will only return the number of physical cores
     and will ignore logical threads, i.e. in Intel terms, it will not count the
@@ -125,7 +125,7 @@ def get_cpu_count(enable_smt: bool = False):
     return n_cores
 
 
-def get_file_len(filename: str) -> int:
+def get_file_len(filename):
     """Slowly count the number of lines in a file.
     todo: update to jit_open or some other more efficient method
 

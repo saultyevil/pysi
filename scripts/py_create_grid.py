@@ -19,8 +19,7 @@ from typing import List
 # from iridis_create_slurm_file import write_slurm_file
 
 
-def create_grid(pf: str, parameter: str, grid: List[str], ncores: int,
-                thours: int, names: List[str], flags: str) -> List[str]:
+def create_grid(pf, parameter, grid, ncores, thours, names, flags):
     """The purpose of this function is to use a base parameter file and to create
     directories containing parameter files with a different value to the given
     parameter. These values are given in grid.
@@ -103,7 +102,7 @@ def create_grid(pf: str, parameter: str, grid: List[str], ncores: int,
     return pfs
 
 
-def run_grid() -> List[str]:
+def run_grid():
     """Main controlling function of the script."""
 
     # This is the parameter which will be changed
