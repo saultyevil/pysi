@@ -19,6 +19,19 @@ def format_source(fp):
         run(f"isort {file} > /dev/null; yapf -i --style={style} {file} > /dev/null", shell=True)
 
 
+def format_docstrings(fp):
+    """Use docformatter to format docstrings using docformatter. This should be
+    done to PEP-8 covention.
+    Parameters
+    ----------
+    fp: str
+        The file path to research recursively for python files.
+    """
+    for file in Path(fp).rglob("*.py"):
+        print(" -", str(file))
+        run(f"docformatter -i {file} > /dev/null", shell=True)
+
+
 def strip_type_hints(fp):
     """Stip type hints from source files.
     Parameters
@@ -39,3 +52,7 @@ if "--strip-hints" in argv:
 print("Reformating source files:")
 format_source("pypython")
 format_source("scripts")
+
+print("Reformatting docstrings")
+format_docstrings("pypython")
+format_docstrings("scripts")
