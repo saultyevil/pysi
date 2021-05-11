@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Error codes and custom exceptions for pypython. These are pretty basic, and
-don't do much.
+"""Error codes and custom exceptions for pypython.
+
+These are pretty basic, and don't do much.
 """
 
 EXIT_SUCCESS = 0
@@ -10,25 +10,26 @@ EXIT_FAIL = 1
 
 
 class CoordError(Exception):
-    """Exception for when an incorrect coordinate system is used"""
+    """Exception for when an incorrect coordinate system is used."""
     pass
 
 
 class DimensionError(Exception):
-    """Exception for when arrays with incorrect dimensions have been supplied"""
+    """Exception for when arrays with incorrect dimensions have been
+    supplied."""
     pass
 
 
 class PythonError(Exception):
-    """Exception for when Python has broken"""
+    """Exception for when Python has broken."""
     pass
 
 
 class InvalidFileContents(Exception):
-    """Exception for when a file has a different contents than expected"""
+    """Exception for when a file has a different contents than expected."""
     pass
 
 
 class InvalidParameter(Exception):
-    """Exception for when a parameter is not recognised"""
+    """Exception for when a parameter is not recognised."""
     pass

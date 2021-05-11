@@ -28,7 +28,7 @@ done
 
 
 def create_run_script(commands):
-    """Create the run script given a list of commands"""
+    """Create the run script given a list of commands."""
 
     # Find any python parameter file in the directory and subdirectories
     directories = []

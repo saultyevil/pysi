@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-The purpose of this script is to easily create a figure which overplots multiple
-spectra onto a single plot. Spectrum files are recursively searched from the
-calling directory.
+"""The purpose of this script is to easily create a figure which overplots
+multiple spectra onto a single plot.
+
+Spectrum files are recursively searched from the calling directory.
 """
 
 import argparse as ap
@@ -16,8 +16,7 @@ from pypython.error import EXIT_FAIL
 
 
 def setup_script():
-    """
-    Parse the different modes this script can be run from the command line.
+    """Parse the different modes this script can be run from the command line.
 
     Returns
     -------
@@ -68,7 +67,8 @@ def main(setup=None):
     setup: tuple
         A tuple containing the setup parameters to run the script. If this
         isn't provided, then the script will parse them from the command
-        line."""
+        line.
+    """
 
     if setup:
         output_name, wd, inclination, root, x_min, x_max, frequency_space, common_lines, axes_scales, smooth_amount,\

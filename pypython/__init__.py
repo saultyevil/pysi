@@ -33,12 +33,15 @@ UNITS_FLAMBDA = "erg/s/cm^-2/A"
 
 class Spectrum:
     """A class to store PYTHON .spec and .log_spec files.
-    The PYTHON spectrum is read in and stored within a dict, where each column
-    name is a key and the data is stored as a numpy array."""
+
+    The PYTHON spectrum is read in and stored within a dict, where each
+    column name is a key and the data is stored as a numpy array.
+    """
     def __init__(self, root, cd=".", default=None, log=False, smooth=None, delim=None):
-        """Initialise a Spectrum object. This method will construct the file path
-        of the spectrum file given the root, containing directory and whether
-        the logarithmic spectrum is used or not. The spectrum is then read in.
+        """Initialise a Spectrum object. This method will construct the file
+        path of the spectrum file given the root, containing directory and
+        whether the logarithmic spectrum is used or not. The spectrum is then
+        read in.
 
         Parameters
         ----------
@@ -104,15 +107,16 @@ class Spectrum:
             self.smooth(smooth)
 
     def read_in_spectra(self, delim=None):
-        """Read in a spectrum file given in self.filepath. The spectrum is stored
-        as a dictionary in self.spectrum where each key is the name of the
-        columns.
+        """Read in a spectrum file given in self.filepath. The spectrum is
+        stored as a dictionary in self.spectrum where each key is the name of
+        the columns.
 
         Parameters
         ----------
         delim: str [optional]
             A custom delimiter, useful for reading in files which have sometimes
-            between delimited with commas instead of spaces."""
+            between delimited with commas instead of spaces.
+        """
 
         n_read = 0
         files_to_read = ["spec", "spec_tot", "spec_tot_wind", "spec_wind", "spec_tau"]
@@ -195,7 +199,8 @@ class Spectrum:
         width: int [optional]
             The width of the boxcar filter (in bins).
         to_smooth: list or tuple of strings [optional]
-            A list or tuple"""
+            A list or tuple
+        """
 
         # Create a backup of the unsmoothed array before it is smoothed it
 
@@ -243,7 +248,8 @@ class Spectrum:
         label_lines: bool
             Plot line IDs.
         ax_update: plt.Axes
-            An plt.Axes object to update, i.e. to plot on."""
+            An plt.Axes object to update, i.e. to plot on.
+        """
 
         normalize_figure_style()
 
@@ -279,13 +285,14 @@ class Spectrum:
 
     def _spec_plot_all(self, label_lines=False):
         """Plot the spectrum components and observer spectra on a 1x2 panel
-        plot. The left panel has the components, whilst the right panel has
-        the observer spectrum.
+        plot. The left panel has the components, whilst the right panel has the
+        observer spectrum.
 
         Parameters
         ----------
         label_lines: bool
-            Plot line IDs."""
+            Plot line IDs.
+        """
 
         normalize_figure_style()
 
@@ -318,16 +325,18 @@ class Spectrum:
         return fig, ax
 
     def plot(self, name=None, label_lines=False):
-        """Plot the spectra or a single component in a single figure. By default
-        this creates a 1 x 2 of the components on the left and the observer
-        spectra on the right. Useful for when in an interactive session.
+        """Plot the spectra or a single component in a single figure. By
+        default this creates a 1 x 2 of the components on the left and the
+        observer spectra on the right. Useful for when in an interactive
+        session.
 
         Parameters
         ----------
         name: str
             The name of the thing to plot.
         label_lines: bool
-            Plot line IDs."""
+            Plot line IDs.
+        """
 
         # todo:
         # This is some badness inspired by Python. This is done, for now, as
@@ -409,7 +418,9 @@ class Spectrum:
 
 
 class Wind:
-    """A class to store 1D and 2D Python wind tables. Contains methods to
+    """A class to store 1D and 2D Python wind tables.
+
+    Contains methods to
     extract variables, as well as convert various indices into other indices.
     todo: add dot notation for accessing dictionaries.
     """
@@ -692,8 +703,7 @@ class Wind:
 
     def project_cartesian_velocity_to_cylindrical(self):
         """Project the cartesian velocities of the wind into cylindrical
-         coordinates.
-         """
+        coordinates."""
         v_l = np.zeros_like(self.variables["v_x"])
         v_rot = np.zeros_like(v_l)
         v_r = np.zeros_like(v_l)
@@ -726,8 +736,7 @@ class Wind:
 
     def create_masked_arrays(self):
         """Convert each array into a masked array, where the mask is defined by
-        the inwind variable.
-        """
+        the inwind variable."""
         to_mask_wind = list(self.parameters)
 
         # Remove some of the columns, as these shouldn't be masked because
@@ -901,33 +910,27 @@ class Wind:
         return fig, ax
 
     def get_elem_number_from_ij(self, i, j):
-        """Get the wind element number for a given i and j index.
-        """
+        """Get the wind element number for a given i and j index."""
         return self.nz * i + j
 
     def get_ij_from_elem_number(self, elem):
-        """Get the i and j index for a given wind element number.
-        """
+        """Get the i and j index for a given wind element number."""
         return np.unravel_index(elem, (self.nx, self.nz))
 
     def show(self, block=True):
-        """Show a plot which has been created.
-        """
+        """Show a plot which has been created."""
         plt.show(block=block)
 
     def __getitem__(self, key):
-        """Return an array in the variables dictionary when indexing.
-        """
+        """Return an array in the variables dictionary when indexing."""
         return self.variables[key]
 
     def __setitem__(self, key, value):
-        """Set an array in the variables dictionary.
-        """
+        """Set an array in the variables dictionary."""
         self.variables[key] = value
 
     def __str__(self):
-        """Print basic details about the wind.
-        """
+        """Print basic details about the wind."""
         txt = "root: {}\nfilepath: {}\ncoordinate system:{}\nparameters: {}\nelements: {}\n".format(
             self.root, self.fp, self.coord_system, self.parameters, self.elements)
 
@@ -1037,7 +1040,8 @@ def get_array_index(x, target):
 
 
 def get_root(fp):
-    """Get the root name of a Python simulation, extracting it from a file path.
+    """Get the root name of a Python simulation, extracting it from a file
+    path.
 
     Parameters
     ----------
@@ -1099,9 +1103,9 @@ def smooth_array(array, width):
 
 
 def create_wind_save_tables(root, fp=".", ion_density=False, verbose=False):
-    """Run windsave2table in a directory to create the standard data tables. The
-    function can also create a root.all.complete.txt file which merges all the
-    data tables together into one (a little big) file.
+    """Run windsave2table in a directory to create the standard data tables.
+    The function can also create a root.all.complete.txt file which merges all
+    the data tables together into one (a little big) file.
 
     Parameters
     ----------

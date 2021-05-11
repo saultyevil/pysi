@@ -12,13 +12,14 @@ name = "util"
 
 
 def create_run_script(commands):
-    """Create a shell run script given a list of commands to do. This assumes that
-    you want to use a bash interpreter.
+    """Create a shell run script given a list of commands to do. This assumes
+    that you want to use a bash interpreter.
 
     Parameters
     ----------
     commands: List[str]
-        The commands which are going to be run."""
+        The commands which are going to be run.
+    """
 
     paths = []
     pf_fp = get_file("*.pf")
@@ -43,8 +44,8 @@ def create_run_script(commands):
 
 
 def create_slurm_file(name, n_cores, split_cycle, n_hours, n_minutes, flags, fp="."):
-    """Create a slurm file in the directory fp with the name root.slurm. All
-    of the script flags are passed using the flags variable.
+    """Create a slurm file in the directory fp with the name root.slurm. All of
+    the script flags are passed using the flags variable.
 
     Parameters
     ----------

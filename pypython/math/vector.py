@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Description of file.
-"""
+"""Description of file."""
 
 from typing import List, Union
 
@@ -24,7 +22,8 @@ def renormalize_vector(a, scalar):
     Returns
     -------
     a: np.ndarray
-        The renormalized 3-vector quantity."""
+        The renormalized 3-vector quantity.
+    """
 
     eps = 1e-10
 
@@ -57,7 +56,8 @@ def project_cartesian_to_cylindrical_coordinates(a, b):
     -------
     result: np.ndarray
         The input vector b which is now projected into cylindrical
-        coordinates."""
+        coordinates.
+    """
 
     result = np.zeros(3)
     n_rho = np.zeros(3)

@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-The point of this part of pypython is to manipulating the atomic data used in
-Python, to i.e. remove various transitions from the data..
-"""
+"""The point of this part of pypython is to manipulating the atomic data used
+in Python, to i.e. remove various transitions from the data.."""
 
 from os import getenv
 from sys import exit
@@ -12,8 +10,8 @@ from pypython.error import EXIT_FAIL
 
 
 def remove_photoionization_edge(data, atomic_number, ionization_state, new_value=9e99):
-    """Remove a transition or element from some atomic data. Creates a new atomic
-    data file which is placed in the current working or given directory.
+    """Remove a transition or element from some atomic data. Creates a new
+    atomic data file which is placed in the current working or given directory.
 
     To remove a photionization edge from the data, the frequency threshold is,
     by default, set to something large. It is also possible to just change this
@@ -29,7 +27,8 @@ def remove_photoionization_edge(data, atomic_number, ionization_state, new_value
     ionization_state: int
         The ionization state corresponding to the edge to be removed.
     new_value: [optional] float
-        The value of the new frequency threshold for the edge."""
+        The value of the new frequency threshold for the edge.
+    """
 
     data = data.lower()
     allowed_data = [

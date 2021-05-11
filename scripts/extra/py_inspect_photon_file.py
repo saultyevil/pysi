@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-The purpose of this script is to look at various things from the photon sample
-in a Python simulation. To do this, we need to read in the diagnostic save_photon
-file. Python generally is required to be run in the diagnostic
+"""The purpose of this script is to look at various things from the photon
+sample in a Python simulation.
+
+To do this, we need to read in the diagnostic save_photon file. Python
+generally is required to be run in the diagnostic
 """
 
 import argparse as ap
@@ -90,7 +91,7 @@ def bin_photon_weights_in_frequency(freq, w, nbins=100):
 
 
 def plot_photon_frequency_distribution():
-    """Plot the photons weights binned in frequency space"""
+    """Plot the photons weights binned in frequency space."""
 
     ncycles = 10
     nrows = 2
@@ -233,7 +234,7 @@ def extract_scattered_photons(wcycle, nscats):
 
 
 def main():
-    """Main function"""
+    """Main function."""
 
     modes = ["frequency_distribution", "extract_scatters", "weight_hist"]
     mode, wcycle, extract = get_input()

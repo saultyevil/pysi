@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Contains functions for calculating the properties of a blackbody.
-"""
+"""Contains functions for calculating the properties of a blackbody."""
 
 from typing import Union
 
@@ -12,8 +10,8 @@ from .constants import (ANGSTROM, BOLTZMANN, VLIGHT, WIEN_FREQUENCY, WIEN_WAVELE
 
 
 def planck_nu(temperature, frequency):
-    """Calculate the monochromatic intensity for a black body given a temperature
-    and frequency of interest.
+    """Calculate the monochromatic intensity for a black body given a
+    temperature and frequency of interest.
 
     Parameters
     ----------
@@ -26,7 +24,8 @@ def planck_nu(temperature, frequency):
     -------
     b_nu: float
         The value of the Planck function with the provided temperature and
-        frequency. Has units ergs s^-1 cm^-2 Hz^-1."""
+        frequency. Has units ergs s^-1 cm^-2 Hz^-1.
+    """
 
     with np.errstate(all="ignore"):
         x = H * frequency / (BOLTZMANN * temperature)
@@ -36,8 +35,8 @@ def planck_nu(temperature, frequency):
 
 
 def planck_lambda(temperature, lamda):
-    """Calculate the monochromatic intensity for a black body given a temperature
-    and frequency of interest.
+    """Calculate the monochromatic intensity for a black body given a
+    temperature and frequency of interest.
 
     Parameters
     ----------
@@ -50,7 +49,8 @@ def planck_lambda(temperature, lamda):
     -------
     b_lamda: float
         The value of the Planck function with the provided temperature and
-        wavelength. Has units ergs s^-1 cm^-2 A^-1."""
+        wavelength. Has units ergs s^-1 cm^-2 A^-1.
+    """
 
     with np.errstate(all="ignore"):
         lcm = lamda * ANGSTROM
@@ -74,7 +74,8 @@ def wein_law(temperature, freq_space=False):
     Returns
     -------
     The wavelength (in Angstrom) or frequency where the blackbody curve is
-    at maximum."""
+    at maximum.
+    """
 
     if freq_space:
         return WIEN_FREQUENCY * temperature

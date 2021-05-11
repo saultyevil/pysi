@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Logging utilities.
-"""
+"""Logging utilities."""
 
 from typing import TextIO, Union
 
@@ -10,14 +8,15 @@ LOGFILE = None
 
 
 def init_logfile(logfile_name, use_global_log=True):
-    """Initialise a logfile global variable
+    """Initialise a logfile global variable.
 
     Parameters
     ----------
     logfile_name: str
         The name of the logfile to initialise
     use_global_log: bool, optional
-        If this is false, a object for a logfile will be returned instead."""
+        If this is false, a object for a logfile will be returned instead.
+    """
 
     global LOGFILE
 
@@ -64,7 +63,8 @@ def log(message, logfile=None):
         The message to log to screen and file
     logfile: io.TextIO, optional
         An open file object which is the logfile to log to. If this is not
-        provided, then the global logfile."""
+        provided, then the global logfile.
+    """
 
     print(message)
 
@@ -87,7 +87,8 @@ def logsilent(message, logfile=None):
         The message to log to file
     logfile: io.TextIO, optional
         An open file object which is the logfile to log to. If this is not
-        provided, then the global logfile"""
+        provided, then the global logfile
+    """
 
     if logfile:
         logfile.write("{}\n".format(message))

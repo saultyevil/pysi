@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-The purpose of this script is to tie together a bunch of plotting scripts into
-one script. This way, instead of running each plotting script, one only needs
-to run this script. However, the plots will be created with a default set of
-parameters to keep this script simple. If you want more flexible options,
-use (or edit) the other plotting scripts to fit your needs appropriately.
+"""The purpose of this script is to tie together a bunch of plotting scripts
+into one script.
+
+This way, instead of running each plotting script, one only needs to run
+this script. However, the plots will be created with a default set of
+parameters to keep this script simple. If you want more flexible
+options, use (or edit) the other plotting scripts to fit your needs
+appropriately.
 """
 
 import argparse as ap
@@ -35,7 +37,8 @@ def setup_script():
             smooth_amount,
             file_ext,
             display
-        )"""
+        )
+    """
 
     p = ap.ArgumentParser(description=__doc__)
 
@@ -62,8 +65,8 @@ def setup_script():
 
 
 def plot(setup=None):
-    """Creates a bunch of plots using some parameters which can be controlled at
-    run time, but also assumes a few default parameters. Refer to the
+    """Creates a bunch of plots using some parameters which can be controlled
+    at run time, but also assumes a few default parameters. Refer to the
     documentation for the script for more detail.
 
     This function basically just runs the main() functions from a bunch of the
@@ -80,7 +83,8 @@ def plot(setup=None):
     fig: plt.Figure
         The matplotlib Figure object for the created plot.
     ax: plt.Axes
-        The matplotlib Axes objects for the plot panels."""
+        The matplotlib Axes objects for the plot panels.
+    """
 
     if setup:
         root, wd, xmin, xmax, frequency_space, polar_coords, smooth_amount, file_ext, display = setup

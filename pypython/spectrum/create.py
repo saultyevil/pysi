@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-This file contains various utility functions for use with the reverberation
-mapping part of Python. It seems to mostly house functions designed to create
-a spectrum from the delay_dump output.
+"""This file contains various utility functions for use with the reverberation
+mapping part of Python.
+
+It seems to mostly house functions designed to create a spectrum from
+the delay_dump output.
 """
 
 from copy import deepcopy
@@ -38,7 +39,7 @@ def write_delay_dump_spectrum_to_file(root,
                                       n_bins,
                                       d_norm_pc,
                                       return_inclinations=False):
-    """Write the generated delay dump spectrum to file
+    """Write the generated delay dump spectrum to file.
 
     Parameters
     ----------
@@ -64,7 +65,8 @@ def write_delay_dump_spectrum_to_file(root,
     spectrum: np.ndarray
         The delay dump spectrum.
     inclinations: [optional] np.ndarray
-        An array of the inclination angles of the spectrum."""
+        An array of the inclination angles of the spectrum.
+    """
 
     if extract_nres[0] != UNFILTERED_SPECTRUM:
         fname = "{}/{}_line".format(wd, root)
@@ -144,7 +146,8 @@ def read_delay_dump(root, cd=".", mode_dev=False):
     -------
     dumped_photons: pd.DataFrame
         An array containing the dumped photons with the quantities specified
-        by the extract dict."""
+        by the extract dict.
+    """
 
     filename = "{}/{}.delay_dump".format(cd, root)
 
@@ -209,7 +212,8 @@ def convert_weight_to_flux(spectrum, spec_cycle_norm, d_norm_pc):
     Returns
     -------
     spectrum: np.ndarray
-        The renormalized spectrum."""
+        The renormalized spectrum.
+    """
 
     n_bins = spectrum.shape[0]
     n_spec = spectrum.shape[1] - 1
@@ -262,7 +266,8 @@ def bin_photon_weights(spectrum, freq_min, freq_max, photon_freqs, photon_weight
     Returns
     -------
     spectrum: np.ndarray
-        The spectrum where photon weights have been binned."""
+        The spectrum where photon weights have been binned.
+    """
 
     n_extract = len(extract_nres)
     n_photons = photon_freqs.shape[0]
@@ -318,10 +323,9 @@ def create_spectrum_process_breakdown(root,
                                       wd=".",
                                       nres=None,
                                       mode_line_res=True):
-    """Get the spectra for the different physical processes which contribute to a
-    spectrum. If nres is provided, then only a specific interaction will be
+    """Get the spectra for the different physical processes which contribute to
+    a spectrum. If nres is provided, then only a specific interaction will be
     extracted, otherwise all resonance interactions will.
-
 
     Parameters
     ----------
@@ -348,7 +352,8 @@ def create_spectrum_process_breakdown(root,
     -------
     spectra: dict
         A dictionary where the keys are the name of the spectra and the values
-        are pd.DataFrames of that corresponding spectrum."""
+        are pd.DataFrames of that corresponding spectrum.
+    """
 
     df = read_delay_dump(root, cd=wd)
     s = Spectrum(root, wd)
@@ -424,7 +429,7 @@ def create_spectrum_process_breakdown(root,
 @jit(nopython=True)
 def wind_bin_photon_weights(n_photons, nres, photon_x, photon_y, photon_z, photon_nres, photon_weight, x_points,
                             z_points, nx, nz):
-    """Bin photon weights by extract location"""
+    """Bin photon weights by extract location."""
 
     hist2d_weight = np.zeros((nx, nz))
     hist2d_count = np.zeros((nx, nz))
@@ -512,8 +517,8 @@ def create_spectrum(root,
                     logbins=True,
                     mode_dev=False,
                     output_numpy=False):
-    """Create a spectrum for each inclination angle using the photons which have
-    been dumped to the root.delay_dump file.
+    """Create a spectrum for each inclination angle using the photons which
+    have been dumped to the root.delay_dump file.
 
     Spectrum frequency bins are rounded to 7 significant figures as this makes
     them the same values as what is output from the Python spectrum.
@@ -556,7 +561,8 @@ def create_spectrum(root,
     -------
     filtered_spectrum: np.ndarray or pd.DataFrame
         A 2D array containing the frequency in the first column and the
-        fluxes for each inclination angle in the other columns."""
+        fluxes for each inclination angle in the other columns.
+    """
 
     if type(extract_nres) != tuple:
         print("extract_nres is not a tuple but is of type {}".format(type(extract_nres)))
@@ -634,7 +640,7 @@ def create_spectrum(root,
 
 
 class Photon(Base):
-    """Photon object for SQL database"""
+    """Photon object for SQL database."""
     __tablename__ = "Photons"
     id = Column(Integer, primary_key=True, autoincrement=True)
     np = Column(Integer)
@@ -679,7 +685,8 @@ def get_photon_db(root, cd=".", dd_dev=False, commitfreq=1000000):
     engine:
         The SQLalchemy engine.
     session:
-        The SQLalchemy session."""
+        The SQLalchemy session.
+    """
 
     engine = sqlalchemy.create_engine("sqlite:///{}.db".format(root))
     Session = sessionmaker(bind=engine)

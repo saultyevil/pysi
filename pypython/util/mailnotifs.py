@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Tools to send email notifications to update users on the current progress or
-some long program. Requires access to the mcrtpythonupdates@gmail.com Gmail API.
-Currently access to this API is limited.
+"""Tools to send email notifications to update users on the current progress or
+some long program.
+
+Requires access to the mcrtpythonupdates@gmail.com Gmail API. Currently
+access to this API is limited.
 """
 
 import base64
@@ -34,7 +35,8 @@ def create_email_message(sender, to, subject, message):
     Returns
     -------
     message: dict
-        The created email message"""
+        The created email message
+    """
 
     message = MIMEText(message)
     message["to"] = to
@@ -60,7 +62,8 @@ def send_email_message(service, msg, user):
     Returns
     -------
     msg: dict
-        The email message sent"""
+        The email message sent
+    """
 
     try:
         msg = service.users().messages().send(userId=user, body=msg).execute()
@@ -88,7 +91,8 @@ def send_notification(to, subject, notification, sender="mcrtpythonupdates@gmail
     Returns
     -------
     message: dict
-        The message sent"""
+        The message sent
+    """
 
     credentials = None
     scope = ["https://www.googleapis.com/auth/gmail.compose"]

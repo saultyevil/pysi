@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-The purpose of this script is to provide quick plotting of the wind for a Python
-simulation. As such, it is not very flexible with input to modify the output.
-The script will create a figure of the "important" wind quantities, such as
-the electron temperature and density, as well figures for the ion fractions
-for H, He, C, N, O and Si.
+"""The purpose of this script is to provide quick plotting of the wind for a
+Python simulation.
+
+As such, it is not very flexible with input to modify the output. The
+script will create a figure of the "important" wind quantities, such as
+the electron temperature and density, as well figures for the ion
+fractions for H, He, C, N, O and Si.
 """
 
 import argparse as ap
@@ -41,7 +42,8 @@ def setup_script():
     -------
     setup: tuple
         A list containing all of the different setup of parameters for
-        plotting."""
+        plotting.
+    """
 
     p = ap.ArgumentParser(description=__doc__)
 

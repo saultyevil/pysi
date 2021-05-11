@@ -123,9 +123,10 @@ def plot(x,
          label=None,
          alpha=1.0,
          display=False):
-    """This is a simple plotting function designed to give you the bare minimum.
-    It will create a figure and axes object for a single panel and that is
-    it. It is mostly designed for quick plotting of models and real data.
+    """This is a simple plotting function designed to give you the bare
+    minimum. It will create a figure and axes object for a single panel and
+    that is it. It is mostly designed for quick plotting of models and real
+    data.
 
     Parameters
     ----------
@@ -159,7 +160,8 @@ def plot(x,
     fig: plt.Figure
         The figure object for the plot.
     ax: plt.Axes
-        The axes object containing the plot."""
+        The axes object containing the plot.
+    """
 
     # It doesn't make sense to provide only fig and not ax, or ax and not fig
     # so at this point we will throw an error message and return
@@ -223,9 +225,9 @@ def plot_optical_depth(root,
                        show_absorption_edge_labels=True,
                        frequency_space=True,
                        display=False):
-    """Create an optical depth spectrum for a given Python simulation. This figure
-    can be created in both wavelength or frequency space and with various
-    choices of axes scaling.
+    """Create an optical depth spectrum for a given Python simulation. This
+    figure can be created in both wavelength or frequency space and with
+    various choices of axes scaling.
 
     This function will return the Figure and Axes object used to create the
     plot.
@@ -256,7 +258,8 @@ def plot_optical_depth(root,
     fig: pyplot.Figure
         The pyplot.Figure object for the created figure
     ax: pyplot.Axes
-        The pyplot.Axes object for the created figure"""
+        The pyplot.Axes object for the created figure
+    """
 
     normalize_figure_style()
 
@@ -410,9 +413,9 @@ def plot_spectrum_components(root,
                              alpha=0.6,
                              frequency_space=False,
                              display=False):
-    """Create a figure of the different spectrum components of a Python spectrum
-    file. Note that all of the spectrum components added together DO NOT have
-    to equal the output spectrum or the emitted spectrum (don't ask).
+    """Create a figure of the different spectrum components of a Python
+    spectrum file. Note that all of the spectrum components added together DO
+    NOT have to equal the output spectrum or the emitted spectrum (don't ask).
 
     Parameters
     ----------
@@ -445,7 +448,8 @@ def plot_spectrum_components(root,
     fig: pyplot.Figure
         The pyplot.Figure object for the created figure
     ax: pyplot.Axes
-        The pyplot.Axes object for the created figure"""
+        The pyplot.Axes object for the created figure
+    """
 
     normalize_figure_style()
 
@@ -530,7 +534,8 @@ def plot_spectrum_inclinations_in_subpanels(root,
     fig: pyplot.Figure
         The pyplot.Figure object for the created figure
     ax: pyplot.Axes
-        The pyplot.Axes object for the created figure"""
+        The pyplot.Axes object for the created figure
+    """
 
     spectrum = Spectrum(root, fp)
     spectrum_units = spectrum.units
@@ -628,7 +633,8 @@ def plot_single_spectrum_inclination(root,
     fig: pyplot.Figure
         The pyplot.Figure object for the created figure
     ax: pyplot.Axes
-        The pyplot.Axes object for the created figure"""
+        The pyplot.Axes object for the created figure
+    """
 
     normalize_figure_style()
 

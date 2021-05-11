@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Functions to analyse spectral lines.
-"""
+"""Functions to analyse spectral lines."""
 
 from typing import Tuple, Union
 
@@ -20,9 +18,12 @@ def fit_gaussian():
 
 
 def measure_equivalent_width(wavelength, flux, display_xmin, display_xmax, ret_fit=False):
-    """Measure the equivalent width for an emission or absorption line. A matplotlib
-    window will pop up, allowing the user to click on either side of the line
-    feature where it ends. A continuum is then fit using a linear fit."""
+    """Measure the equivalent width for an emission or absorption line.
+
+    A matplotlib window will pop up, allowing the user to click on
+    either side of the line feature where it ends. A continuum is then
+    fit using a linear fit.
+    """
 
     coords = []
 
@@ -142,7 +143,7 @@ def measure_equivalent_width(wavelength, flux, display_xmin, display_xmax, ret_f
 
 
 def full_width_half_maximum():
-    """Calculate the full width had maximum (FWHM) of a spectral line"""
+    """Calculate the full width had maximum (FWHM) of a spectral line."""
     def midpoints():
         raise NotImplementedError
 

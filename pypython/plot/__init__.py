@@ -127,7 +127,6 @@ def get_y_lims_for_x_lims(x, y, xmin, xmax, scale=10):
     """Determine the lower and upper y limits for a matplotlib plot given a
     restricted x range, since matplotlib doesn't do this automatically.
 
-
     Parameters
     ----------
     x: np.array[float]
@@ -146,7 +145,8 @@ def get_y_lims_for_x_lims(x, y, xmin, xmax, scale=10):
     ymin: float
         The lowest y value.
     ymax: float
-        The highest y value."""
+        The highest y value.
+    """
 
     n = get_y_lims_for_x_lims.__name__
 
@@ -191,7 +191,8 @@ def common_lines(freq=False):
     line: List[List[str, float]]
         A list of lists where each element of the list is the name of the
         transition/edge and the rest wavelength of that transition in
-        Angstroms."""
+        Angstroms.
+    """
 
     lines = [
         ["N III/O III", 305],
@@ -243,7 +244,8 @@ def photoionization_edges(freq=False):
     edges: List[List[str, float]]
         A list of lists where each element of the list is the name of the
         transition/edge and the rest wavelength of that transition in
-        Angstroms."""
+        Angstroms.
+    """
 
     edges = [
         ["He II", 229],

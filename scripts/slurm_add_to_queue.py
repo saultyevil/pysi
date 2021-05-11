@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Search recursively for .slurm files and add them to the slurm queue.
-"""
+"""Search recursively for .slurm files and add them to the slurm queue."""
 
 import argparse as ap
 from pathlib import Path
@@ -17,7 +15,8 @@ def split_path_and_filename(filepath):
     Parameters
     ----------
     filepath: str
-        The filepath to split the slurm file name and directory from."""
+        The filepath to split the slurm file name and directory from.
+    """
 
     assert (type(filepath) == str)
 
@@ -44,7 +43,8 @@ def add_files_to_slurm_queue(slurm_files):
     Parameters
     ----------
     slurm_files: List[str]
-        A list containing the slurm file paths to add to the queue."""
+        A list containing the slurm file paths to add to the queue.
+    """
 
     rc = []
 
@@ -77,7 +77,8 @@ def find_slurm_files(filepath="."):
     Returns
     -------
     slurm_files: List[str]
-        A list containing the relative paths of the slurm files."""
+        A list containing the relative paths of the slurm files.
+    """
 
     slurm_files = []
 
@@ -102,7 +103,8 @@ def setup():
     Returns
     -------
     add_to_queue: bool
-        Indicates whether to add the slurm files to the queue or not."""
+        Indicates whether to add the slurm files to the queue or not.
+    """
 
     p = ap.ArgumentParser(description=__doc__)
     p.add_argument("-a",

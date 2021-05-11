@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Calculate various atomic quantities, such as the ratio of the level population
-for two atomic levels.
-"""
+"""Calculate various atomic quantities, such as the ratio of the level
+population for two atomic levels."""
 
 import numpy as np
 
@@ -33,7 +31,8 @@ def saha_population_ratio(electron_density, g_upper, g_lower, energy_upper, ener
     -------
     n_i+1 / n_i: float
         The ratio of the population of the upper ionisation and ground state
-        of the atom."""
+        of the atom.
+    """
 
     gratio = 2 * g_upper / g_lower
     saha = ((2 * PI * MELEC * BOLTZMANN * temperature) / H**2)**(3 / 2)

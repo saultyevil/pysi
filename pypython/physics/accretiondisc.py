@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Functions to calculate parameters and quantities for accretion discs and
-accretion in general live here. For example, there are functions for the
-temperature profile for an alpha-disc, as well as functions to calculate the
-Eddington luminosity or to create a simple accretion disc spectrum.
+"""Functions to calculate parameters and quantities for accretion discs and
+accretion in general live here.
+
+For example, there are functions for the temperature profile for an
+alpha-disc, as well as functions to calculate the Eddington luminosity
+or to create a simple accretion disc spectrum.
 """
 
 from typing import Union
@@ -35,7 +36,8 @@ def alpha_disc_effective_temperature(ri, r_co, m_co, mdot):
     Returns
     -------
     teff: np.ndarray or float
-        The effective temperature at the provided radius or radii."""
+        The effective temperature at the provided radius or radii.
+    """
 
     m_co *= MSOL
     mdot *= MSOL_PER_YEAR
@@ -63,7 +65,8 @@ def modified_eddigton_alpha_disc_effective_temperature(ri, m_co, mdot):
     Returns
     -------
     teff: np.ndarray or float
-        The effective temperature at the provided radius or radii."""
+        The effective temperature at the provided radius or radii.
+    """
 
     risco = innermost_stable_circular_orbit(m_co)
     rg = gravitational_radius(m_co)
@@ -94,7 +97,8 @@ def eddington_accretion_limit(mbh, efficiency):
 
     Returns
     -------
-    The Eddington accretion rate in units of grams / second."""
+    The Eddington accretion rate in units of grams / second.
+    """
 
     mbh *= MSOL
 
@@ -111,7 +115,8 @@ def eddington_luminosity_limit(mbh):
 
     Returns
     -------
-    The Eddington luminosity for the black hole in units of ergs / second."""
+    The Eddington luminosity for the black hole in units of ergs / second.
+    """
 
     mbh *= MSOL
 
@@ -150,7 +155,8 @@ def create_disc_spectrum(m_co, mdot, r_in, r_out, freq_min, freq_max, freq_units
     s: pd.DataFrame
         The accretion disc spectrum. If in frequency units, the columns are
         "Freq." (Hz) and "Lum" (ergs/s/cm^2/Hz). If in wavelength units, the columns are
-        "Lambda" (A) and "Lum" (ergs/s/cm^2/A)."""
+        "Lambda" (A) and "Lum" (ergs/s/cm^2/A).
+    """
 
     if freq_units:
         xlabel = "Freq."

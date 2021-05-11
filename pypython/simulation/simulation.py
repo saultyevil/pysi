@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Functions for evaluating the convergence or the number of errors in a Python
-simulation, as well as (in the future) other helpful little things.
-"""
+"""Functions for evaluating the convergence or the number of errors in a Python
+simulation, as well as (in the future) other helpful little things."""
 
 import re
 from copy import copy
@@ -12,7 +10,8 @@ from typing import List, Tuple, Union
 
 
 def check_model_convergence(root, wd=".", return_per_cycle=False, return_converging=False):
-    """Check the convergence of a Python simulation by parsing the
+    """Check the convergence of a Python simulation by parsing the.
+
     !!Check_convergence line in the Python diag file.
 
     Parameters

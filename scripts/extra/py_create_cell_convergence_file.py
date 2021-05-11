@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-The purpose of this script is to print out detailed convergence information -
-with a specific focus on cells which have failed the specified number of
-convergence checks in Python. One should then be able to study which cells are
-failing to converge, or study cells which are not converging. The cell information
-contained in a regular master file should be printed out. Note that this will
-not work as well with all master files, but only those which contain the
+"""The purpose of this script is to print out detailed convergence information
+- with a specific focus on cells which have failed the specified number of
+convergence checks in Python.
+
+One should then be able to study which cells are failing to converge, or
+study cells which are not converging. The cell information contained in
+a regular master file should be printed out. Note that this will not
+work as well with all master files, but only those which contain the
 converging output as well.
 """
 
@@ -19,8 +20,7 @@ from pypython.util import create_wind_save_tables
 
 
 def setup_script():
-    """
-    Parse setup options from the command line.
+    """Parse setup options from the command line.
 
     Returns
     -------
@@ -48,8 +48,9 @@ def setup_script():
 
 
 def main():
-    """
-    Main function. Returns the screen output as a Pandas DataFrame and writes to file.
+    """Main function.
+
+    Returns the screen output as a Pandas DataFrame and writes to file.
     """
 
     root, nfails, converging = setup_script()

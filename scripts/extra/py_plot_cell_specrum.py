@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-The purpose of this script is to create a Spectral Energy Distribution (SED) for
-a cell in Python. To do this, the simulation must have been run using the
-matrix_pow ionisation solver.
+"""The purpose of this script is to create a Spectral Energy Distribution (SED)
+for a cell in Python.
+
+To do this, the simulation must have been run using the matrix_pow
+ionisation solver.
 """
 
 import argparse as ap
@@ -23,7 +24,7 @@ plt.rcParams['axes.labelsize'] = 15
 
 
 def get_spec_model(root, nx, nz, i, j, nbands=4):
-    """Get the spectral model for a specific cell from py_wind
+    """Get the spectral model for a specific cell from py_wind.
 
     Parameters
     ----------
@@ -43,7 +44,8 @@ def get_spec_model(root, nx, nz, i, j, nbands=4):
     Returns
     -------
     spectral_model_bands: List[str]
-        A list containing the spectral model bands output from py_wind."""
+        A list containing the spectral model bands output from py_wind.
+    """
 
     everything_output = get_py_wind_everything_output(root, nx, nz, i, j).split("\n")
 
@@ -79,7 +81,8 @@ def get_py_wind_everything_output(root, nx, nz, i, j):
     Returns
     -------
     stdout: str
-        The screen output from py_wind."""
+        The screen output from py_wind.
+    """
 
     elem = nz * i + j
     cmds = np.array(["1", "e", str(elem)])
@@ -110,7 +113,8 @@ def plot_cell_sed(model_bands, filename, icell, jcell, smooth_amount=1):
     jcell: int
         The j-th index of the cell to plot, used for the title and output name.
     smooth_amount: int [optional]
-        The width of the boxcar smoothing filter."""
+        The width of the boxcar smoothing filter.
+    """
 
     numin = []
     bandmin = []
@@ -187,7 +191,10 @@ def plot_cell_sed(model_bands, filename, icell, jcell, smooth_amount=1):
 
 
 def main():
-    """Main function of the script. Parses arguments from the command line."""
+    """Main function of the script.
+
+    Parses arguments from the command line.
+    """
 
     p = ap.ArgumentParser(description=__doc__)
 

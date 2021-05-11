@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-The purpose of this script is to create a figure which overplots the continuum
-and emitted spectrum from model. The continuum optical depths are plotted as well.
-Both are plotted as a function of frequency.
+"""The purpose of this script is to create a figure which overplots the
+continuum and emitted spectrum from model.
+
+The continuum optical depths are plotted as well. Both are plotted as a
+function of frequency.
 """
 
 import argparse as ap
@@ -32,7 +33,8 @@ def setup_script():
                 args.ncores,
                 args.smooth_amount,
                 args.display
-            )"""
+            )
+    """
 
     p = ap.ArgumentParser(description=__doc__)
 
@@ -59,7 +61,8 @@ def setup_script():
 
 
 def create_plot(root, spectrum, optical_depth_spectrum, sm=1, bgalpha=0.50, display=False):
-    """Create a figure to show how the underlying continuum is being reprocessed.
+    """Create a figure to show how the underlying continuum is being
+    reprocessed.
 
     Parameters
     ----------
@@ -76,7 +79,8 @@ def create_plot(root, spectrum, optical_depth_spectrum, sm=1, bgalpha=0.50, disp
     bgalpha: float [optional]
         The transparency of the spectra.
     display: bool [optional]
-        If True, the plot will be shown to screen."""
+        If True, the plot will be shown to screen.
+    """
 
     # Find the various sight lines of the optical depth spectra
 
@@ -146,7 +150,8 @@ def main(setup=None):
                 ncores,
                 smooth_amount,
                 display
-            )"""
+            )
+    """
 
     if setup:
         root, wd, n_cores, sm, display = setup

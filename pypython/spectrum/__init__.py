@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Contains the spectrum object, as well as utility and plotting functions for
-spectra.
-"""
+"""Contains the spectrum object, as well as utility and plotting functions for
+spectra."""
 
 import copy
 import os

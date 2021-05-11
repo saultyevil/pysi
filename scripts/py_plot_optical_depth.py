@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-The purpose of this script is to create quick plots which show the optical
+"""The purpose of this script is to create quick plots which show the optical
 depth as a function of frequency or wavelength for multiple inclination
-angles.
-"""
+angles."""
 
 import argparse as ap
 from typing import Tuple
@@ -32,7 +30,8 @@ def setup_script():
             axes_scales,
             file_ext,
             display
-        )"""
+        )
+    """
 
     p = ap.ArgumentParser(description=__doc__)
 
@@ -81,7 +80,8 @@ def plot_optical_depth_spectrum(root,
     ----------
 
     Returns
-    -------"""
+    -------
+    """
 
     fig, ax = spectrum.plot_optical_depth(root,
                                           wd, ["all"],
@@ -98,8 +98,8 @@ def plot_optical_depth_spectrum(root,
 
 
 def main(setup=None):
-    """The main function of the script. First, the important wind quantities are
-    plotted. This is then followed by the important ions.
+    """The main function of the script. First, the important wind quantities
+    are plotted. This is then followed by the important ions.
 
     Parameters
     ----------
@@ -124,7 +124,8 @@ def main(setup=None):
     fig: plt.Figure
         The matplotlib Figure object for the created plot.
     ax: plt.Axes
-        The matplotlib Axes objects for the plot panels."""
+        The matplotlib Axes objects for the plot panels.
+    """
 
     if setup:
         root, wd, xmin, xmax, frequency_space, absorption_edges, axes_scales, file_ext, display = setup

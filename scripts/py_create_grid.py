@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Create and run a grid of Python simulations. Note that this script has to be
+"""Create and run a grid of Python simulations. Note that this script has to be
 edited before being called as I didn't want to add one billion command line
 arguments/switches to the script like with py_run.
 
@@ -20,9 +19,9 @@ from typing import List
 
 
 def create_grid(pf, parameter, grid, ncores, thours, names, flags):
-    """The purpose of this function is to use a base parameter file and to create
-    directories containing parameter files with a different value to the given
-    parameter. These values are given in grid.
+    """The purpose of this function is to use a base parameter file and to
+    create directories containing parameter files with a different value to the
+    given parameter. These values are given in grid.
 
     This function will only work with one parameter and grids of multiple
     parameters cannot be created.
@@ -51,7 +50,8 @@ def create_grid(pf, parameter, grid, ncores, thours, names, flags):
     Returns
     -------
     pfs: List[str]
-        A list containing the file paths to the newly created pfs."""
+        A list containing the file paths to the newly created pfs.
+    """
 
     if pf.find(".pf") == -1:
         pf += ".pf"

@@ -1,8 +1,6 @@
 #!/usr/bin/env python
-"""
-The purpose of this script is to take a root.delay_dump file in from a Python
-simulation and to transform that into a spectrum.
-"""
+"""The purpose of this script is to take a root.delay_dump file in from a
+Python simulation and to transform that into a spectrum."""
 
 import argparse as ap
 
@@ -253,8 +251,7 @@ def plot(root,
 
 
 def main(setup=None):
-    """
-    Main function of the script.
+    """Main function of the script.
 
     Parameters
     ----------
@@ -280,7 +277,6 @@ def main(setup=None):
             ext,
             display
         )
-
     """
 
     # Get the run time variables to set up the script... there are a lot of

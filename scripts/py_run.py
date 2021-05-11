@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-Run a batch of Python models. This script searches recursively for parameter
-files and executes a number of commands, most importantly running the model,
-depending on what is requested by the user using a number of runtime flags.
+"""Run a batch of Python models.
+
+This script searches recursively for parameter files and executes a
+number of commands, most importantly running the model, depending on
+what is requested by the user using a number of runtime flags.
 """
 
 import argparse as ap
@@ -89,8 +90,7 @@ VERBOSITY = VERBOSE_EXTRA_INFORMATION_TRANSPORT
 
 
 def setup_script():
-    """Setup the global variables via command line arguments.
-    """
+    """Setup the global variables via command line arguments."""
     global VERBOSITY
     global SPLIT_CYCLES
     global PYTHON_BINARY
@@ -174,9 +174,9 @@ def setup_script():
 
 
 def print_python_output(input_line, n_cores, verbosity=VERBOSITY):
-    """Process the output from a Python simulation and print something to screen.
-    The amount printed to screen will vary depending on the verbosity level
-    chosen.
+    """Process the output from a Python simulation and print something to
+    screen. The amount printed to screen will vary depending on the verbosity
+    level chosen.
 
     0: VERBOSE_SILENT                         Nothing
     1: VERBOSE_PROGRESS_REPORT                Cycle information
@@ -362,9 +362,9 @@ def run_single_model(root,
                      restart_from_spec_cycles=False,
                      split_cycles=False):
     """The purpose of this function is to use the Subprocess library to call
-    Python. Unfortunately, to cover a wide range of situations with how one
-    may want to run Python, this function has become rather complicated and
-    could benefit from being modularised further.
+    Python. Unfortunately, to cover a wide range of situations with how one may
+    want to run Python, this function has become rather complicated and could
+    benefit from being modularised further.
 
     Parameters
     ----------
@@ -510,7 +510,8 @@ def run_all_models(parameter_files, use_mpi, n_cores):
     Returns
     -------
     the_rc: List[int]
-        The return codes of the Python models"""
+        The return codes of the Python models
+    """
 
     global SEND_NOTIFS
     host = gethostname()
@@ -621,8 +622,7 @@ def run_all_models(parameter_files, use_mpi, n_cores):
 
 
 def main():
-    """Main function of the script.
-    """
+    """Main function of the script."""
     if SEND_NOTIFS:
         atexit.register(send_notification, "ejp1n17@soton.ac.uk",
                         "{}: py_run has exited unexpectedly".format(gethostname()), "")

@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-The purpose of this script is to parse the diag file of Python and to compare
-the photon luminosity before and after trans_phot.
-FOR NOW, THIS WILL ONLY WORK WELL WITH MACRO ATOMS WHERE WE DO NOT GENERATE
-WIND PHOTONS AS WE ASSUME THAT THE TOTAL LUMINOSITY BEFORE TRANS_PHOT FOR EACH
-CYCLE IS THE SAME, WHICH I DO NOT BELIEVE TO BE TRUE IN SIMPLE ATOM MODE.
-THIS WILL ALSO ONLY CHECK THE ROOT DIAGNOSTIC FILE. IN FUTURE THIS COULD,
-FOR EXAMPLE ALSO CHECK THE OTHER DIAG FILES AND AVERAGE OVER THEM OR CREATE A
-PLOT FOR EACH PROCESS.
+"""The purpose of this script is to parse the diag file of Python and to
+compare the photon luminosity before and after trans_phot.
+
+FOR NOW, THIS WILL ONLY WORK WELL WITH MACRO ATOMS WHERE WE DO NOT
+GENERATE WIND PHOTONS AS WE ASSUME THAT THE TOTAL LUMINOSITY BEFORE
+TRANS_PHOT FOR EACH CYCLE IS THE SAME, WHICH I DO NOT BELIEVE TO BE TRUE
+IN SIMPLE ATOM MODE. THIS WILL ALSO ONLY CHECK THE ROOT DIAGNOSTIC FILE.
+IN FUTURE THIS COULD, FOR EXAMPLE ALSO CHECK THE OTHER DIAG FILES AND
+AVERAGE OVER THEM OR CREATE A PLOT FOR EACH PROCESS.
 """
 
 import argparse as ap
@@ -26,7 +26,8 @@ def get_input():
     Returns
     -------
     args.root: str
-        The root name of the Python simulation."""
+        The root name of the Python simulation.
+    """
 
     p = ap.ArgumentParser(description=__doc__)
     p.add_argument("root", help="The root name of the simulation to check")
@@ -36,15 +37,16 @@ def get_input():
 
 
 def check_luminosity_balance(root, wd="./"):
-    """Check the luminosity before and after trans_phot for a Python simulation.
-    This function will also create a plot of the relative change.
+    """Check the luminosity before and after trans_phot for a Python
+    simulation. This function will also create a plot of the relative change.
 
     Parameters
     ----------
     root: str
         The root name of the Python simulation.
     wd: str [optional]
-        The directory containing the Python simulation."""
+        The directory containing the Python simulation.
+    """
 
     luminosity_before = []
     luminosity_after = []

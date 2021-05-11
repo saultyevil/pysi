@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Update an existing parameter for some parameter file(s).
-The script will search recursively from the calling directory for parameter
-files. If a root name is provided, however, then the script will only operate
- on pf files which have the same root name.
+"""Update an existing parameter for some parameter file(s).
+
+The script will search recursively from the calling directory for
+parameter files. If a root name is provided, however, then the script
+will only operate  on pf files which have the same root name.
 """
 
 import argparse as ap
@@ -15,9 +15,10 @@ from pypython.simulation import grid
 
 
 def change_pfs(filepaths, parameter, value):
-    """Iterate over a list of pfs, and update the parameter given by the variable
-    parameter with the new value given by value. This function will also
-    print out verbose, because it seems most sensible to be loud about this.
+    """Iterate over a list of pfs, and update the parameter given by the
+    variable parameter with the new value given by value. This function will
+    also print out verbose, because it seems most sensible to be loud about
+    this.
 
     Parameters
     ----------
@@ -26,7 +27,8 @@ def change_pfs(filepaths, parameter, value):
     parameter: str
         The parameter name of the parameter which is being updated.
     value: str
-        The updated parameter value."""
+        The updated parameter value.
+    """
 
     for filepath in filepaths:
         grid.update_single_parameter(filepath, parameter, value, verbose=True)

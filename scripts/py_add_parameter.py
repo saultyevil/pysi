@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Add a parameter to already existing parameter file(s).
-The script will search recursively from the calling directory for parameter
-files. If a root name is provided, however, then the script will only operate
-on pf files which have the same root name.
+"""Add a parameter to already existing parameter file(s).
+
+The script will search recursively from the calling directory for
+parameter files. If a root name is provided, however, then the script
+will only operate on pf files which have the same root name.
 """
 
 import argparse as ap

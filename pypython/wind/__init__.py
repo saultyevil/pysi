@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-Functions and classes used to manipulate and plot wind save tables, for Python
-simuations.
-"""
+"""Functions and classes used to manipulate and plot wind save tables, for
+Python simuations."""
 
 import os
 from sys import exit

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-The original purpose of this script was to plot various important quantities for
-cells which are having trouble converging. However, there is nothing to stop one
-from using this for any cell in a model. The input files in general are expected
-to be in the form of rootXX.0.master.txt, where XX is a series of numbers.
+"""The original purpose of this script was to plot various important quantities
+for cells which are having trouble converging.
+
+However, there is nothing to stop one from using this for any cell in a
+model. The input files in general are expected to be in the form of
+rootXX.0.master.txt, where XX is a series of numbers.
 """
 
 import argparse as ap
@@ -17,8 +18,7 @@ from matplotlib import pyplot as plt
 
 
 def setup_script():
-    """
-    Parse the cell number from the command line and other setup options.
+    """Parse the cell number from the command line and other setup options.
 
     Returns
     -------
@@ -44,8 +44,9 @@ def setup_script():
 
 
 def main():
-    """
-    Main function of the script. Returns fuck all.
+    """Main function of the script.
+
+    Returns fuck all.
     """
 
     root, icell, jcell = setup_script()

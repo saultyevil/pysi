@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-The purpose of this script is to be able to parse out where luminosity is
-being lost in a Python model by trawling through the diagnostic files.
-"""
+"""The purpose of this script is to be able to parse out where luminosity is
+being lost in a Python model by trawling through the diagnostic files."""
 
 import argparse as ap
 from glob import glob

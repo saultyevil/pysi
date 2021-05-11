@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-The purpose of this script is to determine if a simulation has converged or not,
-and to create any plots which are related to the convergence of a simulation.
-"""
+"""The purpose of this script is to determine if a simulation has converged or
+not, and to create any plots which are related to the convergence of a
+simulation."""
 
 from typing import List
 
@@ -16,8 +15,8 @@ COL_WIDTH = 80
 
 
 def plot_convergence(root, convergence, converging=None, tr=None, te=None, te_max=None, hc=None, wd="."):
-    """Create a detailed plot of the convergence of a Python simulation, including,
-    if provided, a breakdown of the different convergence criteria.
+    """Create a detailed plot of the convergence of a Python simulation,
+    including, if provided, a breakdown of the different convergence criteria.
 
     Parameters
     ----------
@@ -36,7 +35,8 @@ def plot_convergence(root, convergence, converging=None, tr=None, te=None, te_ma
     hc: List[float] [optional]
         The fraction of cells which have converged heating and cooling rates.
     wd: str [optional]
-        The directory containing the Python simulation."""
+        The directory containing the Python simulation.
+    """
 
     plot.normalize_figure_style()
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
@@ -73,15 +73,17 @@ def plot_convergence(root, convergence, converging=None, tr=None, te=None, te_ma
 
 
 def get_convergence(root, wd="./"):
-    """Print out the convergence of a Python simulation and then create a detailed
-    plot of the convergence and convergence break down of the simulation.
+    """Print out the convergence of a Python simulation and then create a
+    detailed plot of the convergence and convergence break down of the
+    simulation.
 
     Parameters
     ----------
     root: str
         The root name of the Python simulation.
     wd: str [optional]
-        The directory containing the Python simulation."""
+        The directory containing the Python simulation.
+    """
 
     convergence = simulation.check_model_convergence(root, wd, return_per_cycle=True)
     converging = simulation.check_model_convergence(root, wd, return_per_cycle=True, return_converging=True)

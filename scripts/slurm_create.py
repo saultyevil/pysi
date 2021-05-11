@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Generate a *.slurm file for a Python simulation. This script can also be used to
-update an already existing .slurm file, for example if one wishes to restart
-a Python simulation.
+"""Generate a *.slurm file for a Python simulation.
+
+This script can also be used to update an already existing .slurm file,
+for example if one wishes to restart a Python simulation.
 """
 
 import argparse
@@ -30,7 +30,8 @@ def parse_arguments():
     args.root: str
         The root name of the Python simulation
     args.flags: str
-        Any flags to pass to Python"""
+        Any flags to pass to Python
+    """
 
     p = argparse.ArgumentParser(description=__doc__)
 
