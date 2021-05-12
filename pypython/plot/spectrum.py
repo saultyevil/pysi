@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from typing import List, Tuple, Union
+from typing import List, Tuple
 
 import numpy as np
 from matplotlib import pyplot as plt
 
 from pypython import (UNITS_FLAMBDA, UNITS_FNU, UNITS_LNU, Spectrum, get_root, smooth_array)
 from pypython.error import InvalidParameter
-from pypython.physics.constants import PARSEC
+from pypython.constants import PARSEC
 from pypython.plot import (ax_add_line_ids, common_lines, get_y_lims_for_x_lims, normalize_figure_style,
                            photoionization_edges, remove_extra_axes, subplot_dims)
 

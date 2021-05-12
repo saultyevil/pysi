@@ -3,7 +3,7 @@
 """Contains functions to convert various quantities into other quantities, i.e.
 frequency to wavelength, or to convert from one set of units to another."""
 
-from .constants import ANGSTROM, C
+from pypython.constants import ANGSTROM, C
 
 
 def angstrom_to_hz(wl):

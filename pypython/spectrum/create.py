@@ -8,7 +8,6 @@ the delay_dump output.
 """
 
 from copy import deepcopy
-from typing import Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -20,7 +19,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 from pypython.error import EXIT_FAIL
-from pypython.physics.constants import PARSEC, C
+from pypython.constants import PARSEC, C
 from pypython.physics.convert import angstrom_to_hz, hz_to_angstrom
 from pypython.spectrum import Spectrum
 from pypython.wind import Wind

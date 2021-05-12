@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Calculate various parameters relating to black holes."""
 
-from .constants import GRAV, MSOL, VLIGHT
+from pypython.constants import GRAV, MSOL, VLIGHT
 
 
 def gravitational_radius(m_bh):

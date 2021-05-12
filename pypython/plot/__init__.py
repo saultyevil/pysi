@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from typing import List, Tuple, Union
+from typing import List, Tuple
 
 import numpy as np
 from matplotlib import pyplot as plt
 
 from pypython.error import DimensionError
 
-from ..physics.constants import ANGSTROM, C
+from pypython.constants import ANGSTROM, C
 
 
 def normalize_figure_style():

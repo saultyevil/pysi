@@ -8,13 +8,12 @@ function of frequency.
 """
 
 import argparse as ap
-from typing import Tuple
 
 import numpy as np
 from matplotlib import pyplot as plt
 
 from pypython import plot, smooth_array
-from pypython.physics.constants import PARSEC, PI
+from pypython.constants import PARSEC, PI
 from pypython.spectrum import Spectrum
 from pypython.util import get_cpu_count
 

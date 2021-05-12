@@ -5,7 +5,7 @@ population for two atomic levels."""
 
 import numpy as np
 
-from .constants import BOLTZMANN, MELEC, PI, H
+from pypython.constants import BOLTZMANN, MELEC, PI, H
 
 
 def saha_population_ratio(electron_density, g_upper, g_lower, energy_upper, energy_lower, temperature):

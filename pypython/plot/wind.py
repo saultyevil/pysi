@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from typing import List, Tuple, Union
-
 import numpy as np
 from matplotlib import pyplot as plt
 
 # from pypython import Wind
-from pypython.physics.constants import PI
+from pypython.constants import PI
 
 from . import normalize_figure_style
 

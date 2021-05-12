@@ -5,26 +5,24 @@ import copy
 import re
 import textwrap
 import time
-from enum import Enum
 from os import listdir, path, remove
 from pathlib import Path
 from platform import system
 from shutil import which
 from subprocess import PIPE, Popen
-from typing import List, Tuple, Union
 
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.signal import boxcar, convolve
 
 from pypython.math import vector
-from pypython.physics.constants import CMS_TO_KMS, PI, VLIGHT
+from pypython.constants import CMS_TO_KMS, PI, VLIGHT
 from pypython.plot import ax_add_line_ids, common_lines, normalize_figure_style
 from pypython.plot.wind import plot_1d_wind, plot_2d_wind
 
-name = "pypython"
 
-# Spectrum class --------------
+# Spectrum class ---------------------------------------------------------------
+
 
 UNITS_LNU = "erg/s/Hz"
 UNITS_FNU = "erg/s/cm^-2/Hz"
@@ -37,7 +35,7 @@ class Spectrum:
     The PYTHON spectrum is read in and stored within a dict, where each
     column name is a key and the data is stored as a numpy array.
     """
-    def __init__(self, root, cd=".", default=None, log=False, smooth=None, delim=None):
+    def __init__(self, root, cd=".", default=None, log_spec=False, smooth=None, delim=None):
         """Initialise a Spectrum object. This method will construct the file
         path of the spectrum file given the root, containing directory and
         whether the logarithmic spectrum is used or not. The spectrum is then
@@ -51,22 +49,23 @@ class Spectrum:
             The directory containing the model.
         default: str [optional]
             The default spectrum to make the available spectrum for indexing.
-        log: bool [optional]
+        log_spec: bool [optional]
             Read in the logarithmic spectrum.
         smooth: int [optional]
             The amount of smoothing to use.
         delim: str [optional]
             The deliminator in the spectrum file.
         """
-
         self.root = root
 
         self.fp = cd
-        self.logspec = log
-        if log and not default.startswith("log_"):
-            default = "log_" + default
         if self.fp[-1] != "/":
             self.fp += "/"
+
+        self.log_spec = log_spec
+        if default and self.log_spec:
+            if not default.startswith("log_"):
+                default = "log_" + default
 
         self.all_spectrum = {}
         self.all_columns = {}
@@ -77,7 +76,7 @@ class Spectrum:
         # self.unsmoothed is a variable which keeps a copy of the spectrum for
         # safe keeping if it is smoothed
 
-        self.unsmoothed = None
+        self.original = None
 
         # The next method call reads in the spectrum and initializes the above
         # member variables. We also keep track of what spectra have been loaded
@@ -123,7 +122,7 @@ class Spectrum:
 
         for spec_type in files_to_read:
             fpath = self.fp + self.root + "."
-            if self.logspec and spec_type != "spec_tau":
+            if self.log_spec and spec_type != "spec_tau":
                 fpath += "log_"
             fpath += spec_type
 
@@ -204,8 +203,8 @@ class Spectrum:
 
         # Create a backup of the unsmoothed array before it is smoothed it
 
-        if self.unsmoothed is None:
-            self.unsmoothed = copy.deepcopy(self.spectrum)
+        if self.original is None:
+            self.original = copy.deepcopy(self.spectrum)
 
         # Get the input parameters for smoothing and make sure it's good input
 
@@ -221,24 +220,25 @@ class Spectrum:
                 self.inclinations)
         elif type(to_smooth) is str:
             to_smooth = to_smooth,
+        elif type(to_smooth) is tuple:
+            pass
         else:
-            raise ValueError("unknown format for to_smooth, must be a tuple of strings or string")
+            raise ValueError("unknown format for argument to_smooth; must be a tuple of strings or string.")
 
         # Loop over each available spectrum and smooth it
 
         for key in self.available:
             for thing_to_smooth in to_smooth:
                 try:
-                    self.spectrum[key][thing_to_smooth] = convolve(self.spectrum[key][thing_to_smooth],
-                                                                   boxcar(width) / float(width),
-                                                                   mode="same")
+                    self.spectrum[key][thing_to_smooth] = \
+                        convolve(self.spectrum[key][thing_to_smooth], boxcar(width) / float(width), mode="same")
                 except KeyError:
                     continue
 
-    def unsmooth(self):
+    def restore_original_spectra(self):
         """Restore the spectrum to its unsmoothed form."""
 
-        self.spectrum = copy.deepcopy(self.unsmoothed)
+        self.spectrum = copy.deepcopy(self.original)
 
     def _plot_specific(self, name, label_lines=False, ax_update=None):
         """Plot a specific column in a spectrum file.
@@ -371,7 +371,7 @@ class Spectrum:
     def set(self, name):
         """Set a different spectrum to be the target."""
 
-        if self.logspec and not name.startswith("log_"):
+        if self.log_spec and not name.startswith("log_"):
             name = "log_" + name
 
         if name not in self.available:
