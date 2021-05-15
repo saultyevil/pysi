@@ -185,7 +185,9 @@ def print_model_output(input_line, n_cores, verbosity=VERBOSITY):
 
     if verbosity >= VERBOSE_ALL:
         log("{}".format(line))
-    elif verbosity >= VERBOSE_EXTRA_INFORMATION_TRANSPORT:
+        return
+
+    if verbosity >= VERBOSE_EXTRA_INFORMATION_TRANSPORT:
         if line.find("per cent") > -1 and line.find("Photon") > -1:
             if int(split_line[7]) == 0:
                 log("         Beginning photon transport")
@@ -201,7 +203,8 @@ def print_model_output(input_line, n_cores, verbosity=VERBOSITY):
                 log(f"           - {percent_done}% of {n_photons} photons transported")
         if line.find("photon transport completed in") > -1:
             log(f"         Photons transported in {datetime.timedelta(seconds=float(split_line[5]) // 1)} hrs:mins:secs")
-    elif verbosity >= VERBOSE_EXTRA_INFORMATION:
+
+    if verbosity >= VERBOSE_EXTRA_INFORMATION:
         if line.find("Completed ionization cycle") > -1 or line.find("Completed spectrum cycle") > -1:
             log(f"         Elapsed run time: {datetime.timedelta(seconds=float(split_line[-1]) // 1)} hrs:mins:secs")
         if line.find("converged") > -1 and line.find("converging") > -1:
@@ -209,15 +212,14 @@ def print_model_output(input_line, n_cores, verbosity=VERBOSITY):
                 log(f"         {split_line[1]} cells converged {split_line[2]}")
             except IndexError:
                 return
-    elif verbosity >= VERBOSE_PROGRESS_REPORT:
+
+    if verbosity >= VERBOSE_PROGRESS_REPORT:
         if line.find("for defining wind") > -1:
             log(f"{time.strftime('%H:%M')}  Starting Ionisation Cycle ....... {split_line[3]}/{split_line[5]}")
         if line.find("to calculate a detailed spectrum") > -1:
             log(f"{time.strftime('%H:%M')}  Starting Spectrum Cycle ......... {split_line[1]}/{split_line[3]}")
         if line.find("Completed entire program.") > -1:
             log(f"\nSimulation completed in: {datetime.timedelta(seconds=float(split_line[-1]) // 1)} hrs:mins:secs")
-    else:
-        return
 
 
 def restore_parameter_file(root, fp):
