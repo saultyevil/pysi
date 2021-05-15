@@ -10,6 +10,7 @@ from pathlib import Path
 from platform import system
 from shutil import which
 from subprocess import PIPE, Popen
+from sys import exit
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -32,25 +33,29 @@ UNITS_FLAMBDA = "erg/s/cm^-2/A"
 class Spectrum:
     """A class to store PYTHON .spec and .log_spec files.
 
-    The PYTHON spectrum is read in and stored within a dict, where each
-    column name is a key and the data is stored as a numpy array.
+    The Python spectra are read in and stored within a dict of dicts, where each
+    column name is the spectrum name and the columns in that dict are the
+    names of the columns in the spectrum file. The data is stored as numpy
+    arrays.
     """
-    def __init__(self, root, cd=".", default=None, log_spec=False, smooth=None, delim=None):
-        """Initialise a Spectrum object. This method will construct the file
-        path of the spectrum file given the root, containing directory and
-        whether the logarithmic spectrum is used or not. The spectrum is then
-        read in.
+    def __init__(self, root, fp=".", default=None, log_spec=False, smooth=None, delim=None):
+        """Create the Spectrum object.
+
+        This method will construct the file path of the spectrum files given the
+        root, directory and whether the logarithmic spectrum is used or not.
+        The different spectra are then read in, with either the .spec or the first
+        spectrum file read in being the default index choice.
 
         Parameters
         ----------
         root: str
             The root name of the model.
-        cd: str [optional]
+        fp: str [optional]
             The directory containing the model.
         default: str [optional]
             The default spectrum to make the available spectrum for indexing.
         log_spec: bool [optional]
-            Read in the logarithmic spectrum.
+            Read in the logarithmic version of the spectra.
         smooth: int [optional]
             The amount of smoothing to use.
         delim: str [optional]
@@ -58,7 +63,7 @@ class Spectrum:
         """
         self.root = root
 
-        self.fp = cd
+        self.fp = fp
         if self.fp[-1] != "/":
             self.fp += "/"
 
@@ -121,19 +126,18 @@ class Spectrum:
         files_to_read = ["spec", "spec_tot", "spec_tot_wind", "spec_wind", "spec_tau"]
 
         for spec_type in files_to_read:
-            fpath = self.fp + self.root + "."
+            fp = self.fp + self.root + "."
             if self.log_spec and spec_type != "spec_tau":
-                fpath += "log_"
-            fpath += spec_type
-
-            if not path.exists(fpath):
+                fp += "log_"
+            fp += spec_type
+            if not path.exists(fp):
                 continue
 
             n_read += 1
             self.all_spectrum[spec_type] = {}
             self.all_units[spec_type] = "unknown"
 
-            with open(fpath, "r") as f:
+            with open(fp, "r") as f:
                 spectrum_file = f.readlines()
 
             # Read in the spectrum file, ignoring empty lines and lines which have
@@ -236,9 +240,35 @@ class Spectrum:
                     continue
 
     def restore_original_spectra(self):
-        """Restore the spectrum to its unsmoothed form."""
+        """Restore the spectrum to its original unsmoothed form."""
 
         self.spectrum = copy.deepcopy(self.original)
+
+    def set(self, name):
+        """Set a spectrum as the default.
+
+        Sets a different spectrum to be the currently available spectrum for
+        indexing.
+
+        Parameters
+        ----------
+        name: str
+            The name of the spectrum, i.e. log_spec or spec_tot, etc. The
+            available spectrum types are stored in self.available.
+        """
+
+        if self.log_spec and not name.startswith("log_"):
+            name = "log_" + name
+
+        if name not in self.available:
+            raise ValueError(f"Spectrum {name} is not available: available {self.available}")
+
+        self.current = name
+        self.spectrum = self.all_spectrum[self.current]
+        self.columns = self.all_columns[self.current]
+        self.inclinations = self.all_inclinations[self.current]
+        self.n_inclinations = self.all_n_inclinations[self.current]
+        self.units = self.all_units[self.current]
 
     def _plot_specific(self, name, label_lines=False, ax_update=None):
         """Plot a specific column in a spectrum file.
@@ -283,7 +313,7 @@ class Spectrum:
         else:
             return ax
 
-    def _spec_plot_all(self, label_lines=False):
+    def _spec_plot_spec_file(self, label_lines=False):
         """Plot the spectrum components and observer spectra on a 1x2 panel
         plot. The left panel has the components, whilst the right panel has the
         observer spectrum.
@@ -293,6 +323,9 @@ class Spectrum:
         label_lines: bool
             Plot line IDs.
         """
+
+        if "spec" not in self.available and "log_spec" not in self.available:
+            raise IOError("A .spec/.log_spec file was not read in, cannot use this function")
 
         normalize_figure_style()
 
@@ -343,46 +376,30 @@ class Spectrum:
         # I haven't implemented a way to plot other spectra quickly this way
 
         ot = self.current
-        self.current = "spec"
 
         if name:
             if name not in self.columns:
-                print(f"{name} is not in the spectrum columns")
-                return
+                raise ValueError(f"{name} is not in the current spectrum columns")
             fig, ax = self._plot_specific(name, label_lines)
             if name.isdigit():
                 name += r"$^{\circ}$"
             ax.set_title(name.replace("_", r"\_"))
         else:
-            # todo: update with more functions to plot spec_tot w/o name etc
-            if "spec" not in self.available and "log_spec" not in self.available:
-                raise IOError(f"Unable to plot without parameter 'name' as there is no {self.root}.spec file")
-            fig, ax = self._spec_plot_all(label_lines)
+            self.current = "spec"
+            fig, ax = self._spec_plot_spec_file(label_lines)
 
         self.current = ot
 
         return fig, ax
 
     def show(self, block=True):
-        """Show any plots which have been generated."""
+        """Show any plots which have been generated.
+        Parameters
+        ----------
+        block: bool [optional]
+            Enable non-blocking show from matplotlib with False."""
 
         plt.show(block=block)
-
-    def set(self, name):
-        """Set a different spectrum to be the target."""
-
-        if self.log_spec and not name.startswith("log_"):
-            name = "log_" + name
-
-        if name not in self.available:
-            raise ValueError(f"Spectrum {name} is not available: available {self.available}")
-
-        self.current = name
-        self.spectrum = self.all_spectrum[self.current]
-        self.columns = self.all_columns[self.current]
-        self.inclinations = self.all_inclinations[self.current]
-        self.n_inclinations = self.all_n_inclinations[self.current]
-        self.units = self.all_units[self.current]
 
     def __getitem__(self, key):
         """Return an array in the spectrum dictionary when indexing."""
@@ -414,24 +431,28 @@ class Spectrum:
         return textwrap.dedent(msg)
 
 
-# Wind class ------------------
+# Wind class -------------------------------------------------------------------
+
+
+COORD_TYPE_CYLINDRICAL = COORD_TYPE_CARTESIAN = "rectilinear"
+COORD_TYPE_POLAR = "polar"
+COORD_TYPE_SPHERICAL = "spherical"
 
 
 class Wind:
     """A class to store 1D and 2D Python wind tables.
 
-    Contains methods to
-    extract variables, as well as convert various indices into other indices.
-    todo: add dot notation for accessing dictionaries.
+    Contains methods to extract variables, as well as convert various indices
+    into other indices.
     """
-    def __init__(self, root, cd=".", velocity_units="kms", mask=True, delim=None):
+    def __init__(self, root, fp=".", velocity_units="kms", mask=True, delim=None):
         """Initialize the Wind object.
 
         Parameters
         ----------
         root: str
             The root name of the Python simulation.
-        cd: str
+        fp: str
             The directory containing the model.
         mask: bool [optional]
             Store the wind parameters as masked arrays.
@@ -439,13 +460,8 @@ class Wind:
             The delimiter used in the wind table files.
         """
 
-        # class CoordSystem(Enum):
-        #     SPHERICAL = 1
-        #     POLAR = 2
-        #     RECTILINEAR = 3
-
         self.root = root
-        self.fp = cd
+        self.fp = fp
         if self.fp[-1] != "/":
             self.fp += "/"
         self.nx = 1
@@ -481,20 +497,20 @@ class Wind:
         # wind parameters again
 
         try:
-            self.read_in_wind_parameters(delim)
+            self.read_wind_parameters(delim)
         except IOError:
             print("trying to run windsave2table to generate wind tables")
             create_wind_save_tables(self.root, self.fp, ion_density=True)
             create_wind_save_tables(self.root, self.fp, ion_density=False)
-            self.read_in_wind_parameters(delim)
-        self.read_in_wind_ions(delim)
+            self.read_wind_parameters(delim)
+        self.read_wind_elements(delim)
         self.columns = self.parameters + self.elements
 
         # Convert velocity into desired units and also calculate the cylindrical
         # velocities. This doesn't work for polar or spherical coordinates as
         # they will not have these velocities
 
-        if self.coord_system == "rectilinear":
+        if self.coord_system == COORD_TYPE_CYLINDRICAL:
             self.project_cartesian_velocity_to_cylindrical()
 
         self.variables["v_x"] *= self.velocity_conversion_factor
@@ -507,7 +523,7 @@ class Wind:
         if mask:
             self.create_masked_arrays()
 
-    def read_in_wind_parameters(self, delim=None):
+    def read_wind_parameters(self, delim=None):
         """Read in the wind parameters.
 
         Parameters
@@ -558,7 +574,7 @@ class Wind:
             if wind_list[0][0].isdigit() is False:
                 wind_columns += wind_list[0]
             else:
-                wind_columns += list(np.arrange(len(wind_list[0]), dtype=np.str))
+                wind_columns += list(np.arange(len(wind_list[0]), dtype=np.dtype.str))
 
             wind_all.append(np.array(wind_list[1:], dtype=np.float64))
 
@@ -609,16 +625,16 @@ class Wind:
         # Record the coordinate system and the axes labels
 
         if self.nz == 1:
-            self.coord_system = "spherical"
+            self.coord_system = COORD_TYPE_SPHERICAL
             self.axes = ["r", "r_cen"]
         elif "r" in self.parameters and "theta" in self.parameters:
-            self.coord_system = "polar"
+            self.coord_system = COORD_TYPE_POLAR
             self.axes = ["r", "theta", "r_cen", "theta_cen"]
         else:
-            self.coord_system = "rectilinear"
+            self.coord_system = COORD_TYPE_CYLINDRICAL
             self.axes = ["x", "z", "x_cen", "z_cen"]
 
-    def read_in_wind_ions(self, delim=None, elements_to_get=None):
+    def read_wind_elements(self, delim=None, elements_to_get=None):
         """Read in the ion parameters.
 
         Parameters
@@ -633,8 +649,7 @@ class Wind:
             elements_to_get = ("H", "He", "C", "N", "O", "Si", "Fe")
         else:
             if type(elements_to_get) not in [str, list, tuple]:
-                print("ions_to_get should be a tuple/list of strings or a string")
-                exit(1)
+                raise TypeError("ions_to_get should be a tuple/list of strings or a string")
 
         # Read in each ion file, one by one. The ions will be stored in the
         # self.variables dict as,
@@ -689,7 +704,7 @@ class Wind:
                     columns = tuple(wind[0])
                     index = columns.index("i01")
                 else:
-                    columns = tuple(np.arrange(len(wind[0]), dtype=np.str))
+                    columns = tuple(np.arange(len(wind[0]), dtype=np.dtype.str))
                     index = 0
                 columns = columns[index:]
                 wind = np.array(wind[1:], dtype=np.float64)[:, index:]
@@ -711,20 +726,19 @@ class Wind:
 
         for i in range(n1):
             for j in range(n2):
-                cart_point = [self.variables["x"][i, j], 0, self.variables["z"][i, j]]
+                cart_point = np.array([self.variables["x"][i, j], 0, self.variables["z"][i, j]])
                 # todo: don't think I need to do this check anymore
                 if self.variables["inwind"][i, j] < 0:
                     v_l[i, j] = 0
                     v_rot[i, j] = 0
                     v_r[i, j] = 0
                 else:
-                    cart_velocity_vector = [
+                    cart_velocity_vector = np.array([
                         self.variables["v_x"][i, j], self.variables["v_y"][i, j], self.variables["v_z"][i, j]
-                    ]
+                    ])
                     cyl_velocity_vector = vector.project_cartesian_to_cylindrical_coordinates(
                         cart_point, cart_velocity_vector)
                     if type(cyl_velocity_vector) is int:
-                        # todo: some error has happened, print a warning...
                         continue
                     v_l[i, j] = np.sqrt(cyl_velocity_vector[0]**2 + cyl_velocity_vector[2]**2)
                     v_rot[i, j] = cyl_velocity_vector[1]
@@ -735,8 +749,8 @@ class Wind:
         self.variables["v_r"] = v_r * self.velocity_conversion_factor
 
     def create_masked_arrays(self):
-        """Convert each array into a masked array, where the mask is defined by
-        the inwind variable."""
+        """Convert each array into a masked array using inwind.
+        """
         to_mask_wind = list(self.parameters)
 
         # Remove some of the columns, as these shouldn't be masked because
@@ -822,9 +836,13 @@ class Wind:
 
         Parameters
         ----------
+        theta: float
+            The angle to extract along.
+        parameter: str
+            The parameter to extract.
         """
-        if self.coord_system == "polar":
-            raise NotImplementedError()
+        if self.coord_system == COORD_TYPE_POLAR:
+            raise NotImplementedError("This hasn't been implemented for polar winds")
 
         if type(theta) is not float:
             theta = float(theta)
@@ -843,11 +861,16 @@ class Wind:
         return np.array(self.m_coords), z_array, values
 
     def _get_wind_coordinates(self):
+        """Get coordinates of the wind.
 
-        if self.coord_system == "spherical":
+        This returns the 2d array of coordinate points for the grid or 1d
+        depending on the coordinate type. This is different from using
+        self.n_coords which returns only the axes points.
+        """
+        if self.coord_system == COORD_TYPE_SPHERICAL:
             n_points = self.variables["r"]
             m_points = np.zeros_like(n_points)
-        elif self.coord_system == "rectilinear":
+        elif self.coord_system == COORD_TYPE_CYLINDRICAL:
             n_points = self.variables["x"]
             m_points = self.variables["z"]
         else:
@@ -857,11 +880,15 @@ class Wind:
         return n_points, m_points
 
     def _get_wind_indices(self):
+        """Get cell indices of the grid cells of the wind.
 
-        if self.coord_system == "spherical":
+        This returns the 2d array of grid cell indices for the grid or 1d
+        depending on the coordinate type.
+        """
+        if self.coord_system == COORD_TYPE_SPHERICAL:
             n_points = self.variables["i"]
             m_points = np.zeros_like(n_points)
-        elif self.coord_system == "rectilinear":
+        elif self.coord_system == COORD_TYPE_CYLINDRICAL:
             n_points = self.variables["i"]
             m_points = self.variables["i"]
         else:
@@ -869,7 +896,7 @@ class Wind:
 
         return n_points, m_points
 
-    def plot(self, variable_name, use_cell_coordinates=True, fraction=False, scale="loglog"):
+    def plot(self, variable_name, use_cell_coordinates=True, scale="loglog"):
         """Create a plot of the wind for the given variable.
         Parameters
         ----------
@@ -878,8 +905,6 @@ class Wind:
             H_i01, He_i02, etc.
         use_cell_coordinates: bool [optional]
             Plot using the cell coordinates instead of cell index numbers
-        fraction: bool [optional]
-            Plot ion fractions instead of density
         scale: str [optional]
             The type of scaling for the axes
         """
@@ -909,6 +934,10 @@ class Wind:
 
         return fig, ax
 
+    def show(self, block=True):
+        """Show a plot which has been created."""
+        plt.show(block=block)
+
     def get_elem_number_from_ij(self, i, j):
         """Get the wind element number for a given i and j index."""
         return self.nz * i + j
@@ -916,10 +945,6 @@ class Wind:
     def get_ij_from_elem_number(self, elem):
         """Get the i and j index for a given wind element number."""
         return np.unravel_index(elem, (self.nx, self.nz))
-
-    def show(self, block=True):
-        """Show a plot which has been created."""
-        plt.show(block=block)
 
     def __getitem__(self, key):
         """Return an array in the variables dictionary when indexing."""
@@ -1157,7 +1182,7 @@ def create_wind_save_tables(root, fp=".", ion_density=False, verbose=False):
     return
 
 
-def run_py_wind_commands(root, commands, fp="."):
+def run_py_wind(root, commands, fp="."):
     """Run py_wind with the provided commands.
 
     Parameters
