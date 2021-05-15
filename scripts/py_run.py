@@ -223,8 +223,6 @@ def print_model_output(input_line, n_cores, verbosity=VERBOSITY):
             log(f"{time.strftime('%H:%M')}  Starting Ionisation Cycle ....... {split_line[3]}/{split_line[5]}")
         if line.find("to calculate a detailed spectrum") > -1:
             log(f"{time.strftime('%H:%M')}  Starting Spectrum Cycle ......... {split_line[1]}/{split_line[3]}")
-        if line.find("Completed wind creation.") > -1:
-            log("\nIonization cycles completed\n")
         if line.find("At program completion, the elapsed TIME was") > -1:
             log(f"\nSimulation completed in: {datetime.timedelta(seconds=float(split_line[-1]) // 1)} hrs:mins:secs")
 
