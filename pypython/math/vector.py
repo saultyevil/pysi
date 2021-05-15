@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Description of file."""
+"""Basic vector functions which are not part of numpy. These are taken
+directly from python, hence why they can be a little cursed."""
 
-from typing import List, Union
 
 import numpy as np
 

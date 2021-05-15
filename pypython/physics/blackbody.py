@@ -15,7 +15,7 @@ def planck_nu(temperature, frequency):
     ----------
     temperature: float
         The temperature to calculate the function at.
-    frequency: float
+    frequency: np.ndarray or float
         The frequency to calculate the function at.
 
     Returns
@@ -40,7 +40,7 @@ def planck_lambda(temperature, lamda):
     ----------
     temperature: float
         The temperature to calculate the function at.
-    lamda: float
+    lamda: np.ndarray or float
         The frequency to calculate the function at.
 
     Returns
