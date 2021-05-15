@@ -25,7 +25,7 @@ def check_model_convergence(root, wd=".", return_per_cycle=False, return_converg
 
     Returns
     -------
-    convergence: float or int
+    convergence: float or int or list
         The convergence fraction in the final cycle of the simulation. If this
         is -1, then a convergence fraction was not found.
     """

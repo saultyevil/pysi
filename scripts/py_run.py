@@ -18,16 +18,15 @@ from shutil import copyfile
 from socket import gethostname
 from subprocess import PIPE, Popen
 from sys import exit
-from typing import List, Tuple
 
 import pypython
 from pypython import simulation, util
 from pypython.error import EXIT_FAIL
 from pypython.simulation import grid
-from pypython.util.logging import close_logfile, init_logfile, log, logsilent
-from pypython.util.mailnotifs import send_notification
+from pypython.util import close_logfile, init_logfile, log, logsilent
+from pypython.util.notifications import send_notification
 
-CONVERGED =\
+CONVERGED = \
     r"""
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
     It is                                    _
@@ -39,7 +38,7 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 """
 
-NOT_CONVERGED =\
+NOT_CONVERGED = \
     r"""
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
     It is    _                                                 _
@@ -51,7 +50,7 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 """
 
-ITS_A_MYSTERY =\
+ITS_A_MYSTERY = \
     r"""
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ __ _ _ _ _ _ _ _ _
                                                           _
@@ -77,7 +76,7 @@ AUTOMATIC_RESTART_OVERRIDE = False
 CONVERGENCE_LOWER_LIMIT = 0.80
 SPLIT_CYCLES = False
 DRY_RUN = False
-SEND_NOTIFS = False
+SEND_NOTIFICATIONS = False
 
 # Verbosity levels of Python output
 
@@ -100,7 +99,7 @@ def setup_script():
     global CONVERGENCE_LOWER_LIMIT
     global DRY_RUN
     global N_CORES
-    global SEND_NOTIFS
+    global SEND_NOTIFICATIONS
 
     p = ap.ArgumentParser(description=__doc__)
 
@@ -153,7 +152,7 @@ def setup_script():
     CONVERGENCE_LOWER_LIMIT = args.convergence_limit
     DRY_RUN = args.dry_run
     N_CORES = args.n_cores
-    SEND_NOTIFS = args.notifs
+    SEND_NOTIFICATIONS = args.notifs
 
     msg = textwrap.dedent("""\
         Python  .......................... {}
@@ -227,7 +226,7 @@ def print_python_output(input_line, n_cores, verbosity=VERBOSITY):
 
     # PRINT TOTAL RUN TIME ELAPSED FOR A CYCLE
 
-    elif (line.find("Completed ionization cycle") != -1 or line.find("Completed spectrum cycle") != -1) and\
+    elif (line.find("Completed ionization cycle") != -1 or line.find("Completed spectrum cycle") != -1) and \
             verbosity >= VERBOSE_EXTRA_INFORMATION:
         elapsed_time_seconds = float(split_line[-1])
         elapsed_time = datetime.timedelta(seconds=elapsed_time_seconds // 1)
@@ -235,7 +234,7 @@ def print_python_output(input_line, n_cores, verbosity=VERBOSITY):
 
     # PRINT CONVERGENCE
 
-    elif (line.find("converged") != -1 and line.find("converging") != -1)\
+    elif (line.find("converged") != -1 and line.find("converging") != -1) \
             and verbosity >= VERBOSE_EXTRA_INFORMATION:
         try:
             cells_converged = split_line[1]
@@ -246,7 +245,7 @@ def print_python_output(input_line, n_cores, verbosity=VERBOSITY):
 
     # PRINT PHOTON TRANSPORT REPORT
 
-    elif line.find("per cent") != -1 and line.find("Photon") != -1\
+    elif line.find("per cent") != -1 and line.find("Photon") != -1 \
             and verbosity >= VERBOSE_EXTRA_INFORMATION_TRANSPORT:
         try:
             if int(split_line[6]) == 0:
@@ -513,19 +512,19 @@ def run_all_models(parameter_files, use_mpi, n_cores):
         The return codes of the Python models
     """
 
-    global SEND_NOTIFS
+    global SEND_NOTIFICATIONS
     host = gethostname()
     n_models = len(parameter_files)
     return_codes = []
 
-    if SEND_NOTIFS:
+    if SEND_NOTIFICATIONS:
         # if send_notification returns an empty dict, then the rest of the mails
         # will not be sent
-        SEND_NOTIFS = send_notification("ejp1n17@soton.ac.uk", "{}: Starting models".format(host), "")
+        SEND_NOTIFICATIONS = send_notification("ejp1n17@soton.ac.uk", "{}: Starting models".format(host), "")
 
-    for i, path in enumerate(parameter_files):
+    for i, fp in enumerate(parameter_files):
 
-        root, fp = pypython.get_root(path)
+        root, fp = pypython.get_root(fp)
         msg = textwrap.dedent("""\
             ------------------------
 
@@ -539,10 +538,10 @@ def run_all_models(parameter_files, use_mpi, n_cores):
 
         log(msg)
 
-        if SEND_NOTIFS:
+        if SEND_NOTIFICATIONS:
             send_notification("ejp1n17@soton.ac.uk",
                               "{}: Model {}/{} has started running".format(host, i + 1, n_models),
-                              "The model {} has started running on {}".format(path, host))
+                              "The model {} has started running on {}".format(fp, host))
 
         rc = run_single_model(root,
                               fp,
@@ -555,9 +554,9 @@ def run_all_models(parameter_files, use_mpi, n_cores):
         return_codes.append(rc)
         if rc != 0:
             log("Python exited for error code {}".format(rc))
-            if SEND_NOTIFS:
+            if SEND_NOTIFICATIONS:
                 send_notification("ejp1n17@soton.ac.uk", "{}: Model {}/{} failed".format(host, i + 1, n_models),
-                                  "The model {} has failed\nReturn code {}".format(path, host, rc))
+                                  "The model {} has failed\nReturn code {}".format(fp, host, rc))
             continue
 
         # Print the error report and the convergence
@@ -572,9 +571,9 @@ def run_all_models(parameter_files, use_mpi, n_cores):
 
         if rc != 0:
             log("Python exited with return code {}.".format(rc))
-            if SEND_NOTIFS:
+            if SEND_NOTIFICATIONS:
                 send_notification("ejp1n17@soton.ac.uk", "{}: Model {}/{} failed".format(host, i + 1, n_models),
-                                  "The model {} has failed on {}\nReturn code {}".format(path, host, rc))
+                                  "The model {} has failed on {}\nReturn code {}".format(fp, host, rc))
             continue
 
         # If the cycles are being split into two separate runs to lower the
@@ -593,29 +592,29 @@ def run_all_models(parameter_files, use_mpi, n_cores):
             print_errors(errors, root)
         elif SPLIT_CYCLES and not b_converged:
             log("The model has not converged to the set convergence limit of {}.".format(CONVERGENCE_LOWER_LIMIT))
-            if SEND_NOTIFS:
+            if SEND_NOTIFICATIONS:
                 send_notification("ejp1n17@soton.ac.uk", "{}: Model {}/{} failed".format(host, i + 1, n_models),
-                                  "The model {} has failed on {}\nReturn code {}".format(path, host, rc))
+                                  "The model {} has failed on {}\nReturn code {}".format(fp, host, rc))
 
         # rc will determine if the model failed or not
 
         if rc != 0:
             log("Python exited for error code {} after spectral cycles.".format(rc))
-            if SEND_NOTIFS:
+            if SEND_NOTIFICATIONS:
                 send_notification(
                     "ejp1n17@soton.ac.uk", "{}: Model {}/{} spectral cycles failed".format(host, i + 1, n_models),
-                    "The model {} has failed during spectral cycles on {}\nReturn code {}".format(path, host, rc))
+                    "The model {} has failed during spectral cycles on {}\nReturn code {}".format(fp, host, rc))
             continue
         else:
-            if SEND_NOTIFS:
+            if SEND_NOTIFICATIONS:
                 send_notification(
                     "ejp1n17@soton.ac.uk", "{}: Model {}/{} finished".format(host, i + 1, n_models),
                     "The model {} has finished running on {}\nReturn code {}\nConvergence {}".format(
-                        path, host, rc, convergence))
+                        fp, host, rc, convergence))
 
         log("")
 
-    if SEND_NOTIFS:
+    if SEND_NOTIFICATIONS:
         send_notification("ejp1n17@soton.ac.uk", "{}: All models completed".format(host), "")
 
     return return_codes
@@ -623,7 +622,7 @@ def run_all_models(parameter_files, use_mpi, n_cores):
 
 def main():
     """Main function of the script."""
-    if SEND_NOTIFS:
+    if SEND_NOTIFICATIONS:
         atexit.register(send_notification, "ejp1n17@soton.ac.uk",
                         "{}: py_run has exited unexpectedly".format(gethostname()), "")
 
