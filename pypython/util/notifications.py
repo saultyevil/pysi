@@ -11,11 +11,10 @@ import base64
 import os
 import pickle
 from email.mime.text import MIMEText
-from typing import Union
 
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import Resource, build
+from googleapiclient.discovery import build
 
 
 def create_email_message(sender, to, subject, message):
