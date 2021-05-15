@@ -21,8 +21,8 @@ from sqlalchemy.orm import sessionmaker
 from pypython.error import EXIT_FAIL
 from pypython.constants import PARSEC, C
 from pypython.physics.convert import angstrom_to_hz, hz_to_angstrom
-from pypython.spectrum import Spectrum
-from pypython.wind import Wind
+from pypython import Spectrum
+from pypython import Wind
 
 BOUND_FREE_NRES = 20000
 UNFILTERED_SPECTRUM = -999
@@ -257,7 +257,7 @@ def bin_photon_weights(spectrum, freq_min, freq_max, photon_freqs, photon_weight
         The Res. values for the photons.
     photon_line_nres: np.ndarray
         The LineRes values for the photons.
-    extract_nres: int
+    extract_nres: int or np.ndarray or list
         The line number for the line to extract
     logbins: bool
         Use frequency bins spaced in log space.
@@ -479,7 +479,7 @@ def wind_bin_interaction_weight(root, nres, cd=".", n_cores=1):
         the grid.
     """
 
-    w = Wind(root, cd, mask_cells=False)
+    w = Wind(root, cd, mask=False)
     x_points = np.array(w.m_coords)
     z_points = np.array(w.n_coords)
 
@@ -688,19 +688,19 @@ def get_photon_db(root, cd=".", dd_dev=False, commitfreq=1000000):
     """
 
     engine = sqlalchemy.create_engine("sqlite:///{}.db".format(root))
-    Session = sessionmaker(bind=engine)
-    session = Session()
+    engine_session = sessionmaker(bind=engine)
+    session = engine_session()
 
     if dd_dev:
-        colnames = [
+        column_names = [
             "Freq", "Lambda", "Weight", "LastX", "LastY", "LastZ", "Scat", "RScat", "Delay", "Spec", "Orig", "Res"
         ]
     else:
-        colnames = [
+        column_names = [
             "Np", "Freq", "Lambda", "Weight", "LastX", "LastY", "LastZ", "Scat", "RScat", "Delay", "Spec", "Orig",
             "Res", "LineRes"
         ]
-    ncols = len(colnames)
+    n_columns = len(column_names)
 
     try:
         session.query(Photon.weight).first()
@@ -717,7 +717,7 @@ def get_photon_db(root, cd=".", dd_dev=False, commitfreq=1000000):
                 except ValueError:
                     print("Line {} has values which cannot be converted into a number".format(n))
                     continue
-                if len(values) != ncols:
+                if len(values) != n_columns:
                     print("Line {} has unknown format with {} columns:\n{}".format(n, len(values), line))
                     continue
                 if dd_dev:
