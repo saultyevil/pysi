@@ -35,9 +35,9 @@ def plot_wind(wind,
         be strings and 0 < inclination < 90.
     scale: str [optional]
         The scaling of the axes: [logx, logy, loglog, linlin]
-    vmin: float [optional]
+    vmin: float or None [optional]
         The minimum value to plot.
-    vmax: float [optional]
+    vmax: float or None [optional]
         The maximum value to plot.
     fig: plt.Figure [optional]
         A Figure object to update, otherwise a new one will be created.
