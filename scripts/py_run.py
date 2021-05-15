@@ -463,6 +463,7 @@ def run_all_models(parameter_files, use_mpi, n_cores):
 
         if SPLIT_CYCLES:
             if model_converged:
+                log("")
                 rc = run_model(root,
                                fp,
                                use_mpi,
