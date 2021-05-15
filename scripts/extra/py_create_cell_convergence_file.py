@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""The purpose of this script is to print out detailed convergence information
+"""The purpose of this script is to print out detailed convergence information.
+
 - with a specific focus on cells which have failed the specified number of
 convergence checks in Python.
 

@@ -18,6 +18,8 @@ def clear_jobs():
         if stderr:
             print(stderr.decode("utf-8"))
 
+    print(f"Removed jobs {', '.join(job_ids[:-1])} and {job_ids[-1]}.")
+
     return job_ids
 
 

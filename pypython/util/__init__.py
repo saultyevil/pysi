@@ -8,7 +8,6 @@ from psutil import cpu_count
 
 from .. import get_file, get_root
 
-
 LOGFILE = None
 
 
@@ -233,4 +232,3 @@ def logsilent(message, logfile=None):
         return
 
     return
-

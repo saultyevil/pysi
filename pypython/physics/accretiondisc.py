@@ -11,9 +11,10 @@ or to create a simple accretion disc spectrum.
 import numpy as np
 import pandas as pd
 
+from pypython.constants import (MPROT, MSOL, MSOL_PER_YEAR, PI, STEFAN_BOLTZMANN, THOMPSON, C, G)
+
 from .blackbody import planck_lambda, planck_nu
 from .blackhole import gravitational_radius, innermost_stable_circular_orbit
-from pypython.constants import (MPROT, MSOL, MSOL_PER_YEAR, PI, STEFAN_BOLTZMANN, THOMPSON, C, G)
 
 
 def alpha_disc_effective_temperature(ri, r_co, m_co, mdot):

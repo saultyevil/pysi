@@ -5,11 +5,10 @@ depth as a function of frequency or wavelength for multiple inclination
 angles."""
 
 import argparse as ap
-from typing import Tuple
 
 from matplotlib import pyplot as plt
 
-from pypython import spectrum
+from pypython.plot import spectrum
 
 
 def setup_script():

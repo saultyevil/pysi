@@ -7,12 +7,10 @@ Spectrum files are recursively searched from the calling directory.
 """
 
 import argparse as ap
-from typing import Tuple
 
-from matplotlib import pyplot as plt
-
-from pypython import get_file, spectrum
+from pypython import get_file
 from pypython.error import EXIT_FAIL
+from pypython.plot import spectrum
 
 
 def setup_script():

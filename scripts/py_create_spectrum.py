@@ -7,9 +7,9 @@ import argparse as ap
 import numpy as np
 from matplotlib import pyplot as plt
 
-from pypython import plot, smooth_array
+from pypython import Spectrum, plot, smooth_array
 from pypython.physics import convert
-from pypython.spectrum import Spectrum, create
+from pypython.spectrum import create
 
 
 def setup_script():

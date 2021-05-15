@@ -9,12 +9,11 @@ model. It creates the following figures:
 """
 
 import argparse as ap
-from typing import Tuple
 
 from matplotlib import pyplot as plt
 
-from pypython import plot
-from pypython import spectrum as spec
+from pypython import Spectrum, plot
+from pypython.plot import spectrum as splot
 
 
 def setup_script():
@@ -103,7 +102,7 @@ def plot_all_spectrum_inclinations_in_one_panel(root,
     """
 
     alpha = 0.75
-    spectrum = spec.Spectrum(root, cd)
+    spectrum = Spectrum(root, cd)
     spectrum.smooth(smooth_amount)
     spectrum_inclinations = spectrum.inclinations
 
@@ -147,17 +146,17 @@ def plot_all_spectrum_inclinations_in_one_panel(root,
         if frequency_space:
             y *= spectrum["Lambda"]
 
-        fig, ax = spec.plot(x,
-                            y,
-                            xmin,
-                            xmax,
-                            xlabel,
-                            ylabel,
-                            axes_scales,
-                            fig,
-                            ax,
-                            label=str(inclination) + r"$^{\circ}$",
-                            alpha=alpha)
+        fig, ax = splot.plot(x,
+                             y,
+                             xmin,
+                             xmax,
+                             xlabel,
+                             ylabel,
+                             axes_scales,
+                             fig,
+                             ax,
+                             label=str(inclination) + r"$^{\circ}$",
+                             alpha=alpha)
 
     ax.set_ylim(ymin, ymax)
     ax.legend(loc="lower left")
@@ -216,8 +215,8 @@ def plot_spectrum_inclinations_on_one_figure_in_subpanels(root,
         The matplotlib Axes objects for the plot panels.
     """
 
-    fig, ax = spec.plot_spectrum_inclinations_in_subpanels(root, cd, xmin, xmax, smooth_amount, common_lines,
-                                                           frequency_space, axes_scales)
+    fig, ax = splot.plot_spectrum_inclinations_in_subpanels(root, cd, xmin, xmax, smooth_amount, common_lines,
+                                                            frequency_space, axes_scales)
     fig.savefig("{}/{}_spectra.{}".format(cd, root, file_ext))
 
     return fig, ax
@@ -262,7 +261,7 @@ def plot_spectrum_inclination_in_individual_figures(root,
     """
 
     alpha = 0.75
-    spectrum = spec.Spectrum(root, cd)
+    spectrum = Spectrum(root, cd)
     spectrum.smooth(smooth_amount)
     spectrum_inclinations = spectrum.inclinations
 
@@ -287,7 +286,7 @@ def plot_spectrum_inclination_in_individual_figures(root,
         # Convert into lambda F_lambda which is (I hope) the same as nu F_nu
         if frequency_space:
             y *= spectrum["Lambda"]
-        fig, ax = spec.plot(x, y, xmin, xmax, xlabel, ylabel, axes_scales, alpha=alpha)
+        fig, ax = splot.plot(x, y, xmin, xmax, xlabel, ylabel, axes_scales, alpha=alpha)
         if axes_scales == "loglog" or axes_scales == "logx":
             logx = True
         else:
@@ -367,8 +366,8 @@ def main(setup=None):
 
     alpha = 0.75
     try:
-        fig, ax = spec.plot_spectrum_components(root, cd, False, False, xmin, xmax, smooth_amount, axes_scales, alpha,
-                                                frequency_space, display)
+        fig, ax = splot.plot_spectrum_components(root, cd, False, False, xmin, xmax, smooth_amount, axes_scales, alpha,
+                                                 frequency_space, display)
         fig.savefig("{}/{}_spectrum_components.{}".format(cd, root, file_ext))
     except IOError:
         pass
@@ -377,8 +376,8 @@ def main(setup=None):
 
     # log_spec_tot - all photons
     try:
-        fig, ax = spec.plot_spectrum_components(root, cd, True, False, xmin, xmax, smooth_amount, axes_scales, alpha,
-                                                frequency_space, display)
+        fig, ax = splot.plot_spectrum_components(root, cd, True, False, xmin, xmax, smooth_amount, axes_scales, alpha,
+                                                 frequency_space, display)
         fig.savefig("{}/{}_spec_tot.{}".format(cd, root, file_ext))
     except IOError:
         pass
@@ -387,8 +386,8 @@ def main(setup=None):
 
     # log_spec_tot_wind - anything which is "inwind"
     try:
-        fig, ax = spec.plot_spectrum_components(root, cd, False, True, xmin, xmax, smooth_amount, axes_scales, alpha,
-                                                frequency_space, display)
+        fig, ax = splot.plot_spectrum_components(root, cd, False, True, xmin, xmax, smooth_amount, axes_scales, alpha,
+                                                 frequency_space, display)
         fig.savefig("{}/{}_spec_tot_wind.{}".format(cd, root, file_ext))
     except IOError:
         pass

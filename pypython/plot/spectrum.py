@@ -7,8 +7,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from pypython import (UNITS_FLAMBDA, UNITS_FNU, UNITS_LNU, Spectrum, get_root, smooth_array)
-from pypython.error import InvalidParameter
 from pypython.constants import PARSEC
+from pypython.error import InvalidParameter
 from pypython.plot import (ax_add_line_ids, common_lines, get_y_lims_for_x_lims, normalize_figure_style,
                            photoionization_edges, remove_extra_axes, subplot_dims)
 
@@ -225,9 +225,9 @@ def plot_optical_depth(root,
                        show_absorption_edge_labels=True,
                        frequency_space=True,
                        display=False):
-    """Create an optical depth spectrum for a given Python models. This
-    figure can be created in both wavelength or frequency space and with
-    various choices of axes scaling.
+    """Create an optical depth spectrum for a given Python models. This figure
+    can be created in both wavelength or frequency space and with various
+    choices of axes scaling.
 
     This function will return the Figure and Axes object used to create the
     plot.
@@ -572,8 +572,8 @@ def plot_spectrum_inclinations_in_subpanels(root,
             if inclination_index > n_inclinations - 1:
                 break
             name = str(spectrum_inclinations[inclination_index])
-            ax[i, j] = _plot_panel_subplot(ax[i, j], x, spectrum, spectrum_units, [name], xlims, smooth_amount, 1, scale,
-                                           frequency_space, False)
+            ax[i, j] = _plot_panel_subplot(ax[i, j], x, spectrum, spectrum_units, [name], xlims, smooth_amount, 1,
+                                           scale, frequency_space, False)
             ymin, ymax = get_y_lims_for_x_lims(x, spectrum[name], xmin, xmax)
             ax[i, j].set_ylim(ymin, ymax)
 

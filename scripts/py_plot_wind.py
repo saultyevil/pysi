@@ -10,12 +10,12 @@ fractions for H, He, C, N, O and Si.
 """
 
 import argparse as ap
-from typing import List, Tuple
 
 import numpy as np
 from matplotlib import pyplot as plt
 
-from pypython import plot, wind
+from pypython import Wind, plot
+from pypython.plot import wind
 
 default_wind_parameters = ("t_e", "t_r", "ne", "rho", "c4", "ip")
 
@@ -244,7 +244,7 @@ def main():
     # Read in the wind, set the wing parameters we want to plot, as well as the
     # elements of the ions we want to plot and the number of ions.
 
-    w = wind.Wind(root, cd, velocity_units, True)
+    w = Wind(root, cd, velocity_units, True)
 
     if w.coord_system == "polar":
         subplot_kw = {"projection": "polar"}

@@ -6,9 +6,8 @@ from typing import List, Tuple
 import numpy as np
 from matplotlib import pyplot as plt
 
-from pypython.error import DimensionError
-
 from pypython.constants import ANGSTROM, C
+from pypython.error import DimensionError
 
 
 def normalize_figure_style():

@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Basic vector functions which are not part of numpy. These are taken
-directly from python, hence why they can be a little cursed."""
+"""Basic vector functions which are not part of numpy.
 
+These are taken directly from python, hence why they can be a little
+cursed.
+"""
 
 import numpy as np
 

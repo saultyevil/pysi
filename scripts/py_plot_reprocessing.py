@@ -12,9 +12,8 @@ import argparse as ap
 import numpy as np
 from matplotlib import pyplot as plt
 
-from pypython import plot, smooth_array
+from pypython import Spectrum, plot, smooth_array
 from pypython.constants import PARSEC, PI
-from pypython.spectrum import Spectrum
 from pypython.util import get_cpu_count
 
 

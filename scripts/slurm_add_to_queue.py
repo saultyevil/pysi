@@ -5,7 +5,6 @@
 import argparse as ap
 from pathlib import Path
 from subprocess import PIPE, Popen
-from typing import List, Tuple
 
 
 def split_path_and_filename(filepath):

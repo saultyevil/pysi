@@ -16,14 +16,12 @@ import numpy as np
 from matplotlib import pyplot as plt
 from scipy.signal import boxcar, convolve
 
-from pypython.math import vector
 from pypython.constants import CMS_TO_KMS, PI, VLIGHT
+from pypython.math import vector
 from pypython.plot import ax_add_line_ids, common_lines, normalize_figure_style
 from pypython.plot.wind import plot_1d_wind, plot_2d_wind
 
-
 # Spectrum class ---------------------------------------------------------------
-
 
 UNITS_LNU = "erg/s/Hz"
 UNITS_FNU = "erg/s/cm^-2/Hz"
@@ -33,10 +31,10 @@ UNITS_FLAMBDA = "erg/s/cm^-2/A"
 class Spectrum:
     """A class to store PYTHON .spec and .log_spec files.
 
-    The Python spectra are read in and stored within a dict of dicts, where each
-    column name is the spectrum name and the columns in that dict are the
-    names of the columns in the spectrum file. The data is stored as numpy
-    arrays.
+    The Python spectra are read in and stored within a dict of dicts,
+    where each column name is the spectrum name and the columns in that
+    dict are the names of the columns in the spectrum file. The data is
+    stored as numpy arrays.
     """
     def __init__(self, root, fp=".", default=None, log_spec=False, smooth=None, delim=None):
         """Create the Spectrum object.
@@ -433,7 +431,6 @@ class Spectrum:
 
 # Wind class -------------------------------------------------------------------
 
-
 COORD_TYPE_CYLINDRICAL = COORD_TYPE_CARTESIAN = "rectilinear"
 COORD_TYPE_POLAR = "polar"
 COORD_TYPE_SPHERICAL = "spherical"
@@ -442,8 +439,8 @@ COORD_TYPE_SPHERICAL = "spherical"
 class Wind:
     """A class to store 1D and 2D Python wind tables.
 
-    Contains methods to extract variables, as well as convert various indices
-    into other indices.
+    Contains methods to extract variables, as well as convert various
+    indices into other indices.
     """
     def __init__(self, root, fp=".", velocity_units="kms", mask=True, delim=None):
         """Initialize the Wind object.
@@ -733,9 +730,8 @@ class Wind:
                     v_rot[i, j] = 0
                     v_r[i, j] = 0
                 else:
-                    cart_velocity_vector = np.array([
-                        self.variables["v_x"][i, j], self.variables["v_y"][i, j], self.variables["v_z"][i, j]
-                    ])
+                    cart_velocity_vector = np.array(
+                        [self.variables["v_x"][i, j], self.variables["v_y"][i, j], self.variables["v_z"][i, j]])
                     cyl_velocity_vector = vector.project_cartesian_to_cylindrical_coordinates(
                         cart_point, cart_velocity_vector)
                     if type(cyl_velocity_vector) is int:
@@ -749,8 +745,7 @@ class Wind:
         self.variables["v_r"] = v_r * self.velocity_conversion_factor
 
     def create_masked_arrays(self):
-        """Convert each array into a masked array using inwind.
-        """
+        """Convert each array into a masked array using inwind."""
         to_mask_wind = list(self.parameters)
 
         # Remove some of the columns, as these shouldn't be masked because
@@ -863,9 +858,9 @@ class Wind:
     def _get_wind_coordinates(self):
         """Get coordinates of the wind.
 
-        This returns the 2d array of coordinate points for the grid or 1d
-        depending on the coordinate type. This is different from using
-        self.n_coords which returns only the axes points.
+        This returns the 2d array of coordinate points for the grid or
+        1d depending on the coordinate type. This is different from
+        using self.n_coords which returns only the axes points.
         """
         if self.coord_system == COORD_TYPE_SPHERICAL:
             n_points = self.variables["r"]
@@ -882,8 +877,8 @@ class Wind:
     def _get_wind_indices(self):
         """Get cell indices of the grid cells of the wind.
 
-        This returns the 2d array of grid cell indices for the grid or 1d
-        depending on the coordinate type.
+        This returns the 2d array of grid cell indices for the grid or
+        1d depending on the coordinate type.
         """
         if self.coord_system == COORD_TYPE_SPHERICAL:
             n_points = self.variables["i"]
