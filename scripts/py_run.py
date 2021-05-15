@@ -19,7 +19,7 @@ from sys import exit
 
 import pypython
 from pypython import simulation, util
-from pypython.error import EXIT_FAIL, EXIT_SUCCESS
+from pypython.error import EXIT_SUCCESS
 from pypython.simulation import grid
 from pypython.util import close_logfile, init_logfile, log, logsilent
 
@@ -76,12 +76,12 @@ DRY_RUN = False
 
 # Verbosity levels of Python output
 
+VERBOSITY = -1
 VERBOSE_SILENT = 0
 VERBOSE_PROGRESS_REPORT = 1
 VERBOSE_EXTRA_INFORMATION = 2
 VERBOSE_EXTRA_INFORMATION_TRANSPORT = 3
 VERBOSE_ALL = 4
-VERBOSITY = VERBOSE_EXTRA_INFORMATION_TRANSPORT
 
 
 def setup_script():
@@ -123,7 +123,7 @@ def setup_script():
     p.add_argument("-v",
                    "--verbosity",
                    type=int,
-                   default=VERBOSE_EXTRA_INFORMATION,
+                   default=VERBOSE_EXTRA_INFORMATION_TRANSPORT,
                    help="The level of verbosity for Python's output.")
     p.add_argument("-n",
                    "--n_cores",
@@ -158,7 +158,7 @@ def setup_script():
         """.format(PYTHON_BINARY, SPLIT_CYCLES, RESTART_MODEL, AUTOMATIC_RESTART_OVERRIDE, N_CORES,
                    CONVERGENCE_LOWER_LIMIT, VERBOSITY))
 
-    log(f"------------------------\n{msg}")
+    log(f"------------------------\n\n{msg}")
     if RUNTIME_FLAGS:
         log("\nUsing these util python flags:\n\t{}".format(RUNTIME_FLAGS))
 
@@ -169,12 +169,6 @@ def print_model_output(input_line, n_cores, verbosity=VERBOSITY):
     """Process the output from a Python simulation and print something to
     screen. The amount printed to screen will vary depending on the verbosity
     level chosen.
-
-    0: VERBOSE_SILENT                         Nothing
-    1: VERBOSE_PROGRESS_REPORT                Cycle information
-    2: VERBOSE_EXTRA_INFORMATION              Convergence plus the above
-    3: VERBOSE_EXTRA_INFORMATION_TRANSPORT    Transport progress plus the above
-    4: VERBOSE_ALL                            Everything from Python
 
     Parameters
     ----------
@@ -189,82 +183,41 @@ def print_model_output(input_line, n_cores, verbosity=VERBOSITY):
     line = copy(input_line)
     split_line = line.split()
 
-    # PRINT EVERYTHING
-
     if verbosity >= VERBOSE_ALL:
         log("{}".format(line))
-
-    # PRINT CURRENT IONISATION CYCLE
-
-    elif line.find("for defining wind") != -1 and verbosity >= VERBOSE_PROGRESS_REPORT:
-        current_cycle = split_line[3]
-        total_cycles = split_line[5]
-        current_time = time.strftime("%H:%M")
-        log("{}  Starting Ionisation Cycle ....... {}/{}".format(current_time, current_cycle, total_cycles))
-
-    # PRINT CURRENT SPECTRUM CYCLE
-
-    elif line.find("to calculate a detailed spectrum") != -1 and verbosity >= VERBOSE_PROGRESS_REPORT:
-        current_cycle = split_line[1]
-        total_cycles = split_line[3]
-        current_time = time.strftime("%H:%M")
-        log("{}  Starting Spectrum Cycle ......... {}/{}".format(current_time, current_cycle, total_cycles))
-
-    # PRINT COMPLETE RUN TIME
-
-    elif line.find("Completed entire program.") != -1 and verbosity >= VERBOSE_PROGRESS_REPORT:
-        tot_run_time_seconds = float(split_line[-1])
-        tot_run_time = datetime.timedelta(seconds=tot_run_time_seconds // 1)
-        log("\nSimulation completed in: {} hrs:mins:secs".format(tot_run_time))
-
-    # PRINT TOTAL RUN TIME ELAPSED FOR A CYCLE
-
-    elif (line.find("Completed ionization cycle") != -1 or line.find("Completed spectrum cycle") != -1) and \
-            verbosity >= VERBOSE_EXTRA_INFORMATION:
-        elapsed_time_seconds = float(split_line[-1])
-        elapsed_time = datetime.timedelta(seconds=elapsed_time_seconds // 1)
-        log("         Elapsed run time: {} hrs:mins:secs".format(elapsed_time))
-
-    # PRINT CONVERGENCE
-
-    elif (line.find("converged") != -1 and line.find("converging") != -1) \
-            and verbosity >= VERBOSE_EXTRA_INFORMATION:
-        try:
-            cells_converged = split_line[1]
-            fraction_converged = split_line[2]
-            log("         {} cells converged {}".format(cells_converged, fraction_converged))
-        except IndexError:
-            log("          unable to parse convergence :-(")
-
-    # PRINT PHOTON TRANSPORT REPORT
-
-    elif line.find("per cent") != -1 and line.find("Photon") != -1 \
-            and verbosity >= VERBOSE_EXTRA_INFORMATION_TRANSPORT:
-        try:
+    elif verbosity >= VERBOSE_EXTRA_INFORMATION_TRANSPORT:
+        if line.find("per cent") > -1 and line.find("Photon") > -1:
             if int(split_line[6]) == 0:
                 log("         Beginning photon transport")
-        except ValueError:
-            pass
-        try:
-            percent = round(float(split_line[-3]), 0)
-        except ValueError:
-            percent = split_line[-3]
-        try:
-            nphots = round(int(split_line[-5]) * n_cores, 0)
-            nphots = "{:1.2e}".format(nphots)
-        except ValueError:
-            nphots = split_line[-5]
-        log("           - {}% of {} photons transported".format(percent, nphots))
-
-    # PRINT PHOTON TRANSPORT RUN TIME
-    elif line.find("photon transport completed in") != -1 and verbosity >= VERBOSE_EXTRA_INFORMATION_TRANSPORT:
-        transport_time_seconds = float(split_line[5])
-        transport_time = datetime.timedelta(seconds=transport_time_seconds // 1)
-        log("         Photons transported in {} hrs:mins:secs".format(transport_time))
-
-    # PRINT ERROR MESSAGES
-    elif line.find("Error: ") != -1 and verbosity >= VERBOSE_EXTRA_INFORMATION_TRANSPORT:
-        log("         {}".format(line))
+            else:
+                try:
+                    percent_done = round(float(split_line[-3]), 0)
+                except ValueError:
+                    percent_done = split_line[-3]
+                try:
+                    n_photons = "{:1.2e}".format(round(int(split_line[-5]) * n_cores, 0))
+                except ValueError:
+                    n_photons = split_line[-5]
+                log(f"           - {percent_done}% of {n_photons} photons transported")
+        if line.find("photon transport completed in") > -1:
+            log(f"         Photons transported in {datetime.timedelta(seconds=float(split_line[5]) // 1)} hrs:mins:secs")
+    elif verbosity >= VERBOSE_EXTRA_INFORMATION:
+        if line.find("Completed ionization cycle") > -1 or line.find("Completed spectrum cycle") > -1:
+            log(f"         Elapsed run time: {datetime.timedelta(seconds=float(split_line[-1]) // 1)} hrs:mins:secs")
+        if line.find("converged") > -1 and line.find("converging") > -1:
+            try:
+                log(f"         {split_line[1]} cells converged {split_line[2]}")
+            except IndexError:
+                return
+    elif verbosity >= VERBOSE_PROGRESS_REPORT:
+        if line.find("for defining wind") > -1:
+            log(f"{time.strftime('%H:%M')}  Starting Ionisation Cycle ....... {split_line[3]}/{split_line[5]}")
+        if line.find("to calculate a detailed spectrum") > -1:
+            log(f"{time.strftime('%H:%M')}  Starting Spectrum Cycle ......... {split_line[1]}/{split_line[3]}")
+        if line.find("Completed entire program.") > -1:
+            log(f"\nSimulation completed in: {datetime.timedelta(seconds=float(split_line[-1]) // 1)} hrs:mins:secs")
+    else:
+        return
 
 
 def restore_parameter_file(root, fp):
@@ -331,20 +284,14 @@ def print_model_errors(error, root):
     root: str
         The root name of the Python simulation
     """
-    log("Total errors reported for {}:\n".format(root))
+    log("Errors reported for     {}:\n".format(root))
     for key in error.keys():
         log("  {:6d} -- {}".format(error[key], key))
 
     return
 
 
-def run_model(root,
-              fp,
-              use_mpi,
-              n_cores,
-              resume_model=False,
-              restart_from_spec_cycles=False,
-              split_cycles=False):
+def run_model(root, fp, use_mpi, n_cores, resume_model=False, restart_from_spec_cycles=False, split_cycles=False):
     """The purpose of this function is to use the Subprocess library to call
     Python. Unfortunately, to cover a wide range of situations with how one may
     want to run Python, this function has become rather complicated and could
@@ -426,7 +373,7 @@ def run_model(root,
             break
         line = stdout_line.decode("utf-8").replace("\n", "")
         model_logfile.write("{}\n".format(line))
-        print_model_output(line, n_cores)
+        print_model_output(line, n_cores, VERBOSITY)
 
     log("")
 
@@ -491,7 +438,7 @@ def run_all_models(parameter_files, use_mpi, n_cores):
         print_model_errors(errors, root)
 
         if rc != 0:
-            log("Python exited with return code {}\n".format(rc))
+            log("\nPython exited with return code {}\n".format(rc))
             continue
 
         model_converged, model_convergence = check_model_convergence(root, fp)
@@ -507,7 +454,7 @@ def run_all_models(parameter_files, use_mpi, n_cores):
                 errors = simulation.model_error_summary(root, fp, N_CORES)
                 print_model_errors(errors, root)
                 if rc != 0:
-                    log("Python exited due to error code {} after spectral cycles.".format(rc))
+                    log("\nPython exited due to error code {} after restarted spectral cycles.".format(rc))
             else:
                 log("The model has not converged to the desired limit of {}.".format(CONVERGENCE_LOWER_LIMIT))
 
@@ -563,13 +510,15 @@ def main():
 
     return_codes = run_all_models(parameter_files, use_mpi, n_cores_to_use)
 
+    log("------------------------\n")
+
     n_crashed = 0
     for pf, rc in zip(parameter_files, return_codes):
         if rc > 0:
             log("Model {} failed with rc {}".format(pf, rc))
             n_crashed += 1
 
-    log("------------------------")
+    log("\n------------------------")
     close_logfile()
 
     if n_crashed:
