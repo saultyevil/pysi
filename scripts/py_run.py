@@ -208,11 +208,13 @@ def print_model_output(input_line, n_cores, verbosity=VERBOSITY):
                     n_photons = split_line[-5]
                 log(f"           - {percent_done}% of {n_photons} photons transported")
         if line.find("photon transport completed in") > -1:
-            log(f"         Photons transported in {datetime.timedelta(seconds=float(split_line[5]) // 1)} hrs:mins:secs")
+            log(f"         Photons transported in {datetime.timedelta(seconds=float(split_line[5]) // 1)} hrs:mins:secs"
+                )
 
     if verbosity >= VERBOSE_EXTRA_INFORMATION:
         if line.find("Completed ionization cycle") > -1 or line.find("Completed spectrum cycle") > -1:
-            log(f"         Total run time so far: {datetime.timedelta(seconds=float(split_line[-1]) // 1)} hrs:mins:secs")
+            log(f"         Total run time so far: {datetime.timedelta(seconds=float(split_line[-1]) // 1)} hrs:mins:secs"
+                )
         if line.find("converged") > -1 and line.find("converging") > -1:
             log(f"         {split_line[1]} cells converged {split_line[2]}")
 
@@ -439,7 +441,12 @@ def run_all_models(parameter_files, use_mpi, n_cores):
 
         log(msg)
 
-        rc = run_model(root, fp, use_mpi, n_cores, resume_model=RESTART_MODEL, restart_from_spec_cycles=False,
+        rc = run_model(root,
+                       fp,
+                       use_mpi,
+                       n_cores,
+                       resume_model=RESTART_MODEL,
+                       restart_from_spec_cycles=False,
                        split_cycles=SPLIT_CYCLES)
 
         return_codes.append(rc)
@@ -458,7 +465,12 @@ def run_all_models(parameter_files, use_mpi, n_cores):
 
         if SPLIT_CYCLES:
             if model_converged:
-                rc = run_model(root, fp, use_mpi, n_cores, resume_model=True, restart_from_spec_cycles=True,
+                rc = run_model(root,
+                               fp,
+                               use_mpi,
+                               n_cores,
+                               resume_model=True,
+                               restart_from_spec_cycles=True,
                                split_cycles=True)
                 return_codes[i] = rc
                 errors = simulation.model_error_summary(root, fp, N_CORES)
