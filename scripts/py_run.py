@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Run a batch of Python models.
+"""Run a selection of Python models.
 
 This script searches recursively for parameter files and executes a
 number of commands, most importantly running the model, depending on
@@ -8,23 +8,20 @@ what is requested by the user using a number of runtime flags.
 """
 
 import argparse as ap
-import atexit
 import datetime
 import textwrap
 import time
 from copy import copy
 from os import path
 from shutil import copyfile
-from socket import gethostname
 from subprocess import PIPE, Popen
 from sys import exit
 
 import pypython
 from pypython import simulation, util
-from pypython.error import EXIT_FAIL
+from pypython.error import EXIT_FAIL, EXIT_SUCCESS
 from pypython.simulation import grid
 from pypython.util import close_logfile, init_logfile, log, logsilent
-from pypython.util.notifications import send_notification
 
 CONVERGED = \
     r"""
@@ -76,7 +73,6 @@ AUTOMATIC_RESTART_OVERRIDE = False
 CONVERGENCE_LOWER_LIMIT = 0.80
 SPLIT_CYCLES = False
 DRY_RUN = False
-SEND_NOTIFICATIONS = False
 
 # Verbosity levels of Python output
 
@@ -99,7 +95,6 @@ def setup_script():
     global CONVERGENCE_LOWER_LIMIT
     global DRY_RUN
     global N_CORES
-    global SEND_NOTIFICATIONS
 
     p = ap.ArgumentParser(description=__doc__)
 
@@ -140,7 +135,6 @@ def setup_script():
                    action="store_true",
                    default=DRY_RUN,
                    help="Print the models found to screen and then exit.")
-    p.add_argument("--notifs", action="store_true", default=False, help="Enable email notifications")
 
     args = p.parse_args()
     VERBOSITY = args.verbosity
@@ -152,7 +146,6 @@ def setup_script():
     CONVERGENCE_LOWER_LIMIT = args.convergence_limit
     DRY_RUN = args.dry_run
     N_CORES = args.n_cores
-    SEND_NOTIFICATIONS = args.notifs
 
     msg = textwrap.dedent("""\
         Python  .......................... {}
@@ -165,14 +158,14 @@ def setup_script():
         """.format(PYTHON_BINARY, SPLIT_CYCLES, RESTART_MODEL, AUTOMATIC_RESTART_OVERRIDE, N_CORES,
                    CONVERGENCE_LOWER_LIMIT, VERBOSITY))
 
-    log(msg)
+    log(f"------------------------\n{msg}")
     if RUNTIME_FLAGS:
         log("\nUsing these util python flags:\n\t{}".format(RUNTIME_FLAGS))
 
     return
 
 
-def print_python_output(input_line, n_cores, verbosity=VERBOSITY):
+def print_model_output(input_line, n_cores, verbosity=VERBOSITY):
     """Process the output from a Python simulation and print something to
     screen. The amount printed to screen will vary depending on the verbosity
     level chosen.
@@ -274,7 +267,7 @@ def print_python_output(input_line, n_cores, verbosity=VERBOSITY):
         log("         {}".format(line))
 
 
-def restore_backup_pf(root, fp):
+def restore_parameter_file(root, fp):
     """Copy a backup parameter file back to the original parameter file
     destination.
 
@@ -292,7 +285,7 @@ def restore_backup_pf(root, fp):
     return
 
 
-def convergence_check(root, cd):
+def check_model_convergence(root, cd):
     """Check the convergence of a Python simulation by parsing the master diag
     file. If more than one model is being run, then the convergence of each
     model will be appended to the convergence tracking files.
@@ -309,33 +302,25 @@ def convergence_check(root, cd):
     converged: bool
         If the simulation has converged, True is returned.
     """
+    cycle_convergence = simulation.check_model_convergence(root, cd)
+    if type(cycle_convergence) == list:  # get the last cycle
+        cycle_convergence = cycle_convergence[-1]
+
     converged = False
-    model_convergence = simulation.check_model_convergence(root, cd)
-    if type(model_convergence) == list:
-        model_convergence = model_convergence[-1]
-
-    # An unknown convergence has been returned
-
-    if 0 > model_convergence > 1:
+    if 0 > cycle_convergence > 1:
         log(ITS_A_MYSTERY)
-
-    # The model has not converged
-
-    elif model_convergence < CONVERGENCE_LOWER_LIMIT:
+    elif cycle_convergence < CONVERGENCE_LOWER_LIMIT:
         log(NOT_CONVERGED)
-
-    # The model has converged
-
-    elif model_convergence >= CONVERGENCE_LOWER_LIMIT:
-        converged = True
+    elif cycle_convergence >= CONVERGENCE_LOWER_LIMIT:
         log(CONVERGED)
+        converged = True
 
     log("")
 
-    return converged, model_convergence
+    return converged, cycle_convergence
 
 
-def print_errors(error, root):
+def print_model_errors(error, root):
     """Print an errors dictionary.
 
     Parameters
@@ -353,13 +338,13 @@ def print_errors(error, root):
     return
 
 
-def run_single_model(root,
-                     fp,
-                     use_mpi,
-                     n_cores,
-                     resume_model=False,
-                     restart_from_spec_cycles=False,
-                     split_cycles=False):
+def run_model(root,
+              fp,
+              use_mpi,
+              n_cores,
+              resume_model=False,
+              restart_from_spec_cycles=False,
+              split_cycles=False):
     """The purpose of this function is to use the Subprocess library to call
     Python. Unfortunately, to cover a wide range of situations with how one may
     want to run Python, this function has become rather complicated and could
@@ -391,33 +376,20 @@ def run_single_model(root,
     rc: int
         The return code from the Python simulation
     """
-    if VERBOSITY >= VERBOSE_ALL:
-        verbose = True
-    else:
-        verbose = False
-
+    if fp == ".":
+        fp += "/"
     pf = root + ".pf"
 
     # The purpose of this is to manage the situation where we "split" the
     # ionization and spectral cycles into TWO separate Python runs. So, we first
     # set the spectrum cycles to 0, to run only ionization. Then, we set the
-    # spectrum cycles to 5 and set the photon per cycle to 1e6. The point of
-    # this is because you may need 5e7 photons during the ionization cycles for
-    # the model to converge, but you are unlikely to need this many to make a
-    # low signal/noise spectrum. Note we make a backup of the original pf.
-    # todo: put into separate function
+    # spectrum cycles to 5 and set the photon per cycle to 1e6.
 
-    try:
-        if fp == ".":
-            fp += "/"
-        if split_cycles and not restart_from_spec_cycles:
-            grid.update_single_parameter(fp + pf, "Spectrum_cycles", "0", backup=True, verbose=verbose)
-        elif split_cycles and restart_from_spec_cycles:
-            grid.update_single_parameter(fp + pf, "Spectrum_cycles", "5", backup=False, verbose=verbose)
-            grid.update_single_parameter(fp + pf, "Photons_per_cycle", "1e6", backup=False, verbose=verbose)
-    except IOError:
-        print("Unable to open parameter file {} in split cycle mode to change parameters".format(fp + pf))
-        exit(EXIT_FAIL)
+    if split_cycles and not restart_from_spec_cycles:
+        grid.update_single_parameter(fp + pf, "Spectrum_cycles", "0", backup=True)
+    elif split_cycles and restart_from_spec_cycles:
+        grid.update_single_parameter(fp + pf, "Spectrum_cycles", "5", backup=False)
+        grid.update_single_parameter(fp + pf, "Photons_per_cycle", "1e6", backup=False)
 
     # Construct shell command to run Python and use subprocess to run
 
@@ -429,13 +401,9 @@ def run_single_model(root,
 
     command += " {} ".format(PYTHON_BINARY)
 
-    # If a root.save file exists, then we assume that we want to restart the
-    # run
+    # If a root.wind_save exists, then we assume that we want to restart
 
-    if path.exists("{}/{}.wind_save".format(fp, root)) and not AUTOMATIC_RESTART_OVERRIDE:
-        resume_model = True
-
-    if resume_model:
+    if resume_model or (not AUTOMATIC_RESTART_OVERRIDE and path.exists("{}/{}.wind_save".format(fp, root))):
         command += " -r "
 
     # Add the run-time flags the user provided
@@ -443,14 +411,8 @@ def run_single_model(root,
     if RUNTIME_FLAGS:
         command += " {} ".format(RUNTIME_FLAGS)
 
-    # Add the root name at the end of the call to Python
-
     command += " {} ".format(pf)
     log("{}\n".format(command))
-
-    # Use Popen to create a new Python process - I do this manually for some
-    # reason?
-
     cmd = Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
 
     # This next bit provides real time output of Python's output...
@@ -464,32 +426,24 @@ def run_single_model(root,
             break
         line = stdout_line.decode("utf-8").replace("\n", "")
         model_logfile.write("{}\n".format(line))
-        print_python_output(line, n_cores, VERBOSITY)
+        print_model_output(line, n_cores)
 
-    if not verbose:
-        log("")
+    log("")
 
     model_logfile.close()
 
     # Sometimes with Subprocess, if the output buffer is too large then
-    # subprocess breaks and causes a deadlock. To get around this, one can use
-    # .communicate() to flush the buffer or s/t
+    # subprocess breaks and causes a deadlock. To get around this, flush the
+    # communicate buffer
 
-    stdout, stderr = cmd.communicate()
-    stderr = stderr.decode("utf-8")
-    if stderr:
-        log("The following message was sent to stderr:")
-        log(stderr)
+    cmd.communicate()
 
     rc = cmd.returncode
     if rc:
         print("Python exited with non-zero exit code: {}\n".format(rc))
 
-    # If we have modified the parameter file because we are splitting the
-    # model into two runs, then restore the original backup
-
     if split_cycles and restart_from_spec_cycles:
-        restore_backup_pf(root, fp)
+        restore_parameter_file(root, fp)
 
     return rc
 
@@ -512,18 +466,10 @@ def run_all_models(parameter_files, use_mpi, n_cores):
         The return codes of the Python models
     """
 
-    global SEND_NOTIFICATIONS
-    host = gethostname()
-    n_models = len(parameter_files)
     return_codes = []
-
-    if SEND_NOTIFICATIONS:
-        # if send_notification returns an empty dict, then the rest of the mails
-        # will not be sent
-        SEND_NOTIFICATIONS = send_notification("ejp1n17@soton.ac.uk", "{}: Starting models".format(host), "")
+    n_models = len(parameter_files)
 
     for i, fp in enumerate(parameter_files):
-
         root, fp = pypython.get_root(fp)
         msg = textwrap.dedent("""\
             ------------------------
@@ -538,97 +484,43 @@ def run_all_models(parameter_files, use_mpi, n_cores):
 
         log(msg)
 
-        if SEND_NOTIFICATIONS:
-            send_notification("ejp1n17@soton.ac.uk",
-                              "{}: Model {}/{} has started running".format(host, i + 1, n_models),
-                              "The model {} has started running on {}".format(fp, host))
-
-        rc = run_single_model(root,
-                              fp,
-                              use_mpi,
-                              n_cores,
-                              resume_model=RESTART_MODEL,
-                              restart_from_spec_cycles=False,
-                              split_cycles=SPLIT_CYCLES)
+        rc = run_model(root, fp, use_mpi, n_cores, resume_model=RESTART_MODEL, restart_from_spec_cycles=False, split_cycles=SPLIT_CYCLES)
 
         return_codes.append(rc)
-        if rc != 0:
-            log("Python exited for error code {}".format(rc))
-            if SEND_NOTIFICATIONS:
-                send_notification("ejp1n17@soton.ac.uk", "{}: Model {}/{} failed".format(host, i + 1, n_models),
-                                  "The model {} has failed\nReturn code {}".format(fp, host, rc))
-            continue
-
-        # Print the error report and the convergence
-
         errors = simulation.model_error_summary(root, fp, N_CORES)
-        b_converged, convergence = convergence_check(root, fp)
-        print_errors(errors, root)
-        log("\nModel convergence ........... {}".format(convergence))
-
-        # If the return code is non-zero, then something bad has happened. So
-        # we skip the rest of the code
+        print_model_errors(errors, root)
 
         if rc != 0:
-            log("Python exited with return code {}.".format(rc))
-            if SEND_NOTIFICATIONS:
-                send_notification("ejp1n17@soton.ac.uk", "{}: Model {}/{} failed".format(host, i + 1, n_models),
-                                  "The model {} has failed on {}\nReturn code {}".format(fp, host, rc))
+            log("Python exited with return code {}\n".format(rc))
             continue
+
+        model_converged, model_convergence = check_model_convergence(root, fp)
+        log("\nModel convergence ........... {}".format(model_convergence))
 
         # If the cycles are being split into two separate runs to lower the
         # number of photons during a spectrum cycles, handle that situation here
 
-        if SPLIT_CYCLES and b_converged:
-            rc = run_single_model(root,
-                                  fp,
-                                  use_mpi,
-                                  n_cores,
-                                  resume_model=True,
-                                  restart_from_spec_cycles=True,
-                                  split_cycles=True)
-            return_codes[i] = rc
-        elif SPLIT_CYCLES and not b_converged:
-            log("The model has not converged to the set convergence limit of {}.".format(CONVERGENCE_LOWER_LIMIT))
-            if SEND_NOTIFICATIONS:
-                send_notification("ejp1n17@soton.ac.uk", "{}: Model {}/{} failed".format(host, i + 1, n_models),
-                                  "The model {} has failed on {}\nReturn code {}".format(fp, host, rc))
-
-        # rc will determine if the model failed or not
-
-        if rc != 0:
-            log("Python exited for error code {} after spectral cycles.".format(rc))
-            if SEND_NOTIFICATIONS:
-                send_notification(
-                    "ejp1n17@soton.ac.uk", "{}: Model {}/{} spectral cycles failed".format(host, i + 1, n_models),
-                    "The model {} has failed during spectral cycles on {}\nReturn code {}".format(fp, host, rc))
-            continue
-        else:
-            if SEND_NOTIFICATIONS:
-                send_notification(
-                    "ejp1n17@soton.ac.uk", "{}: Model {}/{} finished".format(host, i + 1, n_models),
-                    "The model {} has finished running on {}\nReturn code {}\nConvergence {}".format(
-                        fp, host, rc, convergence))
-
-        errors = simulation.model_error_summary(root, fp, N_CORES)
-        print_errors(errors, root)
+        if SPLIT_CYCLES:
+            if model_converged:
+                rc = run_model(root, fp, use_mpi, n_cores, resume_model=True, restart_from_spec_cycles=True, split_cycles=True)
+                return_codes[i] = rc
+                errors = simulation.model_error_summary(root, fp, N_CORES)
+                print_model_errors(errors, root)
+                if rc != 0:
+                    log("Python exited due to error code {} after spectral cycles.".format(rc))
+            else:
+                log("The model has not converged to the desired limit of {}.".format(CONVERGENCE_LOWER_LIMIT))
 
         log("")
-
-    if SEND_NOTIFICATIONS:
-        send_notification("ejp1n17@soton.ac.uk", "{}: All models completed".format(host), "")
 
     return return_codes
 
 
 def main():
     """Main function of the script."""
-    if SEND_NOTIFICATIONS:
-        atexit.register(send_notification, "ejp1n17@soton.ac.uk",
-                        "{}: py_run has exited unexpectedly".format(gethostname()), "")
 
     setup_script()
-    init_logfile("Log.txt")
+    init_logfile("log.txt")
     log("------------------------\n")
     logsilent("{}".format(datetime.datetime.now()))
 
@@ -641,7 +533,7 @@ def main():
     if not n_models:
         log("No parameter files found, nothing to do!\n")
         log("------------------------")
-        return
+        exit(EXIT_SUCCESS)
 
     # Check to see how many processor cores are going to be use, and set the
     # mpirun flag appropriately
@@ -669,8 +561,6 @@ def main():
         log("------------------------")
         return
 
-    # Now run Python...
-
     return_codes = run_all_models(parameter_files, use_mpi, n_cores_to_use)
 
     n_crashed = 0
@@ -682,12 +572,10 @@ def main():
     log("------------------------")
     close_logfile()
 
-    atexit.unregister(send_notification)
-
     if n_crashed:
         exit(n_crashed)
-
-    return
+    else:
+        exit(0)
 
 
 if __name__ == "__main__":
