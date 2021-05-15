@@ -160,7 +160,7 @@ def setup_script():
 
     log(f"------------------------\n\n{msg}")
     if RUNTIME_FLAGS:
-        log("\nUsing these util python flags:\n\t{}".format(RUNTIME_FLAGS))
+        log("\nUsing these python flags:\n\t{}\n".format(RUNTIME_FLAGS))
 
     return
 
@@ -179,6 +179,12 @@ def print_model_output(input_line, n_cores, verbosity=VERBOSITY):
         to calculate the total photon number
     verbosity: bool, optional
         If this is True, then every line will be printed to screen
+
+    Returns
+    -------
+    keep_going: bool
+        Will return False when the brief run summary is found which should
+        stop the loop
     """
     line = copy(input_line)
     split_line = line.split()
@@ -206,20 +212,24 @@ def print_model_output(input_line, n_cores, verbosity=VERBOSITY):
 
     if verbosity >= VERBOSE_EXTRA_INFORMATION:
         if line.find("Completed ionization cycle") > -1 or line.find("Completed spectrum cycle") > -1:
-            log(f"         Elapsed run time: {datetime.timedelta(seconds=float(split_line[-1]) // 1)} hrs:mins:secs")
+            log(f"         Total run time so far: {datetime.timedelta(seconds=float(split_line[-1]) // 1)} hrs:mins:secs")
         if line.find("converged") > -1 and line.find("converging") > -1:
-            try:
-                log(f"         {split_line[1]} cells converged {split_line[2]}")
-            except IndexError:
-                return
+            log(f"         {split_line[1]} cells converged {split_line[2]}")
 
     if verbosity >= VERBOSE_PROGRESS_REPORT:
         if line.find("for defining wind") > -1:
             log(f"{time.strftime('%H:%M')}  Starting Ionisation Cycle ....... {split_line[3]}/{split_line[5]}")
         if line.find("to calculate a detailed spectrum") > -1:
             log(f"{time.strftime('%H:%M')}  Starting Spectrum Cycle ......... {split_line[1]}/{split_line[3]}")
-        if line.find("Completed entire program.") > -1:
+        if line.find("Completed wind creation.") > -1:
+            log("\nIonization cycles completed\n")
+        if line.find("At program completion, the elapsed TIME was") > -1:
             log(f"\nSimulation completed in: {datetime.timedelta(seconds=float(split_line[-1]) // 1)} hrs:mins:secs")
+
+    if line.find("Convergence statistics for the wind after the ionization calculation:") > -1:
+        return False
+
+    return True
 
 
 def restore_parameter_file(root, fp):
@@ -270,8 +280,6 @@ def check_model_convergence(root, cd):
         log(CONVERGED)
         converged = True
 
-    log("")
-
     return converged, cycle_convergence
 
 
@@ -286,9 +294,9 @@ def print_model_errors(error, root):
     root: str
         The root name of the Python simulation
     """
-    log("Errors reported for     {}:\n".format(root))
+    log("\nErrors reported for {}:\n".format(root))
     for key in error.keys():
-        log("  {:6d} -- {}".format(error[key], key))
+        log("  {:9d} -- {}".format(error[key], key))
 
     return
 
@@ -330,19 +338,20 @@ def run_model(root, fp, use_mpi, n_cores, resume_model=False, restart_from_spec_
     pf = root + ".pf"
 
     model_log = "{}/{}.log.txt".format(fp, root)
-    model_logfile = open(model_log, "a")
-    model_logfile.write("{}\n".format(datetime.datetime.now()))
+    logfile = open(model_log, "a")
+    logfile.write("{}\n".format(datetime.datetime.now()))
 
     # The purpose of this is to manage the situation where we "split" the
     # ionization and spectral cycles into TWO separate Python runs. So, we first
     # set the spectrum cycles to 0, to run only ionization. Then, we set the
     # spectrum cycles to 5 and set the photon per cycle to 1e6.
 
-    if split_cycles and not restart_from_spec_cycles:
-        grid.update_single_parameter(fp + pf, "Spectrum_cycles", "0", backup=True)
-    elif split_cycles and restart_from_spec_cycles:
-        grid.update_single_parameter(fp + pf, "Spectrum_cycles", "5", backup=False)
-        grid.update_single_parameter(fp + pf, "Photons_per_cycle", "1e6", backup=False)
+    if split_cycles:
+        if not restart_from_spec_cycles:
+            grid.update_single_parameter(fp + pf, "Spectrum_cycles", "0", backup=True)
+        else:
+            grid.update_single_parameter(fp + pf, "Photons_per_cycle", "1e6", backup=False)
+            grid.update_single_parameter(fp + pf, "Spectrum_cycles", "5", backup=False)
 
     # Construct shell command to run Python and use subprocess to run
 
@@ -366,28 +375,27 @@ def run_model(root, fp, use_mpi, n_cores, resume_model=False, restart_from_spec_
 
     command += " {} ".format(pf)
     log("{}\n".format(command))
-    cmd = Popen(command, stdout=PIPE, shell=True)
+    process = Popen(command, stdout=PIPE, shell=True, bufsize=0)
 
-    for stdout_line in iter(cmd.stdout.readline, ""):
-        if not stdout_line:
+    for line in iter(process.stdout.readline, ""):
+        if not line:
             break
-        line = stdout_line.decode("utf-8").replace("\n", "")
-        model_logfile.write("{}\n".format(line))
-        print_model_output(line, n_cores, VERBOSITY)
+        line = line.decode("utf-8").replace("\n", "")
+        logfile.write(f"{line}\n")
+        keep_going = print_model_output(line, n_cores, VERBOSITY)
+        if keep_going is False:
+            break
 
-    log("")
-
-    model_logfile.close()
+    logfile.close()
 
     # Sometimes with Subprocess, if the output buffer is too large then
     # subprocess breaks and causes a deadlock. To get around this, flush the
     # communicate buffer
 
-    cmd.communicate()
-
-    rc = cmd.returncode
+    _ = process.communicate()
+    rc = process.returncode
     if rc:
-        print("Python exited with non-zero exit code: {}\n".format(rc))
+        log("Python exited with non-zero exit code: {}".format(rc))
 
     if split_cycles and restart_from_spec_cycles:
         restore_parameter_file(root, fp)
@@ -431,25 +439,27 @@ def run_all_models(parameter_files, use_mpi, n_cores):
 
         log(msg)
 
-        rc = run_model(root, fp, use_mpi, n_cores, resume_model=RESTART_MODEL, restart_from_spec_cycles=False, split_cycles=SPLIT_CYCLES)
+        rc = run_model(root, fp, use_mpi, n_cores, resume_model=RESTART_MODEL, restart_from_spec_cycles=False,
+                       split_cycles=SPLIT_CYCLES)
 
         return_codes.append(rc)
         errors = simulation.model_error_summary(root, fp, N_CORES)
         print_model_errors(errors, root)
 
         if rc != 0:
-            log("\nPython exited with return code {}\n".format(rc))
+            log("\nPython exited with return code {}".format(rc))
             continue
 
         model_converged, model_convergence = check_model_convergence(root, fp)
-        log("\nModel convergence ........... {}".format(model_convergence))
+        log("Model convergence ........... {}".format(model_convergence))
 
         # If the cycles are being split into two separate runs to lower the
         # number of photons during a spectrum cycles, handle that situation here
 
         if SPLIT_CYCLES:
             if model_converged:
-                rc = run_model(root, fp, use_mpi, n_cores, resume_model=True, restart_from_spec_cycles=True, split_cycles=True)
+                rc = run_model(root, fp, use_mpi, n_cores, resume_model=True, restart_from_spec_cycles=True,
+                               split_cycles=True)
                 return_codes[i] = rc
                 errors = simulation.model_error_summary(root, fp, N_CORES)
                 print_model_errors(errors, root)
@@ -497,7 +507,7 @@ def main():
 
     # Print the models which are going to be run to the screen
 
-    log("\nThe following {} parameter files were found:\n".format(len(parameter_files)))
+    log("The following {} parameter files were found:\n".format(len(parameter_files)))
     for file in parameter_files:
         log("{}".format(file))
     log("")
@@ -515,8 +525,10 @@ def main():
     n_crashed = 0
     for pf, rc in zip(parameter_files, return_codes):
         if rc > 0:
-            log("Model {} failed with rc {}".format(pf, rc))
+            log(f"Model {pf} failed with rc {rc}")
             n_crashed += 1
+    if n_crashed == 0:
+        log("All models exited successfully")
 
     log("\n------------------------")
     close_logfile()
