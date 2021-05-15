@@ -588,8 +588,6 @@ def run_all_models(parameter_files, use_mpi, n_cores):
                                   restart_from_spec_cycles=True,
                                   split_cycles=True)
             return_codes[i] = rc
-            errors = simulation.model_error_summary(root, fp, N_CORES)
-            print_errors(errors, root)
         elif SPLIT_CYCLES and not b_converged:
             log("The model has not converged to the set convergence limit of {}.".format(CONVERGENCE_LOWER_LIMIT))
             if SEND_NOTIFICATIONS:
@@ -611,6 +609,9 @@ def run_all_models(parameter_files, use_mpi, n_cores):
                     "ejp1n17@soton.ac.uk", "{}: Model {}/{} finished".format(host, i + 1, n_models),
                     "The model {} has finished running on {}\nReturn code {}\nConvergence {}".format(
                         fp, host, rc, convergence))
+
+        errors = simulation.model_error_summary(root, fp, N_CORES)
+        print_errors(errors, root)
 
         log("")
 
