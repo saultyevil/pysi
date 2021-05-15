@@ -225,7 +225,7 @@ def plot_optical_depth(root,
                        show_absorption_edge_labels=True,
                        frequency_space=True,
                        display=False):
-    """Create an optical depth spectrum for a given Python simulation. This
+    """Create an optical depth spectrum for a given Python models. This
     figure can be created in both wavelength or frequency space and with
     various choices of axes scaling.
 
@@ -235,9 +235,9 @@ def plot_optical_depth(root,
     Parameters
     ----------
     root: str
-        The root name of the Python simulation
+        The root name of the Python models
     wd: str
-        The absolute or relative path containing the Python simulation
+        The absolute or relative path containing the Python models
     inclinations: List[str] [optional]
         A list of inclination angles to plot
     xmin: float [optional]
@@ -420,9 +420,9 @@ def plot_spectrum_components(root,
     Parameters
     ----------
     root: str
-        The root name of the Python simulation
+        The root name of the Python models
     wd: str
-        The absolute or relative path containing the Python simulation
+        The absolute or relative path containing the Python models
     spec_tot: bool [optional]
         If True, the root.log_spec_tot file will be plotted
     wind_tot: bool [optional]
@@ -509,9 +509,9 @@ def plot_spectrum_inclinations_in_subpanels(root,
     Parameters
     ----------
     root: str
-        The root name of the Python simulation
+        The root name of the Python models
     fp: str
-        The absolute or relative path containing the Python simulation
+        The absolute or relative path containing the Python models
     xmin: float [optional]
         The lower x boundary for the figure
     xmax: float [optional]
@@ -572,7 +572,7 @@ def plot_spectrum_inclinations_in_subpanels(root,
             if inclination_index > n_inclinations - 1:
                 break
             name = str(spectrum_inclinations[inclination_index])
-            ax[i, j] = _plot_panel_subplot(ax[i, j], x, spectrum, spectrum_units, name, xlims, smooth_amount, 1, scale,
+            ax[i, j] = _plot_panel_subplot(ax[i, j], x, spectrum, spectrum_units, [name], xlims, smooth_amount, 1, scale,
                                            frequency_space, False)
             ymin, ymax = get_y_lims_for_x_lims(x, spectrum[name], xmin, xmax)
             ax[i, j].set_ylim(ymin, ymax)
@@ -610,9 +610,9 @@ def plot_single_spectrum_inclination(root,
     Parameters
     ----------
     root: str
-        The root name of the Python simulation
+        The root name of the Python models
     fp: str
-        The absolute or relative path containing the Python simulation
+        The absolute or relative path containing the Python models
     inclination: str, float, int
         The specific inclination angle to plot for
     xmin: float [optional]
@@ -701,7 +701,7 @@ def plot_multiple_model_spectra(output_name,
     inclination_angle: str
         The inclination angle(s) to plot
     fp: [optional] str
-        The working directory containing the Python simulation
+        The working directory containing the Python models
     xmin: [optional] float
         The smallest value on the x axis.
     xmax: [optional] float

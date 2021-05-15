@@ -30,8 +30,6 @@ def plot_wind(wind,
     parameter: np.ndarray
         The wind parameter to be plotted, in the same shape as the coordinate
         arrays. Can also be the name of the variable.
-    ion_fraction: bool [optional]
-        Plot ions as a fraction [True] or a density.
     inclinations_to_plot: List[str] [optional]
         A list of inclination angles to plot onto the ax[0, 0] sub panel. Must
         be strings and 0 < inclination < 90.
