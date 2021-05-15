@@ -187,7 +187,7 @@ def print_model_output(input_line, n_cores, verbosity=VERBOSITY):
         log("{}".format(line))
     elif verbosity >= VERBOSE_EXTRA_INFORMATION_TRANSPORT:
         if line.find("per cent") > -1 and line.find("Photon") > -1:
-            if int(split_line[6]) == 0:
+            if int(split_line[7]) == 0:
                 log("         Beginning photon transport")
             else:
                 try:
@@ -327,6 +327,10 @@ def run_model(root, fp, use_mpi, n_cores, resume_model=False, restart_from_spec_
         fp += "/"
     pf = root + ".pf"
 
+    model_log = "{}/{}.log.txt".format(fp, root)
+    model_logfile = open(model_log, "a")
+    model_logfile.write("{}\n".format(datetime.datetime.now()))
+
     # The purpose of this is to manage the situation where we "split" the
     # ionization and spectral cycles into TWO separate Python runs. So, we first
     # set the spectrum cycles to 0, to run only ionization. Then, we set the
@@ -360,13 +364,7 @@ def run_model(root, fp, use_mpi, n_cores, resume_model=False, restart_from_spec_
 
     command += " {} ".format(pf)
     log("{}\n".format(command))
-    cmd = Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
-
-    # This next bit provides real time output of Python's output...
-
-    model_log = "{}/{}.log.txt".format(fp, root)
-    model_logfile = open(model_log, "a")
-    model_logfile.write("{}\n".format(datetime.datetime.now()))
+    cmd = Popen(command, stdout=PIPE, shell=True)
 
     for stdout_line in iter(cmd.stdout.readline, ""):
         if not stdout_line:
