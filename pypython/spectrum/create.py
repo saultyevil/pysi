@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-This file contains various utility functions for use with the reverberation
-mapping part of Python. It seems to mostly house functions designed to create
-a spectrum from the delay_dump output.
+"""Create a spectrum from a delay_dump file.
+
+It is possible to create spectra which certain physical processes
+removed. If the delay dump file is large, then use the SQL version of
+the functions, otherwise the regular version is much faster.
 """
 
 from copy import deepcopy
-from typing import Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -18,11 +18,10 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from .extrautil.error import EXIT_FAIL
-from .physics.constants import PARSEC, C
-from .physics.convert import angstrom_to_hz, hz_to_angstrom
-from .spectrum import Spectrum
-from .wind import Wind
+from pypython import Spectrum, Wind
+from pypython.constants import PARSEC, C
+from pypython.error import EXIT_FAIL
+from pypython.physics import angstrom_to_hz, hz_to_angstrom
 
 BOUND_FREE_NRES = 20000
 UNFILTERED_SPECTRUM = -999
@@ -30,17 +29,15 @@ UNFILTERED_SPECTRUM = -999
 Base = declarative_base()
 
 
-def write_delay_dump_spectrum_to_file(
-    root: str,
-    wd: str,
-    spectrum: np.ndarray,
-    extract_nres: tuple,
-    n_spec: int,
-    n_bins: int,
-    d_norm_pc: float,
-    return_inclinations: bool = False
-) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
-    """Write the generated delay dump spectrum to file
+def write_delay_dump_spectrum_to_file(root,
+                                      wd,
+                                      spectrum,
+                                      extract_nres,
+                                      n_spec,
+                                      n_bins,
+                                      d_norm_pc,
+                                      return_inclinations=False):
+    """Write the generated delay dump spectrum to file.
 
     Parameters
     ----------
@@ -66,7 +63,8 @@ def write_delay_dump_spectrum_to_file(
     spectrum: np.ndarray
         The delay dump spectrum.
     inclinations: [optional] np.ndarray
-        An array of the inclination angles of the spectrum."""
+        An array of the inclination angles of the spectrum.
+    """
 
     if extract_nres[0] != UNFILTERED_SPECTRUM:
         fname = "{}/{}_line".format(wd, root)
@@ -130,9 +128,7 @@ def write_delay_dump_spectrum_to_file(
         return spectrum
 
 
-def read_delay_dump(root: str,
-                    cd: str = ".",
-                    mode_dev: bool = False) -> pd.DataFrame:
+def read_delay_dump(root, cd=".", mode_dev=False):
     """Process the photons which have been dumped to the delay_dump file.
 
     Parameters
@@ -148,7 +144,8 @@ def read_delay_dump(root: str,
     -------
     dumped_photons: pd.DataFrame
         An array containing the dumped photons with the quantities specified
-        by the extract dict."""
+        by the extract dict.
+    """
 
     filename = "{}/{}.delay_dump".format(cd, root)
 
@@ -188,17 +185,12 @@ def read_delay_dump(root: str,
             "LineRes.": np.int32
         }
 
-    output = pd.read_csv(filename,
-                         names=list(names.keys()),
-                         dtype=names,
-                         delim_whitespace=True,
-                         comment="#")
+    output = pd.read_csv(filename, names=list(names.keys()), dtype=names, delim_whitespace=True, comment="#")
 
     return output
 
 
-def convert_weight_to_flux(spectrum: np.ndarray, spec_cycle_norm: float,
-                           d_norm_pc: float):
+def convert_weight_to_flux(spectrum, spec_cycle_norm, d_norm_pc):
     """Re-normalize the photon weight bins into a Flux per unit wavelength.
 
     spec_cycle_norm fixes the case where less than the specified number of
@@ -218,7 +210,8 @@ def convert_weight_to_flux(spectrum: np.ndarray, spec_cycle_norm: float,
     Returns
     -------
     spectrum: np.ndarray
-        The renormalized spectrum."""
+        The renormalized spectrum.
+    """
 
     n_bins = spectrum.shape[0]
     n_spec = spectrum.shape[1] - 1
@@ -236,11 +229,8 @@ def convert_weight_to_flux(spectrum: np.ndarray, spec_cycle_norm: float,
 
 
 @jit(nopython=True)
-def bin_photon_weights(spectrum: np.ndarray, freq_min: float, freq_max: float,
-                       photon_freqs: np.ndarray, photon_weights: np.ndarray,
-                       photon_spc_i: np.ndarray, photon_nres: np.ndarray,
-                       photon_line_nres: np.ndarray, extract_nres: tuple,
-                       logbins: bool):
+def bin_photon_weights(spectrum, freq_min, freq_max, photon_freqs, photon_weights, photon_spc_i, photon_nres,
+                       photon_line_nres, extract_nres, logbins):
     """Bin the photons into frequency bins using jit to attempt to speed
     everything up.
 
@@ -266,7 +256,7 @@ def bin_photon_weights(spectrum: np.ndarray, freq_min: float, freq_max: float,
         The Res. values for the photons.
     photon_line_nres: np.ndarray
         The LineRes values for the photons.
-    extract_nres: int
+    extract_nres: int or np.ndarray or list
         The line number for the line to extract
     logbins: bool
         Use frequency bins spaced in log space.
@@ -274,7 +264,8 @@ def bin_photon_weights(spectrum: np.ndarray, freq_min: float, freq_max: float,
     Returns
     -------
     spectrum: np.ndarray
-        The spectrum where photon weights have been binned."""
+        The spectrum where photon weights have been binned.
+    """
 
     n_extract = len(extract_nres)
     n_photons = photon_freqs.shape[0]
@@ -322,18 +313,17 @@ def bin_photon_weights(spectrum: np.ndarray, freq_min: float, freq_max: float,
     return spectrum
 
 
-def create_spectrum_process_breakdown(root: str,
-                                      wl_min: float,
-                                      wl_max: float,
-                                      n_cores_norm: int = 1,
-                                      spec_cycle_norm: float = 1,
-                                      wd: str = ".",
-                                      nres: int = None,
-                                      mode_line_res: bool = True) -> dict:
-    """Get the spectra for the different physical processes which contribute to a
-    spectrum. If nres is provided, then only a specific interaction will be
+def create_spectrum_process_breakdown(root,
+                                      wl_min,
+                                      wl_max,
+                                      n_cores_norm=1,
+                                      spec_cycle_norm=1,
+                                      wd=".",
+                                      nres=None,
+                                      mode_line_res=True):
+    """Get the spectra for the different physical processes which contribute to
+    a spectrum. If nres is provided, then only a specific interaction will be
     extracted, otherwise all resonance interactions will.
-
 
     Parameters
     ----------
@@ -360,7 +350,8 @@ def create_spectrum_process_breakdown(root: str,
     -------
     spectra: dict
         A dictionary where the keys are the name of the spectra and the values
-        are pd.DataFrames of that corresponding spectrum."""
+        are pd.DataFrames of that corresponding spectrum.
+    """
 
     df = read_delay_dump(root, cd=wd)
     s = Spectrum(root, wd)
@@ -434,12 +425,9 @@ def create_spectrum_process_breakdown(root: str,
 
 
 @jit(nopython=True)
-def wind_bin_photon_weights(n_photons: int, nres: int, photon_x: np.ndarray,
-                            photon_y: np.ndarray, photon_z: np.ndarray,
-                            photon_nres: np.ndarray, photon_weight: np.ndarray,
-                            x_points: np.ndarray, z_points: np.ndarray,
-                            nx: int, nz: int) -> Tuple[np.ndarray, np.ndarray]:
-    """Bin photon weights by extract location"""
+def wind_bin_photon_weights(n_photons, nres, photon_x, photon_y, photon_z, photon_nres, photon_weight, x_points,
+                            z_points, nx, nz):
+    """Bin photon weights by extract location."""
 
     hist2d_weight = np.zeros((nx, nz))
     hist2d_count = np.zeros((nx, nz))
@@ -469,10 +457,7 @@ def wind_bin_photon_weights(n_photons: int, nres: int, photon_x: np.ndarray,
     return hist2d_weight, hist2d_count
 
 
-def wind_bin_interaction_weight(root: str,
-                                nres: int,
-                                cd: str = ".",
-                                n_cores: int = 1) -> np.ndarray:
+def wind_bin_interaction_weight(root, nres, cd=".", n_cores=1):
     """Bin photon weights by extract location.
 
     Parameters
@@ -493,7 +478,7 @@ def wind_bin_interaction_weight(root: str,
         the grid.
     """
 
-    w = Wind(root, cd, mask_cells=False)
+    w = Wind(root, cd, mask=False)
     x_points = np.array(w.m_coords)
     z_points = np.array(w.n_coords)
 
@@ -502,10 +487,10 @@ def wind_bin_interaction_weight(root: str,
         print("photon dataframe is empty")
         exit(1)
 
-    hist2d_weight, hist2d_count = wind_bin_photon_weights(
-        len(photons), nres, photons["LastX"].values, photons["LastY"].values,
-        photons["LastZ"].values, photons["Res."].values,
-        photons["Weight"].values, x_points, z_points, w.nx, w.nz)
+    hist2d_weight, hist2d_count = wind_bin_photon_weights(len(photons), nres, photons["LastX"].values,
+                                                          photons["LastY"].values, photons["LastZ"].values,
+                                                          photons["Res."].values, photons["Weight"].values, x_points,
+                                                          z_points, w.nx, w.nz)
 
     hist2d_weight /= n_cores
 
@@ -516,23 +501,22 @@ def wind_bin_interaction_weight(root: str,
     return hist2d_weight, hist2d_count
 
 
-def create_spectrum(
-        root: str,
-        wd: str = ".",
-        extract_nres: tuple = (UNFILTERED_SPECTRUM, ),
-        dumped_photons: pd.DataFrame = None,
-        freq_bins: np.ndarray = None,
-        freq_min: float = None,
-        freq_max: float = None,
-        n_bins: int = 10000,
-        d_norm_pc: float = 100,
-        spec_cycle_norm: float = 1,
-        n_cores_norm: int = 1,
-        logbins: bool = True,
-        mode_dev: bool = False,
-        output_numpy: bool = False) -> Union[np.ndarray, pd.DataFrame]:
-    """Create a spectrum for each inclination angle using the photons which have
-    been dumped to the root.delay_dump file.
+def create_spectrum(root,
+                    wd=".",
+                    extract_nres=(UNFILTERED_SPECTRUM, ),
+                    dumped_photons=None,
+                    freq_bins=None,
+                    freq_min=None,
+                    freq_max=None,
+                    n_bins=10000,
+                    d_norm_pc=100,
+                    spec_cycle_norm=1,
+                    n_cores_norm=1,
+                    logbins=True,
+                    mode_dev=False,
+                    output_numpy=False):
+    """Create a spectrum for each inclination angle using the photons which
+    have been dumped to the root.delay_dump file.
 
     Spectrum frequency bins are rounded to 7 significant figures as this makes
     them the same values as what is output from the Python spectrum.
@@ -575,11 +559,11 @@ def create_spectrum(
     -------
     filtered_spectrum: np.ndarray or pd.DataFrame
         A 2D array containing the frequency in the first column and the
-        fluxes for each inclination angle in the other columns."""
+        fluxes for each inclination angle in the other columns.
+    """
 
     if type(extract_nres) != tuple:
-        print("extract_nres is not a tuple but is of type {}".format(
-            type(extract_nres)))
+        print("extract_nres is not a tuple but is of type {}".format(type(extract_nres)))
         exit(EXIT_FAIL)
 
     # If the frequency bins have been provided, we need to do some checks to make
@@ -590,9 +574,7 @@ def create_spectrum(
             freq_bins = np.array(freq_bins, dtype=np.float64)
         is_increasing = np.all(np.diff(freq_bins) > 0)
         if not is_increasing:
-            raise ValueError(
-                "the values for the frequency bins provided are not increasing"
-            )
+            raise ValueError("the values for the frequency bins provided are not increasing")
         n_bins = len(freq_bins)
 
     if dumped_photons is None:
@@ -614,15 +596,9 @@ def create_spectrum(
         if not freq_max:
             freq_max = np.max(dumped_photons["Freq."])
         if logbins:
-            spectrum[:, 0] = np.logspace(np.log10(freq_min),
-                                         np.log10(freq_max),
-                                         n_bins,
-                                         endpoint=True)
+            spectrum[:, 0] = np.logspace(np.log10(freq_min), np.log10(freq_max), n_bins, endpoint=True)
         else:
-            spectrum[:, 0] = np.linspace(freq_min,
-                                         freq_max,
-                                         n_bins,
-                                         endpoint=True)
+            spectrum[:, 0] = np.linspace(freq_min, freq_max, n_bins, endpoint=True)
 
     # This function now constructs a spectrum given the photon frequencies and
     # weights as well as any other normalization constants
@@ -630,12 +606,9 @@ def create_spectrum(
     freq_min = np.min(spectrum[:, 0])
     freq_max = np.max(spectrum[:, 0])
 
-    spectrum = bin_photon_weights(
-        spectrum, freq_min, freq_max, dumped_photons["Freq."].values,
-        dumped_photons["Weight"].values,
-        dumped_photons["Spec."].values.astype(int) + 1,
-        dumped_photons["Res."].values.astype(int), line_res, extract_nres,
-        logbins)
+    spectrum = bin_photon_weights(spectrum, freq_min, freq_max, dumped_photons["Freq."].values,
+                                  dumped_photons["Weight"].values, dumped_photons["Spec."].values.astype(int) + 1,
+                                  dumped_photons["Res."].values.astype(int), line_res, extract_nres, logbins)
 
     spectrum[:, 1:] /= n_cores_norm
 
@@ -646,15 +619,14 @@ def create_spectrum(
     n_bins -= 2
     spectrum = spectrum[1:-1, :]
 
-    spectrum, inclinations = write_delay_dump_spectrum_to_file(
-        root,
-        wd,
-        spectrum,
-        extract_nres,
-        n_spec,
-        n_bins,
-        d_norm_pc,
-        return_inclinations=True)
+    spectrum, inclinations = write_delay_dump_spectrum_to_file(root,
+                                                               wd,
+                                                               spectrum,
+                                                               extract_nres,
+                                                               n_spec,
+                                                               n_bins,
+                                                               d_norm_pc,
+                                                               return_inclinations=True)
 
     if output_numpy:
         return spectrum
@@ -666,7 +638,7 @@ def create_spectrum(
 
 
 class Photon(Base):
-    """Photon object for SQL database"""
+    """Photon object for SQL database."""
     __tablename__ = "Photons"
     id = Column(Integer, primary_key=True, autoincrement=True)
     np = Column(Integer)
@@ -688,10 +660,7 @@ class Photon(Base):
         return str(self.id)
 
 
-def get_photon_db(root: str,
-                  cd: str = ".",
-                  dd_dev: bool = False,
-                  commitfreq: int = 1000000):
+def get_photon_db(root, cd=".", dd_dev=False, commitfreq=1000000):
     """Create or open a database to store the delay_dump file in an easier to
     query data structure.
 
@@ -714,23 +683,23 @@ def get_photon_db(root: str,
     engine:
         The SQLalchemy engine.
     session:
-        The SQLalchemy session."""
+        The SQLalchemy session.
+    """
 
     engine = sqlalchemy.create_engine("sqlite:///{}.db".format(root))
-    Session = sessionmaker(bind=engine)
-    session = Session()
+    engine_session = sessionmaker(bind=engine)
+    session = engine_session()
 
     if dd_dev:
-        colnames = [
-            "Freq", "Lambda", "Weight", "LastX", "LastY", "LastZ", "Scat",
-            "RScat", "Delay", "Spec", "Orig", "Res"
+        column_names = [
+            "Freq", "Lambda", "Weight", "LastX", "LastY", "LastZ", "Scat", "RScat", "Delay", "Spec", "Orig", "Res"
         ]
     else:
-        colnames = [
-            "Np", "Freq", "Lambda", "Weight", "LastX", "LastY", "LastZ",
-            "Scat", "RScat", "Delay", "Spec", "Orig", "Res", "LineRes"
+        column_names = [
+            "Np", "Freq", "Lambda", "Weight", "LastX", "LastY", "LastZ", "Scat", "RScat", "Delay", "Spec", "Orig",
+            "Res", "LineRes"
         ]
-    ncols = len(colnames)
+    n_columns = len(column_names)
 
     try:
         session.query(Photon.weight).first()
@@ -745,13 +714,10 @@ def get_photon_db(root: str,
                 try:
                     values = [float(i) for i in line.split()]
                 except ValueError:
-                    print(
-                        "Line {} has values which cannot be converted into a number"
-                        .format(n))
+                    print("Line {} has values which cannot be converted into a number".format(n))
                     continue
-                if len(values) != ncols:
-                    print("Line {} has unknown format with {} columns:\n{}".
-                          format(n, len(values), line))
+                if len(values) != n_columns:
+                    print("Line {} has unknown format with {} columns:\n{}".format(n, len(values), line))
                     continue
                 if dd_dev:
                     session.add(

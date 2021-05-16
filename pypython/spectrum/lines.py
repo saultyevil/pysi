@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Functions to analyse spectral lines.
-"""
-
-from typing import Tuple, Union
+"""Functions to analyse spectral lines."""
 
 import numpy as np
 from matplotlib import pyplot as plt
 
-from .extrautil.error import EXIT_FAIL
-from .plot import ax_add_line_ids, common_lines, get_y_lims_for_x_lims
-from .util import get_array_index
+from pypython import get_array_index
+from pypython.error import EXIT_FAIL
+from pypython.plot import ax_add_line_ids, common_lines, get_y_lims_for_x_lims
 
 
 def fit_gaussian():
@@ -19,15 +15,13 @@ def fit_gaussian():
     return NotImplementedError
 
 
-def measure_equivalent_width(
-        wavelength: np.ndarray,
-        flux: np.ndarray,
-        display_xmin: float,
-        display_xmax: float,
-        ret_fit: bool = False) -> Union[float, Tuple[float, np.poly1d]]:
-    """Measure the equivalent width for an emission or absorption line. A matplotlib
-    window will pop up, allowing the user to click on either side of the line
-    feature where it ends. A continuum is then fit using a linear fit."""
+def measure_equivalent_width(wavelength, flux, display_xmin, display_xmax, ret_fit=False):
+    """Measure the equivalent width for an emission or absorption line.
+
+    A matplotlib window will pop up, allowing the user to click on
+    either side of the line feature where it ends. A continuum is then
+    fit using a linear fit.
+    """
 
     coords = []
 
@@ -58,8 +52,7 @@ def measure_equivalent_width(
 
     is_increasing = np.all(np.diff(wavelength) > 0)
     if not is_increasing:
-        raise ValueError(
-            "the values for the wavelength bins provided are not increasing")
+        raise ValueError("the values for the wavelength bins provided are not increasing")
 
     # Plot the spectrum, then allow the user to click on the edges of the line
     # to label where it starts and stops
@@ -67,12 +60,7 @@ def measure_equivalent_width(
     fig, ax = plt.subplots(figsize=(12, 5))
     ax.loglog(wavelength, flux, linewidth=2, label="Spectrum")
     ax.set_xlim(display_xmin, display_xmax)
-    ax.set_ylim(
-        get_y_lims_for_x_lims(wavelength,
-                              flux,
-                              display_xmin,
-                              display_xmax,
-                              scale=2))
+    ax.set_ylim(get_y_lims_for_x_lims(wavelength, flux, display_xmin, display_xmax, scale=2.0))
     ax.set_xlabel("Wavelength")
     ax.set_ylabel("Flux")
     ax = ax_add_line_ids(ax, common_lines(), logx=True)
@@ -113,12 +101,7 @@ def measure_equivalent_width(
     # ax.plot(a, b, linewidth=2, label="Extracted bit")
     ax.plot(a, fit(a), label="Linear fit")
     ax.set_xlim(display_xmin, display_xmax)
-    ax.set_ylim(
-        get_y_lims_for_x_lims(wavelength,
-                              flux,
-                              display_xmin,
-                              display_xmax,
-                              scale=2))
+    ax.set_ylim(get_y_lims_for_x_lims(wavelength, flux, display_xmin, display_xmax, scale=2.0))
     ax.legend()
     ax.set_xlabel("Wavelength")
     ax.set_ylabel("Flux")
@@ -144,8 +127,7 @@ def measure_equivalent_width(
     n_bins = len(wavelength_ew)
     for i in range(1, n_bins):
         d_wavelength = wavelength_ew[i] - wavelength_ew[i - 1]
-        w += (flux_continuum_ew[i] -
-              flux_ew[i]) / flux_continuum_ew[i] * d_wavelength
+        w += (flux_continuum_ew[i] - flux_ew[i]) / flux_continuum_ew[i] * d_wavelength
 
     # Take the absolute value, as can be negative depending on if the line is in
     # emission or absorption
@@ -159,7 +141,7 @@ def measure_equivalent_width(
 
 
 def full_width_half_maximum():
-    """Calculate the full width had maximum (FWHM) of a spectral line"""
+    """Calculate the full width had maximum (FWHM) of a spectral line."""
     def midpoints():
         raise NotImplementedError
 

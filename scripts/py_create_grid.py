@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Create and run a grid of Python simulations. Note that this script has to be
+"""Create and run a grid of Python simulations. Note that this script has to be
 edited before being called as I didn't want to add one billion command line
 arguments/switches to the script like with py_run.
 
@@ -19,11 +18,10 @@ from typing import List
 # from iridis_create_slurm_file import write_slurm_file
 
 
-def create_grid(pf: str, parameter: str, grid: List[str], ncores: int,
-                thours: int, names: List[str], flags: str) -> List[str]:
-    """The purpose of this function is to use a base parameter file and to create
-    directories containing parameter files with a different value to the given
-    parameter. These values are given in grid.
+def create_grid(pf, parameter, grid, ncores, thours, names, flags):
+    """The purpose of this function is to use a base parameter file and to
+    create directories containing parameter files with a different value to the
+    given parameter. These values are given in grid.
 
     This function will only work with one parameter and grids of multiple
     parameters cannot be created.
@@ -52,7 +50,8 @@ def create_grid(pf: str, parameter: str, grid: List[str], ncores: int,
     Returns
     -------
     pfs: List[str]
-        A list containing the file paths to the newly created pfs."""
+        A list containing the file paths to the newly created pfs.
+    """
 
     if pf.find(".pf") == -1:
         pf += ".pf"
@@ -62,8 +61,7 @@ def create_grid(pf: str, parameter: str, grid: List[str], ncores: int,
         if line == "/":  # todo: switch to using rfind
             sl = i  # This will find the index of the final /
     pl = pf.find(".pf")
-    root = pf[sl:
-              pl]  # Now we can extract just the root name from the file path
+    root = pf[sl:pl]  # Now we can extract just the root name from the file path
     shutil.copyfile(pf, pf + ".bak")
 
     with open(pf, "r") as f:
@@ -103,7 +101,7 @@ def create_grid(pf: str, parameter: str, grid: List[str], ncores: int,
     return pfs
 
 
-def run_grid() -> List[str]:
+def run_grid():
     """Main controlling function of the script."""
 
     # This is the parameter which will be changed
@@ -118,8 +116,7 @@ def run_grid() -> List[str]:
         grid.append("{:.4e}".format(tmp[i]))
     print(parameter, grid)
 
-    print(
-        "ENSURE THAT THE SCRIPT HAS BEEN EDITED APPROPRIATELY BEFORE RUNNING")
+    print("ENSURE THAT THE SCRIPT HAS BEEN EDITED APPROPRIATELY BEFORE RUNNING")
     input("Press a enter to continue...")
 
     print("Running grid of {} simulations:".format(len(grid)))

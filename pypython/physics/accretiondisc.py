@@ -1,26 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Functions to calculate parameters and quantities for accretion discs and
-accretion in general live here. For example, there are functions for the
-temperature profile for an alpha-disc, as well as functions to calculate the
-Eddington luminosity or to create a simple accretion disc spectrum.
-"""
+"""Equations for accretion discs.
 
-from typing import Union
+Includes temperature profiles, calculations for the Eddington luminosity
+and accretion rate and also a function to create a crude accretion disc
+spectrum.
+"""
 
 import numpy as np
 import pandas as pd
 
-from .blackbody import planck_lambda, planck_nu
-from .blackhole import gravitational_radius, innermost_stable_circular_orbit
-from .constants import (MPROT, MSOL, MSOL_PER_YEAR, PI, STEFAN_BOLTZMANN,
-                        THOMPSON, C, G)
+from pypython.constants import (MPROT, MSOL, MSOL_PER_YEAR, PI, STEFAN_BOLTZMANN, THOMPSON, C, G)
+from pypython.physics.blackbody import planck_lambda, planck_nu
+from pypython.physics.blackhole import (gravitational_radius, innermost_stable_circular_orbit)
 
 
-def alpha_disc_effective_temperature(ri: Union[np.ndarray, float], r_co: float,
-                                     m_co: float,
-                                     mdot: float) -> Union[float, np.ndarray]:
+def alpha_disc_effective_temperature(ri, r_co, m_co, mdot):
     """Standard alpha-disc effective temperature profile.
 
     Parameters
@@ -38,7 +33,8 @@ def alpha_disc_effective_temperature(ri: Union[np.ndarray, float], r_co: float,
     Returns
     -------
     teff: np.ndarray or float
-        The effective temperature at the provided radius or radii."""
+        The effective temperature at the provided radius or radii.
+    """
 
     m_co *= MSOL
     mdot *= MSOL_PER_YEAR
@@ -50,9 +46,7 @@ def alpha_disc_effective_temperature(ri: Union[np.ndarray, float], r_co: float,
     return teff4**0.25
 
 
-def modified_eddigton_alpha_disc_effective_temperature(
-        ri: Union[np.ndarray, float], m_co: float,
-        mdot: float) -> Union[float, np.ndarray]:
+def modified_eddington_alpha_disc_effective_temperature(ri, m_co, mdot):
     """The effective temperature profile from Strubbe and Quataert 2009.
 
     Parameters
@@ -68,7 +62,8 @@ def modified_eddigton_alpha_disc_effective_temperature(
     Returns
     -------
     teff: np.ndarray or float
-        The effective temperature at the provided radius or radii."""
+        The effective temperature at the provided radius or radii.
+    """
 
     risco = innermost_stable_circular_orbit(m_co)
     rg = gravitational_radius(m_co)
@@ -79,15 +74,13 @@ def modified_eddigton_alpha_disc_effective_temperature(
 
     with np.errstate(all="ignore"):
         fnt = 1 - np.sqrt(risco / ri)
-        teff4 = (3 * G * m_co * mdot * fnt) / (8 * PI * ri**3 *
-                                               STEFAN_BOLTZMANN)
-        teff4 *= (0.5 + (0.25 + 6 * fnt * (mdot * C**2 / ledd)**2 *
-                         (ri / rg)**-2)**0.5)**-1
+        teff4 = (3 * G * m_co * mdot * fnt) / (8 * PI * ri**3 * STEFAN_BOLTZMANN)
+        teff4 *= (0.5 + (0.25 + 6 * fnt * (mdot * C**2 / ledd)**2 * (ri / rg)**-2)**0.5)**-1
 
     return teff4**0.25
 
 
-def eddington_accretion_limit(mbh: float, efficiency: float) -> float:
+def eddington_accretion_limit(mbh, efficiency):
     """Calculate the Eddington accretion limit for a black hole. Note that the
     accretion rate can be larger than the Eddington accretion rate. See, for
     example, Foundations of High-Energy Astrophysics by Mario Vietri.
@@ -101,14 +94,15 @@ def eddington_accretion_limit(mbh: float, efficiency: float) -> float:
 
     Returns
     -------
-    The Eddington accretion rate in units of grams / second."""
+    The Eddington accretion rate in units of grams / second.
+    """
 
     mbh *= MSOL
 
     return (4 * PI * G * mbh * MPROT) / (efficiency * C * THOMPSON)
 
 
-def eddington_luminosity_limit(mbh: float) -> float:
+def eddington_luminosity_limit(mbh):
     """Calculate the Eddington luminosity for accretion onto a black hole.
 
     Parameters
@@ -118,22 +112,15 @@ def eddington_luminosity_limit(mbh: float) -> float:
 
     Returns
     -------
-    The Eddington luminosity for the black hole in units of ergs / second."""
+    The Eddington luminosity for the black hole in units of ergs / second.
+    """
 
     mbh *= MSOL
 
     return (4 * PI * G * mbh * C * MPROT) / THOMPSON
 
 
-def create_disc_spectrum(m_co: float,
-                         mdot: float,
-                         r_in: float,
-                         r_out: float,
-                         freq_min: float,
-                         freq_max: float,
-                         freq_units: bool = True,
-                         n_freq: int = 5000,
-                         n_rings: int = 1000) -> np.array:
+def create_disc_spectrum(m_co, mdot, r_in, r_out, freq_min, freq_max, freq_units=True, n_freq=5000, n_rings=1000):
     """Create a crude accretion disc spectrum. This works by approximating an
     accretion disc as being a collection of annuli radiating at different
     temperatures and treats them as a blackbody. The emerging spectrum is then
@@ -165,7 +152,8 @@ def create_disc_spectrum(m_co: float,
     s: pd.DataFrame
         The accretion disc spectrum. If in frequency units, the columns are
         "Freq." (Hz) and "Lum" (ergs/s/cm^2/Hz). If in wavelength units, the columns are
-        "Lambda" (A) and "Lum" (ergs/s/cm^2/A)."""
+        "Lambda" (A) and "Lum" (ergs/s/cm^2/A).
+    """
 
     if freq_units:
         xlabel = "Freq."

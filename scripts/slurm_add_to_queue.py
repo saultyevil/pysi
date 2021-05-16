@@ -1,23 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Search recursively for .slurm files and add them to the slurm queue.
-"""
+"""Search recursively for .slurm files and add them to the slurm queue."""
 
 import argparse as ap
 from pathlib import Path
 from subprocess import PIPE, Popen
-from typing import List, Tuple
 
 
-def split_path_and_filename(filepath: str) -> Tuple[str, str]:
+def split_path_and_filename(filepath):
     """Extract the slurm file name and the directory it is in from the entire
     file path.
 
     Parameters
     ----------
     filepath: str
-        The filepath to split the slurm file name and directory from."""
+        The filepath to split the slurm file name and directory from.
+    """
 
     assert (type(filepath) == str)
 
@@ -37,14 +35,15 @@ def split_path_and_filename(filepath: str) -> Tuple[str, str]:
     return slurm_file, directory
 
 
-def add_files_to_slurm_queue(slurm_files: List[str]) -> None:
+def add_files_to_slurm_queue(slurm_files):
     """Add a bunch of slurm files to the slurm queue. Uses subprocess and so
     only works on macOS and Linux.
 
     Parameters
     ----------
     slurm_files: List[str]
-        A list containing the slurm file paths to add to the queue."""
+        A list containing the slurm file paths to add to the queue.
+    """
 
     rc = []
 
@@ -65,7 +64,7 @@ def add_files_to_slurm_queue(slurm_files: List[str]) -> None:
     return
 
 
-def find_slurm_files(filepath: str = ".") -> List[str]:
+def find_slurm_files(filepath="."):
     """Searches recursively from the calling direction for files which end with
     the extension *.slurm and returns a list of the found files.
 
@@ -77,7 +76,8 @@ def find_slurm_files(filepath: str = ".") -> List[str]:
     Returns
     -------
     slurm_files: List[str]
-        A list containing the relative paths of the slurm files."""
+        A list containing the relative paths of the slurm files.
+    """
 
     slurm_files = []
 
@@ -96,13 +96,14 @@ def find_slurm_files(filepath: str = ".") -> List[str]:
     return slurm_files
 
 
-def setup() -> bool:
+def setup():
     """Parse the command line for run time arguments.
 
     Returns
     -------
     add_to_queue: bool
-        Indicates whether to add the slurm files to the queue or not."""
+        Indicates whether to add the slurm files to the queue or not.
+    """
 
     p = ap.ArgumentParser(description=__doc__)
     p.add_argument("-a",
@@ -116,14 +117,13 @@ def setup() -> bool:
     return args.add_to_queue
 
 
-def main() -> None:
+def main():
     """Main function of the script."""
 
     add_to_queue = setup()
     slurm_files = find_slurm_files()
 
-    print("The following {} .slurm files will be added to the queue:\n".format(
-        len(slurm_files)))
+    print("The following {} .slurm files will be added to the queue:\n".format(len(slurm_files)))
     for n, file in enumerate(slurm_files):
         print("{}\t{}".format(n + 1, file))
     print("")

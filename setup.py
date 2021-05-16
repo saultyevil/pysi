@@ -12,12 +12,14 @@ setup(
       author="Edward J. Parkinson",
       author_email="e.j.parkinson@soton.ac.uk",
       license="MIT",
-      packages=["pypython", "pypython/physics", "pypython/extrautil"],
+      packages=["pypython", "pypython/math", "pypython/physics", "pypython/plot",
+                "pypython/simulation", "pypython/spectrum", "pypython/util",
+                "pypython/wind"],
       zip_safe=False,
       install_requires=[
             "matplotlib", "scipy", "numpy", "pandas", "astropy", "numba",
             "psutil", "pathlib", "argparse", "google-api-python-client",
             "google-auth-httplib2", "google-auth-oauthlib", "sphinx",
-            "karma_sphinx_theme", "automodinit", "sqlalchemy"
+            "karma_sphinx_theme", "sqlalchemy"
       ]
 )

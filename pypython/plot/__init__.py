@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Functions for helping plotting with matplotlib.
-"""
+"""The basic/universal plotting functions of pypython.
 
-from typing import List, Tuple, Union
+The module includes functions for normalizing the style, as well as ways
+to finish the plot. Included in pypython are functions to plot the
+spectrum files and the wind save tables.
+"""
 
 import numpy as np
 from matplotlib import pyplot as plt
 
-from .extrautil.error import DimensionError
-from .physics.constants import ANGSTROM, C
+from pypython.constants import ANGSTROM, C
+from pypython.error import DimensionError
 
 
 def normalize_figure_style():
@@ -49,9 +50,12 @@ def normalize_figure_style():
     return parameters
 
 
-def subplot_dims(n_plots: int) -> Tuple[int, int]:
-    """Return the dimensions for a plot with multiple subplot panels.
-    todo: include more plot subdivisions
+def subplot_dims(n_plots):
+    """Get the number of rows and columns for the give number of plots.
+
+    Returns how many rows and columns should be used to have the correct
+    number of figures available. This doesn't return anything larger than
+    3 columns, but the number of rows can be large.
 
     Parameters
     ----------
@@ -61,32 +65,25 @@ def subplot_dims(n_plots: int) -> Tuple[int, int]:
     Returns
     -------
     dims: Tuple[int, int]
-        The dimensions of the subplots returned as (nrows, ncols)"""
-
-    n_rows = n_cols = 1
-
-    if n_plots < 1:
-        return n_rows, n_cols
-
-    if n_plots > 2:
-        n_cols = 2
-        n_rows = (1 + n_plots) // n_cols
-    elif n_plots > 9:
+        The dimensions of the subplots returned as (nrows, ncols)
+    """
+    if n_plots > 9:
         n_cols = 3
         n_rows = (1 + n_plots) // n_cols
+    elif n_plots < 2:
+        n_rows = n_cols = 1
     else:
-        n_cols = 1
-        n_rows = n_plots
+        n_cols = 2
+        n_rows = (1 + n_plots) // n_cols
 
     return n_rows, n_cols
 
 
-def remove_extra_axes(
-        fig: plt.Figure, ax: Union[plt.Axes, np.ndarray], n_wanted: int,
-        n_panel: int) -> Tuple[plt.Figure, Union[plt.Axes, np.ndarray]]:
-    """Remove additional axes which are included in a plot. This can be used if you
-    have 4 x 2 = 8 panels but only want to use 7 of tha panels. The 8th panel
-    will be removed.
+def remove_extra_axes(fig, ax, n_wanted, n_panel):
+    """Remove additional axes which are included in a plot.
+
+    This should be used if you have 4 x 2 = 8 panels but only want to use 7 of
+    the panels, in this case the 8th panel will be removed.
 
     Parameters
     ----------
@@ -104,7 +101,8 @@ def remove_extra_axes(
     fig: plt.Figure
         The modified Figure.
     ax: plt.Axes
-        The modified Axes."""
+        The modified Axes.
+    """
 
     if type(ax) != np.ndarray:
         return fig, ax
@@ -127,15 +125,11 @@ def remove_extra_axes(
     return fig, ax
 
 
-def get_y_lims_for_x_lims(x: np.array,
-                          y: np.array,
-                          xmin: float,
-                          xmax: float,
-                          scale: float = 10
-                          ) -> Union[Tuple[float, float], Tuple[None, None]]:
-    """Determine the lower and upper y limits for a matplotlib plot given a
-    restricted x range, since matplotlib doesn't do this automatically.
+def get_y_lims_for_x_lims(x, y, xmin, xmax, scale=10):
+    """Determine the lower and upper y for the given x range.
 
+    Useful as matplotlib does not rescale the y limits when the x range is
+    restricted.
 
     Parameters
     ----------
@@ -155,14 +149,13 @@ def get_y_lims_for_x_lims(x: np.array,
     ymin: float
         The lowest y value.
     ymax: float
-        The highest y value."""
+        The highest y value.
+    """
 
     n = get_y_lims_for_x_lims.__name__
 
     if x.shape[0] != y.shape[0]:
-        raise DimensionError(
-            "{}: x and y are of different dimensions x {} y {}".format(
-                n, x.shape, y.shape))
+        raise DimensionError("{}: x and y are of different dimensions x {} y {}".format(n, x.shape, y.shape))
 
     if not xmin or not xmax:
         return None, None
@@ -186,7 +179,7 @@ def get_y_lims_for_x_lims(x: np.array,
     return ymin, ymax
 
 
-def common_lines(freq: bool = False) -> list:
+def common_lines(freq=False):
     """Return a list containing the names of line transitions and the
     wavelength of the transition in Angstroms. Instead of returning the
     wavelength, the frequency can be returned instead. It is also possible to
@@ -202,7 +195,8 @@ def common_lines(freq: bool = False) -> list:
     line: List[List[str, float]]
         A list of lists where each element of the list is the name of the
         transition/edge and the rest wavelength of that transition in
-        Angstroms."""
+        Angstroms.
+    """
 
     lines = [
         ["N III/O III", 305],
@@ -238,7 +232,7 @@ def common_lines(freq: bool = False) -> list:
     return lines
 
 
-def photoionization_edges(freq: bool = False) -> list:
+def photoionization_edges(freq=False):
     """Return a list containing the names of line transitions and the
     wavelength of the transition in Angstroms. Instead of returning the
     wavelength, the frequency can be returned instead. It is also possible to
@@ -254,7 +248,8 @@ def photoionization_edges(freq: bool = False) -> list:
     edges: List[List[str, float]]
         A list of lists where each element of the list is the name of the
         transition/edge and the rest wavelength of that transition in
-        Angstroms."""
+        Angstroms.
+    """
 
     edges = [
         ["He II", 229],
@@ -271,14 +266,7 @@ def photoionization_edges(freq: bool = False) -> list:
     return edges
 
 
-def ax_add_line_ids(ax: plt.Axes,
-                    lines: list,
-                    linestyle: str = "dashed",
-                    ynorm: float = 0.90,
-                    logx: bool = False,
-                    offset: float = 25,
-                    rotation: str = "vertical",
-                    fontsize: int = 10) -> plt.Axes:
+def ax_add_line_ids(ax, lines, linestyle="dashed", ynorm=0.90, logx=False, offset=25, rotation="vertical", fontsize=10):
     """Add labels for line transitions or other regions of interest onto a
     matplotlib figure. Labels are placed at the top of the panel and dashed
     lines, with zorder = 0, are drawn from top to bottom.
@@ -330,8 +318,7 @@ def ax_add_line_ids(ax: plt.Axes,
         # Calculate the x location of the label in axes coordinates
 
         if logx:
-            xnorm = (np.log10(x) - np.log10(xlims[0])) / (np.log10(xlims[1]) -
-                                                          np.log10(xlims[0]))
+            xnorm = (np.log10(x) - np.log10(xlims[0])) / (np.log10(xlims[1]) - np.log10(xlims[0]))
         else:
             xnorm = (x - xlims[0]) / (xlims[1] - xlims[0])
 
@@ -345,3 +332,8 @@ def ax_add_line_ids(ax: plt.Axes,
                 transform=ax.transAxes)
 
     return ax
+
+
+# This is placed here due to a circular dependency -----------------------------
+
+from pypython.plot import misc, spectrum, wind

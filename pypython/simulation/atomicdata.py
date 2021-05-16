@@ -1,26 +1,26 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-The point of this part of pypython is to manipulating the atomic data used in
-Python, to i.e. remove various transitions from the data..
+"""Remove certain interactions form the atomic data.
+
+Sometimes it's desirable to remove certain resonance line or
+photoioniation cross-sections from the atomic data, so photons do not
+interact with them.
 """
 
 from os import getenv
 from sys import exit
 
-from .extrautil.error import EXIT_FAIL
+from pypython.error import EXIT_FAIL
 
 
-def remove_photoionization_edge(data: str,
-                                atomic_number: int,
-                                ionization_state: int,
-                                new_value: float = 9e99) -> None:
-    """Remove a transition or element from some atomic data. Creates a new atomic
-    data file which is placed in the current working or given directory.
+def remove_photoionization_edge(data, atomic_number, ionization_state, new_value=9e99):
+    """Remove a transition or element from some atomic data.
 
-    To remove a photionization edge from the data, the frequency threshold is,
-    by default, set to something large. It is also possible to just change this
-    threshold instead to something else (for experimentation reasons?).
+    Creates a new atomic data file which is placed in the current working or
+    given directory. To remove a photionization edge from the data, the
+    frequency threshold is, by default, set to something large. It is also
+    possible to just change this threshold instead to something else
+    (for experimentation reasons?).
 
     Parameters
     ----------
@@ -32,7 +32,8 @@ def remove_photoionization_edge(data: str,
     ionization_state: int
         The ionization state corresponding to the edge to be removed.
     new_value: [optional] float
-        The value of the new frequency threshold for the edge."""
+        The value of the new frequency threshold for the edge.
+    """
 
     data = data.lower()
     allowed_data = [
@@ -41,8 +42,7 @@ def remove_photoionization_edge(data: str,
     ]
 
     if data not in allowed_data:
-        print("atomic data {} is unknown, known types are {}".format(
-            data, allowed_data))
+        print("atomic data {} is unknown, known types are {}".format(data, allowed_data))
         exit(EXIT_FAIL)
 
     filename = getenv("PYTHON") + "/xdata/atomic/"
@@ -72,8 +72,7 @@ def remove_photoionization_edge(data: str,
     while i < (len(lines)):
         line = lines[i].split() + ["\n"]
 
-        if line[0] == stop and line[1] == atomic_number and line[
-                2] == ionization_state:
+        if line[0] == stop and line[1] == atomic_number and line[2] == ionization_state:
             line[5] = new_value
             new.append(" ".join(line))
 
@@ -93,9 +92,9 @@ def remove_photoionization_edge(data: str,
     return
 
 
-def remove_bound_bound_transitions_ion(atomic_number: int,
-                                       ionization_state: int) -> None:
-    """Remove all bound-bound transitions for a single ion from the atomic data.
+def remove_bound_bound_transitions_ion(atomic_number, ionization_state):
+    """Remove all bound-bound transitions for a single ion.
+
     This is achieved by setting the oscillator strengths of the transition, f,
     to f = 0, effectively removing the transition.
 
@@ -104,7 +103,8 @@ def remove_bound_bound_transitions_ion(atomic_number: int,
     atomic_number: int
         The atomic number for the ion/atom the line is associated with.
     ionization_state: int
-        The ionization state of the ion/atom the line is associated with."""
+        The ionization state of the ion/atom the line is associated with.
+    """
 
     filename = getenv("PYTHON") + "/xdata/atomic/lines_linked_ver_2.dat"
 

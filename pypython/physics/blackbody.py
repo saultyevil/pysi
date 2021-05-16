@@ -1,34 +1,33 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Contains functions for calculating the properties of a blackbody.
-"""
+"""Blackbody functions for wavelength and frequency.
 
-from typing import Union
+In wavelength space, the blackbody function assumes that the wavelength
+is given in units of Angstroms.
+"""
 
 import numpy as np
 
-from .constants import (ANGSTROM, BOLTZMANN, VLIGHT, WIEN_FREQUENCY,
-                        WIEN_WAVELENGTH, H)
+from pypython.constants import (ANGSTROM, BOLTZMANN, VLIGHT, WIEN_FREQUENCY, WIEN_WAVELENGTH, H)
 
 
-def planck_nu(temperature: float,
-              frequency: Union[np.ndarray, float]) -> Union[np.ndarray, float]:
-    """Calculate the monochromatic intensity for a black body given a temperature
-    and frequency of interest.
+def planck_nu(temperature, frequency):
+    """Calculate the monochromatic intensity for a black body given a
+    temperature and frequency of interest.
 
     Parameters
     ----------
     temperature: float
-        The temperature to calculate the function at.
-    frequency: float
-        The frequency to calculate the function at.
+        The temperature of the blackbody.
+    frequency: np.ndarray or float
+        The frequency points to calculate the vale at, in units of Hz.
 
     Returns
     -------
     b_nu: float
         The value of the Planck function with the provided temperature and
-        frequency. Has units ergs s^-1 cm^-2 Hz^-1."""
+        frequency. Has units ergs s^-1 cm^-2 Hz^-1.
+    """
 
     with np.errstate(all="ignore"):
         x = H * frequency / (BOLTZMANN * temperature)
@@ -37,23 +36,23 @@ def planck_nu(temperature: float,
     return b_nu
 
 
-def planck_lambda(temperature: float,
-                  lamda: Union[np.ndarray, float]) -> Union[np.ndarray, float]:
-    """Calculate the monochromatic intensity for a black body given a temperature
-    and frequency of interest.
+def planck_lambda(temperature, lamda):
+    """Calculate the monochromatic intensity for a black body given a
+    temperature and frequency of interest.
 
     Parameters
     ----------
     temperature: float
-        The temperature to calculate the function at.
-    lamda: float
-        The frequency to calculate the function at.
+        The temperature of the blackbody.
+    lamda: np.ndarray or float
+        The wavelength points to calculate the value at, in Angstroms.
 
     Returns
     -------
     b_lamda: float
         The value of the Planck function with the provided temperature and
-        wavelength. Has units ergs s^-1 cm^-2 A^-1."""
+        wavelength. Has units ergs s^-1 cm^-2 A^-1.
+    """
 
     with np.errstate(all="ignore"):
         lcm = lamda * ANGSTROM
@@ -64,7 +63,7 @@ def planck_lambda(temperature: float,
     return b_lamda
 
 
-def wein_law(temperature: float, freq_space: bool = False):
+def wein_law(temperature, freq_space=False):
     """Calculate the peak wavelength of a blackbody curve.
 
     Parameters
@@ -77,7 +76,8 @@ def wein_law(temperature: float, freq_space: bool = False):
     Returns
     -------
     The wavelength (in Angstrom) or frequency where the blackbody curve is
-    at maximum."""
+    at maximum.
+    """
 
     if freq_space:
         return WIEN_FREQUENCY * temperature

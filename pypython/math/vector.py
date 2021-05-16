@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Description of file.
-"""
+"""Basic vector functions which are not part of numpy.
 
-from typing import List, Union
+These are taken directly from python, hence can be a little cursed.
+"""
 
 import numpy as np
 
-from .error import EXIT_FAIL
+from pypython.error import EXIT_FAIL
 
 
-def renormalize_vector(a: np.ndarray, scalar: Union[float, int]) -> np.ndarray:
+def renormalize_vector(a, scalar):
     """This function is used to renormalise a 3-vector quantity.
 
     Parameters
@@ -24,7 +23,8 @@ def renormalize_vector(a: np.ndarray, scalar: Union[float, int]) -> np.ndarray:
     Returns
     -------
     a: np.ndarray
-        The renormalized 3-vector quantity."""
+        The renormalized 3-vector quantity.
+    """
 
     eps = 1e-10
 
@@ -42,9 +42,7 @@ def renormalize_vector(a: np.ndarray, scalar: Union[float, int]) -> np.ndarray:
     return a
 
 
-def project_cartesian_to_cylindrical_coordinates(
-        a: Union[np.ndarray, List[float]],
-        b: Union[np.ndarray, List[float]]) -> np.ndarray:
+def project_cartesian_to_cylindrical_coordinates(a, b):
     """Attempt to project a vector from cartesian into cylindrical coordinates.
 
     Parameters
@@ -59,7 +57,8 @@ def project_cartesian_to_cylindrical_coordinates(
     -------
     result: np.ndarray
         The input vector b which is now projected into cylindrical
-        coordinates."""
+        coordinates.
+    """
 
     result = np.zeros(3)
     n_rho = np.zeros(3)

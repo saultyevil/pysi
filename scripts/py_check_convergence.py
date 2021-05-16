@@ -1,30 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-The purpose of this script is to determine if a simulation has converged or not,
-and to create any plots which are related to the convergence of a simulation.
-"""
+"""The purpose of this script is to determine if a simulation has converged or
+not, and to create any plots which are related to the convergence of a
+simulation."""
 
 from typing import List
 
 import numpy as np
 from matplotlib import pyplot as plt
 
-from pypython import plot, simulation, util
+from pypython import get_file, get_root, plot, simulation, util
 
 COL_WIDTH = 80
 
 
-def plot_convergence(root: str,
-                     convergence: List[float],
-                     converging: List[float] = None,
-                     tr: List[float] = None,
-                     te: List[float] = None,
-                     te_max: List[float] = None,
-                     hc: List[float] = None,
-                     wd: str = "."):
-    """Create a detailed plot of the convergence of a Python simulation, including,
-    if provided, a breakdown of the different convergence criteria.
+def plot_convergence(root, convergence, converging=None, tr=None, te=None, te_max=None, hc=None, wd="."):
+    """Create a detailed plot of the convergence of a Python simulation,
+    including, if provided, a breakdown of the different convergence criteria.
 
     Parameters
     ----------
@@ -43,7 +35,8 @@ def plot_convergence(root: str,
     hc: List[float] [optional]
         The fraction of cells which have converged heating and cooling rates.
     wd: str [optional]
-        The directory containing the Python simulation."""
+        The directory containing the Python simulation.
+    """
 
     plot.normalize_figure_style()
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
@@ -64,19 +57,14 @@ def plot_convergence(root: str,
     if te:
         ax.plot(cycles, te, "--", label="Electron temperature", alpha=0.65)
     if te_max:
-        ax.plot(cycles,
-                te_max,
-                "--",
-                label="Electron temperature max",
-                alpha=0.65)
+        ax.plot(cycles, te_max, "--", label="Electron temperature max", alpha=0.65)
     if hc:
         ax.plot(cycles, hc, "--", label="Heating/Cooling", alpha=0.65)
 
     ax.legend()
     ax.set_xlabel("Cycle")
     ax.set_ylabel("Fraction of Cells Passed")
-    ax.set_title("Final Convergence = {:4.2f}%".format(
-        float(convergence[-1]) * 100))
+    ax.set_title("Final Convergence = {:4.2f}%".format(float(convergence[-1]) * 100))
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
     plt.savefig("{}/{}_convergence.png".format(wd, root))
     plt.close()
@@ -84,37 +72,31 @@ def plot_convergence(root: str,
     return
 
 
-def get_convergence(root: str, wd: str = "./") -> None:
-    """Print out the convergence of a Python simulation and then create a detailed
-    plot of the convergence and convergence break down of the simulation.
+def get_convergence(root, wd="./"):
+    """Print out the convergence of a Python simulation and then create a
+    detailed plot of the convergence and convergence break down of the
+    simulation.
 
     Parameters
     ----------
     root: str
         The root name of the Python simulation.
     wd: str [optional]
-        The directory containing the Python simulation."""
+        The directory containing the Python simulation.
+    """
 
-    convergence = simulation.check_model_convergence(root,
-                                                     wd,
-                                                     return_per_cycle=True)
-    converging = simulation.check_model_convergence(root,
-                                                    wd,
-                                                    return_per_cycle=True,
-                                                    return_converging=True)
+    convergence = simulation.check_model_convergence(root, wd, return_per_cycle=True)
+    converging = simulation.check_model_convergence(root, wd, return_per_cycle=True, return_converging=True)
     tr, te, te_max, hc = simulation.model_convergence_components(root, wd)
 
     n_cycles = len(convergence)
     if n_cycles == 0:
-        print(
-            "Unable to find any convergence information for this model :-(\n")
+        print("Unable to find any convergence information for this model :-(\n")
         return
 
     for i in range(n_cycles):
-        print(
-            "Cycle {:2d} / {:2d}: {:5.2f}% of cells converged and {:5.2f}% of cells are still converging"
-            .format(i + 1, n_cycles, convergence[i] * 100,
-                    converging[i] * 100))
+        print("Cycle {:2d} / {:2d}: {:5.2f}% of cells converged and {:5.2f}% of cells are still converging".format(
+            i + 1, n_cycles, convergence[i] * 100, converging[i] * 100))
     print("")
 
     try:
@@ -132,18 +114,17 @@ def main():
 
     print("-" * COL_WIDTH, "\n")
 
-    parameter_files = util.get_parameter_files()
+    parameter_files = get_file("*.pf")
 
     if len(parameter_files) == 0:
         print("\nCan't find any Python simulations\n")
     else:
         for pf in parameter_files:
-            root, cd = util.get_root_from_filepath(pf)
+            root, cd = util.get_root(pf)
             if cd.find("continuum") != -1:
                 continue
             print("-" * COL_WIDTH)
-            print("\nGetting the convergence for {} in directory {}\n".format(
-                root, cd[:-1]))
+            print("\nGetting the convergence for {} in directory {}\n".format(root, cd[:-1]))
             get_convergence(root, cd)
 
     print("-" * COL_WIDTH)

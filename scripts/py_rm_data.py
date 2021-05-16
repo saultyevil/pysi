@@ -13,16 +13,16 @@ Usage:
 
 from sys import argv, exit
 
-from pypython.util import clean_up_data_sym_links
+from pypython import cleanup_data
 
 if len(argv) == 1:
-    clean_up_data_sym_links("~/PySims", verbose=True)
+    cleanup_data("~/PySims", verbose=True)
 elif len(argv) == 2:
     if argv[1] == "-h" or argv[1] == "--help":
         print(__doc__)
 
         exit(0)
-    clean_up_data_sym_links(argv[1], verbose=True)
+    cleanup_data(argv[1], verbose=True)
 else:
     print("Unknown number of arguments.")
     print(__doc__)

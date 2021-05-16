@@ -1,24 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Tools to send email notifications to update users on the current progress or
-some long program. Requires access to the mcrtpythonupdates@gmail.com Gmail API.
-Currently access to this API is limited.
+"""Simple email notification functions.
+
+Requires access to the mcrtpythonupdates@gmail.com Gmail API. Currently
+access to this API is limited and the refresh token doesn't seem to work
+sometimes.
 """
 
 import base64
 import os
 import pickle
 from email.mime.text import MIMEText
-from typing import Union
 
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import Resource, build
+from googleapiclient.discovery import build
 
 
-def create_email_message(sender: str, to: str, subject: str,
-                         message: str) -> dict:
+def create_email_message(sender, to, subject, message):
     """Create an email message and encode it.
 
     Parameters
@@ -35,21 +34,19 @@ def create_email_message(sender: str, to: str, subject: str,
     Returns
     -------
     message: dict
-        The created email message"""
+        The created email message
+    """
 
     message = MIMEText(message)
     message["to"] = to
     message["from"] = sender
     message["subject"] = subject
-    message = {
-        "raw": base64.urlsafe_b64encode(message.as_string().encode()).decode()
-    }
+    message = {"raw": base64.urlsafe_b64encode(message.as_string().encode()).decode()}
 
     return message
 
 
-def send_email_message(service: Resource, msg: dict,
-                       user: str) -> Union[None, dict]:
+def send_email_message(service, msg, user):
     """Send an email message using the API service.
 
     Parameters
@@ -64,7 +61,8 @@ def send_email_message(service: Resource, msg: dict,
     Returns
     -------
     msg: dict
-        The email message sent"""
+        The email message sent
+    """
 
     try:
         msg = service.users().messages().send(userId=user, body=msg).execute()
@@ -75,10 +73,7 @@ def send_email_message(service: Resource, msg: dict,
     return {}
 
 
-def send_notification(to: str,
-                      subject: str,
-                      notification: str,
-                      sender: str = "mcrtpythonupdates@gmail.com") -> dict:
+def send_notification(to, subject, notification, sender="mcrtpythonupdates@gmail.com"):
     """Send a notification email to the user. Requires access to the Gmail API.
 
     Parameters
@@ -95,7 +90,8 @@ def send_notification(to: str,
     Returns
     -------
     message: dict
-        The message sent"""
+        The message sent
+    """
 
     credentials = None
     scope = ["https://www.googleapis.com/auth/gmail.compose"]
@@ -118,12 +114,10 @@ def send_notification(to: str,
             credentials.refresh(Request())
         else:
             try:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    "credentials.json", scope)
+                flow = InstalledAppFlow.from_client_secrets_file("credentials.json", scope)
             except FileNotFoundError:
                 try:
-                    flow = InstalledAppFlow.from_client_secrets_file(
-                        os.path.expanduser("~/credentials.json"), scope)
+                    flow = InstalledAppFlow.from_client_secrets_file(os.path.expanduser("~/credentials.json"), scope)
                 except FileNotFoundError:
                     return {}
 

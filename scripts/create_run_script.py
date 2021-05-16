@@ -5,7 +5,6 @@ from sys import argv
 from typing import List
 
 from pypython import util
-
 """
 #!/bin/bash
 
@@ -28,8 +27,8 @@ done
 """
 
 
-def create_run_script(commands: List[str]):
-    """Create the run script given a list of commands"""
+def create_run_script(commands):
+    """Create the run script given a list of commands."""
 
     # Find any python parameter file in the directory and subdirectories
     directories = []

@@ -1,22 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Functions used to create a grid of parameter files or to edit a grid of
-parameter files.
-"""
+"""Create or modify a grid of parameter files."""
 
 from shutil import copyfile
 from typing import List
 
 
-def update_single_parameter(path: str,
-                            parameter_name: str,
-                            new_value: str,
-                            backup: bool = True,
-                            verbose: bool = False) -> None:
-    """Change the value of a parameter in a Python parameter file. If the old and
-    new parameter value are the same, the script will still update the parameter
-    file.
+def update_single_parameter(path, parameter_name, new_value, backup=True, verbose=False):
+    """Change the value of a parameter in a Python parameter file.
+
+    If the old and new parameter value are the same, the script will still
+    update the parameter file.
 
     Parameters
     ----------
@@ -29,12 +23,11 @@ def update_single_parameter(path: str,
     backup: bool [optional]
         Create a back up of the original parameter file
     verbose: bool [optional]
-        Enable verbose output to the screen"""
+        Enable verbose output to the screen
+    """
 
     if path.find(".pf") == -1:
-        raise IOError(
-            "provided parameter file path {} is not a .pf parameter file".
-            format(path))
+        raise IOError("provided parameter file path {} is not a .pf parameter file".format(path))
 
     if backup:
         copyfile(path, path + ".bak")
@@ -58,12 +51,10 @@ def update_single_parameter(path: str,
 
     if old and new:
         if verbose:
-            print("changed parameter {} from {} to {}".format(
-                parameter_name, old.replace("\n", ""), new.replace("\n", "")))
+            print("changed parameter {} from {} to {}".format(parameter_name, old.replace("\n", ""),
+                                                              new.replace("\n", "")))
     else:
-        print(
-            "unable to update: could not find parameter {} in file {}".format(
-                parameter_name, path))
+        print("unable to update: could not find parameter {} in file {}".format(parameter_name, path))
         return
 
     with open(path, "w") as f:
@@ -72,14 +63,11 @@ def update_single_parameter(path: str,
     return
 
 
-def add_single_parameter(path: str,
-                         parameter_name: str,
-                         new_value: str,
-                         backup: bool = True) -> None:
-    """Add a parameter which doesn't already exist to the end of an already
-    existing Python parameter file. The parameter will be appended to the
-    end of the parameter file but will be cleaned up in the root.out.pf file
-    once the model is run.
+def add_single_parameter(path, parameter_name, new_value, backup=True):
+    """Add a parameter which doesn't already exist.
+
+    The parameter will be appended to the end of the parameter file but will be
+    cleaned up in the root.out.pf file once the model is run.
 
     Parameters
     ----------
@@ -90,12 +78,11 @@ def add_single_parameter(path: str,
     new_value: str
         The value of the parameter
     backup: bool [optional]
-        Create a back up of the original parameter file"""
+        Create a back up of the original parameter file
+    """
 
     if path.find(".pf") == -1:
-        raise IOError(
-            "provided parameter file path {} is not a .pf parameter file".
-            format(path))
+        raise IOError("provided parameter file path {} is not a .pf parameter file".format(path))
 
     if backup:
         copyfile(path, path + ".bak")
@@ -115,16 +102,13 @@ def add_single_parameter(path: str,
     return
 
 
-def create_grid(path: str,
-                parameter_name: str,
-                grid_values: List[str],
-                extra_name: str = None,
-                backup: bool = True,
-                verbose: bool = False) -> List[str]:
-    """Creates a bunch of new parameter files with the choice of values for a
-    given parameter. This will only work for one parameter at a time and one
-    parameter file. By default, a back up of the original parameter file is made
-    as a safety precaution.
+def create_grid(path, parameter_name, grid_values, extra_name=None, backup=True, verbose=False):
+    """Create a bunch of new parameter files with the choice of values for a
+    given parameter.
+
+    This will only work for one parameter at a time and one parameter file.
+    By default, a back up of the original parameter file is made as a safety
+    precaution.
 
     Parameters
     ----------
@@ -135,7 +119,7 @@ def create_grid(path: str,
     grid_values: List[str]
         A list of values for the simulation grid for the parameter
     extra_name: str [optional]
-        Adds an extra name to the output grid parameter file names
+        Adds an util name to the output grid parameter file names
     backup: bool [optional]
         Create a back up of the original parameter file
     verbose: bool [optional]
@@ -144,7 +128,8 @@ def create_grid(path: str,
     Returns
     -------
     grid: List[str]
-        The paths to the newly generated parameter files for the grid"""
+        The paths to the newly generated parameter files for the grid
+    """
 
     n_grid = len(grid_values)
     grid = []
@@ -154,8 +139,7 @@ def create_grid(path: str,
 
     ext = path.find(".pf")
     if ext == -1:
-        raise IOError(
-            "provided file path {} is not a .pf parameter file".format(path))
+        raise IOError("provided file path {} is not a .pf parameter file".format(path))
 
     for i in range(n_grid):
         path = path[:ext]
@@ -164,11 +148,7 @@ def create_grid(path: str,
         path += "_{}".format(grid_values[i]) + ".pf"
         print(path)
         copyfile(path, path)
-        update_single_parameter(path,
-                                parameter_name,
-                                grid_values[i],
-                                backup=False,
-                                verbose=verbose)
+        update_single_parameter(path, parameter_name, grid_values[i], backup=False, verbose=verbose)
         grid.append(path)
 
     return grid
