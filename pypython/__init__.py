@@ -17,7 +17,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from scipy.signal import boxcar, convolve
 
-from pypython.constants import CMS_TO_KMS, PI, VLIGHT
+from pypython.constants import CMS_TO_KMS, PI, VLIGHT, PARSEC
 from pypython.math import vector
 
 # Functions --------------------------------------------------------------------
@@ -294,7 +294,7 @@ class Spectrum:
     dict are the names of the columns in the spectrum file. The data is
     stored as numpy arrays.
     """
-    def __init__(self, root, fp=".", default=None, log_spec=False, smooth=None, delim=None):
+    def __init__(self, root, fp=".", default=None, log_spec=False, smooth=None, distance=None, delim=None):
         """Create the Spectrum object.
 
         This method will construct the file path of the spectrum files given the
@@ -314,6 +314,8 @@ class Spectrum:
             Read in the logarithmic version of the spectra.
         smooth: int [optional]
             The amount of smoothing to use.
+        distance: float [optional]
+            The distance of the spectrum flux, in units of parsec.
         delim: str [optional]
             The deliminator in the spectrum file.
         """
@@ -333,6 +335,7 @@ class Spectrum:
         self.all_inclinations = {}
         self.all_n_inclinations = {}
         self.all_units = {}
+        self.all_distance = {}
 
         # self.unsmoothed is a variable which keeps a copy of the spectrum for
         # safe keeping if it is smoothed
@@ -356,12 +359,10 @@ class Spectrum:
                 raise ValueError(f"{self.root}.{default} is not available as it has not been read in")
         else:
             self.current = self.available[0]
+        self._set_current(self.current)
 
-        self.spectrum = self.all_spectrum[self.current]
-        self.columns = self.all_columns[self.current]
-        self.inclinations = self.all_inclinations[self.current]
-        self.n_inclinations = self.all_n_inclinations[self.current]
-        self.units = self.all_units[self.current]
+        if distance:
+            self.rescale_flux(distance)
 
         if smooth:
             self.smooth(smooth)
@@ -392,6 +393,7 @@ class Spectrum:
             n_read += 1
             self.all_spectrum[spec_type] = {}
             self.all_units[spec_type] = "unknown"
+            self.all_distance[spec_type] = 0.0
 
             with open(fp, "r") as f:
                 spectrum_file = f.readlines()
@@ -410,6 +412,10 @@ class Spectrum:
                     line = line.split()
                 if "Units:" in line:
                     self.all_units[spec_type] = line[4][1:-1]
+                    if self.all_units[spec_type] in [SPECTRUM_UNITS_FLM, SPECTRUM_UNITS_FNU]:
+                        self.all_distance[spec_type] = float(line[6])
+                    else:
+                        self.all_distance[spec_type] = 0
                 if len(line) == 0 or line[0] == "#":
                     continue
                 spectrum.append(line)
@@ -450,6 +456,28 @@ class Spectrum:
         if n_read == 0:
             raise IOError(f"Unable to open any spectrum files in {self.fp}")
 
+    def rescale_flux(self, distance):
+        """Recale the flux to the given distance.
+
+        Parameters
+        ----------
+        distance: float or int
+            The distance to scale the flux to.
+        """
+        if type(distance) is not float and type(distance) is not int:
+            raise ValueError("distance is not a float or integer")
+
+        for spectrum in self.available:
+            if self.all_units[spectrum] == SPECTRUM_UNITS_LNU:
+                continue
+            for key in self.all_spectrum[spectrum].keys():
+                if key in ["Lambda", "Freq."]:
+                    continue
+                self.all_spectrum[spectrum][key] *= (self.all_distance[spectrum] * PARSEC)**2 / (distance * PARSEC)**2
+            self.all_distance[spectrum] = distance
+
+        self.distance = distance
+
     def smooth(self, width=5, to_smooth=None):
         """Smooth the spectrum flux/luminosity bins.
 
@@ -460,9 +488,6 @@ class Spectrum:
         to_smooth: list or tuple of strings [optional]
             A list or tuple
         """
-
-        # Create a backup of the unsmoothed array before it is smoothed it
-
         if self.original is None:
             self.original = copy.deepcopy(self.spectrum)
 
@@ -500,6 +525,24 @@ class Spectrum:
 
         self.spectrum = copy.deepcopy(self.original)
 
+    def _set_current(self, target):
+        """Set the current target spectrum.
+
+        Parameters
+        ----------
+        target: str
+            The name of the spectrum to become the current.
+        """
+        if target not in self.available:
+            raise ValueError(f"spectrum {target} is not available: available are {self.available}")
+
+        self.spectrum = self.all_spectrum[target]
+        self.columns = self.all_columns[target]
+        self.inclinations = self.all_inclinations[target]
+        self.n_inclinations = self.all_n_inclinations[target]
+        self.units = self.all_units[target]
+        self.distance = self.all_distance[target]
+
     def set(self, name):
         """Set a spectrum as the default.
 
@@ -512,19 +555,10 @@ class Spectrum:
             The name of the spectrum, i.e. log_spec or spec_tot, etc. The
             available spectrum types are stored in self.available.
         """
-
         if self.log_spec and not name.startswith("log_"):
             name = "log_" + name
 
-        if name not in self.available:
-            raise ValueError(f"Spectrum {name} is not available: available {self.available}")
-
-        self.current = name
-        self.spectrum = self.all_spectrum[self.current]
-        self.columns = self.all_columns[self.current]
-        self.inclinations = self.all_inclinations[self.current]
-        self.n_inclinations = self.all_n_inclinations[self.current]
-        self.units = self.all_units[self.current]
+        self._set_current(name)
 
     def _plot_specific(self, name, label_lines=False, ax_update=None):
         """Plot a specific column in a spectrum file.
@@ -536,7 +570,6 @@ class Spectrum:
         ax_update: plt.Axes
             An plt.Axes object to update, i.e. to plot on.
         """
-
         normalize_figure_style()
 
         if not ax_update:
@@ -550,16 +583,16 @@ class Spectrum:
         if self.units == SPECTRUM_UNITS_FLM:
             ax.plot(self.spectrum["Lambda"], self.spectrum[name], label=name)
             ax.set_xlabel(r"Wavelength [\AA]")
-            ax.set_ylabel(r"Flux Density 100 pc [erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
+            ax.set_ylabel(r"Flux Density " + f"{self.distance}" + r"pc [erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
             if label_lines:
                 ax = ax_add_line_ids(ax, common_lines(False), logx=True)
         else:
             ax.plot(self.spectrum["Freq."], self.spectrum[name], label=name)
             ax.set_xlabel("Frequency [Hz]")
             if self.units == SPECTRUM_UNITS_LNU:
-                ax.set_ylabel(r"Luminosity 100 pc [erg s$^{-1}$ Hz$^{-1}$]")
+                ax.set_ylabel(r"Luminosity [erg s$^{-1}$ Hz$^{-1}$]")
             else:
-                ax.set_ylabel(r"Flux Density 100 pc [erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
+                ax.set_ylabel(r"Flux Density " + f"{self.distance}" + r"pc [erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
             if label_lines:
                 ax = ax_add_line_ids(ax, common_lines(True), logx=True)
 
@@ -579,7 +612,6 @@ class Spectrum:
         label_lines: bool
             Plot line IDs.
         """
-
         if "spec" not in self.available and "log_spec" not in self.available:
             raise IOError("A .spec/.log_spec file was not read in, cannot use this function")
 
@@ -626,11 +658,6 @@ class Spectrum:
         label_lines: bool
             Plot line IDs.
         """
-
-        # todo:
-        # This is some badness inspired by Python. This is done, for now, as
-        # I haven't implemented a way to plot other spectra quickly this way
-
         ot = self.current
 
         if name:
@@ -653,13 +680,12 @@ class Spectrum:
         Parameters
         ----------
         block: bool [optional]
-            Enable non-blocking show from matplotlib with False."""
-
+            Enable non-blocking show from matplotlib with False.
+        """
         plt.show(block=block)
 
     def __getitem__(self, key):
         """Return an array in the spectrum dictionary when indexing."""
-
         if key not in self.available:
             return self.spectrum[key]
         else:
@@ -667,7 +693,6 @@ class Spectrum:
 
     def __setitem__(self, key, value):
         """Allows to modify the arrays in the spectrum dictionary."""
-
         if key not in self.available:
             self.spectrum[key] = value
         else:
@@ -675,7 +700,6 @@ class Spectrum:
 
     def __str__(self):
         """Print the basic details about the spectrum."""
-
         msg = f"Spectrum for the model {self.root} in {self.fp}\n"
         msg += f"Available spectra: {self.available}\n"
         msg += f"Current spectrum {self.current}\n"
@@ -699,6 +723,13 @@ class Wind:
     def __init__(self, root, fp=".", velocity_units="kms", mask=True, delim=None):
         """Initialize the Wind object.
 
+        Each of the available wind save tables or ion tables are read in, and
+        stored in the same dictionary. To access each paramter, using the get()
+        method is perferred. However, it is also possible to index using the
+        regular [ ] operator. To get an ion, the index is as follows
+        w["H"]["density"]["i01"]. If using get(), it is insted as
+        get("H_i01d") or get("H_i01f") for the ion fractions.
+
         Parameters
         ----------
         root: str
@@ -710,7 +741,6 @@ class Wind:
         delim: str [optional]
             The delimiter used in the wind table files.
         """
-
         self.root = root
         self.fp = fp
         if self.fp[-1] != "/":
@@ -730,6 +760,7 @@ class Wind:
 
         # Set up the velocity units and conversion factors
 
+        velocity_units = velocity_units.lower()
         if velocity_units not in ["cms", "kms", "c"]:
             print(f"unknown velocity units {velocity_units}. Allowed units [kms, cms, c]")
             exit(1)
