@@ -12,7 +12,6 @@ from matplotlib import pyplot as plt
 
 from pypython.constants import ANGSTROM, C
 from pypython.error import DimensionError
-# from pypython.plot import miscplot, spectrumplot, windplot
 
 
 def normalize_figure_style():
@@ -333,3 +332,7 @@ def ax_add_line_ids(ax, lines, linestyle="dashed", ynorm=0.90, logx=False, offse
                 transform=ax.transAxes)
 
     return ax
+
+# This is placed here due to a circular dependency -----------------------------
+
+from pypython.plot import miscplot, spectrumplot, windplot
