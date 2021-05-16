@@ -13,7 +13,7 @@ import argparse as ap
 from matplotlib import pyplot as plt
 
 from pypython import Spectrum, plot
-from pypython.plot import spectrumplot as splot
+from pypython.plot import spectrum as splot
 
 
 def setup_script():

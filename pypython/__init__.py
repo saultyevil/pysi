@@ -1227,4 +1227,4 @@ for loader, module_name, is_pkg in pkgutil.walk_packages(__path__):
 # These are put here to solve a circular dependency ----------------------------
 
 from pypython.plot import ax_add_line_ids, common_lines, normalize_figure_style
-from pypython.plot.windplot import plot_1d_wind, plot_2d_wind
+from pypython.plot.wind import plot_1d_wind, plot_2d_wind

@@ -335,4 +335,4 @@ def ax_add_line_ids(ax, lines, linestyle="dashed", ynorm=0.90, logx=False, offse
 
 # This is placed here due to a circular dependency -----------------------------
 
-from pypython.plot import miscplot, spectrumplot, windplot
+from pypython.plot import misc, spectrum, wind
