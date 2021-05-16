@@ -20,7 +20,6 @@ from scipy.signal import boxcar, convolve
 from pypython.constants import CMS_TO_KMS, PI, VLIGHT
 from pypython.math import vector
 
-
 # Functions --------------------------------------------------------------------
 
 
@@ -276,7 +275,6 @@ def run_py_wind(root, commands, fp="."):
 
 # These are put here to solve a circular dependency ----------------------------
 
-
 SPECTRUM_UNITS_LNU = "erg/s/Hz"
 SPECTRUM_UNITS_FNU = "erg/s/cm^-2/Hz"
 SPECTRUM_UNITS_FLM = "erg/s/cm^-2/A"
@@ -284,7 +282,6 @@ SPECTRUM_UNITS_FLM = "erg/s/cm^-2/A"
 COORD_TYPE_CYLINDRICAL = COORD_TYPE_CARTESIAN = "rectilinear"
 COORD_TYPE_POLAR = "polar"
 COORD_TYPE_SPHERICAL = "spherical"
-
 
 # Spectrum class ---------------------------------------------------------------
 
@@ -1216,13 +1213,11 @@ class Wind:
 
 # Load in all the submodules ---------------------------------------------------
 
-
 __all__ = []
 for loader, module_name, is_pkg in pkgutil.walk_packages(__path__):
     __all__.append(module_name)
     _module = loader.find_module(module_name).load_module(module_name)
     globals()[module_name] = _module
-
 
 # These are put here to solve a circular dependency ----------------------------
 
