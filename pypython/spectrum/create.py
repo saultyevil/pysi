@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""This file contains various utility functions for use with the reverberation
-mapping part of Python.
+"""Create a spectrum from a delay_dump file.
 
-It seems to mostly house functions designed to create a spectrum from
-the delay_dump output.
+It is possible to create spectra which certain physical processes
+removed. If the delay dump file is large, then use the SQL version of
+the functions, otherwise the regular version is much faster.
 """
 
 from copy import deepcopy
@@ -21,7 +21,7 @@ from sqlalchemy.orm import sessionmaker
 from pypython import Spectrum, Wind
 from pypython.constants import PARSEC, C
 from pypython.error import EXIT_FAIL
-from pypython.physics.convert import angstrom_to_hz, hz_to_angstrom
+from pypython.physics import angstrom_to_hz, hz_to_angstrom
 
 BOUND_FREE_NRES = 20000
 UNFILTERED_SPECTRUM = -999

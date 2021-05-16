@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""The basic/universal plotting functions of pypython.
 
-from typing import List, Tuple
+The module includes functions for normalizing the style, as well as ways
+to finish the plot. Included in pypython are functions to plot the
+spectrum files and the wind save tables.
+"""
 
 import numpy as np
 from matplotlib import pyplot as plt
 
 from pypython.constants import ANGSTROM, C
 from pypython.error import DimensionError
+# from pypython.plot import miscplot, spectrumplot, windplot
 
 
 def normalize_figure_style():
@@ -47,8 +52,11 @@ def normalize_figure_style():
 
 
 def subplot_dims(n_plots):
-    """Return the dimensions for a plot with multiple subplot panels.
-    todo: include more plot subdivisions
+    """Get the number of rows and columns for the give number of plots.
+
+    Returns how many rows and columns should be used to have the correct
+    number of figures available. This doesn't return anything larger than
+    3 columns, but the number of rows can be large.
 
     Parameters
     ----------
@@ -58,30 +66,25 @@ def subplot_dims(n_plots):
     Returns
     -------
     dims: Tuple[int, int]
-        The dimensions of the subplots returned as (nrows, ncols)"""
-
-    n_rows = n_cols = 1
-
-    if n_plots < 1:
-        return n_rows, n_cols
-
-    if n_plots > 2:
-        n_cols = 2
-        n_rows = (1 + n_plots) // n_cols
-    elif n_plots > 9:
+        The dimensions of the subplots returned as (nrows, ncols)
+    """
+    if n_plots > 9:
         n_cols = 3
         n_rows = (1 + n_plots) // n_cols
+    elif n_plots < 2:
+        n_rows = n_cols = 1
     else:
-        n_cols = 1
-        n_rows = n_plots
+        n_cols = 2
+        n_rows = (1 + n_plots) // n_cols
 
     return n_rows, n_cols
 
 
 def remove_extra_axes(fig, ax, n_wanted, n_panel):
-    """Remove additional axes which are included in a plot. This can be used if you
-    have 4 x 2 = 8 panels but only want to use 7 of tha panels. The 8th panel
-    will be removed.
+    """Remove additional axes which are included in a plot.
+
+    This should be used if you have 4 x 2 = 8 panels but only want to use 7 of
+    the panels, in this case the 8th panel will be removed.
 
     Parameters
     ----------
@@ -99,7 +102,8 @@ def remove_extra_axes(fig, ax, n_wanted, n_panel):
     fig: plt.Figure
         The modified Figure.
     ax: plt.Axes
-        The modified Axes."""
+        The modified Axes.
+    """
 
     if type(ax) != np.ndarray:
         return fig, ax
@@ -123,8 +127,10 @@ def remove_extra_axes(fig, ax, n_wanted, n_panel):
 
 
 def get_y_lims_for_x_lims(x, y, xmin, xmax, scale=10):
-    """Determine the lower and upper y limits for a matplotlib plot given a
-    restricted x range, since matplotlib doesn't do this automatically.
+    """Determine the lower and upper y for the given x range.
+
+    Useful as matplotlib does not rescale the y limits when the x range is
+    restricted.
 
     Parameters
     ----------

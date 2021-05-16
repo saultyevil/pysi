@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Calculate various parameters relating to black holes."""
+"""Calculate parameters relating to Schwarzchild black holes.
+
+All functions require the mass to be in units of solar masses and
+accretion rates in solar masses per year.
+"""
 
 from pypython.constants import GRAV, MSOL, VLIGHT
 

@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""The point of this part of pypython is to manipulating the atomic data used
-in Python, to i.e. remove various transitions from the data.."""
+"""Remove certain interactions form the atomic data.
+
+Sometimes it's desirable to remove certain resonance line or
+photoioniation cross-sections from the atomic data, so photons do not
+interact with them.
+"""
 
 from os import getenv
 from sys import exit
@@ -10,12 +14,13 @@ from pypython.error import EXIT_FAIL
 
 
 def remove_photoionization_edge(data, atomic_number, ionization_state, new_value=9e99):
-    """Remove a transition or element from some atomic data. Creates a new
-    atomic data file which is placed in the current working or given directory.
+    """Remove a transition or element from some atomic data.
 
-    To remove a photionization edge from the data, the frequency threshold is,
-    by default, set to something large. It is also possible to just change this
-    threshold instead to something else (for experimentation reasons?).
+    Creates a new atomic data file which is placed in the current working or
+    given directory. To remove a photionization edge from the data, the
+    frequency threshold is, by default, set to something large. It is also
+    possible to just change this threshold instead to something else
+    (for experimentation reasons?).
 
     Parameters
     ----------
@@ -88,7 +93,8 @@ def remove_photoionization_edge(data, atomic_number, ionization_state, new_value
 
 
 def remove_bound_bound_transitions_ion(atomic_number, ionization_state):
-    """Remove all bound-bound transitions for a single ion from the atomic data.
+    """Remove all bound-bound transitions for a single ion.
+
     This is achieved by setting the oscillator strengths of the transition, f,
     to f = 0, effectively removing the transition.
 
@@ -97,7 +103,8 @@ def remove_bound_bound_transitions_ion(atomic_number, ionization_state):
     atomic_number: int
         The atomic number for the ion/atom the line is associated with.
     ionization_state: int
-        The ionization state of the ion/atom the line is associated with."""
+        The ionization state of the ion/atom the line is associated with.
+    """
 
     filename = getenv("PYTHON") + "/xdata/atomic/lines_linked_ver_2.dat"
 

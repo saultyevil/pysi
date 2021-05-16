@@ -6,7 +6,7 @@ from typing import List, Tuple
 import numpy as np
 from matplotlib import pyplot as plt
 
-from pypython import (UNITS_FLAMBDA, UNITS_FNU, UNITS_LNU, Spectrum, get_root, smooth_array)
+from pypython import (SPECTRUM_UNITS_FLM, SPECTRUM_UNITS_FNU, SPECTRUM_UNITS_LNU, Spectrum, get_root, smooth_array)
 from pypython.constants import PARSEC
 from pypython.error import InvalidParameter
 from pypython.plot import (ax_add_line_ids, common_lines, get_y_lims_for_x_lims, normalize_figure_style,
@@ -75,14 +75,14 @@ def _plot_panel_subplot(ax, x_values, spectrum, units, things_to_plot, x_limits,
         # If plotting in frequency space, of if the units then the flux needs
         # to be converted in nu F nu
 
-        if frequency_space and units == UNITS_FLAMBDA:
+        if frequency_space and units == SPECTRUM_UNITS_FLM:
             fl *= spectrum["Lambda"]
-        elif frequency_space and units == UNITS_FNU:
+        elif frequency_space and units == SPECTRUM_UNITS_FNU:
             fl *= spectrum["Freq."]
 
         # If the spectrum units are Lnu then plot nu Lnu
 
-        if units == UNITS_LNU:
+        if units == SPECTRUM_UNITS_LNU:
             fl *= spectrum["Freq."]
 
         ax.plot(x_values, fl, label=thing, alpha=alpha)
@@ -98,7 +98,7 @@ def _plot_panel_subplot(ax, x_values, spectrum, units, things_to_plot, x_limits,
     ax.set_xlim(x_limits[0], x_limits[1])
     if frequency_space:
         ax.set_xlabel(r"Frequency (Hz)")
-        if units == UNITS_LNU:
+        if units == SPECTRUM_UNITS_LNU:
             ax.set_ylabel(r"$\nu L_{\nu}$ (erg s$^{-1}$ Hz$^{-1})$")
         else:
             ax.set_ylabel(r"$\nu F_{\nu}$ (erg s$^{-1}$ cm$^{-2})$")

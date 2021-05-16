@@ -8,7 +8,7 @@ import argparse as ap
 
 from matplotlib import pyplot as plt
 
-from pypython.plot import spectrum
+from pypython.plot import spectrumplot
 
 
 def setup_script():
@@ -82,14 +82,14 @@ def plot_optical_depth_spectrum(root,
     -------
     """
 
-    fig, ax = spectrum.plot_optical_depth(root,
-                                          wd, ["all"],
-                                          xmin,
-                                          xmax,
-                                          scale,
-                                          show_absorption_edges,
-                                          frequency_space,
-                                          display=display)
+    fig, ax = spectrumplot.optical_depth(root,
+                                         wd, ["all"],
+                                         xmin,
+                                         xmax,
+                                         scale,
+                                         show_absorption_edges,
+                                         frequency_space,
+                                         display=display)
 
     fig.savefig("{}/{}_optical_depth.{}".format(wd, root, file_ext))
 

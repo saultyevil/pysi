@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Tools to send email notifications to update users on the current progress or
-some long program.
+"""Simple email notification functions.
 
 Requires access to the mcrtpythonupdates@gmail.com Gmail API. Currently
-access to this API is limited.
+access to this API is limited and the refresh token doesn't seem to work
+sometimes.
 """
 
 import base64

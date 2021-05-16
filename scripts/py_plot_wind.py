@@ -14,23 +14,12 @@ import argparse as ap
 import numpy as np
 from matplotlib import pyplot as plt
 
-from pypython import Wind, COORD_TYPE_CYLINDRICAL
-from pypython import plot
-from pypython.plot import wind
+from pypython import COORD_TYPE_CYLINDRICAL, Wind, plot
+from pypython.plot import windplot
 
-default_wind_parameters = ("t_e",
-                           "t_r",
-                           "ne",
-                           "rho",
-                           "c4",
-                           "ip")
+default_wind_parameters = ("t_e", "t_r", "ne", "rho", "c4", "ip")
 
-default_wind_velocities = ("v_x",
-                           "v_y",
-                           "v_z",
-                           "v_l",
-                           "v_rot",
-                           "v_r")
+default_wind_velocities = ("v_x", "v_y", "v_z", "v_l", "v_rot", "v_r")
 
 default_wind_ions = (
     ["H", 2],
@@ -41,19 +30,9 @@ default_wind_ions = (
     ["Si", 15],
 )
 
-default_ion_fig_dims = ((1, 2),
-                        (1, 3),
-                        (3, 2),
-                        (4, 2),
-                        (4, 2),
-                        (5, 3))
+default_ion_fig_dims = ((1, 2), (1, 3), (3, 2), (4, 2), (4, 2), (5, 3))
 
-default_ion_figsize = ((7.5, 4.46),
-                       (19.25, 6.46),
-                       (13, 14.01),
-                       (13, 18.68),
-                       (13, 18.68),
-                       (19.25, 23.25))
+default_ion_figsize = ((7.5, 4.46), (19.25, 6.46), (13, 14.01), (13, 18.68), (13, 18.68), (19.25, 23.25))
 
 
 def setup_script():
@@ -126,13 +105,7 @@ def plot_wind_parameters(w,
                 to_plot = w[parameters_to_plot[wind_index]]
                 ax[i, j].set_title(parameters_to_plot[wind_index])
 
-            fig, ax = wind.plot_wind(w,
-                                     to_plot,
-                                     scale=axes_scales,
-                                     fig=fig,
-                                     ax=ax,
-                                     i=i,
-                                     j=j)
+            fig, ax = windplot.plot_wind(w, to_plot, scale=axes_scales, fig=fig, ax=ax, i=i, j=j)
             wind_index += 1
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
@@ -181,13 +154,7 @@ def plot_wind_velocity(w,
                 ax[i,
                    j].set_title(wind_velocities_to_plot[wind_index].replace("_", r"\_") + " [" + w.velocity_units + "]")
 
-            fig, ax = wind.plot_wind(w,
-                                     to_plot,
-                                     scale=axes_scales,
-                                     fig=fig,
-                                     ax=ax,
-                                     i=i,
-                                     j=j)
+            fig, ax = windplot.plot_wind(w, to_plot, scale=axes_scales, fig=fig, ax=ax, i=i, j=j)
             wind_index += 1
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
@@ -240,15 +207,15 @@ def plot_wind_ions(w,
             for j in range(n_cols):
                 ion_key = "i{:02d}".format(ion_index)
                 with np.errstate(divide="ignore"):
-                    fig, ax = wind.plot_wind(w,
-                                             np.log10(w[element][ion_type_key][ion_key]),
-                                             scale=axes_scales,
-                                             vmin=vmin,
-                                             vmax=vmax,
-                                             fig=fig,
-                                             ax=ax,
-                                             i=i,
-                                             j=j)
+                    fig, ax = windplot.plot_wind(w,
+                                                 np.log10(w[element][ion_type_key][ion_key]),
+                                                 scale=axes_scales,
+                                                 vmin=vmin,
+                                                 vmax=vmax,
+                                                 fig=fig,
+                                                 ax=ax,
+                                                 i=i,
+                                                 j=j)
                 ax[i, j].set_title("log(" + element + ion_key + ")")
 
                 ion_index += 1
@@ -270,38 +237,26 @@ def plot_wind_ions(w,
 def main():
     """Main function of the script.
 
-    Contains the main logic for the script. Initially the wind parameters are
-    read in, followed by the velocity for cylindrical grids. Finally, the ions
-    of the wind elements are plotted.
+    Contains the main logic for the script. Initially the wind
+    parameters are read in, followed by the velocity for cylindrical
+    grids. Finally, the ions of the wind elements are plotted.
     """
 
     root, fp, use_ion_density, velocity_units, axes_scales, use_cell_indices, display = setup_script()
 
-    # Read in the wind, set the wing parameters we want to plot, as well as the
-    # elements of the ions we want to plot and the number of ions.
-
     w = Wind(root, fp, velocity_units, True)
-
     if w.coord_system == "polar":
         subplot_kw = {"projection": "polar"}
     else:
         subplot_kw = {}
 
-    # First, plot the wind parameters
-
     plot_wind_parameters(w, default_wind_parameters, axes_scales=axes_scales, subplot_kw=subplot_kw, display=display)
-
-    # Next, plot the wind velocities, if the grid is rectilinear
 
     if w.coord_system == COORD_TYPE_CYLINDRICAL:
         plot_wind_velocity(w, default_wind_velocities, velocity_units, subplot_kw, axes_scales, display)
 
-    # Now, plot the wind ions. This is a bit messier...
-
-    fig, ax = plot_wind_ions(w, default_wind_ions, default_ion_fig_dims, default_ion_figsize, use_ion_density,
-                             axes_scales, subplot_kw, display)
-
-    return fig, ax
+    plot_wind_ions(w, default_wind_ions, default_ion_fig_dims, default_ion_figsize, use_ion_density, axes_scales,
+                   subplot_kw, display)
 
 
 if __name__ == "__main__":

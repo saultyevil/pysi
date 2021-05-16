@@ -13,7 +13,7 @@ import argparse as ap
 from matplotlib import pyplot as plt
 
 from pypython import Spectrum, plot
-from pypython.plot import spectrum as splot
+from pypython.plot import spectrumplot as splot
 
 
 def setup_script():
@@ -366,8 +366,8 @@ def main(setup=None):
 
     alpha = 0.75
     try:
-        fig, ax = splot.plot_spectrum_components(root, cd, False, False, xmin, xmax, smooth_amount, axes_scales, alpha,
-                                                 frequency_space, display)
+        fig, ax = splot.spectrum_components(root, cd, False, False, xmin, xmax, smooth_amount, axes_scales, alpha,
+                                            frequency_space, display)
         fig.savefig("{}/{}_spectrum_components.{}".format(cd, root, file_ext))
     except IOError:
         pass
@@ -376,8 +376,8 @@ def main(setup=None):
 
     # log_spec_tot - all photons
     try:
-        fig, ax = splot.plot_spectrum_components(root, cd, True, False, xmin, xmax, smooth_amount, axes_scales, alpha,
-                                                 frequency_space, display)
+        fig, ax = splot.spectrum_components(root, cd, True, False, xmin, xmax, smooth_amount, axes_scales, alpha,
+                                            frequency_space, display)
         fig.savefig("{}/{}_spec_tot.{}".format(cd, root, file_ext))
     except IOError:
         pass
@@ -386,8 +386,8 @@ def main(setup=None):
 
     # log_spec_tot_wind - anything which is "inwind"
     try:
-        fig, ax = splot.plot_spectrum_components(root, cd, False, True, xmin, xmax, smooth_amount, axes_scales, alpha,
-                                                 frequency_space, display)
+        fig, ax = splot.spectrum_components(root, cd, False, True, xmin, xmax, smooth_amount, axes_scales, alpha,
+                                            frequency_space, display)
         fig.savefig("{}/{}_spec_tot_wind.{}".format(cd, root, file_ext))
     except IOError:
         pass

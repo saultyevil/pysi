@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from matplotlib import pyplot as plt
+
+from pypython import smooth_array
+from pypython.plot import ax_add_line_ids, common_lines, normalize_figure_style
+
 
 def plot_spectrum_physics_process_contributions(contribution_spectra,
                                                 inclination,

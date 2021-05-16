@@ -10,7 +10,7 @@ import argparse as ap
 
 from pypython import get_file
 from pypython.error import EXIT_FAIL
-from pypython.plot import spectrum
+from pypython.plot import spectrumplot
 
 
 def setup_script():
@@ -80,8 +80,8 @@ def main(setup=None):
         print("Unable to find any spectrum files")
         exit(EXIT_FAIL)
 
-    fig, ax = spectrum.plot_multiple_model_spectra(output_name, spectra, inclination, wd, x_min, x_max, frequency_space,
-                                                   axes_scales, smooth_amount, common_lines, file_extension, display)
+    fig, ax = spectrumplot.multiple_spectra(output_name, spectra, inclination, wd, x_min, x_max, frequency_space,
+                                            axes_scales, smooth_amount, common_lines, file_extension, display)
 
     return fig, ax
 

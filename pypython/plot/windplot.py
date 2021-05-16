@@ -4,10 +4,8 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-# from pypython import Wind
 from pypython.constants import PI
-
-from . import normalize_figure_style
+from pypython.plot import normalize_figure_style
 
 
 def plot_wind(wind,
@@ -30,6 +28,8 @@ def plot_wind(wind,
     parameter: np.ndarray
         The wind parameter to be plotted, in the same shape as the coordinate
         arrays. Can also be the name of the variable.
+    use_cell_coordinates: bool [optional]
+        Plot the wind either using the cell coordinates or the cell indices.
     inclinations_to_plot: List[str] [optional]
         A list of inclination angles to plot onto the ax[0, 0] sub panel. Must
         be strings and 0 < inclination < 90.

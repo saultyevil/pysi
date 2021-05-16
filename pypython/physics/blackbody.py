@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Contains functions for calculating the properties of a blackbody."""
+"""Blackbody functions for wavelength and frequency.
+
+In wavelength space, the blackbody function assumes that the wavelength
+is given in units of Angstroms.
+"""
 
 import numpy as np
 
@@ -14,9 +18,9 @@ def planck_nu(temperature, frequency):
     Parameters
     ----------
     temperature: float
-        The temperature to calculate the function at.
+        The temperature of the blackbody.
     frequency: np.ndarray or float
-        The frequency to calculate the function at.
+        The frequency points to calculate the vale at, in units of Hz.
 
     Returns
     -------
@@ -39,9 +43,9 @@ def planck_lambda(temperature, lamda):
     Parameters
     ----------
     temperature: float
-        The temperature to calculate the function at.
+        The temperature of the blackbody.
     lamda: np.ndarray or float
-        The frequency to calculate the function at.
+        The wavelength points to calculate the value at, in Angstroms.
 
     Returns
     -------

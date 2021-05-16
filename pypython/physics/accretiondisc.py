@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Functions to calculate parameters and quantities for accretion discs and
-accretion in general live here.
+"""Equations for accretion discs.
 
-For example, there are functions for the temperature profile for an
-alpha-disc, as well as functions to calculate the Eddington luminosity
-or to create a simple accretion disc spectrum.
+Includes temperature profiles, calculations for the Eddington luminosity
+and accretion rate and also a function to create a crude accretion disc
+spectrum.
 """
 
 import numpy as np
 import pandas as pd
 
 from pypython.constants import (MPROT, MSOL, MSOL_PER_YEAR, PI, STEFAN_BOLTZMANN, THOMPSON, C, G)
-
-from .blackbody import planck_lambda, planck_nu
-from .blackhole import gravitational_radius, innermost_stable_circular_orbit
+from pypython.physics.blackbody import planck_lambda, planck_nu
+from pypython.physics.blackhole import (gravitational_radius, innermost_stable_circular_orbit)
 
 
 def alpha_disc_effective_temperature(ri, r_co, m_co, mdot):
@@ -48,7 +46,7 @@ def alpha_disc_effective_temperature(ri, r_co, m_co, mdot):
     return teff4**0.25
 
 
-def modified_eddigton_alpha_disc_effective_temperature(ri, m_co, mdot):
+def modified_eddington_alpha_disc_effective_temperature(ri, m_co, mdot):
     """The effective temperature profile from Strubbe and Quataert 2009.
 
     Parameters

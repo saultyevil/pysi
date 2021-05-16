@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Functions used to create a grid of parameter files or to edit a grid of
-parameter files."""
+"""Create or modify a grid of parameter files."""
 
 from shutil import copyfile
 from typing import List
 
 
 def update_single_parameter(path, parameter_name, new_value, backup=True, verbose=False):
-    """Change the value of a parameter in a Python parameter file. If the old
-    and new parameter value are the same, the script will still update the
-    parameter file.
+    """Change the value of a parameter in a Python parameter file.
+
+    If the old and new parameter value are the same, the script will still
+    update the parameter file.
 
     Parameters
     ----------
@@ -64,10 +64,10 @@ def update_single_parameter(path, parameter_name, new_value, backup=True, verbos
 
 
 def add_single_parameter(path, parameter_name, new_value, backup=True):
-    """Add a parameter which doesn't already exist to the end of an already
-    existing Python parameter file. The parameter will be appended to the end
-    of the parameter file but will be cleaned up in the root.out.pf file once
-    the model is run.
+    """Add a parameter which doesn't already exist.
+
+    The parameter will be appended to the end of the parameter file but will be
+    cleaned up in the root.out.pf file once the model is run.
 
     Parameters
     ----------
@@ -103,10 +103,12 @@ def add_single_parameter(path, parameter_name, new_value, backup=True):
 
 
 def create_grid(path, parameter_name, grid_values, extra_name=None, backup=True, verbose=False):
-    """Creates a bunch of new parameter files with the choice of values for a
-    given parameter. This will only work for one parameter at a time and one
-    parameter file. By default, a back up of the original parameter file is
-    made as a safety precaution.
+    """Create a bunch of new parameter files with the choice of values for a
+    given parameter.
+
+    This will only work for one parameter at a time and one parameter file.
+    By default, a back up of the original parameter file is made as a safety
+    precaution.
 
     Parameters
     ----------

@@ -1,19 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""Basic utility functions for making life easier.
+
+Includes functions for creating slurm files, bash "run scripts", as well
+as getting system info and a logging utility.
+"""
 
 import textwrap
 from typing import List
 
 from psutil import cpu_count
 
-from .. import get_file, get_root
+from pypython import get_file, get_root
 
 LOGFILE = None
 
 
 def create_run_script(commands):
-    """Create a shell run script given a list of commands to do. This assumes
-    that you want to use a bash interpreter.
+    """Create a shell run script given a list of commands to do using bash a
+    bash script.
 
     Parameters
     ----------
@@ -44,8 +49,9 @@ def create_run_script(commands):
 
 
 def create_slurm_file(name, n_cores, split_cycle, n_hours, n_minutes, flags, fp="."):
-    """Create a slurm file in the directory fp with the name root.slurm. All of
-    the script flags are passed using the flags variable.
+    """Create a slurm file in the directory fp with the name root.slurm.
+
+    All of the script flags are passed using the flags variable.
 
     Parameters
     ----------

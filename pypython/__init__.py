@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import copy
+import pkgutil
 import re
 import textwrap
 import time
@@ -19,13 +20,13 @@ from scipy.signal import boxcar, convolve
 from pypython.constants import CMS_TO_KMS, PI, VLIGHT
 from pypython.math import vector
 from pypython.plot import ax_add_line_ids, common_lines, normalize_figure_style
-from pypython.plot.wind import plot_1d_wind, plot_2d_wind
+from pypython.plot.windplot import plot_1d_wind, plot_2d_wind
 
 # Spectrum class ---------------------------------------------------------------
 
-UNITS_LNU = "erg/s/Hz"
-UNITS_FNU = "erg/s/cm^-2/Hz"
-UNITS_FLAMBDA = "erg/s/cm^-2/A"
+SPECTRUM_UNITS_LNU = "erg/s/Hz"
+SPECTRUM_UNITS_FNU = "erg/s/cm^-2/Hz"
+SPECTRUM_UNITS_FLM = "erg/s/cm^-2/A"
 
 
 class Spectrum:
@@ -289,7 +290,7 @@ class Spectrum:
         ax.set_yscale("log")
         ax.set_xscale("log")
 
-        if self.units == UNITS_FLAMBDA:
+        if self.units == SPECTRUM_UNITS_FLM:
             ax.plot(self.spectrum["Lambda"], self.spectrum[name], label=name)
             ax.set_xlabel(r"Wavelength [\AA]")
             ax.set_ylabel(r"Flux Density 100 pc [erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
@@ -298,7 +299,7 @@ class Spectrum:
         else:
             ax.plot(self.spectrum["Freq."], self.spectrum[name], label=name)
             ax.set_xlabel("Frequency [Hz]")
-            if self.units == UNITS_LNU:
+            if self.units == SPECTRUM_UNITS_LNU:
                 ax.set_ylabel(r"Luminosity 100 pc [erg s$^{-1}$ Hz$^{-1}$]")
             else:
                 ax.set_ylabel(r"Flux Density 100 pc [erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
@@ -1208,3 +1209,12 @@ def run_py_wind(root, commands, fp="."):
     remove(cmd_file)
 
     return stdout.decode("utf-8").split("\n")
+
+
+# Load in all the submodules ---------------------------------------------------
+
+__all__ = []
+for loader, module_name, is_pkg in pkgutil.walk_packages(__path__):
+    __all__.append(module_name)
+    _module = loader.find_module(module_name).load_module(module_name)
+    globals()[module_name] = _module

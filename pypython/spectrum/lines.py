@@ -2,14 +2,12 @@
 # -*- coding: utf-8 -*-
 """Functions to analyse spectral lines."""
 
-from typing import Tuple, Union
-
 import numpy as np
 from matplotlib import pyplot as plt
 
+from pypython import get_array_index
 from pypython.error import EXIT_FAIL
 from pypython.plot import ax_add_line_ids, common_lines, get_y_lims_for_x_lims
-from pypython.util import get_array_index
 
 
 def fit_gaussian():
@@ -62,7 +60,7 @@ def measure_equivalent_width(wavelength, flux, display_xmin, display_xmax, ret_f
     fig, ax = plt.subplots(figsize=(12, 5))
     ax.loglog(wavelength, flux, linewidth=2, label="Spectrum")
     ax.set_xlim(display_xmin, display_xmax)
-    ax.set_ylim(get_y_lims_for_x_lims(wavelength, flux, display_xmin, display_xmax, scale=2))
+    ax.set_ylim(get_y_lims_for_x_lims(wavelength, flux, display_xmin, display_xmax, scale=2.0))
     ax.set_xlabel("Wavelength")
     ax.set_ylabel("Flux")
     ax = ax_add_line_ids(ax, common_lines(), logx=True)
@@ -103,7 +101,7 @@ def measure_equivalent_width(wavelength, flux, display_xmin, display_xmax, ret_f
     # ax.plot(a, b, linewidth=2, label="Extracted bit")
     ax.plot(a, fit(a), label="Linear fit")
     ax.set_xlim(display_xmin, display_xmax)
-    ax.set_ylim(get_y_lims_for_x_lims(wavelength, flux, display_xmin, display_xmax, scale=2))
+    ax.set_ylim(get_y_lims_for_x_lims(wavelength, flux, display_xmin, display_xmax, scale=2.0))
     ax.legend()
     ax.set_xlabel("Wavelength")
     ax.set_ylabel("Flux")
