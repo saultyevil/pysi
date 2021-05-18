@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""pypython - making using Python a wee bit easier.
+
+pypython is a companion python package to handle and analyse the data which
+comes out of a python simulation.
+"""
 
 import copy
 import pkgutil
@@ -11,13 +16,12 @@ from pathlib import Path
 from platform import system
 from shutil import which
 from subprocess import PIPE, Popen
-from sys import exit
 
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.signal import boxcar, convolve
 
-from pypython.constants import CMS_TO_KMS, PI, VLIGHT, PARSEC
+from pypython.constants import CMS_TO_KMS, PARSEC, PI, VLIGHT
 from pypython.math import vector
 
 # Functions --------------------------------------------------------------------
@@ -48,7 +52,7 @@ def cleanup_data(fp=".", verbose=False):
         raise OSError("your OS does not work with this function, sorry!")
 
     # - type l will only search for symbolic links
-    cmd = "cd {}; find . -type l -name 'data'".format(fp)
+    cmd = f"cd {fp}; find . -type l -name 'data'"
     stdout, stderr = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
     stdout = stdout.decode("utf-8")
     stderr = stderr.decode("utf-8")
@@ -58,7 +62,7 @@ def cleanup_data(fp=".", verbose=False):
         print(stderr)
 
     if stdout and verbose:
-        print("deleting data symbolic links in the following directories:\n\n{}".format(stdout[:-1]))
+        print(f"deleting data symbolic links in the following directories:\n\n{stdout[:-1]}")
     else:
         print("no data symlinks to delete")
         return n_del
@@ -67,7 +71,7 @@ def cleanup_data(fp=".", verbose=False):
 
     for directory in directories:
         current = fp + directory[1:]
-        cmd = "rm {}".format(current)
+        cmd = f"rm {current}"
         stdout, stderr = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
         if stderr:
             print(stderr.decode("utf-8"))
@@ -77,7 +81,7 @@ def cleanup_data(fp=".", verbose=False):
     return n_del
 
 
-def get_file(pattern, fp="."):
+def get_files(pattern, fp="."):
     """Find files of the given pattern recursively.
 
     Parameters
@@ -91,6 +95,7 @@ def get_file(pattern, fp="."):
     files = [str(file_) for file_ in Path(f"{fp}").rglob(pattern)]
     if ".pf" in pattern:
         files = [file_ for file_ in files if "out.pf" not in file_ and "py_wind" not in file_]
+
     files.sort(key=lambda var: [int(x) if x.isdigit() else x for x in re.findall(r'[^0-9]|[0-9]+', var)])
 
     return files
@@ -117,9 +122,7 @@ def get_array_index(x, target):
     if target > np.max(x):
         return -1
 
-    index = np.abs(x - target).argmin()
-
-    return index
+    return np.abs(x - target).argmin()
 
 
 def get_root(fp):
@@ -146,6 +149,7 @@ def get_root(fp):
 
     root = fp[slash + 1:dot]
     fp = fp[:slash + 1]
+
     if fp == "":
         fp = "./"
 
@@ -169,16 +173,6 @@ def smooth_array(array, width):
     """
     if width is None or width == 0:
         return array
-
-    if type(width) is not int:
-        try:
-            width = int(width)
-        except ValueError:
-            print("Unable to cast {} into an int".format(width))
-            return array
-
-    if type(array) is not np.ndarray:
-        array = np.array(array)
 
     array = np.reshape(array, (len(array), ))  # todo: why do I have to do this? safety probably
 
@@ -213,7 +207,7 @@ def create_wind_save_tables(root, fp=".", ion_density=False, verbose=False):
     command += "windsave2table"
     if ion_density:
         command += " -d"
-    command += " {}".format(root)
+    command += f" {root}"
 
     cmd = Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
     stdout, stderr = cmd.communicate()
@@ -257,13 +251,13 @@ def run_py_wind(root, commands, fp="."):
     output: list[str]
         The stdout output from py_wind.
     """
-    cmd_file = "{}/.tmpcmds.txt".format(fp)
+    cmd_file = f"{fp}/.tmpcmds.txt"
 
     with open(cmd_file, "w") as f:
         for i in range(len(commands)):
-            f.write("{}\n".format(commands[i]))
+            f.write(f"{commands[i]}\n")
 
-    sh = Popen("cd {}; py_wind {} < .tmpcmds.txt".format(fp, root), stdout=PIPE, stderr=PIPE, shell=True)
+    sh = Popen(f"cd {fp}; py_wind {root} < .tmpcmds.txt", stdout=PIPE, stderr=PIPE, shell=True)
     stdout, stderr = sh.communicate()
     if stderr:
         print(stderr.decode("utf-8"))
@@ -330,17 +324,22 @@ class Spectrum:
             if not default.startswith("log_"):
                 default = "log_" + default
 
+        # These are for the "current/target" spectrum. Anything with all_ are
+        # for recording all of the spectra
+
+        self.spectrum = {}
+        self.columns = ()
+        self.inclinations = ()
+        self.n_inclinations = 0
+        self.units = "unknown"
+        self.distance = 100
+
         self.all_spectrum = {}
         self.all_columns = {}
         self.all_inclinations = {}
         self.all_n_inclinations = {}
         self.all_units = {}
         self.all_distance = {}
-
-        # self.unsmoothed is a variable which keeps a copy of the spectrum for
-        # safe keeping if it is smoothed
-
-        self.original = None
 
         # The next method call reads in the spectrum and initializes the above
         # member variables. We also keep track of what spectra have been loaded
@@ -363,6 +362,11 @@ class Spectrum:
 
         if distance:
             self.rescale_flux(distance)
+
+        # self.original is a variable which keeps a copy of the spectrum for
+        # safe keeping if it is smoothed
+
+        self.original = None
 
         if smooth:
             self.smooth(smooth)
@@ -432,7 +436,7 @@ class Spectrum:
                         j = column_name.find("P")
                         column_name = column_name[1:j]
                     header.append(column_name)
-                spectrum = np.array(spectrum[1:], dtype=np.float)
+                spectrum = np.array(spectrum[1:], dtype=np.float64)
             else:
                 header = np.arange(len(spectrum[0]))
 
@@ -454,7 +458,7 @@ class Spectrum:
             self.all_n_inclinations[spec_type] = len(inclinations)
 
         if n_read == 0:
-            raise IOError(f"Unable to open any spectrum files in {self.fp}")
+            raise IOError(f"Unable to open any spectrum files for {self.root} in {self.fp}")
 
     def rescale_flux(self, distance):
         """Recale the flux to the given distance.
@@ -491,34 +495,24 @@ class Spectrum:
         if self.original is None:
             self.original = copy.deepcopy(self.spectrum)
 
-        # Get the input parameters for smoothing and make sure it's good input
-
-        if type(width) is not int:
-            try:
-                width = int(width)
-            except ValueError:
-                print(f"Unable to cast {width} into an int")
-                return
-
         if to_smooth is None:
             to_smooth = ("Created", "WCreated", "Emitted", "CenSrc", "Disk", "Wind", "HitSurf", "Scattered") + tuple(
                 self.inclinations)
         elif type(to_smooth) is str:
             to_smooth = to_smooth,
-        elif type(to_smooth) is tuple:
+        elif type(to_smooth) is tuple or type(to_smooth) is list:
             pass
         else:
-            raise ValueError("unknown format for argument to_smooth; must be a tuple of strings or string.")
+            raise ValueError("unknown format for argument to_smooth, must be a tuple/list of str or str")
 
         # Loop over each available spectrum and smooth it
 
         for key in self.available:
             for thing_to_smooth in to_smooth:
                 try:
-                    self.spectrum[key][thing_to_smooth] = \
-                        convolve(self.spectrum[key][thing_to_smooth], boxcar(width) / float(width), mode="same")
+                    self.all_spectrum[key][thing_to_smooth] = smooth_array(self.all_spectrum[key][thing_to_smooth], width)
                 except KeyError:
-                    continue
+                    pass  # some spectra do not have the inclination angles...
 
     def restore_original_spectra(self):
         """Restore the spectrum to its original unsmoothed form."""
@@ -742,9 +736,11 @@ class Wind:
             The delimiter used in the wind table files.
         """
         self.root = root
+
         self.fp = fp
         if self.fp[-1] != "/":
             self.fp += "/"
+
         self.nx = 1
         self.nz = 1
         self.n_elem = 1
@@ -762,8 +758,7 @@ class Wind:
 
         velocity_units = velocity_units.lower()
         if velocity_units not in ["cms", "kms", "c"]:
-            print(f"unknown velocity units {velocity_units}. Allowed units [kms, cms, c]")
-            exit(1)
+            raise ValueError(f"unknown velocity units {velocity_units}. Allowed units [kms, cms, c]")
 
         self.velocity_units = velocity_units
         if velocity_units == "kms":
@@ -781,10 +776,10 @@ class Wind:
         try:
             self.read_wind_parameters(delim)
         except IOError:
-            print("trying to run windsave2table to generate wind tables")
             create_wind_save_tables(self.root, self.fp, ion_density=True)
             create_wind_save_tables(self.root, self.fp, ion_density=False)
             self.read_wind_parameters(delim)
+
         self.read_wind_elements(delim)
         self.columns = self.parameters + self.elements
 
@@ -872,7 +867,7 @@ class Wind:
         if "z" in wind_columns or "theta" in wind_columns:
             j_col = wind_columns.index("j")
             self.nz = int(np.max(wind_all[0][:, j_col]) + 1)
-        self.n_elem = int(self.nx * self.nz)  # the int() is for safety
+        self.n_elem = int(self.nx * self.nz)
 
         wind_all = np.hstack(wind_all)
 
@@ -945,7 +940,7 @@ class Wind:
         n_elements_read = 0
 
         for element in elements_to_get:
-            element = element.capitalize()  # for safety...
+            element = element.capitalize()
             self.elements += element,
 
             # Each element will have a dict of two keys, either frac or den.
@@ -1236,8 +1231,8 @@ class Wind:
 
     def __str__(self):
         """Print basic details about the wind."""
-        txt = "root: {}\nfilepath: {}\ncoordinate system:{}\nparameters: {}\nelements: {}\n".format(
-            self.root, self.fp, self.coord_system, self.parameters, self.elements)
+        txt = f"root: {self.root}\nfilepath: {self.fp}\ncoordinate system:{self.coord_system}\n" \
+              f"parameters: {self.parameters}\nelements: {self.elements}\n"
 
         return txt
 

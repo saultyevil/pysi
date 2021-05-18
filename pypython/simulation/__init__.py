@@ -196,10 +196,12 @@ def model_error_summary(root, wd=".", n_cores=-1, print_errors=False):
         n_diag_files = len(diag_files)
 
     if n_diag_files == 0:
-        print("no diag files found in path")
+        print(f"No .diag files were found in {wd}/diag_{root} so cannot find any errors")
         return total_errors
 
     broken_diag_files = []
+
+    exit_msg = "ended for unknown reasons"
 
     for diag in diag_files:
         try:

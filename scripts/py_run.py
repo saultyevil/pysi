@@ -147,20 +147,19 @@ def setup_script():
     DRY_RUN = args.dry_run
     N_CORES = args.n_cores
 
-    msg = textwrap.dedent("""\
-        Python  .......................... {}
-        Split cycles ..................... {}
-        Resume run ....................... {}
-        Automatic restart override ....... {}
-        Number of cores .................. {}
-        Convergence limit ................ {}
-        Verbosity level .................. {}
-        """.format(PYTHON_BINARY, SPLIT_CYCLES, RESTART_MODEL, AUTOMATIC_RESTART_OVERRIDE, N_CORES,
-                   CONVERGENCE_LOWER_LIMIT, VERBOSITY))
+    msg = textwrap.dedent(f"""\
+        Python  .......................... {PYTHON_BINARY}
+        Split cycles ..................... {SPLIT_CYCLES}
+        Resume run ....................... {RESTART_MODEL}
+        Automatic restart override ....... {AUTOMATIC_RESTART_OVERRIDE}
+        Number of cores .................. {N_CORES}
+        Convergence limit ................ {CONVERGENCE_LOWER_LIMIT}
+        Verbosity level .................. {VERBOSITY}
+        """)
 
     log(f"------------------------\n\n{msg}")
     if RUNTIME_FLAGS:
-        log("\nUsing these python flags:\n\t{}\n".format(RUNTIME_FLAGS))
+        log(f"\nUsing these python flags:\n\t{RUNTIME_FLAGS}\n")
 
     return
 
@@ -190,7 +189,7 @@ def print_model_output(input_line, n_cores, verbosity=VERBOSITY):
     split_line = line.split()
 
     if verbosity >= VERBOSE_ALL:
-        log("{}".format(line))
+        log(f"{line}")
         return
 
     if verbosity >= VERBOSE_EXTRA_INFORMATION_TRANSPORT:
@@ -203,7 +202,7 @@ def print_model_output(input_line, n_cores, verbosity=VERBOSITY):
                 except ValueError:
                     percent_done = split_line[-3]
                 try:
-                    n_photons = "{:1.2e}".format(round(int(split_line[-5]) * n_cores, 0))
+                    n_photons = f"{round(int(split_line[-5]) * n_cores, 0):1.2e}"
                 except ValueError:
                     n_photons = split_line[-5]
                 log(f"           - {percent_done}% of {n_photons} photons transported")
@@ -243,7 +242,7 @@ def restore_parameter_file(root, fp):
     fp: str
         The working directory to run the Python simulation in.
     """
-    opf = "{}/{}.pf".format(fp, root)
+    opf = f"{fp}/{root}.pf"
     bak = opf + ".bak"
     copyfile(bak, opf)
 
@@ -294,9 +293,9 @@ def print_model_errors(error, root):
     root: str
         The root name of the Python simulation
     """
-    log("\nErrors reported for {}:\n".format(root))
+    log(f"\nErrors reported for {root}:\n")
     for key in error.keys():
-        log("  {:9d} -- {}".format(error[key], key))
+        log(f"  {error[key]:9d} -- {key}")
 
     return
 
@@ -337,9 +336,9 @@ def run_model(root, fp, use_mpi, n_cores, resume_model=False, restart_from_spec_
         fp += "/"
     pf = root + ".pf"
 
-    model_log = "{}/{}.log.txt".format(fp, root)
+    model_log = f"{fp}/{root}.log.txt"
     logfile = open(model_log, "a")
-    logfile.write("{}\n".format(datetime.datetime.now()))
+    logfile.write(f"{datetime.datetime.now()}\n")
 
     # The purpose of this is to manage the situation where we "split" the
     # ionization and spectral cycles into TWO separate Python runs. So, we first
@@ -355,26 +354,26 @@ def run_model(root, fp, use_mpi, n_cores, resume_model=False, restart_from_spec_
 
     # Construct shell command to run Python and use subprocess to run
 
-    command = "cd {}; ".format(fp)
-    if not path.exists("{}/data".format(fp)):
+    command = f"cd {fp}; "
+    if not path.exists(f"{fp}/data"):
         command += "Setup_Py_Dir; "
     if use_mpi:
-        command += "mpirun -n {} ".format(n_cores)
+        command += f"mpirun -n {n_cores} "
 
-    command += " {} ".format(PYTHON_BINARY)
+    command += f" {PYTHON_BINARY} "
 
     # If a root.wind_save exists, then we assume that we want to restart
 
-    if resume_model or (not AUTOMATIC_RESTART_OVERRIDE and path.exists("{}/{}.wind_save".format(fp, root))):
+    if resume_model or (not AUTOMATIC_RESTART_OVERRIDE and path.exists(f"{fp}/{root}.wind_save")):
         command += " -r "
 
     # Add the run-time flags the user provided
 
     if RUNTIME_FLAGS:
-        command += " {} ".format(RUNTIME_FLAGS)
+        command += f" {RUNTIME_FLAGS} "
 
-    command += " {} ".format(pf)
-    log("{}\n".format(command))
+    command += f" {pf} "
+    log(f"{command}\n")
     process = Popen(command, stdout=PIPE, shell=True, bufsize=0)
 
     for line in iter(process.stdout.readline, ""):
@@ -395,7 +394,7 @@ def run_model(root, fp, use_mpi, n_cores, resume_model=False, restart_from_spec_
     _ = process.communicate()
     rc = process.returncode
     if rc:
-        log("Python exited with non-zero exit code: {}".format(rc))
+        log(f"Python exited with non-zero exit code: {rc}")
 
     if split_cycles and restart_from_spec_cycles:
         restore_parameter_file(root, fp)
@@ -426,16 +425,16 @@ def run_all_models(parameter_files, use_mpi, n_cores):
 
     for i, fp in enumerate(parameter_files):
         root, fp = pypython.get_root(fp)
-        msg = textwrap.dedent("""\
+        msg = textwrap.dedent(f"""\
             ------------------------
 
-             Model {}/{}
+             Model {i + 1}/{n_models}
 
             ------------------------
 
-            Root ...................... {}
-            Directory ................. {}
-            """.format(i + 1, n_models, root, fp))
+            Root ...................... {root}
+            Directory ................. {fp}
+            """)
 
         log(msg)
 
@@ -452,11 +451,11 @@ def run_all_models(parameter_files, use_mpi, n_cores):
         print_model_errors(errors, root)
 
         if rc != 0:
-            log("\nPython exited with return code {}".format(rc))
+            log(f"\nPython exited with return code {rc}")
             continue
 
         model_converged, model_convergence = check_model_convergence(root, fp)
-        log("Model convergence ........... {}".format(model_convergence))
+        log(f"Model convergence ........... {model_convergence}")
 
         # If the cycles are being split into two separate runs to lower the
         # number of photons during a spectrum cycles, handle that situation here
@@ -475,9 +474,9 @@ def run_all_models(parameter_files, use_mpi, n_cores):
                 errors = simulation.model_error_summary(root, fp, N_CORES)
                 print_model_errors(errors, root)
                 if rc != 0:
-                    log("\nPython exited due to error code {} after restarted spectral cycles.".format(rc))
+                    log(f"\nPython exited due to error code {rc} after restarted spectral cycles.")
             else:
-                log("The model has not converged to the desired limit of {}.".format(CONVERGENCE_LOWER_LIMIT))
+                log(f"The model has not converged to the desired limit of {CONVERGENCE_LOWER_LIMIT}.")
 
         log("")
 
@@ -490,12 +489,12 @@ def main():
     setup_script()
     init_logfile("log.txt")
     log("------------------------\n")
-    logsilent("{}".format(datetime.datetime.now()))
+    logsilent(f"{datetime.datetime.now()}")
 
     # Find models to run by searching recursively from the calling directory
     # for .pf files
 
-    parameter_files = pypython.get_file("*.pf")
+    parameter_files = pypython.get_files("*.pf")
     n_models = len(parameter_files)
 
     if not n_models:
@@ -518,9 +517,9 @@ def main():
 
     # Print the models which are going to be run to the screen
 
-    log("The following {} parameter files were found:\n".format(len(parameter_files)))
+    log(f"The following {len(parameter_files)} parameter files were found:\n")
     for file in parameter_files:
-        log("{}".format(file))
+        log(f"{file}")
     log("")
 
     # If we're doing a dry-run, then we don't go any further

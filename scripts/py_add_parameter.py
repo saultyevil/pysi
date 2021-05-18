@@ -10,7 +10,7 @@ will only operate on pf files which have the same root name.
 import argparse as ap
 from typing import List
 
-from pypython import get_file
+from pypython import get_files
 from pypython.simulation import grid
 
 
@@ -51,7 +51,7 @@ def main():
     else:
         root = args.root
 
-    add_parameter(get_file(f"*/{root}.pf"), args.parameter, args.value)
+    add_parameter(get_files(f"*/{root}.pf"), args.parameter, args.value)
 
     return
 

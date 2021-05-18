@@ -1,252 +1,197 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from typing import List, Tuple
-
 import numpy as np
 from matplotlib import pyplot as plt
 
-from pypython import (SPECTRUM_UNITS_FLM, SPECTRUM_UNITS_FNU, SPECTRUM_UNITS_LNU, Spectrum, get_root, smooth_array)
-from pypython.constants import PARSEC
-from pypython.error import InvalidParameter
+from pypython import (SPECTRUM_UNITS_FLM, SPECTRUM_UNITS_FNU, SPECTRUM_UNITS_LNU, Spectrum, get_root)
 from pypython.plot import (ax_add_line_ids, common_lines, get_y_lims_for_x_lims, normalize_figure_style,
                            photoionization_edges, remove_extra_axes, subplot_dims)
 
 MIN_SPEC_COMP_FLUX = 1e-15
-DEFAULT_PYTHON_DISTANCE = 100 * PARSEC
+
+# Helper functions -------------------------------------------------------------
 
 
-def _plot_panel_subplot(ax, x_values, spectrum, units, things_to_plot, x_limits, sm, alpha, scale, frequency_space,
-                        skip_sparse):
-    """Create a subplot panel for a figure given the spectrum components names
-    in the list dname.
-    todo: switch x_limits to xmin and xmax inputs
+def _add_line_labels(ax, labels, scale, offset=0.0):
+    """Add labels of lines or absorption edges to ax.
 
     Parameters
     ----------
     ax: plt.Axes
-        The plt.Axes object for the subplot
-    x_values: np.array[float]
-        The x-axis data, i.e. wavelength or frequency
-    spectrum: pd.DataFrame
-        The spectrum data file as a pandas DataFrame
-    units: str
-        The units of the spectrum
-    things_to_plot: list[str]
-        The name of the spectrum components to add to the subplot panel
-    x_limits: Tuple[float, float]
-        The lower and upper x-axis boundaries (xlower, xupper)
-    sm: int
-        The size of the boxcar filter to smooth the spectrum components
-    alpha: float
-        The alpha value of the spectrum to be plotted.
-    scale: bool
-        Set the scale for the plot axes
-    frequency_space: bool
-        Create the figure in frequency space instead of wavelength space
-    skip_sparse: bool
-        If True, then sparse spectra will not be plotted
-    n: str
-        The name of the calling function
+        The subplot to add labels to.
+    labels: tuple or list
+        The labels to add.
+    scale: str
+        The scaling of the axes.
+    """
+    if scale == "loglog" or scale == "logx":
+        logx = True
+    else:
+        logx = False
+    ax = ax_add_line_ids(ax, labels, logx=logx)
+
+    return ax
+
+
+def _get_inclinations(spectrum, inclinations):
+    """Get the inclination angles which will be used.
+
+    If "all" is passed, then the inclinations from the spectrum object will
+    be used. Otherwise, this will simply create a list of strings of the
+    inclinations.
+
+    Parameters
+    ----------
+    spectrum: pypython.Spectrum
+        The spectrum object.
+    inclinations: list
+        A list of inclination angles wanted to be plotted.
+    """
+
+    if type(inclinations) == str:
+        inclinations = [inclinations]
+
+    if len(inclinations) > 1:
+        if inclinations[0] == "all":  # ignore "all" if other inclinations are passed
+            inclinations = inclinations[1:]
+    else:
+        if inclinations[0] == "all":
+            inclinations = spectrum.inclinations
+
+    return [str(inclination) for inclination in inclinations]
+
+
+def _plot_subplot(ax, spectrum, things_to_plot, xmin, xmax, alpha, scale, use_flux, skip_sparse):
+    """Create a subplot panel.
+
+    todo: handle the situation when restircted x range may have bad y limits
+
+    Parameters
+    ----------
 
     Returns
     -------
     ax: pyplot.Axes
-        The pyplot.Axes object for the subplot"""
+        The pyplot.Axes object for the subplot
+    """
 
-    if type(things_to_plot) == str:
+    if type(things_to_plot) is str:
         things_to_plot = [things_to_plot]
 
-    n_skip = 0
+    n_skipped = 0
 
     for thing in things_to_plot:
-        try:
-            fl = smooth_array(spectrum[thing], sm)
-        except KeyError:
-            print("unable to find data column with label {}".format(thing))
-            continue
 
-        # Skip sparse spec components to make prettier plot
-
-        if skip_sparse and len(fl[fl < MIN_SPEC_COMP_FLUX]) > 0.7 * len(fl):
-            n_skip += 1
+        y = spectrum[thing]
+        if skip_sparse and len(y[y < MIN_SPEC_COMP_FLUX]) > 0.7 * len(y):
+            n_skipped += 1
             continue
 
         # If plotting in frequency space, of if the units then the flux needs
         # to be converted in nu F nu
 
-        if frequency_space and units == SPECTRUM_UNITS_FLM:
-            fl *= spectrum["Lambda"]
-        elif frequency_space and units == SPECTRUM_UNITS_FNU:
-            fl *= spectrum["Freq."]
+        if use_flux:
+            if spectrum.units == SPECTRUM_UNITS_FLM:
+                y *= spectrum["Lambda"]
+            elif spectrum.units == SPECTRUM_UNITS_FNU:
+                y *= spectrum["Freq."]
+            else:
+                y *= spectrum["Freq."]
 
-        # If the spectrum units are Lnu then plot nu Lnu
+        if spectrum.units == SPECTRUM_UNITS_FLM:
+            x = spectrum["Lambda"]
+        else:
+            x = spectrum["Freq."]
 
-        if units == SPECTRUM_UNITS_LNU:
-            fl *= spectrum["Freq."]
+        ax.plot(x, y, label=thing, alpha=alpha)
 
-        ax.plot(x_values, fl, label=thing, alpha=alpha)
-
-        if scale == "logx" or scale == "loglog":
-            ax.set_xscale("log")
-        if scale == "logy" or scale == "loglog":
-            ax.set_yscale("log")
-
-    if n_skip == len(things_to_plot):
+    if n_skipped == len(things_to_plot):
+        print("Nothing was plotted due to all the spectra being too sparse")
         return ax
 
-    ax.set_xlim(x_limits[0], x_limits[1])
-    if frequency_space:
-        ax.set_xlabel(r"Frequency (Hz)")
-        if units == SPECTRUM_UNITS_LNU:
-            ax.set_ylabel(r"$\nu L_{\nu}$ (erg s$^{-1}$ Hz$^{-1})$")
-        else:
-            ax.set_ylabel(r"$\nu F_{\nu}$ (erg s$^{-1}$ cm$^{-2})$")
-    else:
-        ax.set_xlabel(r"Wavelength ($\AA$)")
-        ax.set_ylabel(r"$F_{\lambda}$ (erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)")
+    if scale == "logx" or scale == "loglog":
+        ax.set_xscale("log")
+    if scale == "logy" or scale == "loglog":
+        ax.set_yscale("log")
 
+    ax.set_xlim(xmin, xmax)
+    ax = _set_axes_labels(ax, spectrum.units, use_flux)
     ax.legend(loc="lower left")
 
     return ax
 
 
-def plot(x,
-         y,
-         xmin=None,
-         xmax=None,
-         xlabel=None,
-         ylabel=None,
-         scale="logy",
-         fig=None,
-         ax=None,
-         label=None,
-         alpha=1.0,
-         display=False):
-    """This is a simple plotting function designed to give you the bare
-    minimum. It will create a figure and axes object for a single panel and
-    that is it. It is mostly designed for quick plotting of models and real
-    data.
+def _set_axes_labels(ax, units, use_flux):
+    """Set the units of a given matplotlib axes.
 
     Parameters
     ----------
-    x: np.ndarray
-        The wavelength or x-axis data to plot.
-    y: np.ndarray
-        The flux or y-axis data to plot.
-    xmin: float [optional]
-        The smallest number to display on the x-axis
-    xmax: float [optional]
-        The largest number to display on the x-axis
-    xlabel: str [optional]
-        The data label for the x-axis.
-    ylabel: str [optional]
-        The data label for the y-axis.
-    scale: str [optional]
-        The scale of the axes for the plot.
-    fig: plt.Figure [optional]
-        A matplotlib Figure object of which to use to create the plot.
-    ax: plt.Axes [optional]
-        A matplotlib Axes object of which to use to create the plot.
-    label: str [optional]
-        A label for the data being plotted.
-    alpha: float [optional]
-        The alpha value for the data to be plotted.
-    display: bool [optional]
-        If set to True, then the plot will be displayed.
-
-    Returns
-    -------
-    fig: plt.Figure
-        The figure object for the plot.
     ax: plt.Axes
-        The axes object containing the plot.
+        The axes object to update.
+    units: str
+        The units of the spectrum.
+    use_flux: bool
+        If flux/nu Lnu is being plotted instead of flux density or
+        luminosity.
     """
 
-    # It doesn't make sense to provide only fig and not ax, or ax and not fig
-    # so at this point we will throw an error message and return
-
-    normalize_figure_style()
-
-    if fig and not ax:
-        raise InvalidParameter("fig has been provided, but ax has not. Both are required.")
-    if not fig and ax:
-        raise InvalidParameter("fig has not been provided, but ax has. Both are required.")
-    if not fig and not ax:
-        fig, ax = plt.subplots(1, 1, figsize=(12, 5))
-    if label is None:
-        label = ""
-
-    ax.plot(x, y, label=label, alpha=alpha)
-
-    # Set the scales of the aes
-
-    if scale == "loglog" or scale == "logx":
-        ax.set_xscale("log")
-    if scale == "loglog" or scale == "logy":
-        ax.set_yscale("log")
-
-    # If axis labels are provided, then set them
-
-    if xlabel:
-        ax.set_xlabel(xlabel)
-    if ylabel:
-        ax.set_ylabel(ylabel)
-
-    # Set the x and y axis limits. For the y axis, we use a function to try and
-    # figure out appropriate values for the axis limits to display the data
-    # sensibly
-
-    xlims = [x.min(), x.max()]
-    if not xmin:
-        xmin = xlims[0]
-    if not xmax:
-        xmax = xlims[1]
-    xlims = (xmin, xmax)
-    ax.set_xlim(xlims[0], xlims[1])
-
-    ymin, ymax = get_y_lims_for_x_lims(x, y, xmin, xmax)
-    ax.set_ylim(ymin, ymax)
-
-    if display:
-        plt.show()
+    if use_flux:
+        if units == SPECTRUM_UNITS_LNU:
+            ax.set_xlabel(r"Rest-frame Frequency [Hz]")
+            ax.set_ylabel(r"$\nu L_{\nu}$ [erg s$^{-1}$]")
+        elif units == SPECTRUM_UNITS_FLM:
+            ax.set_xlabel(r"Rest-frame Wavelength [\AA]")
+            ax.set_ylabel(r"$\lambda F_{\lambda}$ [erg s$^{-1}$]")
+        else:
+            ax.set_xlabel(r"Rest-frame Frequency [Hz]")
+            ax.set_ylabel(r"$\nu F_{\nu}$ [erg s$^{-1}$ cm$^{-2}$]")
     else:
-        plt.close()
+        if units == SPECTRUM_UNITS_LNU:
+            ax.set_xlabel(r"Rest-frame Frequency [Hz]")
+            ax.set_ylabel(r"$L_{\nu}$ [erg s$^{-1}$ Hz$^{-1}$]")
+        elif units == SPECTRUM_UNITS_FLM:
+            ax.set_xlabel(r"Rest-frame Wavelength [\AA]")
+            ax.set_ylabel(r"$F_{\lambda}$ [erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
+        else:
+            ax.set_xlabel(r"Rest-frame Frequency [Hz]")
+            ax.set_ylabel(r"$F_{\nu}$ [erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
 
-    return fig, ax
+    return ax
 
 
-def plot_optical_depth(root,
-                       wd,
-                       inclinations="all",
-                       xmin=None,
-                       xmax=None,
-                       scale="loglog",
-                       show_absorption_edge_labels=True,
-                       frequency_space=True,
-                       display=False):
-    """Create an optical depth spectrum for a given Python models. This figure
-    can be created in both wavelength or frequency space and with various
-    choices of axes scaling.
+# Plotting functions -----------------------------------------------------------
 
-    This function will return the Figure and Axes object used to create the
-    plot.
+
+def optical_depth(spectrum,
+                  inclinations="all",
+                  xmin=None,
+                  xmax=None,
+                  scale="loglog",
+                  label_edges=True,
+                  frequency_space=True,
+                  display=False):
+    """Plot the continuum optical depth spectrum.
+
+    Create a plot of the continuum optical depth against either frequency or
+    wavelength. Frequency space is the default and preferred. This function
+    returns the Figure and Axes object.
+    todo: handle the situation when restricted x range may have bad y limits
 
     Parameters
     ----------
-    root: str
-        The root name of the Python models
-    wd: str
-        The absolute or relative path containing the Python models
-    inclinations: List[str] [optional]
-        A list of inclination angles to plot
+    spectrum: pypython.Spectrum
+        The spectrum object.
+    inclinations: list [optional]
+        A list of inclination angles to plot, but "all" is also an acceptable
+        choice if all inclinations are to be plotted.
     xmin: float [optional]
         The lower x boundary for the figure
     xmax: float [optional]
         The upper x boundary for the figure
     scale: str [optional]
         The scale of the axes for the plot.
-    show_absorption_edge_labels: bool [optional]
+    label_edges: bool [optional]
         Label common absorption edges of interest onto the figure
     frequency_space: bool [optional]
         Create the figure in frequency space instead of wavelength space
@@ -255,79 +200,66 @@ def plot_optical_depth(root,
 
     Returns
     -------
-    fig: pyplot.Figure
-        The pyplot.Figure object for the created figure
-    ax: pyplot.Axes
-        The pyplot.Axes object for the created figure
+    fig: plt.Figure
+        matplotlib Figure object.
+    ax: plt.Axes
+        matplotlib Axes object.
     """
+    if spectrum.current != "spec_tau":
+        spectrum.set("spec_tau")
 
     normalize_figure_style()
+    fig, ax = plt.subplots(1, 1, figsize=(12, 7))
 
-    fig, ax = plt.subplots(1, 1, figsize=(12, 9))
-    if type(inclinations) == str:
-        inclinations = [inclinations]
-    spectrum = Spectrum(root, wd, "spec_tau")
-    spec_angles = spectrum.inclinations
-    n_angles = len(spec_angles)
-    n_plots = len(inclinations)  # Really have no clue what this does in hindsight...
+    # Determine if we're plotting in frequency or wavelength space and then
+    # determine the inclinations we want to plot
 
-    # Ignore all if other inclinations are passed - assume it was a mistake to pass all
-
-    if inclinations[0] == "all" and len(inclinations) > 1:
-        inclinations = inclinations[1:]
-        n_plots = len(inclinations)
-    if inclinations[0] == "all":
-        inclinations = spec_angles
-        n_plots = n_angles
-
-    # Set wavelength or frequency boundaries
-
-    xlabel = "Lambda"
     if frequency_space:
         xlabel = "Freq."
+    else:
+        xlabel = "Lambda"
 
-    x = spectrum[xlabel]
     if not xmin:
         xmin = np.min(spectrum[xlabel])
     if not xmax:
         xmax = np.max(spectrum[xlabel])
 
-    # This loop will plot the inclinations provided by the user
+    inclinations = _get_inclinations(spectrum, inclinations)
 
-    for i in range(n_plots):
-        if inclinations[0] != "all" and inclinations[i] not in spec_angles:  # Skip inclinations which don't exist
+    # Now loop over the inclinations and plot each one, skipping ones which are
+    # completely empty
+
+    for inclination in inclinations:
+        if inclination != "all":
+            if inclination not in spectrum.inclinations:  # Skip inclinations which don't exist
+                continue
+        label = f"{inclination}" + r"$^{\circ}$"
+
+        if np.count_nonzero(spectrum[inclination]) == 0:
             continue
-        ii = str(inclinations[i])
-        label = ii + r"$^{\circ}$"
-        n_non_zero = np.count_nonzero(spectrum[ii])
 
-        # Skip inclinations which look through vacuum
+        ax.plot(spectrum[xlabel], spectrum[inclination], linewidth=2, label=label)
 
-        if n_non_zero == 0:
-            continue
-
-        ax.plot(x, spectrum[ii], linewidth=2, label=label)
         if scale == "logx" or scale == "loglog":
             ax.set_xscale("log")
         if scale == "logy" or scale == "loglog":
             ax.set_yscale("log")
 
-    ax.set_ylabel(r"Optical Depth, $\tau$")
-    if frequency_space:
-        ax.set_xlabel(r"Frequency, [Hz]")
-    else:
-        ax.set_xlabel(r"Wavelength, [$\AA$]")
-    ax.set_xlim(xmin, xmax)
-    ax.legend(loc="lower left")
+    ax.set_ylabel(r"Continuum Optical Depth")
 
-    if show_absorption_edge_labels:
-        if scale == "loglog" or scale == "logx":
-            logx = True
-        else:
-            logx = False
-        ax_add_line_ids(ax, photoionization_edges(frequency_space), logx=logx)
+    if frequency_space:
+        ax.set_xlabel(r"Rest-frame Frequency [Hz]")
+    else:
+        ax.set_xlabel(r"Rest-frame Wavelength [$\AA$]")
+
+    ax.set_xlim(xmin, xmax)
+    ax.legend(loc="upper left")
+
+    if label_edges:
+        ax = _add_line_labels(ax, photoionization_edges(frequency_space), scale)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+    fig.savefig(f"{spectrum.fp}/{spectrum.root}_spec_optical_depth.png")
 
     if display:
         plt.show()
@@ -337,153 +269,63 @@ def plot_optical_depth(root,
     return fig, ax
 
 
-def plot_spectrum_physics_process_contributions(contribution_spectra,
-                                                inclination,
-                                                root,
-                                                wd=".",
-                                                xmin=None,
-                                                xmax=None,
-                                                ymin=None,
-                                                ymax=None,
-                                                scale="logy",
-                                                line_labels=True,
-                                                sm=5,
-                                                lw=2,
-                                                alpha=0.75,
-                                                file_ext="png",
-                                                display=False):
-    """Description of the function.
-    todo: some of these things really need re-naming..... it seems very confusing
+def reprocessing(spectrum,
+                 xmin=None,
+                 xmax=None,
+                 scale="loglog",
+                 display=False):
+    raise NotImplemented()
+
+
+def spectrum_components(spectrum,
+                        xmin=None,
+                        xmax=None,
+                        scale="loglog",
+                        alpha=0.65,
+                        use_flux=False,
+                        display=False):
+    """Plot the different "components" of the spectrum.
+
+    The components are the columns labelled with words, rather than inclination
+    angles. These columns are not supposed to add together, i.e. all of them
+    together shouldn't equal the "Emitted" spectrum, which is the angle
+    averaged escaping flux/luminosity.
 
     Parameters
-    ----------
+    ----–-----
+    spectrum: pypython.Spectrum
+        The spectrum object.
+    xmin: float [optional]
+        The minimum x boundary to plot.
+    xmax: float [optional]
+        The maximum x boundary to plot.
+    scale: str [optional]
+        The scaling of the axes.
+    alpha: float [optional]
+        The line transparency on the plot.
+    use_flux: bool [optional]
+        Plot in flux or nu Lnu instead of flux density or luminosity.
+    display: bool [optional]
+        Display the object once plotted.
 
     Returns
     -------
     fig: plt.Figure
-        The plt.Figure object for the created figure
+        matplotlib Figure object.
     ax: plt.Axes
-        The plt.Axes object for the created figure"""
-
-    normalize_figure_style()
-
-    fig, ax = plt.subplots(figsize=(12, 8))
-
-    for name, spectrum in contribution_spectra.items():
-        ax.plot(spectrum["Lambda"], smooth_array(spectrum[inclination], sm), label=name, linewidth=lw, alpha=alpha)
-
-    if scale == "logx" or scale == "loglog":
-        ax.set_xscale("log")
-    if scale == "logy" or scale == "loglog":
-        ax.set_yscale("log")
-    ax.set_xlim(xmin, xmax)
-    ax.set_ylim(ymin, ymax)
-    ax.legend(loc="upper center", ncol=len(contribution_spectra))
-    ax.set_xlabel(r"Wavelength [$\AA$]")
-    ax.set_ylabel(r"Flux F$_{\lambda}$ [erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$]")
-
-    if line_labels:
-        if scale == "logx" or scale == "loglog":
-            logx = True
-        else:
-            logx = False
-        ax = ax_add_line_ids(ax, common_lines(), logx=logx)
-
-    fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
-    fig.savefig("{}/{}_spec_processes.{}".format(wd, root, file_ext), dpi=300)
-    if file_ext != "png":
-        fig.savefig("{}/{}_spec_processes.png".format(wd, root), dpi=300)
-
-    if display:
-        plt.show()
-    else:
-        plt.close()
-
-    return fig, ax
-
-
-def plot_spectrum_components(root,
-                             wd,
-                             spec_tot=False,
-                             wind_tot=False,
-                             xmin=None,
-                             xmax=None,
-                             smooth_amount=5,
-                             scale="loglog",
-                             alpha=0.6,
-                             frequency_space=False,
-                             display=False):
-    """Create a figure of the different spectrum components of a Python
-    spectrum file. Note that all of the spectrum components added together DO
-    NOT have to equal the output spectrum or the emitted spectrum (don't ask).
-
-    Parameters
-    ----------
-    root: str
-        The root name of the Python models
-    wd: str
-        The absolute or relative path containing the Python models
-    spec_tot: bool [optional]
-        If True, the root.log_spec_tot file will be plotted
-    wind_tot: bool [optional]
-        If True, the root.log_wind_tot file will be plotted
-    xmin: float [optional]
-        The lower x boundary for the figure
-    xmax: float [optional]
-        The upper x boundary for the figure
-    smooth_amount: int [optional]
-        The size of the boxcar filter to smooth the spectrum components
-    scale: bool [optional]
-        The scale to use for the axes. Allowed values are linlin, logx, logy and
-        loglog.
-    alpha: float [optional]
-        The alpha value used for plotting the spectra.
-    frequency_space: bool [optional]
-        Create the figure in frequency space instead of wavelength space
-    display: bool [optional]
-        Display the final plot if True.
-
-    Returns
-    -------
-    fig: pyplot.Figure
-        The pyplot.Figure object for the created figure
-    ax: pyplot.Axes
-        The pyplot.Axes object for the created figure
+        matplotlib Axes object.
     """
 
     normalize_figure_style()
 
     fig, ax = plt.subplots(2, 1, figsize=(12, 10))
 
-    # Determine the type of spectrum to read in
-
-    if spec_tot:
-        scale = "loglog"
-        frequency_space = True
-        logspec = True
-        spectype = "spec_tot"
-    elif wind_tot:
-        scale = "loglog"
-        frequency_space = True
-        logspec = True
-        spectype = "spec_tot_wind"
-    else:
-        spectype = None
-        logspec = False
-
-    spectrum = Spectrum(root, wd, spectype, logspec)
-    if frequency_space:
-        x = spectrum["Freq."]
-    else:
-        x = spectrum["Lambda"]
-    xlims = (None, None)
-
-    ax[0] = _plot_panel_subplot(ax[0], x, spectrum, spectrum.units, ["Created", "WCreated", "Emitted"], xlims,
-                                smooth_amount, alpha, scale, frequency_space, True)
-    ax[1] = _plot_panel_subplot(ax[1], x, spectrum, spectrum.units, ["CenSrc", "Disk", "Wind", "HitSurf"], xlims,
-                                smooth_amount, alpha, scale, frequency_space, True)
+    ax[0] = _plot_subplot(ax[0], spectrum, ["CenSrc", "Disk", "Wind"], xmin, xmax, alpha, scale, use_flux, True)
+    ax[1] = _plot_subplot(ax[1], spectrum, ["Created", "WCreated", "Emitted", "HitSurf"], xmin, xmax, alpha, scale,
+                          use_flux, True)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+    fig.savefig(f"{spectrum.fp}/{spectrum.root}_spec_components.png")
 
     if display:
         plt.show()
@@ -493,99 +335,74 @@ def plot_spectrum_components(root,
     return fig, ax
 
 
-def plot_spectrum_inclinations_in_subpanels(root,
-                                            fp,
-                                            xmin=None,
-                                            xmax=None,
-                                            smooth_amount=5,
-                                            add_line_ids=True,
-                                            frequency_space=False,
-                                            scale="logy",
-                                            figsize=None,
-                                            display=False):
-    """Creates a figure which plots all of the different inclination angles in
-    different panels.
+def spectrum_observer(spectrum,
+                      inclinations,
+                      xmin=None,
+                      xmax=None,
+                      scale="logy",
+                      use_flux=False,
+                      label_lines=True,
+                      display=False):
+    """Plot the request observer spectrum.
+
+    If "all" is passed to inclinations, then all the observer angles will be
+    plotted on a single figure.
 
     Parameters
     ----------
-    root: str
-        The root name of the Python models
-    fp: str
-        The absolute or relative path containing the Python models
-    xmin: float [optional]
-        The lower x boundary for the figure
-    xmax: float [optional]
-        The upper x boundary for the figure
-    smooth_amount: int [optional]
-        The size of the boxcar filter to smooth the spectrum components.
-    add_line_ids: bool [optional]
-        Plot labels for common line transitions.
-    frequency_space: bool [optional]
-        Create the figure in frequency space instead of wavelength space
-    scale: bool [optional]
-        Set the scales for the axes in the plot
-    figsize: Tuple[float, float] [optional]
-        The size of the Figure in matplotlib units (inches?)
-    display: bool [optional]
-        Display the final plot if True.
+    spectrum: pypython.Spectrum
+        The spectrum being plotted, "spec" or "log_spec" should be the active
+        spectrum.
+    inclinations: list or str
+        The inclination angles to plot.
+    xmin: float
+        The lower x boundary of the plot.
+    xmax: float
+        The upper x boundary of the plot.
+    scale: str
+        The scale of the axes.
+    use_flux: bool
+        Plot the flux instead of flux density.
+    label_lines: bool
+        Label common spectrum lines.
+    display: bool
+        Display the figure once plotted.
 
     Returns
     -------
-    fig: pyplot.Figure
-        The pyplot.Figure object for the created figure
-    ax: pyplot.Axes
-        The pyplot.Axes object for the created figure
+    fig: plt.Figure
+        matplotlib Figure object.
+    ax: plt.Axes
+        matplotlib Axes object.
     """
 
-    spectrum = Spectrum(root, fp)
-    spectrum_units = spectrum.units
-    spectrum_inclinations = spectrum.inclinations
-    n_inclinations = spectrum.n_inclinations
-    plot_dimensions = subplot_dims(n_inclinations)
-
-    if figsize:
-        size = figsize
-    else:
-        size = (12, 10)
+    if spectrum.current not in ["spec", "log_spec"]:
+        spectrum.set("spec")
 
     normalize_figure_style()
+    fig, ax = plt.subplots(1, 1, figsize=(12, 5))
 
-    fig, ax = plt.subplots(plot_dimensions[0], plot_dimensions[1], figsize=size, squeeze=False)
-    fig, ax = remove_extra_axes(fig, ax, n_inclinations, plot_dimensions[0] * plot_dimensions[1])
+    inclinations = _get_inclinations(spectrum, inclinations)
 
-    # Use either frequency or wavelength and set the plot limits respectively
+    wrong_input = []
+    for inclination in inclinations:
+        if inclination not in spectrum.inclinations:
+            wrong_input.append(inclination)
 
-    if frequency_space:
-        x = spectrum["Freq."]
-    else:
-        x = spectrum["Lambda"]
-    xlims = [x.min(), x.max()]
-    if not xmin:
-        xmin = xlims[0]
-    if not xmax:
-        xmax = xlims[1]
-    xlims = (xmin, xmax)
+    if len(wrong_input) > 0:
+        print(f"The following inclinations provided are not in the spectrum inclinations and will be skipped:"
+              f" {', '.join(wrong_input)}")
+        for to_remove in wrong_input:
+            inclinations.remove(to_remove)
 
-    inclination_index = 0
-    for i in range(plot_dimensions[0]):
-        for j in range(plot_dimensions[1]):
-            if inclination_index > n_inclinations - 1:
-                break
-            name = str(spectrum_inclinations[inclination_index])
-            ax[i, j] = _plot_panel_subplot(ax[i, j], x, spectrum, spectrum_units, [name], xlims, smooth_amount, 1,
-                                           scale, frequency_space, False)
-            ymin, ymax = get_y_lims_for_x_lims(x, spectrum[name], xmin, xmax)
-            ax[i, j].set_ylim(ymin, ymax)
+    if len(inclinations) == 0:
+        print(f"Returning empty figure without creating plot as there is nothing to plot")
+        return fig, ax
 
-            if add_line_ids:
-                if scale == "loglog" or scale == "logx":
-                    logx = True
-                else:
-                    logx = False
-                ax[i, j] = ax_add_line_ids(ax[i, j], common_lines(frequency_space), logx=logx)
-            inclination_index += 1
+    ax = _plot_subplot(ax, spectrum, inclinations, xmin, xmax, 1.0, scale, use_flux, False)
 
-    fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+    if label_lines:
+        ax = _add_line_labels(ax, common_lines(spectrum=spectrum), scale)
 
     if display:
         plt.show()
@@ -595,112 +412,30 @@ def plot_spectrum_inclinations_in_subpanels(root,
     return fig, ax
 
 
-def plot_single_spectrum_inclination(root,
-                                     fp,
-                                     inclination,
-                                     xmin=None,
-                                     xmax=None,
-                                     smooth_amount=5,
-                                     scale="logy",
-                                     frequency_space=False,
-                                     display=False):
-    """Create a plot of an individual spectrum for the provided inclination
-    angle.
-
-    Parameters
-    ----------
-    root: str
-        The root name of the Python models
-    fp: str
-        The absolute or relative path containing the Python models
-    inclination: str, float, int
-        The specific inclination angle to plot for
-    xmin: float [optional]
-        The lower x boundary for the figure
-    xmax: float [optional]
-        The upper x boundary for the figure
-    smooth_amount: int [optional]
-        The size of the boxcar filter to smooth the spectrum components
-    scale: str [optional]
-        The scale of the axes for the plot.
-    frequency_space: bool [optional]
-        Create the figure in frequency space instead of wavelength space
-    display: bool [optional]
-        Display the final plot if True.
-
-    Returns
-    -------
-    fig: pyplot.Figure
-        The pyplot.Figure object for the created figure
-    ax: pyplot.Axes
-        The pyplot.Axes object for the created figure
-    """
-
-    normalize_figure_style()
-
-    s = Spectrum(root, fp, smooth=smooth_amount)
-
-    if frequency_space:
-        x = s["Freq."]
-    else:
-        x = s["Lambda"]
-    xlims = [x.min(), x.max()]
-    if not xmin:
-        xmin = xlims[0]
-    if not xmax:
-        xmax = xlims[1]
-    xlims = (xmin, xmax)
-
-    if type(inclination) != str:
-        try:
-            inclination = str(inclination)
-        except ValueError:
-            print("unable to convert into string")
-            return
-    y = s[inclination]
-    if frequency_space:
-        xax = r"Frequency [Hz]"
-        yax = r"$\nu F_{\nu}$ (erg s$^{-1}$ cm$^{-2}$)"
-        y *= s["Lambda"]
-    else:
-        xax = r"Wavelength [$\AA$]"
-        yax = r"$F_{\lambda}$ (erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)"
-
-    fig, ax = plot(x, y, xlims[0], xlims[1], xax, yax, scale)
-
-    if display:
-        plt.show()
-    else:
-        plt.close()
-
-    return fig, ax
-
-
-def plot_multiple_model_spectra(output_name,
-                                spectra_filepaths,
-                                inclination_angle,
-                                fp=".",
-                                xmin=None,
-                                xmax=None,
-                                frequency_space=False,
-                                axes_scales="logy",
-                                smooth_amount=5,
-                                plot_common_lines=False,
-                                file_ext="png",
-                                display=False):
-    """Plot multiple spectra, from multiple models, given in the list of spectra
-    provided.
-    todo: when using "all", create separate plot for each inclination
+def multiple_spectra(output_name,
+                     filepaths,
+                     inclinations,
+                     s=".",
+                     xmin=None,
+                     xmax=None,
+                     frequency_space=False,
+                     axes_scales="logy",
+                     smooth_amount=5,
+                     plot_common_lines=False,
+                     file_ext="png",
+                     display=False):
+    """Plot multiple spectra, from multiple models, given in the list of
+    spectra provided.
 
     Parameters
     ----------
     output_name: str
         The name to use for the created plot.
-    spectra_filepaths: List[str]
+    filepaths: List[str]
         A list of spectrum file paths.
-    inclination_angle: str
+    inclinations: str
         The inclination angle(s) to plot
-    fp: [optional] str
+    s: [optional] str
         The working directory containing the Python models
     xmin: [optional] float
         The smallest value on the x axis.
@@ -724,56 +459,60 @@ def plot_multiple_model_spectra(output_name,
     fig: plt.Figure
         Figure object.
     ax: plt.Axes
-        Axes object."""
+        Axes object.
+    """
 
     normalize_figure_style()
 
-    spectrum_objects = []
-    for spectrum in spectra_filepaths:
-        root, cd = get_root(spectrum)
-        spectrum_objects.append(Spectrum(root, cd, smooth=smooth_amount))
+    spectra = []
 
-    if inclination_angle == "all":
-        inclinations = []
-        for spectrum in spectrum_objects:
-            inclinations += spectrum.inclinations
-        inclinations = sorted(list(dict.fromkeys(inclinations)))
-        figsize = (12, 12)
+    for s in filepaths:
+        root, s = get_root(s)
+        spectra.append(
+            Spectrum(root, s, smooth=smooth_amount)
+        )
+
+    # Now, this is some convoluted shit to get the inclination angles
+    # get only the unique, sorted, values if inclination == "all"
+
+    figsize = (12, 5)
+
+    if inclinations == "all":
+        inclinations = sorted(list(dict.fromkeys([s.inclinations for s in spectra])))
     else:
-        inclinations = [inclination_angle]
-        figsize = (12, 5)
+        inclinations = inclinations
+
+    if type(inclinations) is not list:
+        inclinations = list(inclinations)
 
     n_inclinations = len(inclinations)
+
     n_rows, n_cols = subplot_dims(n_inclinations)
+
     fig, ax = plt.subplots(n_rows, n_cols, figsize=figsize, squeeze=False)
     fig, ax = remove_extra_axes(fig, ax, n_inclinations, n_rows * n_cols)
-    ax = ax.flatten()  # for safety...
+    ax = ax.flatten()
 
     y_min = +1e99
     y_max = -1e99
 
     for i, inclination in enumerate(inclinations):
 
-        for spectrum in spectrum_objects:
-
-            # Ignore spectra which are from continuum only models...
-
-            if spectrum.fp.find("continuum") != -1:
-                continue
+        for s in spectra:
 
             if frequency_space:
-                x = spectrum["Freq."]
+                x = s["Freq."]
             else:
-                x = spectrum["Lambda"]
+                x = s["Lambda"]
             try:
                 if frequency_space:
-                    y = spectrum["Lambda"] * spectrum[inclination]
+                    y = s["Lambda"] * s[inclination]
                 else:
-                    y = spectrum[inclination]
+                    y = s[inclination]
             except KeyError:
                 continue
 
-            ax[i].plot(x, y, label=spectrum.fp.replace("_", r"\_"), alpha=0.75)
+            ax[i].plot(x, y, label=s.fp.replace("_", r"\_"), alpha=0.75)
 
             # Calculate the y-axis limits to keep all spectra within the
             # plot area
@@ -825,10 +564,10 @@ def plot_multiple_model_spectra(output_name,
     ax[0].legend(loc="upper left")
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 
-    if inclination_angle != "all":
-        name = "{}/{}_i{}".format(fp, output_name, inclination_angle)
+    if inclinations != "all":
+        name = "{}/{}_i{}".format(s, output_name, inclinations)
     else:
-        name = "{}/{}".format(fp, output_name)
+        name = "{}/{}".format(s, output_name)
 
     fig.savefig("{}.{}".format(name, file_ext))
     if file_ext == "pdf" or file_ext == "eps":

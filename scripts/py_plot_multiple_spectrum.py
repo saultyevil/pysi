@@ -8,7 +8,7 @@ Spectrum files are recursively searched from the calling directory.
 
 import argparse as ap
 
-from pypython import get_file
+from pypython import get_files
 from pypython.error import EXIT_FAIL
 from pypython.plot import spectrum
 
@@ -75,7 +75,7 @@ def main(setup=None):
         output_name, wd, inclination, root, x_min, x_max, frequency_space, common_lines, axes_scales, smooth_amount,\
             file_extension, display = setup_script()
 
-    spectra = get_file("*.spec")
+    spectra = get_files("*.spec")
     if len(spectra) == 0:
         print("Unable to find any spectrum files")
         exit(EXIT_FAIL)

@@ -11,7 +11,7 @@ from typing import List
 
 from psutil import cpu_count
 
-from pypython import get_file, get_root
+from pypython import get_files, get_root
 
 LOGFILE = None
 
@@ -27,7 +27,7 @@ def create_run_script(commands):
     """
 
     paths = []
-    pf_fp = get_file("*.pf")
+    pf_fp = get_files("*.pf")
     for fp in pf_fp:
         root, path = get_root(fp)
         paths.append(path)

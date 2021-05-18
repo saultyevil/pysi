@@ -10,8 +10,65 @@ spectrum files and the wind save tables.
 import numpy as np
 from matplotlib import pyplot as plt
 
+from pypython import SPECTRUM_UNITS_FNU, SPECTRUM_UNITS_LNU
 from pypython.constants import ANGSTROM, C
-from pypython.error import DimensionError
+from pypython.error import DimensionError, InvalidParameter
+
+
+def plot(x,
+         y,
+         xmin=None,
+         xmax=None,
+         xlabel=None,
+         ylabel=None,
+         scale="logy",
+         fig=None,
+         ax=None,
+         label=None,
+         alpha=1.0,
+         display=False):
+    """Wrapper function around plotting a simple line graph.
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    """
+
+    # It doesn't make sense to provide only fig and not ax, or ax and not fig
+    # so at this point we will throw an error message and return
+
+    normalize_figure_style()
+
+    if fig and not ax:
+        raise InvalidParameter("fig has been provided, but ax has not. Both are required.")
+    elif not fig and ax:
+        raise InvalidParameter("fig has not been provided, but ax has. Both are required.")
+    elif not fig and not ax:
+        fig, ax = plt.subplots(1, 1, figsize=(12, 5))
+
+    ax.plot(x, y, label=label, alpha=alpha)
+
+    if scale == "loglog" or scale == "logx":
+        ax.set_xscale("log")
+    if scale == "loglog" or scale == "logy":
+        ax.set_yscale("log")
+
+    if xlabel:
+        ax.set_xlabel(xlabel)
+    if ylabel:
+        ax.set_ylabel(ylabel)
+
+    ax.set_xlim(xmin, xmax)
+    ax.set_ylim(get_y_lims_for_x_lims(x, y, xmin, xmax))
+
+    if display:
+        plt.show()
+    else:
+        plt.close()
+
+    return fig, ax
 
 
 def normalize_figure_style():
@@ -48,7 +105,6 @@ def normalize_figure_style():
     plt.rcParams.update(parameters)
 
     return parameters
-
 
 def subplot_dims(n_plots):
     """Get the number of rows and columns for the give number of plots.
@@ -179,7 +235,34 @@ def get_y_lims_for_x_lims(x, y, xmin, xmax, scale=10):
     return ymin, ymax
 
 
-def common_lines(freq=False):
+def _convert_labels_to_frequency_space(lines, freq=None, spectrum=None):
+    """Convert the given list of lines/edges from Angstrom to Hz.
+
+    Parameters
+    ----------
+    lines: List[str, float]
+        The list of labels to convert from wavelength to frequency space.
+    freq: bool
+        The flag to indicate to convert to frequency space
+    spectrum: pypython.Spectrum
+        A spectrum object, used to find the units of the spectrum.
+    """
+
+    if spectrum:
+        if spectrum.units in [SPECTRUM_UNITS_FNU, SPECTRUM_UNITS_LNU]:
+            for i in range(len(lines)):
+                lines[i][1] = C / (lines[i][1] * ANGSTROM)
+    elif freq:
+        for i in range(len(lines)):
+            lines[i][1] = C / (lines[i][1] * ANGSTROM)
+    else:
+        raise ValueError("Unable to convert to label locations to frequency space when arguments freq or spectrum"
+                         "aren't provided")
+
+    return lines
+
+
+def common_lines(freq=False, spectrum=None):
     """Return a list containing the names of line transitions and the
     wavelength of the transition in Angstroms. Instead of returning the
     wavelength, the frequency can be returned instead. It is also possible to
@@ -189,6 +272,8 @@ def common_lines(freq=False):
     ----------
     freq: bool [optional]
         Label the transitions in frequency space
+    spectrum: pypython.Spectrum
+        The spectrum object. Used to get the units.
 
     Returns
     -------
@@ -225,14 +310,12 @@ def common_lines(freq=False):
         [r"H$_{\alpha}$", 6564],
     ]
 
-    if freq:
-        for i in range(len(lines)):
-            lines[i][1] = C / (lines[i][1] * ANGSTROM)
+    lines = _convert_labels_to_frequency_space(lines, freq, spectrum)
 
     return lines
 
 
-def photoionization_edges(freq=False):
+def photoionization_edges(freq=False, spectrum=False):
     """Return a list containing the names of line transitions and the
     wavelength of the transition in Angstroms. Instead of returning the
     wavelength, the frequency can be returned instead. It is also possible to
@@ -242,6 +325,8 @@ def photoionization_edges(freq=False):
     ----------
     freq: bool [optional]
         Label the transitions in frequency space
+    spectrum: pypython.Spectrum
+        The spectrum object. Used to get the units.
 
     Returns
     -------
@@ -259,9 +344,7 @@ def photoionization_edges(freq=False):
         ["Paschen", 8204],
     ]
 
-    if freq:
-        for i in range(len(edges)):
-            edges[i][1] = C / (edges[i][1] * ANGSTROM)
+    edges = _convert_labels_to_frequency_space(edges, freq, spectrum)
 
     return edges
 
