@@ -450,7 +450,7 @@ def multiple_spectra(output_name,
                      use_flux=False,
                      alpha=0.7,
                      scale="loglog",
-                     label_lines=False,
+                     label_lines=True,
                      log_spec=False,
                      smooth=None,
                      distance=None,
@@ -465,11 +465,46 @@ def multiple_spectra(output_name,
     is agnostic to the type of spectrum file being plotted, unlike
     spectrum_observer.
 
+    todo: label absorption edges if spec_tau is selected
+
     Parameters
     ----------
+    output_name: str
+        The name of the output .png file.
+    filepaths: str
+        The file paths of the spectra to plot.
+    spectrum_type: str
+        The type of spectrum to plot, i.e. spec or spec_tot.
+    things_to_plot: str or list of str or tuple of str
+        The things which will be plotted, i.e. '45' or ['Created', '45', '60']
+    xmin: float
+        The lower x boundary of the plot
+    xmax: float
+        The upper x boundary for the plot
+    use_flux: bool
+        Plot in flux units, instead of flux density.
+    alpha: float
+        The transparency of the plotted spectra.
+    scale: str
+        The scaling of the axes.
+    label_lines: bool
+        Label common emission and absorption features, will not work with
+        spec_tau.
+    log_spec: bool
+        Use either the linear or logarithmically spaced spectra.
+    smooth: int
+        The amount of smoothing to apply to the spectra.
+    distance: float
+        The distance to scale the spectra to in parsecs.
+    display: bool
+        Display the figure after plotting, or don't.
 
     Returns
     -------
+    fig: plt.Figure
+        matplotlib Figure object.
+    ax: plt.Axes
+        matplotlib Axes object.
     """
     _check_axes_scales(scale)
     normalize_figure_style()
