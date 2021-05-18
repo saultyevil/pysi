@@ -388,8 +388,9 @@ class Spectrum:
 
         for spec_type in files_to_read:
             fp = self.fp + self.root + "."
-            if self.log_spec and spec_type != "spec_tau":
-                fp += "log_"
+            if self.log_spec:
+                if spec_type != "spec_tau":
+                    fp += "log_"
             fp += spec_type
             if not path.exists(fp):
                 continue
@@ -554,11 +555,13 @@ class Spectrum:
 
         self._set_current(name)
 
-    def _plot_specific(self, name, label_lines=False, ax_update=None):
+    def _plot_thing(self, thing, label_lines=False, ax_update=None):
         """Plot a specific column in a spectrum file.
 
         Parameters
         ----------
+        thing: str
+            The name of the thing to be plotted.
         label_lines: bool
             Plot line IDs.
         ax_update: plt.Axes
@@ -575,20 +578,20 @@ class Spectrum:
         ax.set_xscale("log")
 
         if self.units == SPECTRUM_UNITS_FLM:
-            ax.plot(self.spectrum["Lambda"], self.spectrum[name], label=name)
+            ax.plot(self.spectrum["Lambda"], self.spectrum[thing], label=thing)
             ax.set_xlabel(r"Wavelength [\AA]")
             ax.set_ylabel(r"Flux Density " + f"{self.distance}" + r"pc [erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
             if label_lines:
-                ax = ax_add_line_ids(ax, common_lines(False), logx=True)
+                ax = ax_add_line_ids(ax, common_lines(freq=False), logx=True)
         else:
-            ax.plot(self.spectrum["Freq."], self.spectrum[name], label=name)
+            ax.plot(self.spectrum["Freq."], self.spectrum[thing], label=thing)
             ax.set_xlabel("Frequency [Hz]")
             if self.units == SPECTRUM_UNITS_LNU:
                 ax.set_ylabel(r"Luminosity [erg s$^{-1}$ Hz$^{-1}$]")
             else:
                 ax.set_ylabel(r"Flux Density " + f"{self.distance}" + r"pc [erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
             if label_lines:
-                ax = ax_add_line_ids(ax, common_lines(True), logx=True)
+                ax = ax_add_line_ids(ax, common_lines(freq=True), logx=True)
 
         if not ax_update:
             fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
@@ -596,7 +599,7 @@ class Spectrum:
         else:
             return ax
 
-    def _spec_plot_spec_file(self, label_lines=False):
+    def _plot_observer_spec_file(self, label_lines=False):
         """Plot the spectrum components and observer spectra on a 1x2 panel
         plot. The left panel has the components, whilst the right panel has the
         observer spectrum.
@@ -616,14 +619,14 @@ class Spectrum:
         for component in self.columns[:-self.n_inclinations]:
             if component in ["Lambda", "Freq."]:
                 continue
-            ax[0] = self._plot_specific(component, label_lines, ax[0])
+            ax[0] = self._plot_thing(component, label_lines, ax[0])
 
         for line in ax[0].get_lines():
             line.set_alpha(0.7)
         ax[0].legend(ncol=2, loc="upper right").set_zorder(0)
 
         for inclination in self.inclinations:
-            ax[1] = self._plot_specific(inclination, label_lines, ax[1])
+            ax[1] = self._plot_thing(inclination, label_lines, ax[1])
 
         for label, line in zip(self.inclinations, ax[1].get_lines()):
             line.set_alpha(0.7)
@@ -657,13 +660,13 @@ class Spectrum:
         if name:
             if name not in self.columns:
                 raise ValueError(f"{name} is not in the current spectrum columns")
-            fig, ax = self._plot_specific(name, label_lines)
+            fig, ax = self._plot_thing(name, label_lines)
             if name.isdigit():
                 name += r"$^{\circ}$"
             ax.set_title(name.replace("_", r"\_"))
         else:
             self.current = "spec"
-            fig, ax = self._spec_plot_spec_file(label_lines)
+            fig, ax = self._plot_observer_spec_file(label_lines)
 
         self.current = ot
 
@@ -698,9 +701,9 @@ class Spectrum:
         msg += f"Available spectra: {self.available}\n"
         msg += f"Current spectrum {self.current}\n"
         if "spec" in self.available or "log_spec" in self.available:
-            msg += f"Spectrum inclinations: {self.inclinations['spec']}\n"
+            msg += f"Spectrum inclinations: {self.all_inclinations['spec']}\n"
         if "tau_spec" in self.available:
-            msg += f"Optical depth inclinations {self.inclinations['tau_spec']}\n"
+            msg += f"Optical depth inclinations {self.all_inclinations['tau_spec']}\n"
 
         return textwrap.dedent(msg)
 

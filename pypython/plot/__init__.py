@@ -15,6 +15,9 @@ from pypython.constants import ANGSTROM, C
 from pypython.error import DimensionError, InvalidParameter
 
 
+# Generic plotting function ----------------------------------------------------
+
+
 def plot(x,
          y,
          xmin=None,
@@ -71,6 +74,41 @@ def plot(x,
     return fig, ax
 
 
+# Helper functions -------------------------------------------------------------
+
+
+def _check_axes_scales(scale):
+    """Check that the axes scales passed are recognised.
+
+    Parameters
+    ----------
+    scale: str
+        The scaling of the axes to check.
+    """
+
+    if scale not in ["logx", "logy", "linlin", "loglog"]:
+        raise ValueError(f"{scale} is an unknown axes scale choice, allowed: logx, logy, linlin, loglog")
+
+
+def _set_axes_scales(ax, scale):
+    """Set the scale for axes.
+
+    Parameters
+    ----------
+    ax: plt.Axes
+        The matplotlib Axes to update.
+    scale: str
+        The axes scaling to use.
+    """
+
+    if scale == "logx" or scale == "loglog":
+        ax.set_xscale("log")
+    if scale == "logy" or scale == "loglog":
+        ax.set_yscale("log")
+
+    return ax
+
+
 def normalize_figure_style():
     """Set default pypython matplotlib parameters."""
 
@@ -105,6 +143,7 @@ def normalize_figure_style():
     plt.rcParams.update(parameters)
 
     return parameters
+
 
 def subplot_dims(n_plots):
     """Get the number of rows and columns for the give number of plots.
@@ -145,7 +184,7 @@ def remove_extra_axes(fig, ax, n_wanted, n_panel):
     ----------
     fig: plt.Figure
         The Figure object to modify.
-    ax: plt.Axes
+    ax: np.ndarray of plt.Axes
         The Axes objects to modify.
     n_wanted: int
         The actual number of plots/panels which are wanted.
