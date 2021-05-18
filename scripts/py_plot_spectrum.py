@@ -59,7 +59,6 @@ def main():
     """The main function of the script. First, the important wind quantaties
     are plotted. This is then followed by the important ions.
 
-
     Returns
     -------
     fig: plt.Figure

@@ -14,7 +14,6 @@ from pypython import SPECTRUM_UNITS_FNU, SPECTRUM_UNITS_LNU
 from pypython.constants import ANGSTROM, C
 from pypython.error import DimensionError, InvalidParameter
 
-
 # Generic plotting function ----------------------------------------------------
 
 

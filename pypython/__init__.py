@@ -509,9 +509,12 @@ class Spectrum:
         # Loop over each available spectrum and smooth it
 
         for key in self.available:
+            if key == "spec_tau":  # todo: cleaner way to skip spec_tau
+                continue
             for thing_to_smooth in to_smooth:
                 try:
-                    self.all_spectrum[key][thing_to_smooth] = smooth_array(self.all_spectrum[key][thing_to_smooth], width)
+                    self.all_spectrum[key][thing_to_smooth] = smooth_array(self.all_spectrum[key][thing_to_smooth],
+                                                                           width)
                 except KeyError:
                     pass  # some spectra do not have the inclination angles...
 
