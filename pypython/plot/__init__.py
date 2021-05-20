@@ -76,7 +76,7 @@ def plot(x,
 # Helper functions -------------------------------------------------------------
 
 
-def _check_axes_scales(scale):
+def _check_axes_scale_string(scale):
     """Check that the axes scales passed are recognised.
 
     Parameters
@@ -99,6 +99,7 @@ def _set_axes_scales(ax, scale):
     scale: str
         The axes scaling to use.
     """
+    _check_axes_scale_string(scale)
 
     if scale == "logx" or scale == "loglog":
         ax.set_xscale("log")

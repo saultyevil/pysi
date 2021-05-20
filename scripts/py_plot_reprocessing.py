@@ -37,11 +37,7 @@ def setup_script():
 
     p.add_argument("root", help="The root name of simulation.")
     p.add_argument("-wd", "--working_directory", default=".", help="The directory containing the simulation.")
-    p.add_argument("-sm",
-                   "--smooth_amount",
-                   type=int,
-                   default=5,
-                   help="The amount of smoothing to use on the spectra.")
+    p.add_argument("-sm", "--smooth_amount", type=int, default=5, help="The amount of smoothing to use on the spectra.")
     p.add_argument("--display", action="store_true", default=False, help="Display the figure.")
 
     args = p.parse_args()

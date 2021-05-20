@@ -218,6 +218,7 @@ def create_wind_save_tables(root, fp=".", ion_density=False, verbose=False):
         print(stdout.decode("utf-8"))
     if stderr:
         print("There may have been a problem running windsave2table")
+        print(stderr.decode("utf-8"))
 
     # Move the new files in fp/tables
 
@@ -462,7 +463,7 @@ class Spectrum:
             raise IOError(f"Unable to open any spectrum files for {self.root} in {self.fp}")
 
     def rescale_flux(self, distance):
-        """Recale the flux to the given distance.
+        """Rescale the flux to the given distance.
 
         Parameters
         ----------
@@ -532,7 +533,7 @@ class Spectrum:
             The name of the spectrum to become the current.
         """
         if target not in self.available:
-            raise ValueError(f"spectrum {target} is not available: available are {self.available}")
+            raise IndexError(f"spectrum {target} is not available: available are {self.available}")
 
         self.spectrum = self.all_spectrum[target]
         self.columns = self.all_columns[target]

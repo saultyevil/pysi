@@ -4,9 +4,10 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-from pypython import (SPECTRUM_UNITS_FLM, SPECTRUM_UNITS_FNU, SPECTRUM_UNITS_LNU, Spectrum, get_root)
-from pypython.plot import (_check_axes_scales, _set_axes_scales, ax_add_line_ids, common_lines, get_y_lims_for_x_lims,
-                           normalize_figure_style, photoionization_edges, remove_extra_axes, subplot_dims)
+from pypython import SPECTRUM_UNITS_FLM, SPECTRUM_UNITS_LNU, Spectrum, get_root
+from pypython.plot import (_check_axes_scale_string, _set_axes_scales, ax_add_line_ids, common_lines,
+                           get_y_lims_for_x_lims, normalize_figure_style, photoionization_edges, remove_extra_axes,
+                           subplot_dims)
 
 MIN_SPEC_COMP_FLUX = 1e-15
 
@@ -48,7 +49,6 @@ def _get_inclinations(spectrum, inclinations):
     inclinations: list
         A list of inclination angles wanted to be plotted.
     """
-
     if type(inclinations) == str:
         inclinations = [inclinations]
 
@@ -98,9 +98,6 @@ def _plot_subplot(ax, spectrum, things_to_plot, xmin, xmax, alpha, scale, use_fl
     ax: pyplot.Axes
         The modified matplotlib Axes object.
     """
-
-    _check_axes_scales(scale)
-
     if type(things_to_plot) is str:
         things_to_plot = [things_to_plot]
 
@@ -133,10 +130,10 @@ def _plot_subplot(ax, spectrum, things_to_plot, xmin, xmax, alpha, scale, use_fl
         print("Nothing was plotted due to all the spectra being too sparse")
         return ax
 
-    ax = _set_axes_scales(ax, scale)
     ax.set_xlim(xmin, xmax)
-    ax = _set_spectrum_axes_labels(ax, spectrum.units, spectrum.distance, use_flux)
     ax.legend(loc="lower left")
+    ax = _set_axes_scales(ax, scale)
+    ax = _set_spectrum_axes_labels(ax, spectrum.units, spectrum.distance, use_flux)
 
     return ax
 
@@ -156,7 +153,6 @@ def _set_spectrum_axes_labels(ax, units, distance, use_flux):
         If flux/nu Lnu is being plotted instead of flux density or
         luminosity.
     """
-
     if use_flux:
         if units == SPECTRUM_UNITS_LNU:
             ax.set_xlabel(r"Rest-frame Frequency [Hz]")
@@ -229,7 +225,7 @@ def optical_depth(spectrum,
     if spectrum.current != "spec_tau":
         spectrum.set("spec_tau")
 
-    _check_axes_scales(scale)
+    _check_axes_scale_string(scale)
     normalize_figure_style()
     fig, ax = plt.subplots(1, 1, figsize=(12, 7))
 
@@ -262,11 +258,7 @@ def optical_depth(spectrum,
 
         ax.plot(spectrum[xlabel], spectrum[inclination], linewidth=2, label=label)
 
-        if scale == "logx" or scale == "loglog":
-            ax.set_xscale("log")
-        if scale == "logy" or scale == "loglog":
-            ax.set_yscale("log")
-
+    ax = _set_axes_scales(ax, scale)
     ax.set_ylabel(r"Continuum Optical Depth")
 
     if frequency_space:
@@ -309,8 +301,8 @@ def reprocessing(spectrum, xmin=None, xmax=None, scale="loglog", label_edges=Tru
     if "spec" not in spectrum.available and "log_spec" not in spectrum.available:
         raise ValueError("There is no observer spectrum so cannot create this plot")
 
-    _check_axes_scales(scale)
-
+    _check_axes_scale_string(scale)
+    normalize_figure_style()
     fig, ax = plt.subplots(figsize=(12, 7))
     ax2 = ax.twinx()
 
@@ -325,7 +317,10 @@ def reprocessing(spectrum, xmin=None, xmax=None, scale="loglog", label_edges=Tru
         y = spectrum[inclination]
         if np.count_nonzero == 0:
             continue
-        ax.plot(spectrum["Freq."], y, color=f"C{n + 2}", label=r"$\tau_{" + f"{inclination}" + r"^{\circ}}$",
+        ax.plot(spectrum["Freq."],
+                y,
+                color=f"C{n + 2}",
+                label=r"$\tau_{" + f"{inclination}" + r"^{\circ}}$",
                 alpha=alpha)
 
     ax.legend(loc="upper left")
@@ -401,7 +396,6 @@ def spectrum_components(spectrum, xmin=None, xmax=None, scale="loglog", alpha=0.
     ax: plt.Axes
         matplotlib Axes object.
     """
-    _check_axes_scales(scale)
     normalize_figure_style()
 
     fig, ax = plt.subplots(2, 1, figsize=(12, 10))
@@ -411,7 +405,7 @@ def spectrum_components(spectrum, xmin=None, xmax=None, scale="loglog", alpha=0.
                           use_flux, True)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
-    fig.savefig(f"{spectrum.fp}/{spectrum.root}_spec_components.png")
+    fig.savefig(f"{spectrum.fp}/{spectrum.root}_{spectrum.current}_components.png")
 
     if display:
         plt.show()
@@ -468,7 +462,6 @@ def spectrum_observer(spectrum,
     if spectrum.current not in ["spec", "log_spec"]:
         spectrum.set("spec")
 
-    _check_axes_scales(scale)
     normalize_figure_style()
     fig, ax = plt.subplots(1, 1, figsize=(12, 5))
 
@@ -568,7 +561,6 @@ def multiple_spectra(output_name,
     ax: plt.Axes
         matplotlib Axes object.
     """
-    _check_axes_scales(scale)
     normalize_figure_style()
 
     if type(filepaths) is str:

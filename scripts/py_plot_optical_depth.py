@@ -66,8 +66,8 @@ def main():
 
     root, fp, xmin, xmax, absorption_edges, axes_scales, display = setup_script()
 
-    fig, ax = optical_depth(pypython.Spectrum(root, fp), "all", xmin, xmax, axes_scales, absorption_edges,
-                            True, display)
+    fig, ax = optical_depth(pypython.Spectrum(root, fp), "all", xmin, xmax, axes_scales, absorption_edges, True,
+                            display)
 
     return fig, ax
 

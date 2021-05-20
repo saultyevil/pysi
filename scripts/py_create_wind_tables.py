@@ -20,7 +20,7 @@ def setup():
     p = ap.ArgumentParser(description=__doc__)
     p.add_argument("root", help="The root name of the simulation")
     p.add_argument("-fp", "--filepath", default=".", help="The directory containing the simulation")
-    p.add_argument("-q", "--quiet", default=False, type=bool, help="Suppress the output from the script")
+    p.add_argument("-q", "--quiet", default=False, action="store_true", help="Suppress the output from the script")
 
     args = p.parse_args()
 
@@ -37,6 +37,8 @@ def main():
 
     pypython.create_wind_save_tables(root, fp, False, verbose)
     pypython.create_wind_save_tables(root, fp, True, verbose)
+
+    return
 
 
 if __name__ == "__main__":
