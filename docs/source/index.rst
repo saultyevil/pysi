@@ -1,35 +1,36 @@
-.. pyPython documentation master file, created by
+.. pypython documentation master file, created by
    sphinx-quickstart on Mon Dec 21 21:25:58 2020.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-pyPython Documentation
-======================
+Home
+====
 
-pyPython is a module designed to make using Python and plotting the output from
-a model less of a chore. Originally, this module was fairly simple and
-consisted of a small number of modules designed mostly for plotting and running
-a grid of Python simulations.
-
-However, pyPython has now grown into a complex module which not only includes
-the original modules for plotting, it also now includes multiple basic physics
-modules as well a host of utility tools and scripts.
-
+pypython is a python package developed to make using Python a bit easier. It was
+originally a way to standardise plots and analysis for Python models, to avoid
+creating bespoke scripts for each model/project. At the heart of pypython is the
+idea of having flexible functions to suit plotting as many models as possible.
+pypython has now evolved, for better or worse, into a beast of its own and has
+become a fully-featured companion for Python. pypython features scripts to
+create and run a grid of models, including basic logging and email
+notification functionalities to keep track of the progress of simulations.
+Various utility scripts and functions are also included to deal with
+otherwise tedious tasks associated with using python and scientific computing
+in general.
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents
+   :caption: Table of Contents
+   :maxdepth: 4
 
-   Running Python using pyPython          <running>
-   Plotting the Output                    <output>
-   Creating Spectra from Photons          <spectrum_create>
-   Calculating Basic Physical Parameters  <physics>
-   Module Docstrings                      <module_docs>
+   Quickstart            <quickstart>
+   Running models        <running>
+   Analyzing models      <analysis>
+   Creating model grids  <grids>
+   Utilities             <utilities>
+   Physics and maths     <physics>
+   Modules               <modules>
 
 
-Indices and tables
-------------------
+The entire module API can be accessed :ref:`here<modules>`.
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+:ref:`genindex` - :ref:`modindex` - :ref:`search`

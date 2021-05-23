@@ -108,7 +108,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'pyPythondoc'
+htmlhelp_basename = 'pypythondoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -181,3 +181,5 @@ epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
+
+autoclass_content = 'both'
