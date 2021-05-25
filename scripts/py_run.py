@@ -102,39 +102,49 @@ def setup_script():
                    "--split_cycles",
                    action="store_true",
                    default=SPLIT_CYCLES,
-                   help="Split the ionization and spectrum cycles into two separate Python runs.")
+                   help="Split the ionization and spectrum cycles into two separate Python simulations."
+                   " Default is disabled.")
+
     p.add_argument("-r",
                    "--restart",
                    action="store_true",
                    default=RESTART_MODEL,
-                   help="Restart a Python model from a previous wind_save.")
+                   help="Restart Python using a previous wind save. Default is disabled.")
+
     p.add_argument("-ro",
                    "--restart_override",
                    action="store_true",
                    default=AUTOMATIC_RESTART_OVERRIDE,
-                   help="Disable the automatic restarting run function.")
-    p.add_argument("-py", "--python", default=PYTHON_BINARY, help="The name of the of the Python binary to use.")
-    p.add_argument("-f", "--python_flags", default=RUNTIME_FLAGS, help="Any run-time flags to pass to Python.")
+                   help="Disable automatic restarting. Default is disabled.")
+
+    p.add_argument("-py", "--python", default=PYTHON_BINARY, help="The Python binary to use. Default is 'py'.")
+
+    p.add_argument("-f", "--python_flags", default=RUNTIME_FLAGS, help="Runtime flags to use with Python.")
+
     p.add_argument("-c",
                    "--convergence_limit",
                    type=float,
                    default=CONVERGENCE_LOWER_LIMIT,
-                   help="The 'limit' for considering a model converged. This value is 0 < c_value < 1.")
+                   help="The fraction of cells for a simulation to be converged, between 0 and 1. Default is 0.8.")
+
     p.add_argument("-v",
                    "--verbosity",
                    type=int,
                    default=VERBOSE_EXTRA_INFORMATION_TRANSPORT,
-                   help="The level of verbosity for Python's output.")
-    p.add_argument("-n",
-                   "--n_cores",
-                   type=int,
-                   default=N_CORES,
-                   help="The number of processor cores to run Python with.")
+                   help="The level of verbosity for Python's output. Default is 3.")
+
+    p.add_argument(
+        "-n",
+        "--n_cores",
+        type=int,
+        default=N_CORES,
+        help="The number of processor cores to run Python with. Requires MPI. Default is to automatically determine.")
+
     p.add_argument("-d",
                    "--dry_run",
                    action="store_true",
                    default=DRY_RUN,
-                   help="Print the models found to screen and then exit.")
+                   help="Print the models found to screen and exit. Default is disabled.")
 
     args = p.parse_args()
     VERBOSITY = args.verbosity
