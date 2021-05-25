@@ -23,12 +23,16 @@ from scipy.signal import boxcar, convolve
 
 from pypython.constants import CMS_TO_KMS, PARSEC, PI, VLIGHT
 from pypython.math import vector
+from pypython.physics.blackhole import gravitational_radius
+from pypython.simulation.grid import get_parameter_value
 
 # Functions --------------------------------------------------------------------
 
 
 def cleanup_data(fp=".", verbose=False):
-    """Search recursively from the specified directory for symbolic links named
+    """Remove data symbolic links created by Python.
+
+    Search recursively from the specified directory for symbolic links named
     data. This script will only work on Unix systems where the find command is
     available.
     todo: update to a system agnostic method to find symbolic links like pathlib
@@ -84,6 +88,8 @@ def cleanup_data(fp=".", verbose=False):
 def get_files(pattern, fp="."):
     """Find files of the given pattern recursively.
 
+    Used to blah blah
+
     Parameters
     ----------
     pattern: str
@@ -96,15 +102,19 @@ def get_files(pattern, fp="."):
     if ".pf" in pattern:
         files = [file_ for file_ in files if "out.pf" not in file_ and "py_wind" not in file_]
 
-    files.sort(key=lambda var: [int(x) if x.isdigit() else x for x in re.findall(r'[^0-9]|[0-9]+', var)])
+    try:
+        files.sort(key=lambda var: [int(x) if x.isdigit() else x for x in re.findall(r'[^0-9]|[0-9]+', var)])
+    except TypeError as e:
+        print("have been unable to sort the files, be careful as results may not be reproducible")
 
     return files
 
 
 def get_array_index(x, target):
-    """Return the index for a given value in an array. This function will not
-    be happy if you pass an array with duplicate values. It will always return
-    the first instance of the duplicate array.
+    """Return the index for a given value in an array.
+
+    This function will not be happy if you pass an array with duplicate values.
+    It will always return the first instance of the duplicate array.
 
     Parameters
     ----------
@@ -126,8 +136,9 @@ def get_array_index(x, target):
 
 
 def get_root(fp):
-    """Get the root name of a Python simulation, extracting it from a file
-    path.
+    """Get the root name of a Python simulation.
+
+    Extracts both the file path and the root name of the simulation.
 
     Parameters
     ----------
@@ -181,6 +192,7 @@ def smooth_array(array, width):
 
 def create_wind_save_tables(root, fp=".", ion_density=False, verbose=False):
     """Run windsave2table in a directory to create the standard data tables.
+
     The function can also create a root.all.complete.txt file which merges all
     the data tables together into one (a little big) file.
 
@@ -273,10 +285,15 @@ def run_py_wind(root, commands, fp="."):
 SPECTRUM_UNITS_LNU = "erg/s/Hz"
 SPECTRUM_UNITS_FNU = "erg/s/cm^-2/Hz"
 SPECTRUM_UNITS_FLM = "erg/s/cm^-2/A"
+SPECTRUM_UNITS_UNKNOWN = "unknown"
 
-COORD_TYPE_CYLINDRICAL = COORD_TYPE_CARTESIAN = "rectilinear"
-COORD_TYPE_POLAR = "polar"
-COORD_TYPE_SPHERICAL = "spherical"
+WIND_COORD_TYPE_CYLINDRICAL = WIND_COORD_TYPE_CARTESIAN = "rectilinear"
+WIND_COORD_TYPE_POLAR = "polar"
+WIND_COORD_TYPE_SPHERICAL = "spherical"
+WIND_COORD_TYPE_UNKNOWN = "unknown"
+
+WIND_DISTANCE_UNITS_CM = "cm"
+WIND_DISTANCE_UNITS_RG = "rg"
 
 # Spectrum class ---------------------------------------------------------------
 
@@ -292,7 +309,7 @@ class Spectrum:
     def __init__(self, root, fp=".", default=None, log_spec=False, smooth=None, distance=None, delim=None):
         """Create the Spectrum object.
 
-        This method will construct the file path of the spectrum files given the
+        Construct the file path of the spectrum files given the
         root, directory and whether the logarithmic spectrum is used or not.
         The different spectra are then read in, with either the .spec or the first
         spectrum file read in being the default index choice.
@@ -315,10 +332,10 @@ class Spectrum:
             The deliminator in the spectrum file.
         """
         self.root = root
-
         self.fp = fp
         if self.fp[-1] != "/":
             self.fp += "/"
+        self.pf = self.fp + self.root + ".pf"
 
         self.log_spec = log_spec
         if default and self.log_spec:
@@ -332,7 +349,7 @@ class Spectrum:
         self.columns = ()
         self.inclinations = ()
         self.n_inclinations = 0
-        self.units = "unknown"
+        self.units = SPECTRUM_UNITS_UNKNOWN
         self.distance = 100
 
         self.all_spectrum = {}
@@ -676,8 +693,10 @@ class Spectrum:
 
         return fig, ax
 
-    def show(self, block=True):
+    @staticmethod
+    def show(block=True):
         """Show any plots which have been generated.
+
         Parameters
         ----------
         block: bool [optional]
@@ -743,10 +762,10 @@ class Wind:
             The delimiter used in the wind table files.
         """
         self.root = root
-
         self.fp = fp
         if self.fp[-1] != "/":
             self.fp += "/"
+        self.pf = self.fp + self.root + ".pf"
 
         self.nx = 1
         self.nz = 1
@@ -759,7 +778,8 @@ class Wind:
         self.parameters = ()
         self.elements = ()
         self.variables = {}
-        self.coord_system = "unknown"
+        self.coord_system = WIND_COORD_TYPE_UNKNOWN
+        self.units = WIND_DISTANCE_UNITS_CM
 
         # Set up the velocity units and conversion factors
 
@@ -794,7 +814,7 @@ class Wind:
         # velocities. This doesn't work for polar or spherical coordinates as
         # they will not have these velocities
 
-        if self.coord_system == COORD_TYPE_CYLINDRICAL:
+        if self.coord_system == WIND_COORD_TYPE_CYLINDRICAL:
             self.project_cartesian_velocity_to_cylindrical()
 
         self.variables["v_x"] *= self.velocity_conversion_factor
@@ -909,13 +929,13 @@ class Wind:
         # Record the coordinate system and the axes labels
 
         if self.nz == 1:
-            self.coord_system = COORD_TYPE_SPHERICAL
+            self.coord_system = WIND_COORD_TYPE_SPHERICAL
             self.axes = ["r", "r_cen"]
         elif "r" in self.parameters and "theta" in self.parameters:
-            self.coord_system = COORD_TYPE_POLAR
+            self.coord_system = WIND_COORD_TYPE_POLAR
             self.axes = ["r", "theta", "r_cen", "theta_cen"]
         else:
-            self.coord_system = COORD_TYPE_CYLINDRICAL
+            self.coord_system = WIND_COORD_TYPE_CYLINDRICAL
             self.axes = ["x", "z", "x_cen", "z_cen"]
 
     def read_wind_elements(self, delim=None, elements_to_get=None):
@@ -1061,9 +1081,88 @@ class Wind:
                     self.variables[element][ion_type][ion] = np.ma.masked_where(self.variables["inwind"] < 0,
                                                                                 self.variables[element][ion_type][ion])
 
+    def convert_cm_to_rg(self, co_mass_in_msol=None):
+        """Convert the spatial units from cm to gravitational radius.
+
+        If the mass of the central source isn't supplied, then the parameter
+        file will be searched for the mass.
+
+        Parameters
+        ----------
+        co_mass_in_msol: float
+            The mass of the central object in solar masses.
+
+        Returns
+        -------
+        rg: float
+            The gravitational radius for the model.
+        """
+
+        if self.units == WIND_DISTANCE_UNITS_RG:
+            return
+
+        if not co_mass_in_msol:
+            try:
+                co_mass_in_msol = float(get_parameter_value(self.pf, "Central_object.mass(msol)"))
+            except Exception as e:
+                print(e)
+                raise ValueError("please supply the mass instead")
+
+        rg = gravitational_radius(co_mass_in_msol)
+
+        if self.coord_system == WIND_COORD_TYPE_SPHERICAL or self.coord_system == WIND_COORD_TYPE_POLAR:
+            self.variables["r"] /= rg
+        else:
+            self.variables["x"] /= rg
+            self.variables["z"] /= rg
+
+        self.units = WIND_DISTANCE_UNITS_RG
+
+        return rg
+
+    def convert_rg_to_cm(self, co_mass_in_msol=None):
+        """Convert the spatial units from gravitational radius to cm.
+
+        If the mass of the central source isn't supplied, then the parameter
+        file will be searched for the mass.
+
+        Parameters
+        ----------
+        co_mass_in_msol: float
+            The mass of the central object in solar masses.
+
+        Returns
+        -------
+        rg: float
+            The gravitational radius for the model.
+        """
+
+        if self.units == WIND_DISTANCE_UNITS_CM:
+            return
+
+        if not co_mass_in_msol:
+            try:
+                co_mass_in_msol = float(get_parameter_value(self.pf, "Central_object.mass(msol)"))
+            except Exception as e:
+                print(e)
+                raise ValueError("please supply the mass instead")
+
+        rg = gravitational_radius(co_mass_in_msol)
+
+        if self.coord_system == WIND_COORD_TYPE_SPHERICAL or self.coord_system == WIND_COORD_TYPE_POLAR:
+            self.variables["r"] *= rg
+        else:
+            self.variables["x"] *= rg
+            self.variables["z"] *= rg
+
+        self.units = WIND_DISTANCE_UNITS_CM
+
+        return rg
+
     def _get_element_variable(self, element_name, ion_name):
-        """Helper function to get the fraction or density of an ion depending on
-        the final character of the requested variable.
+        """Helper function to get the fraction or density of an ion depending
+        on the final character of the requested variable.
+
         Parameters
         ----------
         element_name: str
@@ -1089,6 +1188,7 @@ class Wind:
     def get(self, parameter):
         """Get a parameter array. This is just another way to access the
         dictionary self.variables.
+
         Parameters
         ----------
         parameter: str
@@ -1106,6 +1206,7 @@ class Wind:
     def get_sight_line_coordinates(self, theta):
         """Get the vertical z coordinates for a given set of x coordinates and
         inclination angle.
+
         Parameters
         ----------
         theta: float
@@ -1123,7 +1224,7 @@ class Wind:
         parameter: str
             The parameter to extract.
         """
-        if self.coord_system == COORD_TYPE_POLAR:
+        if self.coord_system == WIND_COORD_TYPE_POLAR:
             raise NotImplementedError("This hasn't been implemented for polar winds")
 
         if type(theta) is not float:
@@ -1149,10 +1250,10 @@ class Wind:
         1d depending on the coordinate type. This is different from
         using self.n_coords which returns only the axes points.
         """
-        if self.coord_system == COORD_TYPE_SPHERICAL:
+        if self.coord_system == WIND_COORD_TYPE_SPHERICAL:
             n_points = self.variables["r"]
             m_points = np.zeros_like(n_points)
-        elif self.coord_system == COORD_TYPE_CYLINDRICAL:
+        elif self.coord_system == WIND_COORD_TYPE_CYLINDRICAL:
             n_points = self.variables["x"]
             m_points = self.variables["z"]
         else:
@@ -1167,10 +1268,10 @@ class Wind:
         This returns the 2d array of grid cell indices for the grid or
         1d depending on the coordinate type.
         """
-        if self.coord_system == COORD_TYPE_SPHERICAL:
+        if self.coord_system == WIND_COORD_TYPE_SPHERICAL:
             n_points = self.variables["i"]
             m_points = np.zeros_like(n_points)
-        elif self.coord_system == COORD_TYPE_CYLINDRICAL:
+        elif self.coord_system == WIND_COORD_TYPE_CYLINDRICAL:
             n_points = self.variables["i"]
             m_points = self.variables["i"]
         else:
@@ -1180,6 +1281,7 @@ class Wind:
 
     def plot(self, variable_name, use_cell_coordinates=True, scale="loglog"):
         """Create a plot of the wind for the given variable.
+
         Parameters
         ----------
         variable_name: str
@@ -1200,9 +1302,9 @@ class Wind:
             n_points, m_points = self._get_wind_indices()
 
         if self.coord_system == "spherical":
-            fig, ax = plot_1d_wind(n_points, variable, scale=scale)
+            fig, ax = _plot_1d_wind(n_points, variable, self.units, scale=scale)
         else:
-            fig, ax = plot_2d_wind(n_points, m_points, variable, self.coord_system, scale=scale)
+            fig, ax = _plot_2d_wind(n_points, m_points, variable, self.units, self.coord_system, scale=scale)
 
         # Finally, label the axes with what we actually plotted
 
@@ -1216,7 +1318,8 @@ class Wind:
 
         return fig, ax
 
-    def show(self, block=True):
+    @staticmethod
+    def show(block=True):
         """Show a plot which has been created."""
         plt.show(block=block)
 
@@ -1252,7 +1355,17 @@ for loader, module_name, is_pkg in pkgutil.walk_packages(__path__):
     _module = loader.find_module(module_name).load_module(module_name)
     globals()[module_name] = _module
 
+__all__.append("Wind")
+__all__.append("Spectrum")
+__all__.append("cleanup_data")
+__all__.append("get_files")
+__all__.append("get_array_index")
+__all__.append("get_root")
+__all__.append("smooth_array")
+__all__.append("create_wind_save_tables")
+__all__.append("run_py_wind")
+
 # These are put here to solve a circular dependency ----------------------------
 
 from pypython.plot import ax_add_line_ids, common_lines, normalize_figure_style
-from pypython.plot.wind import plot_1d_wind, plot_2d_wind
+from pypython.plot.wind import _plot_1d_wind, _plot_2d_wind

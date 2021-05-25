@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 """Create wind save tables for a model.
 
-This script will overwrite any previously created wind save table. Verbose
-printing is on by default, but can be suppressed.
+This script will overwrite any previously created wind save table.
+Verbose printing is on by default, but can be suppressed.
 """
 
 import argparse as ap
@@ -24,7 +24,7 @@ def setup():
 
     args = p.parse_args()
 
-    return args.rootm, args.filepath, args.quiet
+    return args.root, args.filepath, args.quiet
 
 
 def main():

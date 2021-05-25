@@ -38,7 +38,7 @@ def _add_line_labels(ax, labels, scale, linestyle="dashed", offset=0.0):
 def _get_inclinations(spectrum, inclinations):
     """Get the inclination angles which will be used.
 
-    If "all" is passed, then the inclinations from the spectrum object will
+    If all is passed, then the inclinations from the spectrum object will
     be used. Otherwise, this will simply create a list of strings of the
     inclinations.
 
@@ -200,7 +200,7 @@ def optical_depth(spectrum,
     spectrum: pypython.Spectrum
         The spectrum object.
     inclinations: str or list or tuple [optional]
-        A list of inclination angles to plot, but "all" is also an acceptable
+        A list of inclination angles to plot, but all is also an acceptable
         choice if all inclinations are to be plotted.
     xmin: float [optional]
         The lower x boundary for the figure
@@ -365,15 +365,15 @@ def reprocessing(spectrum, xmin=None, xmax=None, scale="loglog", label_edges=Tru
 
 
 def spectrum_components(spectrum, xmin=None, xmax=None, scale="loglog", alpha=0.65, use_flux=False, display=False):
-    """Plot the different "components" of the spectrum.
+    """Plot the different components of the spectrum.
 
     The components are the columns labelled with words, rather than inclination
     angles. These columns are not supposed to add together, i.e. all of them
-    together shouldn't equal the "Emitted" spectrum, which is the angle
+    together shouldn't equal the Emitted spectrum, which is the angle
     averaged escaping flux/luminosity.
 
     Parameters
-    ----–-----
+    ----------
     spectrum: pypython.Spectrum
         The spectrum object.
     xmin: float [optional]
@@ -425,7 +425,7 @@ def spectrum_observer(spectrum,
                       display=False):
     """Plot the request observer spectrum.
 
-    If "all" is passed to inclinations, then all the observer angles will be
+    If all is passed to inclinations, then all the observer angles will be
     plotted on a single figure. This function will only be available if there
     is a .spec or .log_spec file available in the passed spectrum, it does not
     work for spec_tot, etc. For these spectra, plot.spectrum.spectrum_components
@@ -513,7 +513,7 @@ def multiple_spectra(output_name,
     spectra provided.
 
     Spectrum file paths are passed and then each spectrum is loaded in as a
-    Spectrum object. Each spectrum must have the same untis and are also assumed
+    Spectrum object. Each spectrum must have the same units and are also assumed
     to be at the same distance.
 
     In this function, it is possible to compare Emitted or Created spectra. It

@@ -3,67 +3,9 @@
 """Create or modify a grid of parameter files."""
 
 from shutil import copyfile
-from typing import List
 
 
-def update_single_parameter(path, parameter_name, new_value, backup=True, verbose=False):
-    """Change the value of a parameter in a Python parameter file.
-
-    If the old and new parameter value are the same, the script will still
-    update the parameter file.
-
-    Parameters
-    ----------
-    path: str
-        The path to the parameter file
-    parameter_name: str
-        The name of the parameter to update
-    new_value: str
-        The updated value of the parameter
-    backup: bool [optional]
-        Create a back up of the original parameter file
-    verbose: bool [optional]
-        Enable verbose output to the screen
-    """
-
-    if path.find(".pf") == -1:
-        raise IOError("provided parameter file path {} is not a .pf parameter file".format(path))
-
-    if backup:
-        copyfile(path, path + ".bak")
-
-    old = ""
-    new = ""
-
-    try:
-        with open(path, "r") as f:
-            pf = f.readlines()
-    except IOError:
-        print("unable to open parameter file {}".format(path))
-        return
-
-    for i, line in enumerate(pf):
-        if line.find(parameter_name) != -1:
-            old = line
-            new = "{}{:20s}{}\n".format(parameter_name, " ", new_value)
-            pf[i] = new
-            break
-
-    if old and new:
-        if verbose:
-            print("changed parameter {} from {} to {}".format(parameter_name, old.replace("\n", ""),
-                                                              new.replace("\n", "")))
-    else:
-        print("unable to update: could not find parameter {} in file {}".format(parameter_name, path))
-        return
-
-    with open(path, "w") as f:
-        f.writelines(pf)
-
-    return
-
-
-def add_single_parameter(path, parameter_name, new_value, backup=True):
+def add_single_parameter(fp, name, new_value, backup=True):
     """Add a parameter which doesn't already exist.
 
     The parameter will be appended to the end of the parameter file but will be
@@ -71,9 +13,9 @@ def add_single_parameter(path, parameter_name, new_value, backup=True):
 
     Parameters
     ----------
-    path: str
+    fp: str
         The path to the parameter file
-    parameter_name: str
+    name: str
         The name of the parameter to be added
     new_value: str
         The value of the parameter
@@ -81,28 +23,24 @@ def add_single_parameter(path, parameter_name, new_value, backup=True):
         Create a back up of the original parameter file
     """
 
-    if path.find(".pf") == -1:
-        raise IOError("provided parameter file path {} is not a .pf parameter file".format(path))
+    if fp.find(".pf") == -1:
+        raise IOError(f"provided file path {fp} is not a .pf parameter file")
 
     if backup:
-        copyfile(path, path + ".bak")
+        copyfile(fp, fp + ".bak")
 
-    try:
-        with open(path, "r") as f:
-            pf = f.readlines()
-    except IOError:
-        print("unable to open parameter file {}".format(path))
-        return
+    with open(fp, "r") as f:
+        pf = f.readlines()
 
-    pf.append("{:40s} {}\n".format(parameter_name, new_value))
+    pf.append("{:40s} {}\n".format(name, new_value))
 
-    with open(path, "w") as f:
+    with open(fp, "w") as f:
         f.writelines(pf)
 
     return
 
 
-def create_grid(path, parameter_name, grid_values, extra_name=None, backup=True, verbose=False):
+def create_grid(fp, name, values, extra_name=None, backup=True, verbose=False):
     """Create a bunch of new parameter files with the choice of values for a
     given parameter.
 
@@ -112,11 +50,11 @@ def create_grid(path, parameter_name, grid_values, extra_name=None, backup=True,
 
     Parameters
     ----------
-    path: str
+    fp: str
         The path to the base parameter file to construct the grid from
-    parameter_name: str
+    name: str
         The name of the parameter to create a grid of
-    grid_values: List[str]
+    values: List[str]
         A list of values for the simulation grid for the parameter
     extra_name: str [optional]
         Adds an util name to the output grid parameter file names
@@ -131,24 +69,117 @@ def create_grid(path, parameter_name, grid_values, extra_name=None, backup=True,
         The paths to the newly generated parameter files for the grid
     """
 
-    n_grid = len(grid_values)
     grid = []
+    n_grid = len(values)
 
     if backup:
-        copyfile(path, path + ".bak")
+        copyfile(fp, fp + ".bak")
 
-    ext = path.find(".pf")
+    ext = fp.find(".pf")
     if ext == -1:
-        raise IOError("provided file path {} is not a .pf parameter file".format(path))
+        raise IOError(f"provided file path {fp} is not a .pf parameter file")
 
     for i in range(n_grid):
-        path = path[:ext]
+        fp = fp[:ext]
         if extra_name:
-            path += "_{}".format(extra_name)
-        path += "_{}".format(grid_values[i]) + ".pf"
-        print(path)
-        copyfile(path, path)
-        update_single_parameter(path, parameter_name, grid_values[i], backup=False, verbose=verbose)
-        grid.append(path)
+            fp += "_{}".format(extra_name)
+        fp += "_{}".format(values[i]) + ".pf"
+        print(fp)
+        copyfile(fp, fp)
+        update_single_parameter(fp, name, values[i], backup=False, verbose=verbose)
+        grid.append(fp)
 
     return grid
+
+
+def get_parameter_value(fp, name):
+    """Get the value for a parameter in a parameter file.
+
+    The entire parameter file is searched to find the given parameter and
+    returned as a string. If the parameter is not found, then a ValueError is
+    raised.
+
+    Parameters
+    ----------
+    fp: str
+        The path to the parameter file
+    name: str
+        The name of the parameter
+
+    Returns
+    -------
+    value: str
+        The value of the parameter
+    """
+
+    if fp.find(".pf") == -1:
+        raise IOError(f"provided file path {fp} is not a .pf parameter file")
+
+    with open(fp, "r") as f:
+        lines = f.readlines()
+
+    value = None
+
+    for line in lines:
+        if line.find(name) != -1:
+            split = line.split()
+            if len(split) != 2:
+                raise IndexError(f"invalid syntax for {name} in parameter file {fp}")
+            return split[-1]
+
+    if value is None:
+        raise ValueError(f"parameter {name} was not found in {fp}")
+
+    return value
+
+
+def update_single_parameter(fp, name, new_value, backup=True, verbose=False):
+    """Change the value of a parameter in a Python parameter file.
+
+    If the old and new parameter value are the same, the script will still
+    update the parameter file.
+
+    Parameters
+    ----------
+    fp: str
+        The path to the parameter file
+    name: str
+        The name of the parameter to update
+    new_value: str
+        The updated value of the parameter
+    backup: bool [optional]
+        Create a back up of the original parameter file
+    verbose: bool [optional]
+        Enable verbose output to the screen
+    """
+
+    if fp.find(".pf") == -1:
+        raise IOError(f"provided file path {fp} is not a .pf parameter file")
+
+    if backup:
+        copyfile(fp, fp + ".bak")
+
+    old = ""
+    new = ""
+
+    with open(fp, "r") as f:
+        lines = f.readlines()
+
+    for i, line in enumerate(lines):
+        if line.find(name) != -1:
+            old = line
+            new = "{}{:20s}{}\n".format(name, " ", new_value)
+            lines[i] = new
+            break
+
+    if old and new:
+        if verbose:
+            print("changed parameter {} from {} to {}".format(name, old.replace("\n", ""), new.replace("\n", "")))
+    else:
+        print("unable to update: could not find parameter {} in file {}".format(name, fp))
+        return
+
+    with open(fp, "w") as f:
+        f.writelines(lines)
+
+    return

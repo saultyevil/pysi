@@ -38,11 +38,7 @@ def setup_script():
                    action="store_true",
                    default=False,
                    help="Plot labels for important absorption edges.")
-    p.add_argument("-f",
-                   "--flux",
-                   action="store_true",
-                   default=False,
-                   help="Create the figure in frequency space.")
+    p.add_argument("-f", "--flux", action="store_true", default=False, help="Create the figure in frequency space.")
     p.add_argument("-sm", "--smooth_amount", type=int, default=5, help="The size of the boxcar smoothing filter.")
     p.add_argument("--display", action="store_true", default=False, help="Display the plot before exiting the script.")
 
