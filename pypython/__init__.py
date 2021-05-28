@@ -135,7 +135,7 @@ def get_array_index(x, target):
     return np.abs(x - target).argmin()
 
 
-def get_root(fp):
+def get_root_name(fp):
     """Get the root name of a Python simulation.
 
     Extracts both the file path and the root name of the simulation.
@@ -244,7 +244,7 @@ def create_wind_save_tables(root, fp=".", ion_density=False, verbose=False):
             time.sleep(1.5)
             Path(f"{fp}/{new}").rename(f"{fp}/tables/{new}")
 
-    return
+    return cmd.returncode
 
 
 def run_py_wind(root, commands, fp="."):
@@ -291,6 +291,10 @@ WIND_COORD_TYPE_CYLINDRICAL = WIND_COORD_TYPE_CARTESIAN = "rectilinear"
 WIND_COORD_TYPE_POLAR = "polar"
 WIND_COORD_TYPE_SPHERICAL = "spherical"
 WIND_COORD_TYPE_UNKNOWN = "unknown"
+
+WIND_VELOCITY_UNITS_KMS = "kms"
+WIND_VELOCITY_UNITS_CMS = "cms"
+WIND_VELOCITY_UNITS_LIGHT = "c"
 
 WIND_DISTANCE_UNITS_CM = "cm"
 WIND_DISTANCE_UNITS_RG = "rg"
@@ -415,7 +419,7 @@ class Spectrum:
 
             n_read += 1
             self.all_spectrum[spec_type] = {}
-            self.all_units[spec_type] = "unknown"
+            self.all_units[spec_type] = SPECTRUM_UNITS_UNKNOWN
             self.all_distance[spec_type] = 0.0
 
             with open(fp, "r") as f:
@@ -740,7 +744,7 @@ class Wind:
     Contains methods to extract variables, as well as convert various
     indices into other indices.
     """
-    def __init__(self, root, fp=".", velocity_units="kms", mask=True, delim=None):
+    def __init__(self, root, fp=".", distance_units="cm", velocity_units="kms", mask=True, mk_tab=False, delim=None):
         """Initialize the Wind object.
 
         Each of the available wind save tables or ion tables are read in, and
@@ -756,8 +760,13 @@ class Wind:
             The root name of the Python simulation.
         fp: str
             The directory containing the model.
+        distance_units: str
+            The distance units of the wind.
+        velocity_units: str [optional]
+            The velocity units of the wind.
         mask: bool [optional]
             Store the wind parameters as masked arrays.
+        mk_tab: bool [optional]
         delim: str [optional]
             The delimiter used in the wind table files.
         """
@@ -779,10 +788,13 @@ class Wind:
         self.elements = ()
         self.variables = {}
         self.coord_system = WIND_COORD_TYPE_UNKNOWN
+
+        # todo: use parameter to determine units and convert
         self.units = WIND_DISTANCE_UNITS_CM
 
         # Set up the velocity units and conversion factors
 
+        # todo: use constants instead
         velocity_units = velocity_units.lower()
         if velocity_units not in ["cms", "kms", "c"]:
             raise ValueError(f"unknown velocity units {velocity_units}. Allowed units [kms, cms, c]")
@@ -799,6 +811,10 @@ class Wind:
         # If no wind tables can be found in read_in_wind_parameters, an IOError
         # is raised. If raised, try to create the wind table and read the
         # wind parameters again
+
+        if mk_tab:
+            create_wind_save_tables(self.root, self.fp, ion_density=True)
+            create_wind_save_tables(self.root, self.fp, ion_density=False)
 
         try:
             self.read_wind_parameters(delim)

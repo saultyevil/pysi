@@ -4,7 +4,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-from pypython import SPECTRUM_UNITS_FLM, SPECTRUM_UNITS_LNU, Spectrum, get_root
+from pypython import SPECTRUM_UNITS_FLM, SPECTRUM_UNITS_LNU, Spectrum, get_root_name
 from pypython.plot import (_check_axes_scale_string, _set_axes_scales, ax_add_line_ids, common_lines,
                            get_y_lims_for_x_lims, normalize_figure_style, photoionization_edges, remove_extra_axes,
                            subplot_dims)
@@ -572,7 +572,7 @@ def multiple_spectra(output_name,
     spectra_to_plot = []
 
     for spectrum in filepaths:
-        root, fp = get_root(spectrum)
+        root, fp = get_root_name(spectrum)
         spectra_to_plot.append(Spectrum(root, fp, spectrum_type, log_spec, smooth, distance))
 
     units = list(dict.fromkeys([spectrum.units for spectrum in spectra_to_plot]))

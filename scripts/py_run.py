@@ -303,6 +303,9 @@ def print_model_errors(error, root):
     root: str
         The root name of the Python simulation
     """
+    if not error:
+        return
+
     log(f"\nErrors reported for {root}:\n")
     for key in error.keys():
         log(f"  {error[key]:9d} -- {key}")
@@ -434,7 +437,7 @@ def run_all_models(parameter_files, use_mpi, n_cores):
     n_models = len(parameter_files)
 
     for i, fp in enumerate(parameter_files):
-        root, fp = pypython.get_root(fp)
+        root, fp = pypython.get_root_name(fp)
         msg = textwrap.dedent(f"""\
             ------------------------
 
@@ -461,7 +464,6 @@ def run_all_models(parameter_files, use_mpi, n_cores):
         print_model_errors(errors, root)
 
         if rc != 0:
-            log(f"\nPython exited with return code {rc}")
             continue
 
         model_converged, model_convergence = check_model_convergence(root, fp)

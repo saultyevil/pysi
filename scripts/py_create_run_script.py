@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from sys import argv
-from typing import List
-
-from pypython import util
 """
 #!/bin/bash
 
@@ -26,15 +22,18 @@ do
 done
 """
 
+from sys import argv
+import pypython
+
 
 def create_run_script(commands):
     """Create the run script given a list of commands."""
 
     # Find any python parameter file in the directory and subdirectories
     directories = []
-    pfs = util.get_parameter_files()
+    pfs = pypython.get_files("*.pf")
     for pf in pfs:
-        root, directory = util.get_root_from_filepath(pf)
+        root, directory = pypython.get_root_name(pf)
         directories.append(directory)
 
     # Construct the file as shown in the doc string of the script

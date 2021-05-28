@@ -12,7 +12,7 @@ from copy import copy
 from glob import glob
 
 
-def check_model_convergence(root, wd=".", return_per_cycle=False, return_converging=False):
+def check_model_convergence(root, fp=".", return_per_cycle=False, return_converging=False):
     """Check the convergence of a Python simulation by parsing the.
 
     !!Check_convergence line in the Python diag file.
@@ -21,7 +21,7 @@ def check_model_convergence(root, wd=".", return_per_cycle=False, return_converg
     ----------
     root: str
         The root name of the Python simulation
-    wd: str [optional]
+    fp: str [optional]
         The working directory of the Python simulation
     return_per_cycle: bool [optional]
         Return the convergence fraction for each cycle
@@ -39,18 +39,8 @@ def check_model_convergence(root, wd=".", return_per_cycle=False, return_converg
     convergence = [-1]
     converging = [-1]
 
-    diag_path = "{}/diag_{}/{}_0.diag".format(wd, root, root)
-    try:
-        with open(diag_path, "r") as f:
-            diag = f.readlines()
-    except IOError:
-        try:
-            diag_path = "diag_{}/{}_0.diag".format(root, root)
-            with open(diag_path, "r") as f:
-                diag = f.readlines()
-        except IOError:
-            print("unable to find {}_0.diag file".format(root))
-            return convergence
+    with open(f"{fp}/diag_{root}/{root}_0.diag", "r") as f:
+        diag = f.readlines()
 
     prev = ""
     convergence_per_cycle = []

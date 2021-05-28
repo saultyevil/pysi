@@ -9,7 +9,7 @@ from typing import List
 import numpy as np
 from matplotlib import pyplot as plt
 
-from pypython import get_files, get_root, plot, simulation, util
+import pypython
 
 COL_WIDTH = 80
 
@@ -38,11 +38,11 @@ def plot_convergence(root, convergence, converging=None, tr=None, te=None, te_ma
         The directory containing the Python simulation.
     """
 
-    plot.normalize_figure_style()
+    pypython.plot.normalize_figure_style()
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     n_cycles = len(convergence)
     cycles = np.arange(1, n_cycles + 1, 1)
-    ax.set_xlim(1, n_cycles)
+    # ax.set_xlim(1, n_cycles)
     ax.set_ylim(0, 1)
 
     ax.plot(cycles, convergence, label="Convergence")
@@ -72,7 +72,7 @@ def plot_convergence(root, convergence, converging=None, tr=None, te=None, te_ma
     return
 
 
-def get_convergence(root, wd="./"):
+def get_convergence(root, fp="./"):
     """Print out the convergence of a Python simulation and then create a
     detailed plot of the convergence and convergence break down of the
     simulation.
@@ -81,18 +81,27 @@ def get_convergence(root, wd="./"):
     ----------
     root: str
         The root name of the Python simulation.
-    wd: str [optional]
+    fp: str [optional]
         The directory containing the Python simulation.
     """
 
-    convergence = simulation.check_model_convergence(root, wd, return_per_cycle=True)
-    converging = simulation.check_model_convergence(root, wd, return_per_cycle=True, return_converging=True)
-    tr, te, te_max, hc = simulation.model_convergence_components(root, wd)
+    try:
+        convergence = pypython.simulation.check_model_convergence(root, fp, return_per_cycle=True)
+    except IOError:
+        print("Unable to find convergence information for this model as it has not been run\n")
+        return
 
     n_cycles = len(convergence)
     if n_cycles == 0:
-        print("Unable to find any convergence information for this model :-(\n")
+        print("Unable to find convergence information for this model\n")
         return
+
+    if n_cycles == 1 and convergence[0] == -1:
+        print("Unable to find convergence information for this model\n")
+        return
+
+    converging = pypython.simulation.check_model_convergence(root, fp, return_per_cycle=True, return_converging=True)
+    tr, te, te_max, hc = pypython.simulation.model_convergence_components(root, fp)
 
     for i in range(n_cycles):
         print("Cycle {:2d} / {:2d}: {:5.2f}% of cells converged and {:5.2f}% of cells are still converging".format(
@@ -100,9 +109,9 @@ def get_convergence(root, wd="./"):
     print("")
 
     try:
-        plot_convergence(root, convergence, converging, tr, te, te_max, hc, wd)
+        plot_convergence(root, convergence, converging, tr, te, te_max, hc, fp)
     except Exception as e:
-        print("Unable to create convergence plot.")
+        print("Unable to create convergence plot due to, ")
         print(e)
         print("")
 
@@ -112,22 +121,20 @@ def get_convergence(root, wd="./"):
 def main():
     """Main function of the script."""
 
-    print("-" * COL_WIDTH, "\n")
-
-    parameter_files = get_files("*.pf")
+    parameter_files = pypython.get_files("*.pf")
 
     if len(parameter_files) == 0:
-        print("\nCan't find any Python simulations\n")
+        raise IOError("No Python simulations were found in this directory.")
     else:
         for pf in parameter_files:
-            root, cd = util.get_root(pf)
+            root, cd = pypython.get_root_name(pf)
             if cd.find("continuum") != -1:
                 continue
             print("-" * COL_WIDTH)
             print("\nGetting the convergence for {} in directory {}\n".format(root, cd[:-1]))
             get_convergence(root, cd)
 
-    print("-" * COL_WIDTH)
+        print("-" * COL_WIDTH)
 
     return
 

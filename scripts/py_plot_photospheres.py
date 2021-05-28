@@ -124,7 +124,6 @@ def plot_1d(wind, variable, display):
         ax.axvline(location / rg, color=f"C{n}", linestyle="--", label=r"$\tau_{\rm es} =" + f"{tau_es:.2f}" + "$")
 
     ax.legend(fontsize=11)
-
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
     fig.savefig(f"{wind.fp}/{wind.root}_photosphere.png")
 
@@ -141,7 +140,7 @@ def main():
 
     root, fp = setup()
     variable = "ne"
-    display = True
+    display = False
 
     # read in wind, plot variable get matplotlib objects
 

@@ -122,10 +122,6 @@ def _plot_2d_wind(m_points,
             print(f"unknown wind projection {coordinate_system}. Expected rectilinear or polar")
             exit(1)
 
-    if scale not in ["logx", "logy", "loglog", "linlin"]:
-        print(f"unknown axes scaling {scale}. Allowed: [logx, logy, loglog, linlin]")
-        exit(1)
-
     im = ax[i, j].pcolormesh(m_points, n_points, parameter_points, shading="auto", vmin=vmin, vmax=vmax)
     cbar = fig.colorbar(im, ax=ax[i, j])
 
@@ -154,7 +150,7 @@ def _plot_2d_wind(m_points,
             ax[i, j].set_xlabel(r"$x / R_{g}$]")
             ax[i, j].set_ylabel(r"$z / R_{g}$")
         ax[i, j].set_xlim(np.min(m_points[m_points > 0]), np.max(m_points))
-        ax = _set_axes_scales(ax, scale)
+        ax[i, j] = _set_axes_scales(ax[i, j], scale)
     else:
         ax[i, j].set_theta_zero_location("N")
         ax[i, j].set_theta_direction(-1)
@@ -183,10 +179,11 @@ def plot(wind,
          ax=None,
          i=0,
          j=0):
-    """Wrapper function for plotting a wind.
+    """Plot a variable from a 1D or 2D wind model.
 
-    The function Will decide if a wind is 1D or 2D and call the appropriate
-    function.
+    The function is a simple wrapper around _plot_1d_wind and _plot_2d_wind and
+    will use the Wind object to decide if a wind is 1D or 2D, calling the
+    appropriate function to plot the wind.
 
     Parameters
     ----------

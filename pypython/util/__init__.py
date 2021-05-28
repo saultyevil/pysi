@@ -11,7 +11,7 @@ from typing import List
 
 from psutil import cpu_count
 
-from pypython import get_files, get_root
+from pypython import get_files, get_root_name
 
 LOGFILE = None
 
@@ -29,7 +29,7 @@ def create_run_script(commands):
     paths = []
     pf_fp = get_files("*.pf")
     for fp in pf_fp:
-        root, path = get_root(fp)
+        root, path = get_root_name(fp)
         paths.append(path)
 
     file = "#!/bin/bash\n\ndeclare -a directories=(\n"
@@ -86,7 +86,7 @@ def create_slurm_file(name, n_cores, split_cycle, n_hours, n_minutes, flags, fp=
         module load openmpi/3.0.0/gcc
         module load conda/py3-latest
         source activate pypython
-        python /home/ejp1n17/PythonScripts/py_run.py -n {n_cores} {split} -f='{flags}'
+        python /home/ejp1n17/PythonScripts/py_run.py -n {n_cores} -v 2 -c 0.7 {split} -f='{flags}'
         """)
 
     if fp[-1] != "/":
