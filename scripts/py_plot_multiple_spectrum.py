@@ -50,15 +50,14 @@ def setup_script():
 def main():
     """The main function of the script."""
 
-    output_name, wd, inclination, x_min, x_max, common_lines, axes_scales, smooth_amount, display = setup_script()
+    output_name, wd, inclination, xmin, xmax, label_lines, axes_scales, smooth, display = setup_script()
 
-    spectra_to_plot = get_files("*.spec")
-
-    if len(spectra_to_plot) == 0:
+    spectra_fp = get_files("*.spec")
+    if len(spectra_fp) == 0:
         raise ValueError("Unable to find any spectrum files")
 
-    fig, ax = multiple_spectra(output_name, spectra_to_plot, inclination, wd, x_min, x_max, axes_scales, smooth_amount,
-                               common_lines, file_extension, display)
+    fig, ax = multiple_spectra(output_name, spectra_fp, "spec", inclination, xmin=xmin, xmax=xmax, scale=axes_scales,
+                               smooth=smooth, label_lines=label_lines, display=display)
 
     return fig, ax
 

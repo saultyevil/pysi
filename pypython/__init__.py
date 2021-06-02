@@ -457,7 +457,7 @@ class Spectrum:
                 for i, column_name in enumerate(spectrum[0]):
                     if column_name[0] == "A":
                         j = column_name.find("P")
-                        column_name = column_name[1:j]
+                        column_name = column_name[1:j].lstrip("0")  # remove leading 0's
                     header.append(column_name)
                 spectrum = np.array(spectrum[1:], dtype=np.float64)
             else:
@@ -744,7 +744,7 @@ class Wind:
     Contains methods to extract variables, as well as convert various
     indices into other indices.
     """
-    def __init__(self, root, fp=".", distance_units="cm", velocity_units="kms", mask=True, mk_tab=False, delim=None):
+    def __init__(self, root, fp=".", distance_units="cm", co_mass=None, velocity_units="kms", mask=True, force_make_tables=False, delim=None):
         """Initialize the Wind object.
 
         Each of the available wind save tables or ion tables are read in, and
@@ -762,11 +762,14 @@ class Wind:
             The directory containing the model.
         distance_units: str
             The distance units of the wind.
+        co_mass: float
+            The mass of the central object, optional to use in conjunction with
+            distance_units == "rg"
         velocity_units: str [optional]
             The velocity units of the wind.
         mask: bool [optional]
             Store the wind parameters as masked arrays.
-        mk_tab: bool [optional]
+        force_make_tables: bool [optional]
         delim: str [optional]
             The delimiter used in the wind table files.
         """
@@ -789,20 +792,28 @@ class Wind:
         self.variables = {}
         self.coord_system = WIND_COORD_TYPE_UNKNOWN
 
-        # todo: use parameter to determine units and convert
-        self.units = WIND_DISTANCE_UNITS_CM
+        # Set up the distance units and convert to Rg if required
+
+        distance_units = distance_units.lower()
+        if distance_units not in [WIND_DISTANCE_UNITS_CM, WIND_DISTANCE_UNITS_RG]:
+            raise ValueError(f"Unknown distance units {distance_units}: allowed are {WIND_DISTANCE_UNITS_CM} or "
+                             f"{WIND_DISTANCE_UNITS_RG}")
+        self.units = distance_units
+
+        if self.units == WIND_DISTANCE_UNITS_RG:
+            self.convert_cm_to_rg(co_mass)
 
         # Set up the velocity units and conversion factors
 
         # todo: use constants instead
         velocity_units = velocity_units.lower()
-        if velocity_units not in ["cms", "kms", "c"]:
+        if velocity_units not in [WIND_VELOCITY_UNITS_CMS, WIND_VELOCITY_UNITS_KMS, WIND_VELOCITY_UNITS_LIGHT]:
             raise ValueError(f"unknown velocity units {velocity_units}. Allowed units [kms, cms, c]")
-
         self.velocity_units = velocity_units
-        if velocity_units == "kms":
+
+        if velocity_units == WIND_VELOCITY_UNITS_KMS:
             self.velocity_conversion_factor = CMS_TO_KMS
-        elif velocity_units == "cms":
+        elif velocity_units == WIND_VELOCITY_UNITS_CMS:
             self.velocity_conversion_factor = 1
         else:
             self.velocity_conversion_factor = 1 / VLIGHT
@@ -812,15 +823,13 @@ class Wind:
         # is raised. If raised, try to create the wind table and read the
         # wind parameters again
 
-        if mk_tab:
-            create_wind_save_tables(self.root, self.fp, ion_density=True)
-            create_wind_save_tables(self.root, self.fp, ion_density=False)
+        if force_make_tables:
+            self.create_wind_tables()
 
         try:
             self.read_wind_parameters(delim)
         except IOError:
-            create_wind_save_tables(self.root, self.fp, ion_density=True)
-            create_wind_save_tables(self.root, self.fp, ion_density=False)
+            self.create_wind_tables()
             self.read_wind_parameters(delim)
 
         self.read_wind_elements(delim)
@@ -1097,6 +1106,17 @@ class Wind:
                     self.variables[element][ion_type][ion] = np.ma.masked_where(self.variables["inwind"] < 0,
                                                                                 self.variables[element][ion_type][ion])
 
+    def create_wind_tables(self):
+        """Force the creation of wind save tables for the model.
+
+        This is best used when a simulation has been re-run, as the library is
+        unable to detect when the currently available wind tables do not reflect
+        a new simulation.
+        """
+
+        create_wind_save_tables(self.root, self.fp, ion_density=True)
+        create_wind_save_tables(self.root, self.fp, ion_density=False)
+
     def convert_cm_to_rg(self, co_mass_in_msol=None):
         """Convert the spatial units from cm to gravitational radius.
 
@@ -1122,7 +1142,7 @@ class Wind:
                 co_mass_in_msol = float(get_parameter_value(self.pf, "Central_object.mass(msol)"))
             except Exception as e:
                 print(e)
-                raise ValueError("please supply the mass instead")
+                raise ValueError("unable to find CO mass from parameter file, please supply the mass instead")
 
         rg = gravitational_radius(co_mass_in_msol)
 
@@ -1161,7 +1181,7 @@ class Wind:
                 co_mass_in_msol = float(get_parameter_value(self.pf, "Central_object.mass(msol)"))
             except Exception as e:
                 print(e)
-                raise ValueError("please supply the mass instead")
+                raise ValueError("unable to find CO mass from parameter file, please supply the mass instead")
 
         rg = gravitational_radius(co_mass_in_msol)
 
@@ -1320,6 +1340,7 @@ class Wind:
         if self.coord_system == "spherical":
             fig, ax = _plot_1d_wind(n_points, variable, self.units, scale=scale)
         else:
+            variable = np.log10(variable)
             fig, ax = _plot_2d_wind(n_points, m_points, variable, self.units, self.coord_system, scale=scale)
 
         # Finally, label the axes with what we actually plotted

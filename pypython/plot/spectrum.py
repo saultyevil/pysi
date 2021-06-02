@@ -612,9 +612,7 @@ def multiple_spectra(output_name,
     ymax = 0
 
     for n, thing in enumerate(things_to_plot):
-
         for spectrum in spectra_to_plot:
-
             try:
                 y = spectrum[thing]
             except KeyError:
@@ -634,7 +632,8 @@ def multiple_spectra(output_name,
             else:
                 x = spectrum["Freq."]
 
-            ax[n].plot(x, y, label=spectrum.fp.replace("_", r"\_"), alpha=alpha)
+            label = spectrum.fp.replace("_", r"\_") + "/" + spectrum.root.replace("_", r"\_")
+            ax[n].plot(x, y, label=label, alpha=alpha)
 
             # Calculate the y-axis limits to keep all spectra within the
             # plot area

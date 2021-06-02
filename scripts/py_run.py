@@ -222,8 +222,8 @@ def print_model_output(input_line, n_cores, verbosity=VERBOSITY):
 
     if verbosity >= VERBOSE_EXTRA_INFORMATION:
         if line.find("Completed ionization cycle") > -1 or line.find("Completed spectrum cycle") > -1:
-            log(f"         Total run time so far: {datetime.timedelta(seconds=float(split_line[-1]) // 1)} hrs:mins:secs"
-                )
+            log(f"         Total run time so far: {datetime.timedelta(seconds=float(split_line[-1]) // 1)} "
+                f"hrs:mins:secs")
         if line.find("converged") > -1 and line.find("converging") > -1:
             log(f"         {split_line[1]} cells converged {split_line[2]}")
 
