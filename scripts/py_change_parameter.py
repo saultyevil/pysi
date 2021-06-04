@@ -48,7 +48,7 @@ def main():
     args = p.parse_args()
 
     if args.root is None:
-        root = ""
+        root = "*"
     else:
         root = args.root
 
