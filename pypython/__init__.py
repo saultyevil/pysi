@@ -310,7 +310,7 @@ class Spectrum:
     dict are the names of the columns in the spectrum file. The data is
     stored as numpy arrays.
     """
-    def __init__(self, root, fp=".", default=None, log_spec=False, smooth=None, distance=None, delim=None):
+    def __init__(self, root, fp=".", default=None, log_spec=True, smooth=None, distance=None, delim=None):
         """Create the Spectrum object.
 
         Construct the file path of the spectrum files given the
@@ -410,9 +410,8 @@ class Spectrum:
 
         for spec_type in files_to_read:
             fp = self.fp + self.root + "."
-            if self.log_spec:
-                if spec_type != "spec_tau":
-                    fp += "log_"
+            if self.log_spec and spec_type != "spec_tau":
+                spec_type = "log_" + spec_type
             fp += spec_type
             if not path.exists(fp):
                 continue

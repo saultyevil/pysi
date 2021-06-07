@@ -41,10 +41,11 @@ def setup_script():
     p.add_argument("-f", "--flux", action="store_true", default=False, help="Create the figure in frequency space.")
     p.add_argument("-sm", "--smooth_amount", type=int, default=5, help="The size of the boxcar smoothing filter.")
     p.add_argument("--display", action="store_true", default=False, help="Display the plot before exiting the script.")
+    p.add_argument("--linear", action="store_true", default=False, help="Read in the linearly spaced spectra")
 
     args = p.parse_args()
 
-    return (args.root, args.filepath, args.xmin, args.xmax, args.flux, args.label_lines, args.scales,
+    return (args.root, args.filepath, args.xmin, args.xmax, args.flux, args.label_lines, args.scales, args.linear,
             args.smooth_amount, args.display)
 
 
@@ -60,9 +61,14 @@ def main():
         The matplotlib Axes objects for the plot panels.
     """
 
-    root, fp, xmin, xmax, flux, label_lines, scales, smooth, display = setup_script()
+    root, fp, xmin, xmax, flux, label_lines, scales, linear, smooth, display = setup_script()
 
-    spectrum = Spectrum(root, fp, smooth=smooth)
+    if linear:
+        log_spec = False
+    else:
+        log_spec = True
+
+    spectrum = Spectrum(root, fp, log_spec=log_spec, smooth=smooth)
 
     # Observer spectra
 
@@ -70,24 +76,27 @@ def main():
         spectrum.set("spec")
         plot.spectrum.spectrum_observer(spectrum, "all", xmin, xmax, scales, flux, label_lines, display)
         plot.spectrum.spectrum_components(spectrum, xmin, xmax, scales, use_flux=flux, display=display)
-    except IndexError:
-        print(f"Unable to plot observer spectra as no {fp}/{root}.spec file exists")
+    except IndexError as e:
+        print(e)
+        print(f"unable to plot observer spectra as no {fp}/{root}.spec file exists")
 
     # spec_tot - all photons
 
     try:
         spectrum.set("spec_tot")
         plot.spectrum.spectrum_components(spectrum, xmin, xmax, scales, use_flux=flux, display=display)
-    except IndexError:
-        print(f"Unable to plot ionization spectra as no {fp}/{root}.spec_tot file exists")
+    except IndexError as e:
+        print(e)
+        print(f"unable to plot ionization spectra as no {fp}/{root}.spec_tot file exists")
 
     # spec_tot_wind - anything which is "inwind"
 
     try:
         spectrum.set("spec_tot_wind")
         plot.spectrum.spectrum_components(spectrum, xmin, xmax, scales, use_flux=flux, display=display)
-    except IndexError:
-        print(f"Unable to plot ionization spectra of wind photons as no {fp}/{root}.spec_tot_wind file exists")
+    except IndexError as e:
+        print(e)
+        print(f"unable to plot ionization spectra of wind photons as no {fp}/{root}.spec_tot_wind file exists")
 
     if display:
         plt.show()

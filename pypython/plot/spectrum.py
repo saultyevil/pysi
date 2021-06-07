@@ -130,7 +130,7 @@ def _plot_subplot(ax, spectrum, things_to_plot, xmin, xmax, alpha, scale, use_fl
         print("Nothing was plotted due to all the spectra being too sparse")
         return ax
 
-    ax.set_xlim(xmin, xmax)
+    # ax.set_xlim(xmin, xmax)
     ax.legend(loc="lower left")
     ax = _set_axes_scales(ax, scale)
     ax = _set_spectrum_axes_labels(ax, spectrum.units, spectrum.distance, use_flux)
@@ -400,8 +400,8 @@ def spectrum_components(spectrum, xmin=None, xmax=None, scale="loglog", alpha=0.
 
     fig, ax = plt.subplots(2, 1, figsize=(12, 10))
 
-    ax[0] = _plot_subplot(ax[0], spectrum, ["CenSrc", "Disk", "Wind"], xmin, xmax, alpha, scale, use_flux, True)
-    ax[1] = _plot_subplot(ax[1], spectrum, ["Created", "WCreated", "Emitted", "HitSurf"], xmin, xmax, alpha, scale,
+    ax[0] = _plot_subplot(ax[0], spectrum, ["CenSrc", "Disk", "WCreated"], xmin, xmax, alpha, scale, use_flux, True)
+    ax[1] = _plot_subplot(ax[1], spectrum, ["Created", "Emitted", "Wind", "HitSurf"], xmin, xmax, alpha, scale,
                           use_flux, True)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
@@ -485,9 +485,10 @@ def spectrum_observer(spectrum,
     ax = _plot_subplot(ax, spectrum, inclinations, xmin, xmax, 1.0, scale, use_flux, False)
 
     if label_lines:
-        ax = _add_line_labels(ax, common_lines(spectrum=spectrum), scale)
+        ax = _add_line_labels(ax, common_lines(spectrum=spectrum), scale, linestyle="none")
 
-    fig.savefig(f"{spectrum.fp}/{spectrum.root}_observers.png")
+    fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+    fig.savefig(f"{spectrum.fp}/{spectrum.root}_{spectrum.current}.png")
 
     if display:
         plt.show()
