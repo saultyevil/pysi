@@ -556,6 +556,7 @@ class Spectrum:
         if target not in self.available:
             raise IndexError(f"spectrum {target} is not available: available are {self.available}")
 
+        self.current = target
         self.spectrum = self.all_spectrum[target]
         self.columns = self.all_columns[target]
         self.inclinations = self.all_inclinations[target]

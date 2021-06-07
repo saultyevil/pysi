@@ -99,7 +99,7 @@ def _plot_subplot(ax, spectrum, things_to_plot, xmin, xmax, alpha, scale, use_fl
         The modified matplotlib Axes object.
     """
     if type(things_to_plot) is str:
-        things_to_plot = [things_to_plot]
+        things_to_plot = things_to_plot,
 
     n_skipped = 0
 
@@ -487,6 +487,8 @@ def spectrum_observer(spectrum,
     if label_lines:
         ax = _add_line_labels(ax, common_lines(spectrum=spectrum), scale)
 
+    fig.savefig(f"{spectrum.fp}/{spectrum.root}_observers.png")
+
     if display:
         plt.show()
     else:
@@ -562,6 +564,7 @@ def multiple_spectra(output_name,
         matplotlib Axes object.
     """
     normalize_figure_style()
+    _check_axes_scale_string(scale)
 
     if type(filepaths) is str:
         filepaths = list(filepaths)
@@ -594,6 +597,7 @@ def multiple_spectra(output_name,
             raise ValueError("\"all\" does not seem to have worked, try specifying what to plot instead")
         things_to_plot = tuple(sorted(list(dict.fromkeys(things_to_plot))))  # Gets sorted, unique values from tuple
     else:
+        things_to_plot = things_to_plot.split(",")
         things_to_plot = tuple(things_to_plot)
 
     n_to_plot = len(things_to_plot)
@@ -632,7 +636,7 @@ def multiple_spectra(output_name,
             else:
                 x = spectrum["Freq."]
 
-            label = spectrum.fp.replace("_", r"\_") + "/" + spectrum.root.replace("_", r"\_")
+            label = spectrum.fp.replace("_", r"\_") + spectrum.root.replace("_", r"\_")
             ax[n].plot(x, y, label=label, alpha=alpha)
 
             # Calculate the y-axis limits to keep all spectra within the
@@ -643,7 +647,12 @@ def multiple_spectra(output_name,
             if not xmax:
                 xmax = x.max()
 
-            test_ymin, test_ymax = get_y_lims_for_x_lims(x, y, xmin, xmax)
+            if scale == "linlin" or scale == "logx":
+                white_space_factor = 1.1
+            else:
+                white_space_factor = 10
+
+            test_ymin, test_ymax = get_y_lims_for_x_lims(x, y, xmin, xmax, white_space_factor)
 
             if test_ymin < ymin:
                 ymin = test_ymin
@@ -667,7 +676,7 @@ def multiple_spectra(output_name,
         ax[n].set_ylim(ymin, ymax)
 
         if label_lines:
-            ax[n] = _add_line_labels(ax[n], common_lines(spectrum=spectra_to_plot[0]), scale)
+            ax[n] = _add_line_labels(ax[n], common_lines(spectrum=spectra_to_plot[0]), scale, linestyle="none")
 
     ax[0].legend(fontsize=10).set_zorder(0)
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])

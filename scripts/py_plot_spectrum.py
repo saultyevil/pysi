@@ -30,7 +30,7 @@ def setup_script():
     p.add_argument("-xu", "--xmax", type=float, default=None, help="The upper x-axis boundary to display.")
     p.add_argument("-s",
                    "--scales",
-                   default="logy",
+                   default="loglog",
                    choices=["logx", "logy", "loglog", "linlin"],
                    help="The axes scaling to use: logx, logy, loglog, linlin.")
     p.add_argument("-l",
