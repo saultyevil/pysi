@@ -190,7 +190,7 @@ def smooth_array(array, width):
     return convolve(array, boxcar(width) / float(width), mode="same")
 
 
-def create_wind_save_tables(root, fp=".", ion_density=False, verbose=False):
+def create_wind_save_tables(root, fp=".", ion_density=False, cell_spec=False, verbose=False):
     """Run windsave2table in a directory to create the standard data tables.
 
     The function can also create a root.all.complete.txt file which merges all
@@ -204,6 +204,8 @@ def create_wind_save_tables(root, fp=".", ion_density=False, verbose=False):
         The directory where windsave2table will run
     ion_density: bool [optional]
         Use windsave2table in the ion density version instead of ion fractions
+    cell_spec: bool [optional]
+        Use windsave2table to get the cell spectra.
     verbose: bool [optional]
         Enable verbose output
     """
@@ -219,6 +221,8 @@ def create_wind_save_tables(root, fp=".", ion_density=False, verbose=False):
     command += "windsave2table"
     if ion_density:
         command += " -d"
+    if cell_spec:
+        command += " -xall"
     command += f" {root}"
 
     cmd = Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
@@ -735,6 +739,161 @@ class Spectrum:
         return textwrap.dedent(msg)
 
 
+# Cell spectrum ----------------------------------------------------------------
+
+
+class CellSpectrum:
+    """A class to store the cell spectra accumulated during the ionization
+    cycles.
+
+    This class is mostly a storage space, but there is also a rough method for
+    plotting. In the future, this will probably be amalgamated into the Wind
+    or Spectrum class.
+    todo: determine nx, nz to be consistent with actual model
+    """
+    def __init__(self, root, fp=".", force_make_spectra=False, delim=None):
+        """Initialize the object.
+
+        Reads in the cell spectra into a 1D list. This function will attempt
+        to run windsave2table to create the cell spectra files if they do not
+        exist.
+
+        Parameters
+        ----------
+        root: str
+            The root name of the Python simulation.
+        fp: str
+            The directory containing the model.
+        force_make_spectra: bool [optional]
+            Force windsave2table to be run to re-make the files in the
+            tables directory.
+        delim: str [optional]
+            The delimiter used in the wind table files.
+        """
+        self.root = root
+
+        self.fp = fp
+        if self.fp[-1] != "/":
+            self.fp += "/"
+        self.pf = self.fp + self.root + ".pf"
+
+        self.nx = 0
+        self.nz = 0
+        self.nspec = 0
+        self.header = []
+        self.available = []
+        self.spectra = []
+
+        if force_make_spectra:
+            create_wind_save_tables(root, fp, False, True)
+
+        # Try to read in the spectra, if we can't then we'll try and create the
+        # spectra and read them in then. If this is unsuccessful, then an
+        # IOError will be raised somewhere
+
+        try:
+            self.get_cell_spectra(delim)
+        except IOError:
+            create_wind_save_tables(root, fp, False, True)
+            self.get_cell_spectra(delim)
+
+    def get_cell_spectra(self, delim=None):
+        """Read in the cell spectra."""
+        fp = self.fp + self.root + ".xspec.all.txt"
+        if not path.exists(fp):
+            fp = self.fp + "tables/" + self.root + ".xspec.all.txt"
+            if not path.exists(fp):
+                raise IOError(f"cell spectra file {fp} isn't found")
+
+        with open(fp, "r") as f:
+            spectrum_file = f.readlines()
+
+        spectra = []
+
+        for line in spectrum_file:
+            if len(line) == 0 or line.startswith("#"):
+                continue
+            if delim:
+                line = line.split(delim)
+            else:
+                line = line.split()
+            spectra.append(line)
+
+        self.header = header = spectra[0]
+        cell_spectra = np.array(spectra[1:], dtype=np.float64)
+        frequency_bins = cell_spectra[:, 0]
+        cell_spectra = cell_spectra[:, 1:]
+
+        # We have to make the header differently depending on if the model is
+        # 1d or 2d
+        # todo: probably make 4 a constant so it is not a magic number
+
+        if len(header[1]) > 4:
+            self.available = [(int(cell[1:4]), int(cell[5:])) for cell in header[1:]]
+        else:
+            self.available = [(int(cell[1:4]), 0) for cell in header[1:]]
+
+        try:
+            self.nx = int(get_parameter_value(self.pf, "Wind.dim.in.x_or_r.direction"))
+            if len(header[1]) > 4:
+                self.nz = int(get_parameter_value(self.pf, "Wind.dim.in.z_or_theta.direction"))
+        except IOError or ValueError:
+            self.nx = self.available[-1][0] + 1
+            self.nz = self.available[-1][1] + 1
+
+        self.nspec = int(self.nx * self.nz)
+        self.spectra = [None for _ in range(self.nspec)]
+
+        for n, (i, j) in enumerate(self.available):
+            nelem = self.get_elem_number_from_ij(i, j)
+            self.spectra[nelem] = {
+                "i": i,
+                "j": j,
+                "n": nelem,
+                "Freq.": np.copy(frequency_bins),
+                "Flux": cell_spectra[:, n]
+            }
+
+    def get_elem_number_from_ij(self, i, j):
+        """Get the wind element number for a given i and j index."""
+        return int(self.nz * i + j)
+
+    def plot(self, i, j, scale="loglog"):
+        """Plot the cell spectrum for cell i, j."""
+        normalize_figure_style()
+        fig, ax = plt.subplots(figsize=(12, 6))
+
+        spectrum = self.spectra[self.get_elem_number_from_ij(i, j)]
+        if spectrum is None:
+            raise ValueError(f"no cell spectra for cell ({i}, {j}) as cell is probably no in the wind")
+
+        ax.plot(spectrum["Freq."], spectrum["Flux"])
+        ax.set_ylabel(r"$J_{\nu}$ [ergs s$^{-1}$ cm$^{-3}$ Sr$^{-1}$ Hz$^{-1}$]")
+        ax.set_xlabel("Rest-frame Frequency")
+
+        ax = set_axes_scales(ax, scale)
+        fig.suptitle(f"{i} j {j}")
+
+        return fig, ax
+
+    @staticmethod
+    def show():
+        """Wrapper around matplotlib show"""
+        plt.show()
+
+    def __getitem__(self, pos):
+        """Index."""
+        i, j = pos
+        n = self.get_elem_number_from_ij(i, j)
+        return self.spectra[n]
+
+    def __setitem__(self, pos, value):
+        """Write to an index."""
+        i, j = pos
+        n = self.get_elem_number_from_ij(i, j)
+        self.spectra[n] = value
+
+
 # Wind class -------------------------------------------------------------------
 
 
@@ -744,7 +903,15 @@ class Wind:
     Contains methods to extract variables, as well as convert various
     indices into other indices.
     """
-    def __init__(self, root, fp=".", distance_units="cm", co_mass=None, velocity_units="kms", mask=True, force_make_tables=False, delim=None):
+    def __init__(self,
+                 root,
+                 fp=".",
+                 distance_units="cm",
+                 co_mass=None,
+                 velocity_units="kms",
+                 mask=True,
+                 force_make_tables=False,
+                 delim=None):
         """Initialize the Wind object.
 
         Each of the available wind save tables or ion tables are read in, and
@@ -770,6 +937,8 @@ class Wind:
         mask: bool [optional]
             Store the wind parameters as masked arrays.
         force_make_tables: bool [optional]
+            Force windsave2table to be run to re-make the files in the
+            tables directory.
         delim: str [optional]
             The delimiter used in the wind table files.
         """
@@ -795,13 +964,11 @@ class Wind:
         # Set up the distance units and convert to Rg if required
 
         distance_units = distance_units.lower()
+        self.units = ""
+
         if distance_units not in [WIND_DISTANCE_UNITS_CM, WIND_DISTANCE_UNITS_RG]:
             raise ValueError(f"Unknown distance units {distance_units}: allowed are {WIND_DISTANCE_UNITS_CM} or "
                              f"{WIND_DISTANCE_UNITS_RG}")
-        self.units = distance_units
-
-        if self.units == WIND_DISTANCE_UNITS_RG:
-            self.convert_cm_to_rg(co_mass)
 
         # Set up the velocity units and conversion factors
 
@@ -827,13 +994,21 @@ class Wind:
             self.create_wind_tables()
 
         try:
-            self.read_wind_parameters(delim)
+            self.get_wind_parameters(delim)
         except IOError:
             self.create_wind_tables()
-            self.read_wind_parameters(delim)
+            self.get_wind_parameters(delim)
 
-        self.read_wind_elements(delim)
+        self.get_wind_elements(delim)
         self.columns = self.parameters + self.elements
+
+        # In the case of using rg, the units are set in convert_cm_to_rg, so
+        # we set the units here only in the case of using cm
+
+        if distance_units == WIND_DISTANCE_UNITS_RG:
+            self.convert_cm_to_rg(co_mass)
+        else:
+            self.units = distance_units
 
         # Convert velocity into desired units and also calculate the cylindrical
         # velocities. This doesn't work for polar or spherical coordinates as
@@ -852,7 +1027,7 @@ class Wind:
         if mask:
             self.create_masked_arrays()
 
-    def read_wind_parameters(self, delim=None):
+    def get_wind_parameters(self, delim=None):
         """Read in the wind parameters.
 
         Parameters
@@ -901,7 +1076,15 @@ class Wind:
             # current file into wind_all, the list of lists, the master list
 
             if wind_list[0][0].isdigit() is False:
-                wind_columns += wind_list[0]
+                header = wind_list[0]
+
+                # We need to deal with the case where the mean intensity is
+                # name j, the same as the j cell index...
+
+                if table == "heat":
+                    header = self._rename_j_to_j_bar(table, header)
+
+                wind_columns += header
             else:
                 wind_columns += list(np.arange(len(wind_list[0]), dtype=np.dtype.str))
 
@@ -963,7 +1146,7 @@ class Wind:
             self.coord_system = WIND_COORD_TYPE_CYLINDRICAL
             self.axes = ["x", "z", "x_cen", "z_cen"]
 
-    def read_wind_elements(self, delim=None, elements_to_get=None):
+    def get_wind_elements(self, delim=None, elements_to_get=None):
         """Read in the ion parameters.
 
         Parameters
@@ -1109,9 +1292,9 @@ class Wind:
     def create_wind_tables(self):
         """Force the creation of wind save tables for the model.
 
-        This is best used when a simulation has been re-run, as the library is
-        unable to detect when the currently available wind tables do not reflect
-        a new simulation.
+        This is best used when a simulation has been re-run, as the
+        library is unable to detect when the currently available wind
+        tables do not reflect a new simulation.
         """
 
         create_wind_save_tables(self.root, self.fp, ion_density=True)
@@ -1146,7 +1329,7 @@ class Wind:
 
         rg = gravitational_radius(co_mass_in_msol)
 
-        if self.coord_system == WIND_COORD_TYPE_SPHERICAL or self.coord_system == WIND_COORD_TYPE_POLAR:
+        if self.coord_system in [WIND_COORD_TYPE_SPHERICAL, WIND_COORD_TYPE_POLAR]:
             self.variables["r"] /= rg
         else:
             self.variables["x"] /= rg
@@ -1315,7 +1498,39 @@ class Wind:
 
         return n_points, m_points
 
-    def plot(self, variable_name, use_cell_coordinates=True, scale="loglog"):
+    @staticmethod
+    def _rename_j_to_j_bar(table, header):
+        """Rename j, the mean intensity, to j_bar.
+
+        In old versions of windsave2table, the mean intensity of the field
+        was named j which created a conflict for 2D models which have a j
+        cell index.
+
+        Parameters
+        ----------
+        table: str
+            The name of the table
+        header: list[str]
+            Rename the header for j to j_bar.
+        """
+
+        count = header.count("j")
+        if count < 1:
+            return header
+        if count > 2:
+            raise ValueError(f"too many j's {count} in header for {table} table")
+
+        if "z" in header:
+            idx = header.index("j")
+            idx = header[idx:].index("j")
+            header[idx] = "j_bar"
+        else:
+            idx = header.index("j")
+            header[idx] = "j_bar"
+
+        return header
+
+    def plot(self, variable_name, use_cell_coordinates=True, scale="loglog", log_variable=True):
         """Create a plot of the wind for the given variable.
 
         Parameters
@@ -1327,10 +1542,10 @@ class Wind:
             Plot using the cell coordinates instead of cell index numbers
         scale: str [optional]
             The type of scaling for the axes
+        log_variable: bool [optional]
+            Plot the variable in logarithmic units
         """
         variable = self.get(variable_name)
-
-        # Next, we have to make sure we get the correct coordinates
 
         if use_cell_coordinates:
             n_points, m_points = self._get_wind_coordinates()
@@ -1338,12 +1553,11 @@ class Wind:
             n_points, m_points = self._get_wind_indices()
 
         if self.coord_system == "spherical":
-            fig, ax = _plot_1d_wind(n_points, variable, self.units, scale=scale)
+            fig, ax = plot_1d_wind(n_points, variable, self.units, scale=scale)
         else:
-            variable = np.log10(variable)
-            fig, ax = _plot_2d_wind(n_points, m_points, variable, self.units, self.coord_system, scale=scale)
-
-        # Finally, label the axes with what we actually plotted
+            if log_variable:
+                variable = np.log10(variable)
+            fig, ax = plot_2d_wind(n_points, m_points, variable, self.units, self.coord_system, scale=scale)
 
         if len(ax) == 1:
             ax = ax[0, 0]
@@ -1394,6 +1608,7 @@ for loader, module_name, is_pkg in pkgutil.walk_packages(__path__):
 
 __all__.append("Wind")
 __all__.append("Spectrum")
+__all__.append("CellSpectrum")
 __all__.append("cleanup_data")
 __all__.append("get_files")
 __all__.append("get_array_index")
@@ -1404,5 +1619,5 @@ __all__.append("run_py_wind")
 
 # These are put here to solve a circular dependency ----------------------------
 
-from pypython.plot import ax_add_line_ids, common_lines, normalize_figure_style
-from pypython.plot.wind import _plot_1d_wind, _plot_2d_wind
+from pypython.plot import (set_axes_scales, ax_add_line_ids, common_lines, normalize_figure_style)
+from pypython.plot.wind import plot_1d_wind, plot_2d_wind
