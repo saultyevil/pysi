@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-"""
-#!/bin/bash
+"""#!/bin/bash
 
 declare -a directories=(
     "Directory1"
@@ -23,6 +21,7 @@ done
 """
 
 from sys import argv
+
 import pypython
 
 

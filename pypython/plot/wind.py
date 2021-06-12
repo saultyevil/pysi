@@ -6,10 +6,10 @@ from matplotlib import pyplot as plt
 
 from pypython import (WIND_COORD_TYPE_CYLINDRICAL, WIND_COORD_TYPE_SPHERICAL, WIND_DISTANCE_UNITS_CM)
 from pypython.constants import PI
-from pypython.plot import _set_axes_scales, normalize_figure_style
+from pypython.plot import set_axes_scales, normalize_figure_style
 
 
-def _plot_1d_wind(m_points, parameter_points, units, scale="logx", fig=None, ax=None, i=0, j=0):
+def plot_1d_wind(m_points, parameter_points, units, scale="logx", fig=None, ax=None, i=0, j=0):
     """Plot a 1D wind.
 
     Parameters
@@ -51,26 +51,26 @@ def _plot_1d_wind(m_points, parameter_points, units, scale="logx", fig=None, ax=
     else:
         ax[i, j].set_xlabel(r"$r / R_{g}$")
     ax[i, j].set_xlim(np.min(m_points[m_points > 0]), np.max(m_points))
-    ax[i, j] = _set_axes_scales(ax[i, j], scale)
+    ax[i, j] = set_axes_scales(ax[i, j], scale)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 
     return fig, ax
 
 
-def _plot_2d_wind(m_points,
-                  n_points,
-                  parameter_points,
-                  units,
-                  coordinate_system="rectilinear",
-                  inclinations_to_plot=None,
-                  scale="loglog",
-                  vmin=None,
-                  vmax=None,
-                  fig=None,
-                  ax=None,
-                  i=0,
-                  j=0):
+def plot_2d_wind(m_points,
+                 n_points,
+                 parameter_points,
+                 units,
+                 coordinate_system="rectilinear",
+                 inclinations_to_plot=None,
+                 scale="loglog",
+                 vmin=None,
+                 vmax=None,
+                 fig=None,
+                 ax=None,
+                 i=0,
+                 j=0):
     """Plot a 2D wind using a contour plot.
 
     Parameters
@@ -150,7 +150,7 @@ def _plot_2d_wind(m_points,
             ax[i, j].set_xlabel(r"$x / R_{g}$]")
             ax[i, j].set_ylabel(r"$z / R_{g}$")
         ax[i, j].set_xlim(np.min(m_points[m_points > 0]), np.max(m_points))
-        ax[i, j] = _set_axes_scales(ax[i, j], scale)
+        ax[i, j] = set_axes_scales(ax[i, j], scale)
     else:
         ax[i, j].set_theta_zero_location("N")
         ax[i, j].set_theta_direction(-1)
@@ -234,7 +234,7 @@ def plot(wind,
             n = wind["r"]
         else:
             n = wind["i"]
-        fig, ax = _plot_1d_wind(n, parameter_points, wind.units, "loglog", fig, ax, i, j)
+        fig, ax = plot_1d_wind(n, parameter_points, wind.units, "loglog", fig, ax, i, j)
     elif wind.coord_system == WIND_COORD_TYPE_CYLINDRICAL:
         if use_cell_coordinates:
             n = wind["r"]
@@ -242,12 +242,12 @@ def plot(wind,
         else:
             n = wind["i"]
             m = wind["j"]
-        fig, ax = _plot_2d_wind(n, m, parameter_points, wind.units, wind.coord_system, inclinations_to_plot, scale,
-                                vmin, vmax, fig, ax, i, j)
+        fig, ax = plot_2d_wind(n, m, parameter_points, wind.units, wind.coord_system, inclinations_to_plot, scale, vmin,
+                               vmax, fig, ax, i, j)
     else:
         if use_cell_coordinates:
             raise ValueError("use_indices cannot be used with polar winds")
-        fig, ax = _plot_2d_wind(np.deg2rad(wind["theta"]), np.log10(wind["r"]), parameter_points, wind.units,
-                                wind.coord_system, inclinations_to_plot, scale, vmin, vmax, fig, ax, i, j)
+        fig, ax = plot_2d_wind(np.deg2rad(wind["theta"]), np.log10(wind["r"]), parameter_points, wind.units,
+                               wind.coord_system, inclinations_to_plot, scale, vmin, vmax, fig, ax, i, j)
 
     return fig, ax

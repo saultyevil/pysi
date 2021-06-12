@@ -41,7 +41,7 @@ def setup_script():
     p.add_argument("-f", "--flux", action="store_true", default=False, help="Create the figure in frequency space.")
     p.add_argument("-sm", "--smooth_amount", type=int, default=5, help="The size of the boxcar smoothing filter.")
     p.add_argument("--display", action="store_true", default=False, help="Display the plot before exiting the script.")
-    p.add_argument("--linear", action="store_true", default=False, help="Read in the linearly spaced spectra")
+    p.add_argument("--linear", action="store_false", default=True, help="Read in the linearly spaced spectra")
 
     args = p.parse_args()
 
@@ -61,12 +61,9 @@ def main():
         The matplotlib Axes objects for the plot panels.
     """
 
-    root, fp, xmin, xmax, flux, label_lines, scales, linear, smooth, display = setup_script()
+    root, fp, xmin, xmax, flux, label_lines, scales, log_spec, smooth, display = setup_script()
 
-    if linear:
-        log_spec = False
-    else:
-        log_spec = True
+    # Note that log_spec is really --linear in the command line arguments
 
     spectrum = Spectrum(root, fp, log_spec=log_spec, smooth=smooth)
 

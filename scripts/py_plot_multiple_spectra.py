@@ -56,8 +56,16 @@ def main():
     if len(spectra_fp) == 0:
         raise ValueError("Unable to find any spectrum files")
 
-    fig, ax = multiple_spectra(output_name, spectra_fp, "spec", inclination, xmin=xmin, xmax=xmax, scale=axes_scales,
-                               smooth=smooth, label_lines=label_lines, display=display)
+    fig, ax = multiple_spectra(output_name,
+                               spectra_fp,
+                               "spec",
+                               inclination,
+                               xmin=xmin,
+                               xmax=xmax,
+                               scale=axes_scales,
+                               smooth=smooth,
+                               label_lines=label_lines,
+                               display=display)
 
     return fig, ax
 

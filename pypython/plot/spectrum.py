@@ -4,8 +4,8 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-from pypython import SPECTRUM_UNITS_FLM, SPECTRUM_UNITS_LNU, Spectrum, get_root_name
-from pypython.plot import (_check_axes_scale_string, _set_axes_scales, ax_add_line_ids, common_lines,
+from pypython import (SPECTRUM_UNITS_FLM, SPECTRUM_UNITS_LNU, Spectrum, get_root_name)
+from pypython.plot import (_check_axes_scale_string, set_axes_scales, ax_add_line_ids, common_lines,
                            get_y_lims_for_x_lims, normalize_figure_style, photoionization_edges, remove_extra_axes,
                            subplot_dims)
 
@@ -132,7 +132,7 @@ def _plot_subplot(ax, spectrum, things_to_plot, xmin, xmax, alpha, scale, use_fl
 
     # ax.set_xlim(xmin, xmax)
     ax.legend(loc="lower left")
-    ax = _set_axes_scales(ax, scale)
+    ax = set_axes_scales(ax, scale)
     ax = _set_spectrum_axes_labels(ax, spectrum.units, spectrum.distance, use_flux)
 
     return ax
@@ -258,7 +258,7 @@ def optical_depth(spectrum,
 
         ax.plot(spectrum[xlabel], spectrum[inclination], linewidth=2, label=label)
 
-    ax = _set_axes_scales(ax, scale)
+    ax = set_axes_scales(ax, scale)
     ax.set_ylabel(r"Continuum Optical Depth")
 
     if frequency_space:
@@ -306,8 +306,8 @@ def reprocessing(spectrum, xmin=None, xmax=None, scale="loglog", label_edges=Tru
     fig, ax = plt.subplots(figsize=(12, 7))
     ax2 = ax.twinx()
 
-    ax = _set_axes_scales(ax, scale)
-    ax2 = _set_axes_scales(ax2, scale)
+    ax = set_axes_scales(ax, scale)
+    ax2 = set_axes_scales(ax2, scale)
 
     # Plot the optical depth
 
@@ -665,7 +665,7 @@ def multiple_spectra(output_name,
         if ymax == 0:
             ymax = None
 
-        ax[n] = _set_axes_scales(ax[n], scale)
+        ax[n] = set_axes_scales(ax[n], scale)
         ax[n] = _set_spectrum_axes_labels(ax[n], spectra_to_plot[0].units, spectra_to_plot[0].distance, use_flux)
 
         if thing.isdigit():

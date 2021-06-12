@@ -206,16 +206,15 @@ def print_model_output(input_line, n_cores, verbosity=VERBOSITY):
         if line.find("per cent") > -1 and line.find("Photon") > -1:
             if int(split_line[7]) == 0:
                 log("         Beginning photon transport")
-            else:
-                try:
-                    percent_done = round(float(split_line[-3]), 0)
-                except ValueError:
-                    percent_done = split_line[-3]
-                try:
-                    n_photons = f"{round(int(split_line[-5]) * n_cores, 0):1.2e}"
-                except ValueError:
-                    n_photons = split_line[-5]
-                log(f"           - {percent_done}% of {n_photons} photons transported")
+            try:
+                percent_done = round(float(split_line[-3]), 0)
+            except ValueError:
+                percent_done = split_line[-3]
+            try:
+                n_photons = f"{round(int(split_line[-5]) * n_cores, 0):1.2e}"
+            except ValueError:
+                n_photons = split_line[-5]
+            log(f"           - {percent_done}% of {n_photons} photons transported")
         if line.find("photon transport completed in") > -1:
             log(f"         Photons transported in {datetime.timedelta(seconds=float(split_line[5]) // 1)} hrs:mins:secs"
                 )

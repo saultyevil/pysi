@@ -89,7 +89,7 @@ def _check_axes_scale_string(scale):
         raise ValueError(f"{scale} is an unknown axes scale choice, allowed: logx, logy, linlin, loglog")
 
 
-def _set_axes_scales(ax, scale):
+def set_axes_scales(ax, scale):
     """Set the scale for axes.
 
     Parameters
