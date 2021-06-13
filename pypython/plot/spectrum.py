@@ -5,8 +5,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from pypython import (SPECTRUM_UNITS_FLM, SPECTRUM_UNITS_LNU, Spectrum, get_root_name)
-from pypython.plot import (_check_axes_scale_string, set_axes_scales, ax_add_line_ids, common_lines,
-                           get_y_lims_for_x_lims, normalize_figure_style, photoionization_edges, remove_extra_axes,
+from pypython.plot import (_check_axes_scale_string, ax_add_line_ids, common_lines, get_y_lims_for_x_lims,
+                           normalize_figure_style, photoionization_edges, remove_extra_axes, set_axes_scales,
                            subplot_dims)
 
 MIN_SPEC_COMP_FLUX = 1e-15

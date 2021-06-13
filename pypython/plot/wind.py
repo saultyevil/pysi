@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 
 from pypython import (WIND_COORD_TYPE_CYLINDRICAL, WIND_COORD_TYPE_SPHERICAL, WIND_DISTANCE_UNITS_CM)
 from pypython.constants import PI
-from pypython.plot import set_axes_scales, normalize_figure_style
+from pypython.plot import normalize_figure_style, set_axes_scales
 
 
 def plot_1d_wind(m_points, parameter_points, units, scale="logx", fig=None, ax=None, i=0, j=0):
