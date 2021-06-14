@@ -875,7 +875,8 @@ class CellSpectra:
         if len(cell_spectra) > 1:
             cell_spectra = [np.hstack(cell_spectra)]
 
-        frequency_bins = np.array(frequency_bins[0], dtype=np.float64)  # assuming they're all the same, but we should check
+        frequency_bins = np.array(frequency_bins[0],
+                                  dtype=np.float64)  # assuming they're all the same, but we should check
         cell_spectra = cell_spectra[0]
 
         # We have to make the header differently depending on if the model is
@@ -900,10 +901,7 @@ class CellSpectra:
         self.spectra = np.array([None for _ in range(self.nx * self.nz)], dtype=dict).reshape(self.nx, self.nz)
 
         for n, (i, j) in enumerate(self.available):
-            self.spectra[i, j] = {
-                "Freq.": np.copy(frequency_bins),
-                "Flux": cell_spectra[:, n]
-            }
+            self.spectra[i, j] = {"Freq.": np.copy(frequency_bins), "Flux": cell_spectra[:, n]}
 
     def get_elem_number_from_ij(self, i, j):
         """Get the wind element number for a given i and j index."""
@@ -957,6 +955,7 @@ class Wind:
 
     Contains methods to extract variables, as well as convert various
     indices into other indices.
+    todo: I should include kwargs in a bunch of these functions
     """
     def __init__(self,
                  root,
@@ -1006,34 +1005,35 @@ class Wind:
             self.fp += "/"
         self.pf = self.fp + self.root + ".pf"
 
+        # Set initial conditions for all of the important variables
+
         self.nx = 1
         self.nz = 1
         self.n_elem = 1
-        self.m_coords = ()
-        self.n_coords = ()
-        self.m_cen_coords = ()
-        self.n_cen_coords = ()
+        self.x_coords = ()
+        self.y_coords = ()
+        self.x_cen_coords = ()
+        self.y_cen_coords = ()
         self.axes = ()
         self.parameters = ()
         self.elements = ()
-        self.variables = {}
+        self.wind = {}
         self.coord_system = WIND_COORD_TYPE_UNKNOWN
+        self.units = "probably_cm"  # can't set immediately due to conversion functions setting the units
 
-        # Set up the distance units and convert to Rg if required
+        # Get the conversion factors for distance and velocity units
 
         distance_units = distance_units.lower()
-        self.units = ""
-
         if distance_units not in [WIND_DISTANCE_UNITS_CM, WIND_DISTANCE_UNITS_RG]:
-            raise ValueError(f"Unknown distance units {distance_units}: allowed are {WIND_DISTANCE_UNITS_CM} or "
-                             f"{WIND_DISTANCE_UNITS_RG}")
-
-        # Set up the velocity units and conversion factors
+            raise ValueError(
+                f"Unknown distance units {distance_units}: allowed are {WIND_DISTANCE_UNITS_CM} or {WIND_DISTANCE_UNITS_RG}"
+            )
 
         velocity_units = velocity_units.lower()
-
         if velocity_units not in [WIND_VELOCITY_UNITS_CMS, WIND_VELOCITY_UNITS_KMS, WIND_VELOCITY_UNITS_LIGHT]:
-            raise ValueError(f"unknown velocity units {velocity_units}. Allowed units [kms, cms, c]")
+            raise ValueError(
+                f"unknown velocity units {velocity_units}. Allowed units [{WIND_VELOCITY_UNITS_KMS}, {WIND_VELOCITY_UNITS_CMS}, {WIND_VELOCITY_UNITS_LIGHT}]"
+            )
 
         self.velocity_units = velocity_units
 
@@ -1044,150 +1044,157 @@ class Wind:
         else:
             self.velocity_conversion_factor = 1 / VLIGHT
 
-        # The next method reads in the wind and initializes the above members.
-        # If no wind tables can be found in read_in_wind_parameters, an IOError
-        # is raised. If raised, try to create the wind table and read the
-        # wind parameters again
+        # Now we can read in the different elements of the wind save tables and
+        # initialize most of the variables above. If no files are found, then
+        # windsave2table is automatically run. If that doesn't work, then the
+        # will script raise an exception. It is also possible to force the
+        # re-creation of the tables.
 
         if force_make_tables:
             self.create_wind_tables()
 
         try:
             self.get_wind_parameters(delim)
-            self.get_wind_elements(delim)
+            self.get_wind_elements(delim=delim)
             if include_cell_spec:
-                self.variables["cell_spec"] = CellSpectra(self.root, self.fp, self.nx, self.nz, force_make_tables)
+                self.wind["cell_spec"] = CellSpectra(self.root, self.fp, self.nx, self.nz, force_make_tables)
         except IOError:
             self.create_wind_tables()
             self.get_wind_parameters(delim)
-            self.get_wind_elements(delim)
+            self.get_wind_elements(delim=delim)
             if include_cell_spec:
-                self.variables["cell_spec"] = CellSpectra(self.root, self.fp, self.nx, self.nz)
+                self.wind["cell_spec"] = CellSpectra(self.root, self.fp, self.nx, self.nz)
 
-        self.columns = self.variables.keys()
+        self.columns = self.wind.keys()
 
-        # In the case of using rg, the units are set in convert_cm_to_rg, so
-        # we set the units here only in the case of using cm
+        if mask:
+            self.create_masked_arrays()
+
+        # Now we can convert or set the units, as the wind has been read in
+        # todo: this should be in get_wind_parameters, probably
 
         if distance_units == WIND_DISTANCE_UNITS_RG:
             self.convert_cm_to_rg(co_mass)
         else:
             self.units = distance_units
 
-        # Create masked cells, if that's the users deepest desire for their
-        # data
+    # Private methods ----------------------------------------------------------
 
-        if mask:
-            self.create_masked_arrays()
-
-    def get_wind_parameters(self, delim=None):
-        """Read in the wind parameters.
+    def _get_element_variable(self, element_name, ion_name):
+        """Helper function to get the fraction or density of an ion depending
+        on the final character of the requested variable.
 
         Parameters
         ----------
-        delim: str [optional]
-            The deliminator in the wind table files.
+        element_name: str
+            The element symbol, i.e. H, He.
+        ion_name: str
+            The name of the element, in the format i_01, i_01f, i_01d, etc.
         """
-        wind_all = []
-        wind_columns = []
 
-        # Read in each file, one by one, if they exist. Note that this makes
-        # the assumption that all the tables are the same size.
-
-        n_read = 0
-        files_to_read = ["master", "heat", "gradient", "converge"]
-
-        for table in files_to_read:
-            fp = self.fp + self.root + "." + table + ".txt"
-            if not path.exists(fp):
-                fp = self.fp + "tables/" + self.root + "." + table + ".txt"
-                if not path.exists(fp):
-                    continue
-            n_read += 1
-
-            with open(fp, "r") as f:
-                wind_file = f.readlines()
-
-            # Read in the wind_save table, ignoring empty lines and comments.
-            # Each file is stored as a list of lines within a list, so a list
-            # of lists.
-            # todo: need some method to detect incorrect syntax
-
-            wind_list = []
-
-            for line in wind_file:
-                line = line.strip()
-                if delim:
-                    line = line.split(delim)
-                else:
-                    line = line.split()
-                if len(line) == 0 or line[0] == "#":
-                    continue
-                wind_list.append(line)
-
-            # Keep track of each file header and add the wind lines for the
-            # current file into wind_all, the list of lists, the master list
-
-            if wind_list[0][0].isdigit() is False:
-                header = wind_list[0]
-
-                # We need to deal with the case where the mean intensity is
-                # name j, the same as the j cell index...
-
-                if table == "heat":
-                    header = self._rename_j_to_j_bar(table, header)
-
-                wind_columns += header
+        ion_frac_or_den = ion_name[-1]
+        if not ion_frac_or_den.isdigit():
+            ion_name = ion_name[:-1]
+            if ion_frac_or_den == "d":
+                variable = self.wind[element_name]["density"][ion_name]
+            elif ion_frac_or_den == "f":
+                variable = self.wind[element_name]["fraction"][ion_name]
             else:
-                wind_columns += list(np.arange(len(wind_list[0]), dtype=np.dtype.str))
+                raise ValueError(f"{ion_frac_or_den} is an unknown ion type, try f or d")
+        else:
+            variable = self.wind[element_name]["density"][ion_name]
 
-            wind_all.append(np.array(wind_list[1:], dtype=np.float64))
+        return variable
 
-        if n_read == 0:
-            raise IOError(f"Unable to open any wind tables for root {self.root} directory {self.fp}")
+    def _get_wind_coordinates(self):
+        """Get coordinates of the wind.
 
-        # Determine the number of nx and nz elements. There is a basic check to
-        # only check for nz if a j column exists, i.e. if it is a 2d model.
+        This returns the 2d array of coordinate points for the grid or
+        1d depending on the coordinate type. This is different from
+        using self.n_coords which returns only the axes points.
+        """
+        if self.coord_system == WIND_COORD_TYPE_SPHERICAL:
+            n_points = self.wind["r"]
+            m_points = np.zeros_like(n_points)
+        elif self.coord_system == WIND_COORD_TYPE_CYLINDRICAL:
+            n_points = self.wind["x"]
+            m_points = self.wind["z"]
+        else:
+            m_points = np.log10(self.wind["r"])
+            n_points = np.deg2rad(self.wind["theta"])
 
-        i_col = wind_columns.index("i")
-        self.nx = int(np.max(wind_all[0][:, i_col]) + 1)
+        return n_points, m_points
 
-        if "z" in wind_columns or "theta" in wind_columns:
-            j_col = wind_columns.index("j")
-            self.nz = int(np.max(wind_all[0][:, j_col]) + 1)
-        self.n_elem = int(self.nx * self.nz)
+    def _get_wind_indices(self):
+        """Get cell indices of the grid cells of the wind.
 
-        wind_all = np.hstack(wind_all)
+        This returns the 2d array of grid cell indices for the grid or
+        1d depending on the coordinate type.
+        """
+        if self.coord_system == WIND_COORD_TYPE_SPHERICAL:
+            n_points = self.wind["i"]
+            m_points = np.zeros_like(n_points)
+        elif self.coord_system == WIND_COORD_TYPE_CYLINDRICAL:
+            n_points = self.wind["i"]
+            m_points = self.wind["j"]
+        else:
+            raise ValueError("cannot plot with the cell indices for polar winds due to how matplotlib works")
 
-        # Assign each column header to a key in the dictionary, ignoring any
-        # column which is already in the dict and extract the x and z
-        # coordinates
+        return n_points, m_points
 
-        for index, col in enumerate(wind_columns):
-            if col in self.variables.keys():
-                continue
-            self.variables[col] = wind_all[:, index].reshape(self.nx, self.nz)
-            self.parameters += col,
+    @staticmethod
+    def _rename_j_to_j_bar(table, header):
+        """Rename j, the mean intensity, to j_bar.
 
-        # Get the x/r coordinates
+        In old versions of windsave2table, the mean intensity of the field
+        was named j which created a conflict for 2D models which have a j
+        cell index.
+
+        Parameters
+        ----------
+        table: str
+            The name of the table
+        header: list[str]
+            Rename the header for j to j_bar.
+        """
+        count = header.count("j")
+        if count < 1:
+            return header
+        if count > 2:
+            raise ValueError(f"too many j's {count} in header for {table} table")
+
+        if "z" in header:
+            idx = header.index("j")
+            idx = header[idx:].index("j")
+            header[idx] = "j_bar"
+        else:
+            idx = header.index("j")
+            header[idx] = "j_bar"
+
+        return header
+
+    def _setup_coords(self):
+        """Set up the various coordinate variables."""
+
+        # Setup the x/r coordinates
 
         if "x" in self.parameters:
-            self.m_coords = tuple(np.unique(self.variables["x"]))
-            self.m_cen_coords = tuple(np.unique(self.variables["xcen"]))
+            self.x_coords = tuple(np.unique(self.wind["x"]))
+            self.x_cen_coords = tuple(np.unique(self.wind["xcen"]))
         else:
-            self.m_coords = tuple(np.unique(self.variables["r"]))
-            self.m_cen_coords = tuple(np.unique(self.variables["rcen"]))
+            self.x_coords = tuple(np.unique(self.wind["r"]))
+            self.x_cen_coords = tuple(np.unique(self.wind["rcen"]))
 
-        # Get the z/theta coordinates
+        # Setup the z/theta coordinates
 
         if "z" in self.parameters:
-            self.n_coords = tuple(np.unique(self.variables["z"]))
-            self.n_cen_coords = tuple(np.unique(self.variables["zcen"]))
+            self.y_coords = tuple(np.unique(self.wind["z"]))
+            self.y_cen_coords = tuple(np.unique(self.wind["zcen"]))
         elif "theta" in self.parameters:
-            self.n_coords = tuple(np.unique(self.variables["theta"]))
-            self.n_cen_coords = tuple(np.unique(self.variables["theta_cen"]))
+            self.y_coords = tuple(np.unique(self.wind["theta"]))
+            self.y_cen_coords = tuple(np.unique(self.wind["theta_cen"]))
 
-        # Record the coordinate system and the axes labels
+        # Set up the coordinate system in used and the axes names available
 
         if self.nz == 1:
             self.coord_system = WIND_COORD_TYPE_SPHERICAL
@@ -1199,235 +1206,7 @@ class Wind:
             self.coord_system = WIND_COORD_TYPE_CYLINDRICAL
             self.axes = ["x", "z", "x_cen", "z_cen"]
 
-        # Convert velocity into desired units and also calculate the cylindrical
-        # velocities. This doesn't work for polar or spherical coordinates as
-        # they will not have these velocities
-
-        if self.coord_system == WIND_COORD_TYPE_CYLINDRICAL:
-            self.project_cartesian_velocity_to_cylindrical()
-
-        # Convert the velocity into the correct units
-
-        self.variables["v_x"] *= self.velocity_conversion_factor
-        self.variables["v_y"] *= self.velocity_conversion_factor
-        self.variables["v_z"] *= self.velocity_conversion_factor
-
-    def get_wind_elements(self, delim=None, elements_to_get=None):
-        """Read in the ion parameters.
-
-        Parameters
-        ----------
-        delim: str [optional]
-            The file delimiter.
-        elements_to_get: List[str] or Tuple[str]
-            The elements to read ions in for.
-        """
-
-        if elements_to_get is None:
-            elements_to_get = ("H", "He", "C", "N", "O", "Si", "Fe")
-        else:
-            if type(elements_to_get) not in [str, list, tuple]:
-                raise TypeError("ions_to_get should be a tuple/list of strings or a string")
-
-        # Read in each ion file, one by one. The ions will be stored in the
-        # self.variables dict as,
-        # key = ion name
-        # values = dict of ion keys, i.e. i_01, i_02, etc, and the values
-        # in this dict will be the values of that ion
-
-        ion_types_to_get = ["frac", "den"]
-        ion_types_index_names = ["fraction", "density"]
-
-        n_elements_read = 0
-
-        for element in elements_to_get:
-            element = element.capitalize()
-
-            # Each element will have a dict of two keys, either frac or den.
-            # Inside each dict with be more dicts of keys where the values are
-            # arrays of the
-
-            self.variables[element] = {}
-
-            for ion_type, ion_type_index_name in zip(ion_types_to_get, ion_types_index_names):
-                fp = self.fp + self.root + "." + element + "." + ion_type + ".txt"
-                if not path.exists(fp):
-                    fp = self.fp + "tables/" + self.root + "." + element + "." + ion_type + ".txt"
-                    if not path.exists(fp):
-                        continue
-
-                n_elements_read += 1
-                if element not in self.elements:
-                    self.elements += element,
-
-                with open(fp, "r") as f:
-                    ion_file = f.readlines()
-
-                # Read in ion the ion file. this can be done in a list
-                # comprehension, I think, but I want to skip commented out lines
-                # and I think it's better(?) to do it this way
-
-                wind = []
-
-                for line in ion_file:
-                    if delim:
-                        line = line.split(delim)
-                    else:
-                        line = line.split()
-                    if len(line) == 0 or line[0] == "#":
-                        continue
-                    wind.append(line)
-
-                # Now construct the tables, how this is done is described in
-                # some of the comments above
-
-                if wind[0][0].isdigit() is False:
-                    columns = tuple(wind[0])
-                    index = columns.index("i01")
-                else:
-                    columns = tuple(np.arange(len(wind[0]), dtype=np.dtype.str))
-                    index = 0
-                columns = columns[index:]
-                wind = np.array(wind[1:], dtype=np.float64)[:, index:]
-
-                self.variables[element][ion_type_index_name] = {}
-                for index, col in enumerate(columns):
-                    self.variables[element][ion_type_index_name][col] = wind[:, index].reshape(self.nx, self.nz)
-
-        if n_elements_read == 0 and len(self.columns) == 0:
-            raise IOError("Unable to open any parameter or ion tables: Have you run windsave2table?")
-
-    # def get_cell_spectra(self, delim=None):
-    #     """Read in the cell spectra.
-    #
-    #     Parameters
-    #     ----------
-    #     delim: str [optional]
-    #        The file delimiter for the xspec file.
-    #     """
-    #     fp = self.fp + self.root + ".xspec.all.txt"
-    #     if not path.exists(fp):
-    #         fp = self.fp + "tables/" + self.root + ".xspec.all.txt"
-    #         if not path.exists(fp):
-    #             raise IOError(f"cell spectra file {fp} wasn't found")
-    #
-    #     self.variables["cell_spec"] = [None for _ in range(self.n_elem)]
-    #
-    #     with open(fp, "r") as f:
-    #         spectrum_file = f.readlines()
-    #
-    #     spectra = []
-    #
-    #     for line in spectrum_file:
-    #         if len(line) == 0 or line.startswith("#"):
-    #             continue
-    #         if delim:
-    #             line = line.split(delim)
-    #         else:
-    #             line = line.split()
-    #         spectra.append(line)
-    #
-    #     header = spectra[0]
-    #     cell_spectra = np.array(spectra[1:], dtype=np.float64)
-    #     frequency_bins = cell_spectra[:, 0]
-    #     cell_spectra = cell_spectra[:, 1:]
-    #
-    #     # We have to make the header differently depending on if the model is
-    #     # 1d or 2d
-    #     # todo: probably make 4 a constant so it is not a magic number
-    #
-    #     if len(header[1]) > 4:
-    #         cells = [(int(cell[1:4]), int(cell[5:])) for cell in header[1:]]
-    #     else:
-    #         cells = [(int(cell[1:4]), 0) for cell in header[1:]]
-    #
-    #     self.variables["cell_spec"] = np.array(self.variables["cell_spec"], dtype=dict)
-    #     self.variables["cell_spec"] = self.variables["cell_spec"].reshape(self.nx, self.nz)
-    #
-    #     for n, (i, j) in enumerate(cells):
-    #         self.variables["cell_spec"][i, j] = {
-    #             "Freq.": np.copy(frequency_bins),
-    #             "Flux": cell_spectra[:, n]
-    #         }
-    #
-    #     self.parameters = tuple(list(self.parameters) + ["cell_spec"])
-
-    def project_cartesian_velocity_to_cylindrical(self):
-        """Project the cartesian velocities of the wind into cylindrical
-        coordinates."""
-        v_l = np.zeros_like(self.variables["v_x"])
-        v_rot = np.zeros_like(v_l)
-        v_r = np.zeros_like(v_l)
-        n1, n2 = v_l.shape
-
-        for i in range(n1):
-            for j in range(n2):
-                cart_point = np.array([self.variables["x"][i, j], 0, self.variables["z"][i, j]])
-                # todo: don't think I need to do this check anymore
-                if self.variables["inwind"][i, j] < 0:
-                    v_l[i, j] = 0
-                    v_rot[i, j] = 0
-                    v_r[i, j] = 0
-                else:
-                    cart_velocity_vector = np.array(
-                        [self.variables["v_x"][i, j], self.variables["v_y"][i, j], self.variables["v_z"][i, j]])
-                    cyl_velocity_vector = vector.project_cartesian_to_cylindrical_coordinates(
-                        cart_point, cart_velocity_vector)
-                    if type(cyl_velocity_vector) is int:
-                        continue
-                    v_l[i, j] = np.sqrt(cyl_velocity_vector[0]**2 + cyl_velocity_vector[2]**2)
-                    v_rot[i, j] = cyl_velocity_vector[1]
-                    v_r[i, j] = cyl_velocity_vector[0]
-
-        self.variables["v_l"] = v_l * self.velocity_conversion_factor
-        self.variables["v_rot"] = v_rot * self.velocity_conversion_factor
-        self.variables["v_r"] = v_r * self.velocity_conversion_factor
-
-    def create_masked_arrays(self):
-        """Convert each array into a masked array using inwind."""
-        to_mask_wind = list(self.parameters)
-
-        # Remove some of the columns, as these shouldn't be masked because
-        # weird things will happen when creating a plot. This doesn't need to
-        # be done for the wind ions as they don't have the below items in their
-        # data structures
-
-        for item_to_remove in [
-                "x", "z", "r", "theta", "xcen", "zcen", "rcen", "theta_cen", "i", "j", "inwind", "cell_spec"
-        ]:
-            try:
-                to_mask_wind.remove(item_to_remove)
-            except ValueError:
-                continue
-
-        # First, create masked arrays for the wind parameters which is simple
-        # enough.
-
-        for col in to_mask_wind:
-            self.variables[col] = np.ma.masked_where(self.variables["inwind"] < 0, self.variables[col])
-
-        # self.variables["cell_spec"].spectra = np.ma.masked_where(self.variables["inwind"] < 0, self.variables["cell_spec"].spectra)
-
-        # Now, create masked arrays for the wind ions. Have to do it for each
-        # element and each ion type and each ion. This is probably slow :)
-
-        for element in self.elements:
-            for ion_type in self.variables[element].keys():
-                for ion in self.variables[element][ion_type].keys():
-                    self.variables[element][ion_type][ion] = np.ma.masked_where(self.variables["inwind"] < 0,
-                                                                                self.variables[element][ion_type][ion])
-
-    def create_wind_tables(self):
-        """Force the creation of wind save tables for the model.
-
-        This is best used when a simulation has been re-run, as the
-        library is unable to detect when the currently available wind
-        tables do not reflect a new simulation.
-        """
-
-        create_wind_save_tables(self.root, self.fp, ion_density=True)
-        create_wind_save_tables(self.root, self.fp, ion_density=False)
-        create_wind_save_tables(self.root, self.fp, cell_spec=True)
+    # Methods ------------------------------------------------------------------
 
     def convert_cm_to_rg(self, co_mass_in_msol=None):
         """Convert the spatial units from cm to gravitational radius.
@@ -1459,10 +1238,10 @@ class Wind:
         rg = gravitational_radius(co_mass_in_msol)
 
         if self.coord_system in [WIND_COORD_TYPE_SPHERICAL, WIND_COORD_TYPE_POLAR]:
-            self.variables["r"] /= rg
+            self.wind["r"] /= rg
         else:
-            self.variables["x"] /= rg
-            self.variables["z"] /= rg
+            self.wind["x"] /= rg
+            self.wind["z"] /= rg
 
         self.units = WIND_DISTANCE_UNITS_RG
 
@@ -1498,44 +1277,70 @@ class Wind:
         rg = gravitational_radius(co_mass_in_msol)
 
         if self.coord_system == WIND_COORD_TYPE_SPHERICAL or self.coord_system == WIND_COORD_TYPE_POLAR:
-            self.variables["r"] *= rg
+            self.wind["r"] *= rg
         else:
-            self.variables["x"] *= rg
-            self.variables["z"] *= rg
+            self.wind["x"] *= rg
+            self.wind["z"] *= rg
 
         self.units = WIND_DISTANCE_UNITS_CM
 
         return rg
 
-    def _get_element_variable(self, element_name, ion_name):
-        """Helper function to get the fraction or density of an ion depending
-        on the final character of the requested variable.
+    def create_masked_arrays(self):
+        """Mask cells which are not in the wind.
 
-        Parameters
-        ----------
-        element_name: str
-            The element symbol, i.e. H, He.
-        ion_name: str
-            The name of the element, in the format i_01, i_01f, i_01d, etc.
+        Convert each array into a masked array using the in-wind. This is
+        helpful when using pcolormesh, as matplotlib will ignore masked out
+        cells so there will be no background colour to a color plot.
+        """
+        to_mask_wind = list(self.parameters)
+
+        # Create masked array for wind parameters
+        # Remove some of the columns from the standard wind parameters, as these
+        # shouldn't be masked otherwise weird things will happen
+
+        for item_to_remove in [
+                "x", "z", "r", "theta", "xcen", "zcen", "rcen", "theta_cen", "i", "j", "inwind", "cell_spec"
+        ]:
+            try:
+                to_mask_wind.remove(item_to_remove)
+            except ValueError:  # sometimes a key wont exist and this catches it
+                continue
+
+        for col in to_mask_wind:
+            self.wind[col] = np.ma.masked_where(self.wind["inwind"] < 0, self.wind[col])
+
+        # Now, create masked arrays for the wind ions. Have to do it for each
+        # element and each ion type and each ion hence why we end up with
+        # three for loops
+
+        for element in self.elements:
+            for ion_type in self.wind[element].keys():
+                for ion in self.wind[element][ion_type].keys():
+                    self.wind[element][ion_type][ion] = np.ma.masked_where(self.wind["inwind"] < 0,
+                                                                           self.wind[element][ion_type][ion])
+
+    def create_wind_tables(self):
+        """Force the creation of wind save tables for the model.
+
+        This is best used when a simulation has been re-run, as the
+        library is unable to detect when the currently available wind
+        tables do not reflect a new simulation. This function will create the
+        standard wind tables, as well as the fractional and density ion tables
+        and create the xspec cell spectra files.
         """
 
-        ion_frac_or_den = ion_name[-1]
-        if not ion_frac_or_den.isdigit():
-            ion_name = ion_name[:-1]
-            if ion_frac_or_den == "d":
-                variable = self.variables[element_name]["density"][ion_name]
-            elif ion_frac_or_den == "f":
-                variable = self.variables[element_name]["fraction"][ion_name]
-            else:
-                raise ValueError(f"{ion_frac_or_den} is an unknown ion type, try f or d")
-        else:
-            variable = self.variables[element_name]["density"][ion_name]
-
-        return variable
+        create_wind_save_tables(self.root, self.fp, ion_density=True)
+        create_wind_save_tables(self.root, self.fp, ion_density=False)
+        create_wind_save_tables(self.root, self.fp, cell_spec=True)
 
     def get(self, parameter):
         """Get a parameter array. This is just another way to access the
-        dictionary self.variables.
+        dictionary self.variables and is a nice wrapper around getting
+        ion fractions of densities.
+
+        To get an ion fraction or density use, e.g., C_i04f or C_i04d
+        respectively.
 
         Parameters
         ----------
@@ -1544,12 +1349,40 @@ class Wind:
         """
         element_name = parameter[:2].replace("_", "")
         ion_name = parameter[2:].replace("_", "")
-        if element_name in self.elements:
-            variable = self._get_element_variable(element_name, ion_name)
+
+        if element_name.capitalize() in self.elements:
+            variable = self._get_element_variable(element_name.capitalize(), ion_name)
         else:
-            variable = self.variables[parameter]
+            variable = self.wind[parameter]
 
         return variable
+
+    def get_elem_number_from_ij(self, i, j):
+        """Get the wind element number for a given i and j index.
+
+        Used when indexing into a 1D array, such as in Python itself.
+
+        Parameters
+        ----------
+        i: int
+            The i-th index of the cell.
+        j: int
+            The j-th index of the cell.
+        """
+        return self.nz * i + j
+
+    def get_ij_from_elem_number(self, elem):
+        """Get the i and j index for a given wind element number.
+
+        Used when converting a wind element number into two indices for use
+        in this package.
+
+        Parameters
+        ----------
+        elem: int
+            The element number.
+        """
+        return np.unravel_index(elem, (self.nx, self.nz))
 
     def get_sight_line_coordinates(self, theta):
         """Get the vertical z coordinates for a given set of x coordinates and
@@ -1560,7 +1393,7 @@ class Wind:
         theta: float
             The angle of the sight line to extract from. Given in degrees.
         """
-        return np.array(self.m_coords, dtype=np.float64) * np.tan(PI / 2 - np.deg2rad(theta))
+        return np.array(self.x_coords, dtype=np.float64) * np.tan(PI / 2 - np.deg2rad(theta))
 
     def get_variable_along_sight_line(self, theta, parameter):
         """Extract a variable along a given sight line.
@@ -1573,94 +1406,216 @@ class Wind:
             The parameter to extract.
         """
         if self.coord_system == WIND_COORD_TYPE_POLAR:
-            raise NotImplementedError("This hasn't been implemented for polar winds")
+            raise NotImplementedError("This hasn't been implemented for polar winds, lol")
 
         if type(theta) is not float:
             theta = float(theta)
 
-        z_array = np.array(self.n_coords, dtype=np.float64)
+        z_array = np.array(self.y_coords, dtype=np.float64)
         z_coords = self.get_sight_line_coordinates(theta)
+
         values = np.zeros_like(z_coords, dtype=np.float64)
         w_array = self.get(parameter)
 
-        # This is the actual work which extracts along a sight line
-
-        for x_index, z in enumerate(z_coords):
+        for x_index, z in enumerate(z_coords):  # todo: I wonder if this can be vectorized
             z_index = get_array_index(z_array, z)
             values[x_index] = w_array[x_index, z_index]
 
-        return np.array(self.m_coords), z_array, values
+        return np.array(self.x_coords), z_array, values
 
-    def _get_wind_coordinates(self):
-        """Get coordinates of the wind.
+    def get_wind_elements(self, elements_to_get=None, delim=None):
+        """Read in the ion parameters.
 
-        This returns the 2d array of coordinate points for the grid or
-        1d depending on the coordinate type. This is different from
-        using self.n_coords which returns only the axes points.
-        """
-        if self.coord_system == WIND_COORD_TYPE_SPHERICAL:
-            n_points = self.variables["r"]
-            m_points = np.zeros_like(n_points)
-        elif self.coord_system == WIND_COORD_TYPE_CYLINDRICAL:
-            n_points = self.variables["x"]
-            m_points = self.variables["z"]
-        else:
-            m_points = np.log10(self.variables["r"])
-            n_points = np.deg2rad(self.variables["theta"])
+        Reads each element in and its ions into a dictionary. This function will
+        try to read in both ion fractions and densities.
 
-        return n_points, m_points
-
-    def _get_wind_indices(self):
-        """Get cell indices of the grid cells of the wind.
-
-        This returns the 2d array of grid cell indices for the grid or
-        1d depending on the coordinate type.
-        """
-        if self.coord_system == WIND_COORD_TYPE_SPHERICAL:
-            n_points = self.variables["i"]
-            m_points = np.zeros_like(n_points)
-        elif self.coord_system == WIND_COORD_TYPE_CYLINDRICAL:
-            n_points = self.variables["i"]
-            m_points = self.variables["i"]
-        else:
-            raise ValueError("Cannot plot with the cell indices for polar winds")
-
-        return n_points, m_points
-
-    @staticmethod
-    def _rename_j_to_j_bar(table, header):
-        """Rename j, the mean intensity, to j_bar.
-
-        In old versions of windsave2table, the mean intensity of the field
-        was named j which created a conflict for 2D models which have a j
-        cell index.
+        Each element will have a dict of two keys, either fraction or density.
+        Inside each dict with be more dicts of keys of the available ions for
+        that element.
 
         Parameters
         ----------
-        table: str
-            The name of the table
-        header: list[str]
-            Rename the header for j to j_bar.
+        elements_to_get: List[str] or Tuple[str]
+            The elements to read ions in for.
+        delim: str [optional]
+            The file delimiter.
         """
-
-        count = header.count("j")
-        if count < 1:
-            return header
-        if count > 2:
-            raise ValueError(f"too many j's {count} in header for {table} table")
-
-        if "z" in header:
-            idx = header.index("j")
-            idx = header[idx:].index("j")
-            header[idx] = "j_bar"
+        if elements_to_get is None:
+            elements_to_get = ("H", "He", "C", "N", "O", "Si", "Fe")
         else:
-            idx = header.index("j")
-            header[idx] = "j_bar"
+            if type(elements_to_get) not in [str, list, tuple]:
+                raise TypeError("ions_to_get should be a tuple/list of strings or a string")
 
-        return header
+        # Loop over each element wind table
+
+        n_elements_read = 0
+
+        for element in elements_to_get:
+            element = element.capitalize()
+            self.wind[element] = {}
+
+            # Loop over the different ion "types", i.e. frac or den.
+            # ion_type_index_name is used to give the name for the keys in the
+            # dictionary as frac and den is used in python, but I prefer to use
+            # fraction and density
+
+            for ion_type, ion_type_index_name in zip(["frac", "den"], ["fraction", "density"]):
+
+                fp = self.fp + self.root + "." + element + "." + ion_type + ".txt"
+
+                if not path.exists(fp):
+                    fp = self.fp + "tables/" + self.root + "." + element + "." + ion_type + ".txt"
+                    if not path.exists(fp):
+                        continue
+
+                n_elements_read += 1
+
+                if element not in self.elements:
+                    self.elements += element,
+
+                with open(fp, "r") as f:
+                    ion_file = f.readlines()
+
+                wind_lines = []
+
+                for line in ion_file:
+                    if delim:
+                        line = line.split(delim)
+                    else:
+                        line = line.split()
+                    if len(line) == 0 or line[0] == "#":
+                        continue
+                    wind_lines.append(line)
+
+                # Now construct the dict of ions, in the layout as described
+                # in the doc string. First, we have to find out where the output
+                # we actually wants start
+
+                if wind_lines[0][0].isdigit() is False:
+                    columns = tuple(wind_lines[0])
+                    index = columns.index("i01")
+                else:
+                    columns = tuple(np.arange(len(wind_lines[0]), dtype=np.dtype.str))
+                    index = 0
+
+                columns = columns[index:]
+                wind_lines = np.array(wind_lines[1:], dtype=np.float64)[:, index:]
+
+                # Now we can populate the dictionary with the different columns
+                # of the file
+
+                self.wind[element][ion_type_index_name] = {}
+                for index, col in enumerate(columns):
+                    self.wind[element][ion_type_index_name][col] = wind_lines[:, index].reshape(self.nx, self.nz)
+
+        if n_elements_read == 0 and len(self.columns) == 0:
+            raise IOError(
+                "Unable to open any parameter or ion tables: try running windsave2table with the correct version")
+
+    def get_wind_parameters(self, delim=None):
+        """Read in the wind parameters.
+
+        This reads in the master, heat, gradient, converge and spec file into
+        a dictionary. Each header of the tables is a key in the dictionary.
+
+        Parameters
+        ----------
+        delim: str [optional]
+            The deliminator in the wind table files.
+        """
+        wind_all = []
+        wind_columns = []
+
+        # Read in each file, one by one, if they exist. This makes the
+        # assumption that all the tables are the same size.
+
+        n_read = 0
+        files_to_read = ["master", "heat", "gradient", "converge", "spec"]
+
+        for table in files_to_read:
+            fp = self.fp + self.root + "." + table + ".txt"
+            if not path.exists(fp):
+                fp = self.fp + "tables/" + self.root + "." + table + ".txt"
+                if not path.exists(fp):
+                    continue
+            n_read += 1
+
+            with open(fp, "r") as f:
+                wind_file = f.readlines()
+
+            # todo: need some method to detect incorrect syntax
+
+            wind_list = []
+
+            for line in wind_file:
+                line = line.strip()
+                if delim:
+                    line = line.split(delim)
+                else:
+                    line = line.split()
+                if len(line) == 0 or line[0] == "#":
+                    continue
+                wind_list.append(line)
+
+            # Keep track of each file header and add the wind lines for the
+            # current file into wind_all, the list of lists, the master list and
+            # Add the wind parameters to the wind_all list, but not the
+            # header
+
+            if wind_list[0][0].isdigit() is False:
+                header = wind_list[0]
+                if table == "heat":
+                    header = self._rename_j_to_j_bar(table, header)
+                wind_columns += header
+            else:
+                wind_columns += list(np.arange(len(wind_list[0]), dtype=np.dtype.str))
+
+            wind_all.append(np.array(wind_list[1:], dtype=np.float64))
+
+        if n_read == 0:
+            raise IOError(f"Unable to open any wind tables for root {self.root} directory {self.fp}")
+
+        # Determine the number of nx and nz elements. There is a basic check to
+        # only check for nz if a 'j' column exists, i.e. if it is a 2d model.
+
+        i_col = wind_columns.index("i")
+        self.nx = int(np.max(wind_all[0][:, i_col]) + 1)
+
+        if "z" in wind_columns or "theta" in wind_columns:
+            j_col = wind_columns.index("j")
+            self.nz = int(np.max(wind_all[0][:, j_col]) + 1)
+        self.n_elem = int(self.nx * self.nz)
+
+        # Now we join the different wind tables together and create a dictionary
+        # of all of the parameters. We also can now set up the list of available
+        # parameters and setup the coordinate parameters too
+
+        wind_all = np.hstack(wind_all)
+
+        for index, col in enumerate(wind_columns):
+            if col in self.wind.keys():
+                continue
+            self.wind[col] = wind_all[:, index].reshape(self.nx, self.nz)
+
+        self.parameters = self.wind.keys()
+        self._setup_coords()
+
+        # Convert velocity into desired units and also calculate the cylindrical
+        # velocities.
+
+        if self.coord_system == WIND_COORD_TYPE_CYLINDRICAL:
+            self.project_cartesian_velocity_to_cylindrical()
+
+        self.wind["v_x"] *= self.velocity_conversion_factor
+        self.wind["v_y"] *= self.velocity_conversion_factor
+        self.wind["v_z"] *= self.velocity_conversion_factor
 
     def plot(self, variable_name, use_cell_coordinates=True, scale="loglog", log_variable=True):
         """Create a plot of the wind for the given variable.
+
+        Only one thing can be plotted at once, in their own figure window. More
+        advanced plotting things can be found in pypython.plot.wind, or write
+        something yourself.
 
         Parameters
         ----------
@@ -1698,26 +1653,63 @@ class Wind:
 
         return fig, ax
 
+    def project_cartesian_velocity_to_cylindrical(self):
+        """Project cartesian velocities into cylindrical velocities.
+
+        This makes the variables v_r, v_rot and v_l available in variables
+        dictionary. Only works for cylindrical coordinates systems, which
+        outputs the velocities in cartesian coordinates.
+        """
+        v_l = np.zeros_like(self.wind["v_x"])
+        v_rot = np.zeros_like(v_l)
+        v_r = np.zeros_like(v_l)
+        n1, n2 = v_l.shape
+
+        for i in range(n1):
+            for j in range(n2):
+                cart_point = np.array([self.wind["x"][i, j], 0, self.wind["z"][i, j]])
+                # todo: don't think I need to do this check anymore
+                if self.wind["inwind"][i, j] < 0:
+                    v_l[i, j] = 0
+                    v_rot[i, j] = 0
+                    v_r[i, j] = 0
+                else:
+                    cart_velocity_vector = np.array(
+                        [self.wind["v_x"][i, j], self.wind["v_y"][i, j], self.wind["v_z"][i, j]])
+                    cyl_velocity_vector = vector.project_cartesian_to_cylindrical_coordinates(
+                        cart_point, cart_velocity_vector)
+                    if type(cyl_velocity_vector) is int:
+                        continue
+                    v_l[i, j] = np.sqrt(cyl_velocity_vector[0]**2 + cyl_velocity_vector[2]**2)
+                    v_rot[i, j] = cyl_velocity_vector[1]
+                    v_r[i, j] = cyl_velocity_vector[0]
+
+        self.wind["v_l"] = v_l * self.velocity_conversion_factor
+        self.wind["v_rot"] = v_rot * self.velocity_conversion_factor
+        self.wind["v_r"] = v_r * self.velocity_conversion_factor
+
     @staticmethod
     def show(block=True):
-        """Show a plot which has been created."""
+        """Show a plot which has been created.
+
+        Wrapper around pyplot.show().
+
+        Parameters
+        ----------
+        block: bool
+            Use blocking or non-blocking figure display.
+        """
         plt.show(block=block)
 
-    def get_elem_number_from_ij(self, i, j):
-        """Get the wind element number for a given i and j index."""
-        return self.nz * i + j
-
-    def get_ij_from_elem_number(self, elem):
-        """Get the i and j index for a given wind element number."""
-        return np.unravel_index(elem, (self.nx, self.nz))
+    # Built in stuff -----------------------------------------------------------
 
     def __getitem__(self, key):
         """Return an array in the variables dictionary when indexing."""
-        return self.variables[key]
+        return self.wind[key]
 
     def __setitem__(self, key, value):
         """Set an array in the variables dictionary."""
-        self.variables[key] = value
+        self.wind[key] = value
 
     def __str__(self):
         """Print basic details about the wind."""
