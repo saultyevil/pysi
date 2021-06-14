@@ -143,7 +143,7 @@ def get_files(pattern, fp="."):
     try:
         files.sort(key=lambda var: [int(x) if x.isdigit() else x for x in re.findall(r'[^0-9]|[0-9]+', var)])
     except TypeError as e:
-        print("have been unable to sort the files, be careful as results may not be reproducible")
+        print(f"{get_files.__name__}: have been unable to sort output, be careful as results may not be reproducible")
 
     return files
 
@@ -446,7 +446,6 @@ class Spectrum:
             A custom delimiter, useful for reading in files which have sometimes
             between delimited with commas instead of spaces.
         """
-
         n_read = 0
         files_to_read = ["spec", "spec_tot", "spec_tot_wind", "spec_wind", "spec_tau"]
 
@@ -782,6 +781,174 @@ class Spectrum:
         return textwrap.dedent(msg)
 
 
+# Cell spectrum ----------------------------------------------------------------
+
+
+class CellSpectra:
+    """A class to store the cell spectra accumulated during the ionization
+    cycles.
+
+    This class is mostly a storage space, but there is also a rough method for
+    plotting. In the future, this will probably be amalgamated into the Wind
+    or Spectrum class.
+    todo: determine nx, nz to be consistent with actual model
+    """
+    def __init__(self, root, fp=".", nx=0, nz=0, force_make_spectra=False, delim=None):
+        """Initialize the object.
+        Reads in the cell spectra into a 1D list. This function will attempt
+        to run windsave2table to create the cell spectra files if they do not
+        exist.
+        Parameters
+        ----------
+        root: str
+            The root name of the Python simulation.
+        fp: str
+            The directory containing the model.
+        force_make_spectra: bool [optional]
+            Force windsave2table to be run to re-make the files in the
+            tables directory.
+        delim: str [optional]
+            The delimiter used in the wind table files.
+        """
+        self.root = root
+
+        self.fp = fp
+        if self.fp[-1] != "/":
+            self.fp += "/"
+        self.pf = self.fp + self.root + ".pf"
+
+        self.nx = int(nx)
+        self.nz = int(nz)
+        self.nspec = 0
+        self.header = []
+        self.available = []
+        self.spectra = []
+        self.original = None
+
+        if force_make_spectra:
+            create_wind_save_tables(root, fp, False, True)
+
+        # Try to read in the spectra, if we can't then we'll try and create the
+        # spectra and read them in then. If this is unsuccessful, then an
+        # IOError will be raised somewhere
+
+        try:
+            self.get_cell_spectra(delim)
+        except IOError:
+            create_wind_save_tables(root, fp, False, True)
+            self.get_cell_spectra(delim)
+
+    def get_cell_spectra(self, delim=None):
+        """Read in the cell spectra."""
+
+        # In some cases windsave2table will output the cell spectra into
+        # multiple files so we read them one by one
+
+        self.header = []
+        cell_spectra = []
+        frequency_bins = []
+
+        for fp in get_files("*xspec.*.txt"):
+
+            with open(fp, "r") as f:
+                spectrum_file = f.readlines()
+
+            spectra = []
+
+            for line in spectrum_file:
+                if len(line) == 0 or line.startswith("#"):
+                    continue
+                if delim:
+                    line = line.split(delim)
+                else:
+                    line = line.split()
+                spectra.append(line)
+
+            self.header += spectra[0][1:]
+            array = np.array(spectra[1:], dtype=np.float64)
+            frequency_bins.append(array[:, 0])
+            cell_spectra.append(array[:, 1:])
+
+        # Now we need to join everything together if we have read in multiple
+        # files
+
+        if len(cell_spectra) > 1:
+            cell_spectra = [np.hstack(cell_spectra)]
+
+        frequency_bins = np.array(frequency_bins[0], dtype=np.float64)  # assuming they're all the same, but we should check
+        cell_spectra = cell_spectra[0]
+
+        # We have to make the header differently depending on if the model is
+        # 1d or 2d
+        # todo: probably make 4 a constant so it is not a magic number
+
+        if len(self.header[0]) > 4:
+            self.available = [(int(cell[1:4]), int(cell[5:])) for cell in self.header[1:]]
+        else:
+            self.available = [(int(cell[1:4]), 0) for cell in self.header[1:]]
+
+        if self.nx == 0 or self.nz == 0:
+            try:
+                self.nx = int(get_parameter_value(self.pf, "Wind.dim.in.x_or_r.direction"))
+                if len(self.header[1]) > 4:
+                    self.nz = int(get_parameter_value(self.pf, "Wind.dim.in.z_or_theta.direction"))
+            except (ValueError, IOError):
+                self.nx = self.available[-1][0] + 1
+                self.nz = self.available[-1][1] + 1
+
+        self.nspec = len(self.available)
+        self.spectra = np.array([None for _ in range(self.nx * self.nz)], dtype=dict).reshape(self.nx, self.nz)
+
+        for n, (i, j) in enumerate(self.available):
+            self.spectra[i, j] = {
+                "Freq.": np.copy(frequency_bins),
+                "Flux": cell_spectra[:, n]
+            }
+
+    def get_elem_number_from_ij(self, i, j):
+        """Get the wind element number for a given i and j index."""
+        return int(self.nz * i + j)
+
+    def plot(self, i, j, scale="loglog"):
+        """Plot the cell spectrum for cell i, j."""
+        normalize_figure_style()
+        fig, ax = plt.subplots(figsize=(12, 6))
+
+        spectrum = self.spectra[i, j]
+        if spectrum is None:
+            raise ValueError(f"no cell spectra for cell ({i}, {j}) as cell is probably not in the wind")
+
+        ax.plot(spectrum["Freq."], spectrum["Flux"])
+        ax.set_ylabel(r"$J_{\nu}$ [ergs s$^{-1}$ cm$^{-3}$ Sr$^{-1}$ Hz$^{-1}$]")
+        ax.set_xlabel("Rest-frame Frequency")
+
+        ax = set_axes_scales(ax, scale)
+        fig.suptitle(f"Spectrum in cell ({i}, {j})")
+
+        return fig, ax
+
+    def smooth(self):
+        raise NotImplementedError()
+
+    @staticmethod
+    def show():
+        """Wrapper around matplotlib show."""
+        plt.show()
+
+    def __getitem__(self, pos):
+        """Index."""
+        i, j = pos
+        return self.spectra[i, j]
+
+    def __setitem__(self, pos, value):
+        """Write to an index."""
+        i, j = pos
+        self.spectra[i, j] = value
+
+    def __str__(self):
+        return print(self.spectra)
+
+
 # Wind class -------------------------------------------------------------------
 
 
@@ -794,6 +961,7 @@ class Wind:
     def __init__(self,
                  root,
                  fp=".",
+                 include_cell_spec=True,
                  distance_units="cm",
                  co_mass=None,
                  velocity_units="kms",
@@ -815,6 +983,8 @@ class Wind:
             The root name of the Python simulation.
         fp: str
             The directory containing the model.
+        include_cell_spec: bool
+            Load in the the cell spectra as well.
         distance_units: str
             The distance units of the wind.
         co_mass: float
@@ -884,12 +1054,15 @@ class Wind:
 
         try:
             self.get_wind_parameters(delim)
+            self.get_wind_elements(delim)
+            if include_cell_spec:
+                self.variables["cell_spec"] = CellSpectra(self.root, self.fp, self.nx, self.nz, force_make_tables)
         except IOError:
             self.create_wind_tables()
             self.get_wind_parameters(delim)
-
-        self.get_wind_elements(delim)
-        self.get_cell_spectra(delim)
+            self.get_wind_elements(delim)
+            if include_cell_spec:
+                self.variables["cell_spec"] = CellSpectra(self.root, self.fp, self.nx, self.nz)
 
         self.columns = self.variables.keys()
 
@@ -900,17 +1073,6 @@ class Wind:
             self.convert_cm_to_rg(co_mass)
         else:
             self.units = distance_units
-
-        # Convert velocity into desired units and also calculate the cylindrical
-        # velocities. This doesn't work for polar or spherical coordinates as
-        # they will not have these velocities
-
-        if self.coord_system == WIND_COORD_TYPE_CYLINDRICAL:
-            self.project_cartesian_velocity_to_cylindrical()
-
-        self.variables["v_x"] *= self.velocity_conversion_factor
-        self.variables["v_y"] *= self.velocity_conversion_factor
-        self.variables["v_z"] *= self.velocity_conversion_factor
 
         # Create masked cells, if that's the users deepest desire for their
         # data
@@ -1037,6 +1199,19 @@ class Wind:
             self.coord_system = WIND_COORD_TYPE_CYLINDRICAL
             self.axes = ["x", "z", "x_cen", "z_cen"]
 
+        # Convert velocity into desired units and also calculate the cylindrical
+        # velocities. This doesn't work for polar or spherical coordinates as
+        # they will not have these velocities
+
+        if self.coord_system == WIND_COORD_TYPE_CYLINDRICAL:
+            self.project_cartesian_velocity_to_cylindrical()
+
+        # Convert the velocity into the correct units
+
+        self.variables["v_x"] *= self.velocity_conversion_factor
+        self.variables["v_y"] *= self.velocity_conversion_factor
+        self.variables["v_z"] *= self.velocity_conversion_factor
+
     def get_wind_elements(self, delim=None, elements_to_get=None):
         """Read in the ion parameters.
 
@@ -1119,58 +1294,60 @@ class Wind:
         if n_elements_read == 0 and len(self.columns) == 0:
             raise IOError("Unable to open any parameter or ion tables: Have you run windsave2table?")
 
-    def get_cell_spectra(self, delim=None):
-        """Read in the cell spectra.
-
-        Parameters
-        ----------
-        delim: str [optional]
-           The file delimiter for the xspec file.
-        """
-        self.variables["cell_spec"] = [None for _ in range(self.n_elem)]
-
-        fp = self.fp + self.root + ".xspec.all.txt"
-        if not path.exists(fp):
-            fp = self.fp + "tables/" + self.root + ".xspec.all.txt"
-            if not path.exists(fp):
-                raise IOError(f"cell spectra file {fp} wasn't found")
-
-        with open(fp, "r") as f:
-            spectrum_file = f.readlines()
-
-        spectra = []
-
-        for line in spectrum_file:
-            if len(line) == 0 or line.startswith("#"):
-                continue
-            if delim:
-                line = line.split(delim)
-            else:
-                line = line.split()
-            spectra.append(line)
-
-        header = spectra[0]
-        cell_spectra = np.array(spectra[1:], dtype=np.float64)
-        frequency_bins = cell_spectra[:, 0]
-        cell_spectra = cell_spectra[:, 1:]
-
-        # We have to make the header differently depending on if the model is
-        # 1d or 2d
-        # todo: probably make 4 a constant so it is not a magic number
-
-        if len(header[1]) > 4:
-            cells = [(int(cell[1:4]), int(cell[5:])) for cell in header[1:]]
-        else:
-            cells = [(int(cell[1:4]), 0) for cell in header[1:]]
-
-        self.variables["cell_spec"] = np.array(self.variables["cell_spec"], dtype=dict)
-        self.variables["cell_spec"] = self.variables["cell_spec"].reshape(self.nx, self.nz)
-
-        for n, (i, j) in enumerate(cells):
-            self.variables["cell_spec"][i, j] = {
-                "Freq.": np.copy(frequency_bins),
-                "Flux": cell_spectra[:, n]
-            }
+    # def get_cell_spectra(self, delim=None):
+    #     """Read in the cell spectra.
+    #
+    #     Parameters
+    #     ----------
+    #     delim: str [optional]
+    #        The file delimiter for the xspec file.
+    #     """
+    #     fp = self.fp + self.root + ".xspec.all.txt"
+    #     if not path.exists(fp):
+    #         fp = self.fp + "tables/" + self.root + ".xspec.all.txt"
+    #         if not path.exists(fp):
+    #             raise IOError(f"cell spectra file {fp} wasn't found")
+    #
+    #     self.variables["cell_spec"] = [None for _ in range(self.n_elem)]
+    #
+    #     with open(fp, "r") as f:
+    #         spectrum_file = f.readlines()
+    #
+    #     spectra = []
+    #
+    #     for line in spectrum_file:
+    #         if len(line) == 0 or line.startswith("#"):
+    #             continue
+    #         if delim:
+    #             line = line.split(delim)
+    #         else:
+    #             line = line.split()
+    #         spectra.append(line)
+    #
+    #     header = spectra[0]
+    #     cell_spectra = np.array(spectra[1:], dtype=np.float64)
+    #     frequency_bins = cell_spectra[:, 0]
+    #     cell_spectra = cell_spectra[:, 1:]
+    #
+    #     # We have to make the header differently depending on if the model is
+    #     # 1d or 2d
+    #     # todo: probably make 4 a constant so it is not a magic number
+    #
+    #     if len(header[1]) > 4:
+    #         cells = [(int(cell[1:4]), int(cell[5:])) for cell in header[1:]]
+    #     else:
+    #         cells = [(int(cell[1:4]), 0) for cell in header[1:]]
+    #
+    #     self.variables["cell_spec"] = np.array(self.variables["cell_spec"], dtype=dict)
+    #     self.variables["cell_spec"] = self.variables["cell_spec"].reshape(self.nx, self.nz)
+    #
+    #     for n, (i, j) in enumerate(cells):
+    #         self.variables["cell_spec"][i, j] = {
+    #             "Freq.": np.copy(frequency_bins),
+    #             "Flux": cell_spectra[:, n]
+    #         }
+    #
+    #     self.parameters = tuple(list(self.parameters) + ["cell_spec"])
 
     def project_cartesian_velocity_to_cylindrical(self):
         """Project the cartesian velocities of the wind into cylindrical
@@ -1205,14 +1382,16 @@ class Wind:
 
     def create_masked_arrays(self):
         """Convert each array into a masked array using inwind."""
-        to_mask_wind = list(self.parameters) + ["cell_spec"]
+        to_mask_wind = list(self.parameters)
 
         # Remove some of the columns, as these shouldn't be masked because
         # weird things will happen when creating a plot. This doesn't need to
         # be done for the wind ions as they don't have the below items in their
         # data structures
 
-        for item_to_remove in ["x", "z", "r", "theta", "xcen", "zcen", "rcen", "theta_cen", "i", "j", "inwind"]:
+        for item_to_remove in [
+                "x", "z", "r", "theta", "xcen", "zcen", "rcen", "theta_cen", "i", "j", "inwind", "cell_spec"
+        ]:
             try:
                 to_mask_wind.remove(item_to_remove)
             except ValueError:
@@ -1223,6 +1402,8 @@ class Wind:
 
         for col in to_mask_wind:
             self.variables[col] = np.ma.masked_where(self.variables["inwind"] < 0, self.variables[col])
+
+        # self.variables["cell_spec"].spectra = np.ma.masked_where(self.variables["inwind"] < 0, self.variables["cell_spec"].spectra)
 
         # Now, create masked arrays for the wind ions. Have to do it for each
         # element and each ion type and each ion. This is probably slow :)
@@ -1553,7 +1734,7 @@ for loader, module_name, is_pkg in pkgutil.walk_packages(__path__):
 
 __all__.append("Wind")
 __all__.append("Spectrum")
-__all__.append("CellSpectrum")
+__all__.append("check_python_version")
 __all__.append("cleanup_data")
 __all__.append("get_files")
 __all__.append("get_array_index")
@@ -1570,4 +1751,4 @@ from pypython.plot.wind import plot_1d_wind, plot_2d_wind
 # Raise a system error if the version of Python is too old, or if we can't find
 # Python, etc. in the $PATH ----------------------------------------------------
 
-PY_VERSION = check_python_version()
+# PY_VERSION = check_python_version()

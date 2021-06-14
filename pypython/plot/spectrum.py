@@ -131,6 +131,7 @@ def _plot_subplot(ax, spectrum, things_to_plot, xmin, xmax, alpha, scale, use_fl
         return ax
 
     # ax.set_xlim(xmin, xmax)
+    # ax.set_ylim(get_y_lims_for_x_lims(x, y, xmin, xmax, 2))
     ax.legend(loc="lower left")
     ax = set_axes_scales(ax, scale)
     ax = _set_spectrum_axes_labels(ax, spectrum.units, spectrum.distance, use_flux)
