@@ -192,6 +192,9 @@ def plot_wind_ions(w,
 
     for (element, n_ions), (n_rows, n_cols), (width, height) in zip(ions_to_plot, wind_ion_dims, wind_ion_size):
 
+        if element not in w.elements:
+            continue
+
         fig, ax = plt.subplots(n_rows,
                                n_cols,
                                figsize=(width, height),
@@ -244,16 +247,17 @@ def main():
 
     root, fp, use_ion_density, velocity_units, axes_scales, use_cell_indices, display = setup_script()
 
-    w = Wind(root, fp, velocity_units, True)
+    w = Wind(root, fp, distance_units="rg", velocity_units=velocity_units, force_make_tables=False)
+
     if w.coord_system == "polar":
         subplot_kw = {"projection": "polar"}
     else:
         subplot_kw = {}
 
-    plot_wind_parameters(w, default_wind_parameters, axes_scales=axes_scales, subplot_kw=subplot_kw, display=display)
-
-    if w.coord_system == WIND_COORD_TYPE_CYLINDRICAL:
-        plot_wind_velocity(w, default_wind_velocities, velocity_units, subplot_kw, axes_scales, display)
+    # plot_wind_parameters(w, default_wind_parameters, axes_scales=axes_scales, subplot_kw=subplot_kw, display=display)
+    #
+    # if w.coord_system == WIND_COORD_TYPE_CYLINDRICAL:
+    #     plot_wind_velocity(w, default_wind_velocities, velocity_units, subplot_kw, axes_scales, display)
 
     plot_wind_ions(w, default_wind_ions, default_ion_fig_dims, default_ion_figsize, use_ion_density, axes_scales,
                    subplot_kw, display)

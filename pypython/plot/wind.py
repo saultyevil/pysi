@@ -245,7 +245,7 @@ def plot(wind,
         fig, ax = plot_2d_wind(n, m, parameter_points, wind.units, wind.coord_system, inclinations_to_plot, scale, vmin,
                                vmax, fig, ax, i, j)
     else:
-        if use_cell_coordinates:
+        if not use_cell_coordinates:
             raise ValueError("use_indices cannot be used with polar winds")
         fig, ax = plot_2d_wind(np.deg2rad(wind["theta"]), np.log10(wind["r"]), parameter_points, wind.units,
                                wind.coord_system, inclinations_to_plot, scale, vmin, vmax, fig, ax, i, j)

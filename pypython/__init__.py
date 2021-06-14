@@ -1242,7 +1242,6 @@ class Wind:
 
         for element in elements_to_get:
             element = element.capitalize()
-            self.elements += element,
 
             # Each element will have a dict of two keys, either frac or den.
             # Inside each dict with be more dicts of keys where the values are
@@ -1256,7 +1255,11 @@ class Wind:
                     fp = self.fp + "tables/" + self.root + "." + element + "." + ion_type + ".txt"
                     if not path.exists(fp):
                         continue
+
                 n_elements_read += 1
+                if element not in self.elements:
+                    self.elements += element,
+
                 with open(fp, "r") as f:
                     ion_file = f.readlines()
 
