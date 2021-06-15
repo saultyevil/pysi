@@ -297,9 +297,9 @@ def reprocessing(spectrum, xmin=None, xmax=None, scale="loglog", label_edges=Tru
     ax: plt.Axes
         matplotlib Axes object.
     """
-    if "spec_tau" not in spectrum.available:
+    if "spec_tau" not in spectrum.avail_spectrum:
         raise ValueError("There is no spec_tau spectrum so cannot create this plot")
-    if "spec" not in spectrum.available and "log_spec" not in spectrum.available:
+    if "spec" not in spectrum.avail_spectrum and "log_spec" not in spectrum.avail_spectrum:
         raise ValueError("There is no observer spectrum so cannot create this plot")
 
     _check_axes_scale_string(scale)
