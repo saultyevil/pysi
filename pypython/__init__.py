@@ -1183,7 +1183,7 @@ class CellSpectra:
         # Loop over each file. Each time self.header is updated, but we store
         # the rest into an array which gets hstacked to make a single array
 
-        for fp in get_files("*xspec.*.txt"):
+        for fp in get_files("*xspec.*.txt", self.fp):
 
             with open(fp, "r") as f:
                 spectrum_file = f.readlines()
@@ -1563,8 +1563,8 @@ class Wind:
             raise ValueError(f"too many j's {count} in header for {table} table")
 
         if "z" in header:
-            idx = header.index("j")
-            idx = header[idx:].index("j")
+            idx = header.index("j") + 1
+            idx += header[idx:].index("j")
             header[idx] = "j_bar"
         else:
             idx = header.index("j")
