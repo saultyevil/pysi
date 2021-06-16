@@ -1034,7 +1034,7 @@ class ModelledCellSpectra:
             i, j = self.get_ij_from_elem_number(nelem)
             self.model_parameters[i, j] = bands
 
-    def plot(self, i, j, scale="loglog"):
+    def plot(self, i, j, scale="loglog", figsize=(12, 6)):
         """Plot the spectrum for cell (i, j).
 
         Simple plotting function, if you want something more advanced then
@@ -1048,17 +1048,18 @@ class ModelledCellSpectra:
             The j-th index for the cell.
         scale: str
             The axes scaling for the plot.
+        figsize: tuple(int, int)
+            The size of the figure (width, height) in inches (sigh).
         """
         plot.normalize_figure_style()
-        fig, ax = plt.subplots(figsize=(12, 6))
+        fig, ax = plt.subplots(figsize=figsize)
 
         model = self.models[i, j]
         if model is None:
             raise ValueError(f"no modelled cell spectra for cell ({i}, {j}) as cell is probably not in the wind")
 
-        ax.plot(model["Freq."], model["Flux"])
-
-        ax.set_ylabel(r"$J_{\nu}$ [ergs s$^{-1}$ cm$^{-3}$ Sr$^{-1}$ Hz$^{-1}$]")
+        ax.plot(model["Freq."], model["Flux"], label="Cell model")
+        ax.set_ylabel(r"$J_{\nu}$ [ergs s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
         ax.set_xlabel("Rest-frame Frequency")
         ax = set_axes_scales(ax, scale)
 
@@ -1213,9 +1214,9 @@ class CellSpectra:
         # differently depending on if the model is 1D or 2D.
 
         if len(self.header[0]) > LEN_WHEN_1D_MODEL:
-            self.cells = [(int(cell[1:4]), int(cell[5:])) for cell in self.header[1:]]
+            self.cells = [(int(cell[1:4]), int(cell[5:])) for cell in self.header]
         else:
-            self.cells = [(int(cell[1:4]), 0) for cell in self.header[1:]]
+            self.cells = [(int(cell[1:4]), 0) for cell in self.header]
 
         # If nx or nz were not given, then determine the number of coordinates
         # from the parameter files or from the cells array
@@ -1263,7 +1264,7 @@ class CellSpectra:
         """
         return np.unravel_index(elem, (self.nx, self.nz))
 
-    def plot(self, i, j, scale="loglog"):
+    def plot(self, i, j, scale="loglog", figsize=(12, 6)):
         """Plot the spectrum for cell (i, j).
 
         Simple plotting function, if you want something more advanced then
@@ -1277,16 +1278,18 @@ class CellSpectra:
             The j-th index for the cell.
         scale: str
             The axes scaling for the plot.
+        figsize: tuple(int, int)
+            The size of the figure (width, height) in inches (sigh).
         """
         normalize_figure_style()
-        fig, ax = plt.subplots(figsize=(12, 6))
+        fig, ax = plt.subplots(figsize=figsize)
 
         spectrum = self.spectra[i, j]
         if spectrum is None:
             raise ValueError(f"no cell spectra for cell ({i}, {j}) as cell is probably not in the wind")
 
-        ax.plot(spectrum["Freq."], spectrum["Flux"])
-        ax.set_ylabel(r"$J_{\nu}$ [ergs s$^{-1}$ cm$^{-3}$ Sr$^{-1}$ Hz$^{-1}$]")
+        ax.plot(spectrum["Freq."], spectrum["Flux"], label="Cell spectrum")
+        ax.set_ylabel(r"$J_{\nu}$ [ergs s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
         ax.set_xlabel("Rest-frame Frequency")
         ax = set_axes_scales(ax, scale)
 
@@ -1436,14 +1439,14 @@ class Wind:
             self.get_wind_elements(delim=delim)
             if include_cell_spec:
                 self.wind["cell_spec"] = CellSpectra(self.root, self.fp, self.nx, self.nz)
-                self.wind["model_spec"] = ModelledCellSpectra(self.root, self.fp)
+                self.wind["cell_model"] = ModelledCellSpectra(self.root, self.fp)
         except IOError:
             self.create_wind_tables()
             self.get_wind_parameters(delim)
             self.get_wind_elements(delim=delim)
             if include_cell_spec:
                 self.wind["cell_spec"] = CellSpectra(self.root, self.fp, self.nx, self.nz)
-                self.wind["model_spec"] = ModelledCellSpectra(self.root, self.fp)
+                self.wind["cell_model"] = ModelledCellSpectra(self.root, self.fp)
 
         self.columns = self.wind.keys()
 
