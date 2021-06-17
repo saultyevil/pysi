@@ -343,7 +343,7 @@ def reprocessing(spectrum, xmin=None, xmax=None, scale="loglog", label_edges=Tru
         x = spectrum["Freq."]
         y = spectrum[thing]
 
-        if spectrum.units == SPECTRUM_UNITS_FLM:
+        if spectrum.spatial_units == SPECTRUM_UNITS_FLM:
             y *= spectrum["Lambda"]
         else:
             y *= spectrum["Freq."]

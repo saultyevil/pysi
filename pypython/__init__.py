@@ -698,7 +698,7 @@ class Spectrum:
             The name of the spectrum, i.e. log_spec or spec_tot, etc. The
             available spectrum types are stored in self.available.
         """
-        if self.log_spec and not name.startswith("log_"):
+        if self.log_spec and not name.startswith("log_") and name != "spec_tau":
             name = "log_" + name
 
         self._set_current(name)
@@ -851,9 +851,10 @@ class ModelledCellSpectra:
         self.nz = 0
         self.n_cells = 0
         self.n_bands = 0
-        self.models = None
-        self.model_parameters = None
         self.header = None
+        self.cells = []
+        self.model_parameters = None
+        self.spectra = None
 
         self.n_bins_per_band = 500
 
@@ -878,7 +879,7 @@ class ModelledCellSpectra:
         bins for the whole model is self.n_bins_per_band * self.nbands (which
         saw photons).
         """
-        self.models = np.array([None for _ in range(self.n_cells)]).reshape(self.nx, self.nz)
+        self.spectra = np.array([None for _ in range(self.n_cells)]).reshape(self.nx, self.nz)
 
         # We need to loop over each cell and construct the flux for each
         # band but they will be joined together at the end
@@ -923,7 +924,8 @@ class ModelledCellSpectra:
                 if not np.all(np.diff(cell_frequency) >= 0):
                     raise ValueError("frequency bins are not increasing across the bands, for some reason")
                 cell_flux = np.hstack(cell_flux)
-                self.models[i, j] = {"Freq.": cell_frequency, "Flux": cell_flux}
+                self.spectra[i, j] = {"Freq.": cell_frequency, "Flux": cell_flux}
+                self.cells.append((i, j))
 
     def create_wind_tables(self):
         """Force the creation of wind save tables for the model.
@@ -1034,7 +1036,7 @@ class ModelledCellSpectra:
             i, j = self.get_ij_from_elem_number(nelem)
             self.model_parameters[i, j] = bands
 
-    def plot(self, i, j, scale="loglog", figsize=(12, 6)):
+    def plot(self, i, j, energetic=True, scale="loglog", fig=None, ax=None, figsize=(12, 6)):
         """Plot the spectrum for cell (i, j).
 
         Simple plotting function, if you want something more advanced then
@@ -1046,23 +1048,36 @@ class ModelledCellSpectra:
             The i-th index for the cell.
         j: int
             The j-th index for the cell.
+        energetic: bool
+            Plot in energetic (nu * J_nu) units.
         scale: str
             The axes scaling for the plot.
+        fig: pyplot.Figure
+            A matplotlib Figure object to edit. Needs ax to also be supplied.
+        ax: pyplot.Axes
+            A matplotlib Axes object to edit. Needs fig to also be supplied.
         figsize: tuple(int, int)
             The size of the figure (width, height) in inches (sigh).
         """
-        plot.normalize_figure_style()
-        fig, ax = plt.subplots(figsize=figsize)
-
-        model = self.models[i, j]
+        model = self.spectra[i, j]
         if model is None:
             raise ValueError(f"no modelled cell spectra for cell ({i}, {j}) as cell is probably not in the wind")
 
-        ax.plot(model["Freq."], model["Flux"], label="Cell model")
-        ax.set_ylabel(r"$J_{\nu}$ [ergs s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
+        if not fig and not ax:
+            plot.normalize_figure_style()
+            fig, ax = plt.subplots(figsize=figsize)
+        elif not fig and ax or fig and not ax:
+            raise ValueError("fig and ax need to be supplied together")
+
+        if energetic:
+            ax.plot(model["Freq."], model["Freq."] * model["Flux"], label="Model")
+            ax.set_ylabel(r"$\nu J_{\nu}$ [ergs s$^{-1}$ cm$^{-2}$]")
+        else:
+            ax.plot(model["Freq."], model["Flux"], label="Model")
+            ax.set_ylabel(r"$J_{\nu}$ [ergs s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
+
         ax.set_xlabel("Rest-frame Frequency")
         ax = set_axes_scales(ax, scale)
-
         fig.suptitle(f"Spectrum in cell ({i}, {j})")
 
         return fig, ax
@@ -1084,14 +1099,14 @@ class ModelledCellSpectra:
 
     def __getitem__(self, pos):
         i, j = pos
-        return self.models[i, j]
+        return self.spectra[i, j]
 
     def __setitem__(self, pos, value):
         i, j = pos
-        self.models[i, j] = value
+        self.spectra[i, j] = value
 
     def __str__(self):
-        return print(self.models)
+        return print(self.spectra)
 
 
 # Cell spectra -----------------------------------------------------------------
@@ -1140,6 +1155,7 @@ class CellSpectra:
         self.header = None
         self.cells = None
         self.spectra = None
+
         self.original = None
 
         # Try to read in the spectra, if we can't then we'll try and run
@@ -1264,7 +1280,7 @@ class CellSpectra:
         """
         return np.unravel_index(elem, (self.nx, self.nz))
 
-    def plot(self, i, j, scale="loglog", figsize=(12, 6)):
+    def plot(self, i, j, energetic=True, scale="loglog", fig=None, ax=None, figsize=(12, 6)):
         """Plot the spectrum for cell (i, j).
 
         Simple plotting function, if you want something more advanced then
@@ -1276,23 +1292,36 @@ class CellSpectra:
             The i-th index for the cell.
         j: int
             The j-th index for the cell.
+        energetic: bool
+            Plot in energetic (nu * J_nu) units.
         scale: str
             The axes scaling for the plot.
+        fig: pyplot.Figure
+            A matplotlib Figure object to edit. Needs ax to also be supplied.
+        ax: pyplot.Axes
+            A matplotlib Axes object to edit. Needs fig to also be supplied.
         figsize: tuple(int, int)
             The size of the figure (width, height) in inches (sigh).
         """
-        normalize_figure_style()
-        fig, ax = plt.subplots(figsize=figsize)
-
         spectrum = self.spectra[i, j]
         if spectrum is None:
-            raise ValueError(f"no cell spectra for cell ({i}, {j}) as cell is probably not in the wind")
+            raise ValueError(f"no modelled cell spectra for cell ({i}, {j}) as cell is probably not in the wind")
 
-        ax.plot(spectrum["Freq."], spectrum["Flux"], label="Cell spectrum")
-        ax.set_ylabel(r"$J_{\nu}$ [ergs s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
+        if not fig and not ax:
+            plot.normalize_figure_style()
+            fig, ax = plt.subplots(figsize=figsize)
+        elif not fig and ax or fig and not ax:
+            raise ValueError("fig and ax need to be supplied together")
+
+        if energetic:
+            ax.plot(spectrum["Freq."], spectrum["Freq."] * spectrum["Flux"], label="Spectrum")
+            ax.set_ylabel(r"$\nu J_{\nu}$ [ergs s$^{-1}$ cm$^{-2}$]")
+        else:
+            ax.plot(spectrum["Freq."], spectrum["Flux"], label="Spectrum")
+            ax.set_ylabel(r"$J_{\nu}$ [ergs s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
+
         ax.set_xlabel("Rest-frame Frequency")
         ax = set_axes_scales(ax, scale)
-
         fig.suptitle(f"Spectrum in cell ({i}, {j})")
 
         return fig, ax
@@ -1340,11 +1369,11 @@ class Wind:
     def __init__(self,
                  root,
                  fp=".",
-                 include_cell_spec=True,
-                 distance_units="cm",
+                 get_cell_spec=True,
+                 spatial_units="cm",
                  co_mass=None,
                  velocity_units="kms",
-                 mask=True,
+                 masked=True,
                  force_make_tables=False,
                  delim=None):
         """Initialize the Wind object.
@@ -1362,16 +1391,16 @@ class Wind:
             The root name of the Python simulation.
         fp: str
             The directory containing the model.
-        include_cell_spec: bool
+        get_cell_spec: bool
             Load in the the cell spectra as well.
-        distance_units: str
+        spatial_units: str
             The distance units of the wind.
         co_mass: float
             The mass of the central object, optional to use in conjunction with
             distance_units == "rg"
         velocity_units: str [optional]
             The velocity units of the wind.
-        mask: bool [optional]
+        masked: bool [optional]
             Store the wind parameters as masked arrays.
         force_make_tables: bool [optional]
             Force windsave2table to be run to re-make the files in the
@@ -1398,16 +1427,17 @@ class Wind:
         self.axes = None
         self.parameters = ()
         self.elements = ()
+        self.spectra = ()
         self.wind = {}
         self.coord_system = WIND_COORD_TYPE_UNKNOWN
-        self.units = "probably_cm"  # can't set immediately due to conversion functions setting the units
+        self.gravitational_radius = -1
 
         # Get the conversion factors for distance and velocity units
 
-        distance_units = distance_units.lower()
-        if distance_units not in [WIND_DISTANCE_UNITS_CM, WIND_DISTANCE_UNITS_RG]:
+        spatial_units = spatial_units.lower()
+        if spatial_units not in [WIND_DISTANCE_UNITS_CM, WIND_DISTANCE_UNITS_RG]:
             raise ValueError(
-                f"Unknown distance units {distance_units}: allowed are {WIND_DISTANCE_UNITS_CM} or {WIND_DISTANCE_UNITS_RG}"
+                f"Unknown distance units {spatial_units}: allowed are {WIND_DISTANCE_UNITS_CM} or {WIND_DISTANCE_UNITS_RG}"
             )
 
         velocity_units = velocity_units.lower()
@@ -1435,31 +1465,24 @@ class Wind:
             self.create_wind_tables()
 
         try:
-            self.get_wind_parameters(delim)
-            self.get_wind_elements(delim=delim)
-            if include_cell_spec:
-                self.wind["cell_spec"] = CellSpectra(self.root, self.fp, self.nx, self.nz)
-                self.wind["cell_model"] = ModelledCellSpectra(self.root, self.fp)
+            self.get_all_tables(get_cell_spec, delim)
         except IOError:
             self.create_wind_tables()
-            self.get_wind_parameters(delim)
-            self.get_wind_elements(delim=delim)
-            if include_cell_spec:
-                self.wind["cell_spec"] = CellSpectra(self.root, self.fp, self.nx, self.nz)
-                self.wind["cell_model"] = ModelledCellSpectra(self.root, self.fp)
+            self.get_all_tables(get_cell_spec, delim)
 
         self.columns = self.wind.keys()
 
-        if mask:
+        if masked:
             self.create_masked_arrays()
 
         # Now we can convert or set the units, as the wind has been read in
-        # todo: this should be in get_wind_parameters, probably
 
-        if distance_units == WIND_DISTANCE_UNITS_RG:
-            self.convert_cm_to_rg(co_mass)
+        self.spatial_units = "unknown"
+
+        if spatial_units == WIND_DISTANCE_UNITS_RG:
+            self.convert_cm_to_rg(co_mass)  # self.spatial_units is set in here whenever we convert between units
         else:
-            self.units = distance_units
+            self.spatial_units = spatial_units
 
     # Private methods ----------------------------------------------------------
 
@@ -1627,7 +1650,7 @@ class Wind:
             The gravitational radius for the model.
         """
 
-        if self.units == WIND_DISTANCE_UNITS_RG:
+        if self.spatial_units == WIND_DISTANCE_UNITS_RG:
             return
 
         if not co_mass_in_msol:
@@ -1645,7 +1668,8 @@ class Wind:
             self.wind["x"] /= rg
             self.wind["z"] /= rg
 
-        self.units = WIND_DISTANCE_UNITS_RG
+        self.spatial_units = WIND_DISTANCE_UNITS_RG
+        self.gravitational_radius = rg
 
         return rg
 
@@ -1666,7 +1690,7 @@ class Wind:
             The gravitational radius for the model.
         """
 
-        if self.units == WIND_DISTANCE_UNITS_CM:
+        if self.spatial_units == WIND_DISTANCE_UNITS_CM:
             return
 
         if not co_mass_in_msol:
@@ -1684,7 +1708,8 @@ class Wind:
             self.wind["x"] *= rg
             self.wind["z"] *= rg
 
-        self.units = WIND_DISTANCE_UNITS_CM
+        self.spatial_units = WIND_DISTANCE_UNITS_CM
+        self.gravitational_radius = rg
 
         return rg
 
@@ -1718,6 +1743,12 @@ class Wind:
         for element in self.elements:
             self._mask_ions_for_element(element)
 
+        # Create masked array for cell and model spectra
+
+        for cell_spec_type in self.spectra:
+            self.wind[cell_spec_type].spectra = np.ma.masked_where(self.wind["inwind"] < 0,
+                                                                   self.wind[cell_spec_type].spectra)
+
     def create_wind_tables(self):
         """Force the creation of wind save tables for the model.
 
@@ -1748,12 +1779,30 @@ class Wind:
         element_name = parameter[:2].replace("_", "")
         ion_name = parameter[2:].replace("_", "")
 
-        if element_name.capitalize() in self.elements:
-            variable = self._get_element_variable(element_name.capitalize(), ion_name)
+        if element_name in self.elements:
+            variable = self._get_element_variable(element_name, ion_name)
         else:
             variable = self.wind[parameter]
 
         return variable
+
+    def get_all_tables(self, get_cell_spec, delim):
+        """Read all the wind save tables into the object.
+
+        Parameters
+        ----------
+        get_cell_spec: bool
+            Also read in the cell spectra. In old version of Python, these were
+            not available.
+        delim: str
+            The file delimiter.
+        """
+        self.get_wind_parameters(delim)
+        self.get_wind_elements(delim=delim)
+        if get_cell_spec:
+            self.wind["cell_spec"] = CellSpectra(self.root, self.fp, self.nx, self.nz)
+            self.wind["cell_model"] = ModelledCellSpectra(self.root, self.fp)
+            self.spectra += ("cell_spec", "cell_model")
 
     def get_elem_number_from_ij(self, i, j):
         """Get the wind element number for a given i and j index.
@@ -2035,11 +2084,11 @@ class Wind:
             n_points, m_points = self._get_wind_indices()
 
         if self.coord_system == "spherical":
-            fig, ax = plot_1d_wind(n_points, variable, self.units, scale=scale)
+            fig, ax = plot_1d_wind(n_points, variable, self.spatial_units, scale=scale)
         else:
             if log_variable:
                 variable = np.log10(variable)
-            fig, ax = plot_2d_wind(n_points, m_points, variable, self.units, self.coord_system, scale=scale)
+            fig, ax = plot_2d_wind(n_points, m_points, variable, self.spatial_units, self.coord_system, scale=scale)
 
         if len(ax) == 1:
             ax = ax[0, 0]
@@ -2048,6 +2097,30 @@ class Wind:
                 ax.set_ylabel(title)
             else:
                 ax.set_title(title)
+
+        return fig, ax
+
+    def plot_cell_spec(self, i, j, energetic=False):
+        """Plot the spectrum for a cell.
+
+        This will plot the cell spectrum and the model of that spectrum used
+        internally by Python to calculate the heating/cooling rates.
+
+        Parameters
+        ----------
+        i: int
+            The i-th index for the cell.
+        j: int
+            The j-th index for the cell.
+        energetic: bool
+            Plot in energetic (nu * J_nu) units.
+        """
+        if not self.spectra:
+            raise ValueError("no cell spectra have been read in")
+
+        fig, ax = self.wind["cell_spec"].plot(i, j, energetic)
+        fig, ax = self.wind["cell_model"].plot(i, j, energetic, fig=fig, ax=ax)
+        ax.legend()
 
         return fig, ax
 
@@ -2108,8 +2181,8 @@ class Wind:
         self.wind[key] = value
 
     def __str__(self):
-        txt = f"root: {self.root}\nfilepath: {self.fp}\ncoordinate system:{self.coord_system}\n" \
-              f"parameters: {self.parameters}\nelements: {self.elements}\n"
+        txt = f"root: {self.root}\nfilepath: {self.fp}\ncoordinate system: {self.coord_system}\n" \
+              f"parameters: {self.parameters}\nelements: {self.elements}\nspectra: {self.spectra}"
 
         return textwrap.dedent(txt)
 

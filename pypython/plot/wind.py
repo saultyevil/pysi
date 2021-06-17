@@ -234,20 +234,20 @@ def plot(wind,
             n = wind["r"]
         else:
             n = wind["i"]
-        fig, ax = plot_1d_wind(n, parameter_points, wind.units, "loglog", fig, ax, i, j)
+        fig, ax = plot_1d_wind(n, parameter_points, wind.spatial_units, "loglog", fig, ax, i, j)
     elif wind.coord_system == WIND_COORD_TYPE_CYLINDRICAL:
         if use_cell_coordinates:
-            n = wind["r"]
+            n = wind["x"]
             m = wind["z"]
         else:
             n = wind["i"]
             m = wind["j"]
-        fig, ax = plot_2d_wind(n, m, parameter_points, wind.units, wind.coord_system, inclinations_to_plot, scale, vmin,
-                               vmax, fig, ax, i, j)
+        fig, ax = plot_2d_wind(n, m, parameter_points, wind.spatial_units, wind.coord_system, inclinations_to_plot,
+                               scale, vmin, vmax, fig, ax, i, j)
     else:
         if not use_cell_coordinates:
             raise ValueError("use_indices cannot be used with polar winds")
-        fig, ax = plot_2d_wind(np.deg2rad(wind["theta"]), np.log10(wind["r"]), parameter_points, wind.units,
+        fig, ax = plot_2d_wind(np.deg2rad(wind["theta"]), np.log10(wind["r"]), parameter_points, wind.spatial_units,
                                wind.coord_system, inclinations_to_plot, scale, vmin, vmax, fig, ax, i, j)
 
     return fig, ax

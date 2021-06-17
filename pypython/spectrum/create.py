@@ -478,7 +478,7 @@ def wind_bin_interaction_weight(root, nres, cd=".", n_cores=1):
         the grid.
     """
 
-    w = Wind(root, cd, mask=False)
+    w = Wind(root, cd, masked=False)
     x_points = np.array(w.x_coords)
     z_points = np.array(w.y_coords)
 

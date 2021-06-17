@@ -247,17 +247,17 @@ def main():
 
     root, fp, use_ion_density, velocity_units, axes_scales, use_cell_indices, display = setup_script()
 
-    w = Wind(root, fp, distance_units="rg", velocity_units=velocity_units, force_make_tables=False)
+    w = Wind(root, fp, spatial_units="rg", velocity_units=velocity_units, get_cell_spec=False)
 
     if w.coord_system == "polar":
         subplot_kw = {"projection": "polar"}
     else:
         subplot_kw = {}
 
-    # plot_wind_parameters(w, default_wind_parameters, axes_scales=axes_scales, subplot_kw=subplot_kw, display=display)
-    #
-    # if w.coord_system == WIND_COORD_TYPE_CYLINDRICAL:
-    #     plot_wind_velocity(w, default_wind_velocities, velocity_units, subplot_kw, axes_scales, display)
+    plot_wind_parameters(w, default_wind_parameters, axes_scales=axes_scales, subplot_kw=subplot_kw, display=display)
+
+    if w.coord_system == WIND_COORD_TYPE_CYLINDRICAL:
+        plot_wind_velocity(w, default_wind_velocities, velocity_units, subplot_kw, axes_scales, display)
 
     plot_wind_ions(w, default_wind_ions, default_ion_fig_dims, default_ion_figsize, use_ion_density, axes_scales,
                    subplot_kw, display)
