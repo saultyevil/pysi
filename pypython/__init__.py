@@ -2092,8 +2092,7 @@ class Wind:
         else:
             if log_variable:
                 variable = np.log10(variable)
-            fig, ax = plot_2d_wind(
-                n_points, m_points, variable, self.spatial_units, self.coord_system, scale=scale)
+            fig, ax = plot_2d_wind(n_points, m_points, variable, self.spatial_units, self.coord_system, scale=scale)
 
         if len(ax) == 1:
             ax = ax[0, 0]

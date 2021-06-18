@@ -6,7 +6,7 @@ All functions require the mass to be in units of solar masses and
 accretion rates in solar masses per year.
 """
 
-from pypython.constants import GRAV, MSOL, VLIGHT, RSOL
+from pypython.constants import GRAV, MSOL, RSOL, VLIGHT
 
 
 def tidal_disruption_radius(m_bh, m_star, r_star):
