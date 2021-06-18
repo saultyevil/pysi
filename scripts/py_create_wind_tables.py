@@ -35,7 +35,7 @@ def main():
     if quiet:
         verbose = False
 
-    pypython.create_wind_save_tables(root, fp, False, verbose)
+    pypython.create_wind_save_tables(root, fp, False, True, verbose)
     pypython.create_wind_save_tables(root, fp, True, verbose)
 
     return

@@ -435,7 +435,7 @@ class Spectrum:
         self._set_current(self.current)
 
         if distance:
-            self.rescale_flux(distance)
+            self.rescale_to_distance(distance)
 
         # Smooth all the spectra. A copy of the unsmoothed spectra is kept
         # in the member self.original.
@@ -649,7 +649,7 @@ class Spectrum:
 
         self.available = tuple(self.avail_spectrum.keys())
 
-    def plot(self, name=None, label_lines=False):
+    def plot(self, name=None, spec_type=None, label_lines=False):
         """Plot the spectra or a single component in a single figure. By
         default this creates a 1 x 2 of the components on the left and the
         observer spectra on the right. Useful for when in an interactive
@@ -659,6 +659,8 @@ class Spectrum:
         ----------
         name: str
             The name of the thing to plot.
+        spec_type: str
+            The spectrum the thing to plot belongs in.
         label_lines: bool
             Plot line IDs.
         """
@@ -668,8 +670,10 @@ class Spectrum:
         # assume we just want to plot all columns in the spec file
 
         if name:
+            if spec_type:
+                self.set(spec_type)
             if name not in self.columns:
-                raise ValueError(f"{name} is not in the current spectrum columns")
+                raise ValueError(f"{name} is not available in the {self.current} spectrum")
             fig, ax = self._plot_thing(name, label_lines)
             if name.isdigit():
                 name += r"$^{\circ}$"
@@ -757,7 +761,7 @@ class Spectrum:
                 except KeyError:
                     pass  # some spectra do not have the inclination angles...
 
-    def rescale_flux(self, distance):
+    def rescale_to_distance(self, distance):
         """Rescale the flux to the given distance.
 
         Parameters
@@ -2088,7 +2092,8 @@ class Wind:
         else:
             if log_variable:
                 variable = np.log10(variable)
-            fig, ax = plot_2d_wind(n_points, m_points, variable, self.spatial_units, self.coord_system, scale=scale)
+            fig, ax = plot_2d_wind(
+                n_points, m_points, variable, self.spatial_units, self.coord_system, scale=scale)
 
         if len(ax) == 1:
             ax = ax[0, 0]
