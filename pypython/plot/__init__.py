@@ -251,16 +251,63 @@ def remove_extra_axes(fig, ax, n_wanted, n_panel):
     return fig, ax
 
 
-def get_x_subset(x, y, xmin, xmax):
+def _check_sorted(x):
+    """Check if an array is sorted in ascending order.
 
-    if xmin:
-        idx = get_array_index(x, xmin)
-        x = x[:idx]
-        y = y[:idx]
-    if xmax:
-        idx = get_array_index(x, xmax)
-        x = x[idx:]
-        y = y[idx:]
+    Parameters
+    ----------
+    x: np.ndarray, list
+        The array to check.
+    """
+    return np.all(np.diff(x) >= 0)
+
+
+def get_x_subset(x, y, xmin, xmax):
+    """Get a subset of values from two array given xmin and xmax.
+
+    Parameters
+    ----------
+    x: np.ndarray
+        The first array to get the subset from, set by xmin and xmax.
+    y: np.ndarray
+        The second array to get the subset from.
+    xmin: float
+        The minimum x value
+    xmax: float
+        The maximum x value
+
+    Returns
+    -------
+    x, y: np.ndarray
+        The subset arrays.
+    """
+
+    ascending = True
+
+    if not _check_sorted(x):
+        if _check_sorted(x.copy()[::-1]):
+            ascending = False
+        else:
+            raise ValueError("cannot use get_x_subset on an unsorted array")
+
+    if ascending:
+        if xmin:
+            idx = get_array_index(x, xmin)
+            x = x[idx:]
+            y = y[idx:]
+        if xmax:
+            idx = get_array_index(x, xmax)
+            x = x[:idx]
+            y = y[:idx]
+    else:
+        if xmin:
+            idx = get_array_index(x, xmin)
+            x = x[:idx]
+            y = y[:idx]
+        if xmax:
+            idx = get_array_index(x, xmax)
+            x = x[idx:]
+            y = y[idx:]
 
     return x, y
 
