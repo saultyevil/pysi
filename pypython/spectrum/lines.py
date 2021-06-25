@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 
 from pypython import get_array_index
 from pypython.error import EXIT_FAIL
-from pypython.plot import ax_add_line_ids, common_lines, get_y_lims_for_x_lims
+from pypython.plot import ax_add_line_ids, common_lines, get_y_lims_for_x_lims, get_x_subset
 
 
 def fit_gaussian():
@@ -58,9 +58,10 @@ def measure_equivalent_width(wavelength, flux, display_xmin, display_xmax, ret_f
     # to label where it starts and stops
 
     fig, ax = plt.subplots(figsize=(12, 5))
+    wavelength, flux = get_x_subset(wavelength, flux, display_xmin, display_xmax)
     ax.loglog(wavelength, flux, linewidth=2, label="Spectrum")
-    ax.set_xlim(display_xmin, display_xmax)
-    ax.set_ylim(get_y_lims_for_x_lims(wavelength, flux, display_xmin, display_xmax, scale=2.0))
+    # ax.set_xlim(display_xmin, display_xmax)
+    # ax.set_ylim(get_y_lims_for_x_lims(wavelength, flux, display_xmin, display_xmax, scale=2.0))
     ax.set_xlabel("Wavelength")
     ax.set_ylabel("Flux")
     ax = ax_add_line_ids(ax, common_lines(), logx=True)
@@ -97,11 +98,13 @@ def measure_equivalent_width(wavelength, flux, display_xmin, display_xmax, ret_f
     # a shit fit I do nothing about it and just let the code run its course :-)
 
     fig, ax = plt.subplots(figsize=(12, 5))
+    wavelength, flux = get_x_subset(wavelength, flux, display_xmin, display_xmax)
     ax.loglog(wavelength, flux, linewidth=2, label="Spectrum")
     # ax.plot(a, b, linewidth=2, label="Extracted bit")
-    ax.plot(a, fit(a), label="Linear fit")
-    ax.set_xlim(display_xmin, display_xmax)
-    ax.set_ylim(get_y_lims_for_x_lims(wavelength, flux, display_xmin, display_xmax, scale=2.0))
+    wavelength, flux = get_x_subset(a, fit(a), display_xmin, display_xmax)
+    ax.plot(wavelength, flux, label="Linear fit")
+    # ax.set_xlim(display_xmin, display_xmax)
+    # ax.set_ylim(get_y_lims_for_x_lims(wavelength, flux, display_xmin, display_xmax, scale=2.0))
     ax.legend()
     ax.set_xlabel("Wavelength")
     ax.set_ylabel("Flux")

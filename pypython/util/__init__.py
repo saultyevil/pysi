@@ -7,13 +7,12 @@ as getting system info and a logging utility.
 """
 
 import textwrap
+import subprocess
 from typing import List
 
 from psutil import cpu_count
 
 from pypython import get_files, get_root_name
-
-LOGFILE = None
 
 
 def create_run_script(commands):
@@ -139,7 +138,53 @@ def get_file_len(filename):
     return i + 1
 
 
+def run_command(command, fp=".", verbose=False):
+    """Run a shell command.
+
+    Parameters
+    ----------
+    command: List[str] or str
+        The shell command to run. Must either be a single string to call a
+        program, or a list of the program and arguments for the program.
+    fp: str [optional]
+        The directory to run the command in.
+    verbose: bool
+        Print stdout to the screen.
+    """
+
+    sh = subprocess.run(command, capture_output=True, cwd=fp)
+    if verbose:
+        print(sh.stdout.decode("utf-8"))
+    if sh.stderr:
+        print("stderr reported errors:\n", sh.stderr.decode("utf-8"))
+
+    return sh
+
 # Logging functions ------------------------------------------------------------
+
+
+LOGFILE = None
+
+
+def close_logfile(logfile=None):
+    """Close a log file for writing - this will either use the log file provided
+    or will attempt to close the global log file.
+
+    Parameters
+    ----------
+    logfile: io.TextIO, optional
+        An external log file object"""
+
+    global LOGFILE
+
+    if logfile:
+        logfile.close()
+    elif LOGFILE:
+        LOGFILE.close()
+    else:
+        print("No logfile to close but somehow got here? ahhh disaster")
+
+    return
 
 
 def init_logfile(logfile_name, use_global_log=True):
@@ -163,27 +208,6 @@ def init_logfile(logfile_name, use_global_log=True):
     else:
         logfile = open(logfile_name, "a")
         return logfile
-
-    return
-
-
-def close_logfile(logfile=None):
-    """Close a log file for writing - this will either use the log file provided
-    or will attempt to close the global log file.
-
-    Parameters
-    ----------
-    logfile: io.TextIO, optional
-        An external log file object"""
-
-    global LOGFILE
-
-    if logfile:
-        logfile.close()
-    elif LOGFILE:
-        LOGFILE.close()
-    else:
-        print("No logfile to close but somehow got here? ahhh disaster")
 
     return
 

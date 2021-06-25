@@ -63,7 +63,7 @@ def planck_lambda(temperature, lamda):
     return b_lamda
 
 
-def wein_law(temperature, freq_space=False):
+def wien_law(temperature, freq_space=False):
     """Calculate the peak wavelength of a blackbody curve.
 
     Parameters

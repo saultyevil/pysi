@@ -254,26 +254,19 @@ def create_wind_save_tables(root, fp=".", ion_density=False, cell_spec=False, ve
 
     files_before = listdir(fp)
 
-    command = f"cd {fp};"
     if not Path(f"{fp}/data").exists():
-        command += "Setup_Py_Dir;"
-    command += "windsave2table"
-    if ion_density:
-        command += " -d"
-    if cell_spec:
-        command += " -xall"
-    command += f" {root}"
+        run_command("Setup_Py_Dir", fp)
 
-    cmd = Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
-    stdout, stderr = cmd.communicate()
+    command = ["windsave2table"]
+    if ion_density:
+        command.append("-d")
+    if cell_spec:
+        command.append("-xall")
+    command.append(root)
+
+    cmd = run_command(command, fp, verbose)
 
     files_after = listdir(fp)
-
-    if verbose:
-        print(stdout.decode("utf-8"))
-    if stderr:
-        print("There may have been a problem running windsave2table")
-        print(stderr.decode("utf-8"))
 
     # Move the new files in fp/tables
 
@@ -288,6 +281,13 @@ def create_wind_save_tables(root, fp=".", ion_density=False, cell_spec=False, ve
             Path(f"{fp}/{new}").rename(f"{fp}/tables/{new}")
 
     return cmd.returncode
+
+
+def run_py_optical_depth(root, photosphere=None, fp="."):
+
+    command = ["py_optical_depth"]
+    if photosphere:
+        command.append(f"-p {float(photosphere)}")
 
 
 def run_py_wind(root, commands, fp="."):
@@ -342,10 +342,14 @@ WIND_VELOCITY_UNITS_CMS = "cms"
 WIND_VELOCITY_UNITS_LIGHT = "c"
 
 WIND_DISTANCE_UNITS_CM = "cm"
+WIND_DISTANCE_UNITS_M = "m"
+WIND_DISTANCE_UNITS_KM = "km"
 WIND_DISTANCE_UNITS_RG = "rg"
 
-MODEL_POWERLAW = 1
-MODEL_EXPONENTIAL = 2
+CELL_MODEL_POWERLAW = 1
+CELL_MODEL_EXPONENTIAL = 2
+
+DEBUG_MASK_CELL_SPEC = False
 
 # Spectrum class ---------------------------------------------------------------
 
@@ -508,9 +512,10 @@ class Spectrum:
         """
         normalize_figure_style()
 
-        fig, ax = plt.subplots(figsize=(9, 5))  # doing it like this stops static analysis from complaining :)
         if ax_update:
             ax = ax_update
+        else:
+            fig, ax = plt.subplots(figsize=(9, 5))
 
         ax.set_yscale("log")
         ax.set_xscale("log")
@@ -520,7 +525,7 @@ class Spectrum:
         if self.units == SPECTRUM_UNITS_FLM:
             ax.plot(self.spectrum["Lambda"], self.spectrum[thing], label=thing)
             ax.set_xlabel(r"Wavelength [\AA]")
-            ax.set_ylabel(r"Flux Density " + f"{self.distance}" + r"pc [erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
+            ax.set_ylabel(r"Flux Density " + f"{self.distance:.2e}" + r"pc [erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
             if label_lines:
                 ax = ax_add_line_ids(ax, common_lines(freq=False), logx=True)
         else:
@@ -529,15 +534,15 @@ class Spectrum:
             if self.units == SPECTRUM_UNITS_LNU:
                 ax.set_ylabel(r"Luminosity [erg s$^{-1}$ Hz$^{-1}$]")
             else:
-                ax.set_ylabel(r"Flux Density " + f"{self.distance}" + r"pc [erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
+                ax.set_ylabel(r"Flux Density " + f"{self.distance:.2e}" + r"pc [erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
             if label_lines:
                 ax = ax_add_line_ids(ax, common_lines(freq=True), logx=True)
 
-        if not ax_update:
+        if ax_update:
+            return ax
+        else:
             fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
             return fig, ax
-        else:
-            return ax
 
     def _set_current(self, target):
         """Set the current target spectrum.
@@ -550,7 +555,6 @@ class Spectrum:
         if target not in self.available:
             raise IndexError(f"spectrum {target} is not available: available are {self.available}")
 
-        self.current = target
         self.spectrum = self.avail_spectrum[target]
         self.columns = self.avail_columns[target]
         self.inclinations = self.avail_inclinations[target]
@@ -773,6 +777,8 @@ class Spectrum:
             raise ValueError("distance is not a float or integer")
 
         for spectrum in self.available:
+            if spectrum == "spec_tau":
+                continue
             if self.avail_units[spectrum] == SPECTRUM_UNITS_LNU:
                 continue
             for key in self.avail_spectrum[spectrum].keys():
@@ -808,7 +814,11 @@ class Spectrum:
         msg += f"Available spectra: {self.available}\n"
         msg += f"Current spectrum {self.current}\n"
         if "spec" in self.available or "log_spec" in self.available:
-            msg += f"Spectrum inclinations: {self.avail_inclinations['spec']}\n"
+            if self.log_spec:
+                key = "log_spec"
+            else:
+                key = "spec"
+            msg += f"Spectrum inclinations: {self.avail_inclinations[key]}\n"
         if "tau_spec" in self.available:
             msg += f"Optical depth inclinations {self.avail_inclinations['tau_spec']}\n"
 
@@ -910,9 +920,9 @@ class ModelledCellSpectra:
                     # There are two model types, a power law or an exponential
                     # model
 
-                    if model_type == MODEL_POWERLAW:
+                    if model_type == CELL_MODEL_POWERLAW:
                         f_nu = 10**(band["pl_log_w"] + np.log10(frequency) * band["pl_alpha"])
-                    elif model_type == MODEL_EXPONENTIAL:
+                    elif model_type == CELL_MODEL_EXPONENTIAL:
                         f_nu = band["exp_w"] * np.exp((-1 * PLANCK * frequency) / (band["exp_temp"] * BOLTZMANN))
                     else:
                         f_nu = np.zeros_like(frequency)
@@ -1439,25 +1449,15 @@ class Wind:
         # Get the conversion factors for distance and velocity units
 
         spatial_units = spatial_units.lower()
-        if spatial_units not in [WIND_DISTANCE_UNITS_CM, WIND_DISTANCE_UNITS_RG]:
+        if spatial_units not in [
+                WIND_DISTANCE_UNITS_CM, WIND_DISTANCE_UNITS_M, WIND_DISTANCE_UNITS_KM, WIND_DISTANCE_UNITS_RG
+        ]:
             raise ValueError(
-                f"Unknown distance units {spatial_units}: allowed are {WIND_DISTANCE_UNITS_CM} or {WIND_DISTANCE_UNITS_RG}"
+                f"Unknown distance units {spatial_units}: allowed are {WIND_DISTANCE_UNITS_CM}, "
+                f"{WIND_DISTANCE_UNITS_M}, {WIND_DISTANCE_UNITS_KM} or {WIND_DISTANCE_UNITS_RG}"
             )
 
-        velocity_units = velocity_units.lower()
-        if velocity_units not in [WIND_VELOCITY_UNITS_CMS, WIND_VELOCITY_UNITS_KMS, WIND_VELOCITY_UNITS_LIGHT]:
-            raise ValueError(
-                f"unknown velocity units {velocity_units}. Allowed units [{WIND_VELOCITY_UNITS_KMS}, {WIND_VELOCITY_UNITS_CMS}, {WIND_VELOCITY_UNITS_LIGHT}]"
-            )
-
-        self.velocity_units = velocity_units
-
-        if velocity_units == WIND_VELOCITY_UNITS_KMS:
-            self.velocity_conversion_factor = CMS_TO_KMS
-        elif velocity_units == WIND_VELOCITY_UNITS_CMS:
-            self.velocity_conversion_factor = 1
-        else:
-            self.velocity_conversion_factor = 1 / VLIGHT
+        self._set_velocity_conversion_factor(velocity_units)
 
         # Now we can read in the different elements of the wind save tables and
         # initialize most of the variables above. If no files are found, then
@@ -1590,9 +1590,11 @@ class Wind:
         if count < 1:
             return header
         if count > 2:
-            raise ValueError(f"too many j's {count} in header for {table} table")
+            raise ValueError(f"unexpected format: too many j's ({count}) in header for {table} table")
 
         if "z" in header:
+            if count == 1:  # This avoids new windsave2table where J -> j_bar
+                return header
             idx = header.index("j") + 1
             idx += header[idx:].index("j")
             header[idx] = "j_bar"
@@ -1601,6 +1603,31 @@ class Wind:
             header[idx] = "j_bar"
 
         return header
+
+    def _set_velocity_conversion_factor(self, units):
+        """Set the velocity conversion factor.
+
+        Parameters
+        ----------
+        units: str
+            The velocity units.
+        """
+
+        units = units.lower()
+        if units not in [WIND_VELOCITY_UNITS_CMS, WIND_VELOCITY_UNITS_KMS, WIND_VELOCITY_UNITS_LIGHT]:
+            raise ValueError(
+                f"unknown velocity units {units}. Allowed units [{WIND_VELOCITY_UNITS_KMS}, "
+                f"{WIND_VELOCITY_UNITS_CMS}, {WIND_VELOCITY_UNITS_LIGHT}]"
+            )
+
+        self.velocity_units = units
+
+        if units == WIND_VELOCITY_UNITS_KMS:
+            self.velocity_conversion_factor = CMS_TO_KMS
+        elif units == WIND_VELOCITY_UNITS_CMS:
+            self.velocity_conversion_factor = 1
+        else:
+            self.velocity_conversion_factor = 1 / VLIGHT
 
     def _setup_coords(self):
         """Set up the various coordinate variables."""
@@ -1717,6 +1744,49 @@ class Wind:
 
         return rg
 
+    def convert_velocity_units(self, units):
+        """Convert the velocity units of the outflow.
+
+        The velocity is first converted back into the base units of the model.
+        Then the velocity conversion factor is set again and the units are
+        converted using this.
+
+        Parameters
+        ----------
+        units: str
+            The new velocity units for the outflow.
+        """
+        print("warning: this function is currently untested")
+
+        if units == self.velocity_units:
+            return
+
+        # Convert the units back into the base units, i.e. cm/s
+
+        self.wind["v_x"] /= self.velocity_conversion_factor
+        self.wind["v_y"] /= self.velocity_conversion_factor
+        self.wind["v_z"] /= self.velocity_conversion_factor
+
+        if self.coord_system == WIND_COORD_TYPE_CYLINDRICAL:
+            self.wind["v_l"] /= self.velocity_conversion_factor
+            self.wind["v_rot"] /= self.velocity_conversion_factor
+            self.wind["v_r"] /= self.velocity_conversion_factor
+
+        # Set the new unit conversion scale
+
+        self._set_velocity_conversion_factor(units)
+
+        # Now convert into the new units requested
+
+        self.wind["v_x"] *= self.velocity_conversion_factor
+        self.wind["v_y"] *= self.velocity_conversion_factor
+        self.wind["v_z"] *= self.velocity_conversion_factor
+
+        if self.coord_system == WIND_COORD_TYPE_CYLINDRICAL:
+            self.wind["v_l"] *= self.velocity_conversion_factor
+            self.wind["v_rot"] *= self.velocity_conversion_factor
+            self.wind["v_r"] *= self.velocity_conversion_factor
+
     def create_masked_arrays(self):
         """Mask cells which are not in the wind.
 
@@ -1747,11 +1817,13 @@ class Wind:
         for element in self.elements:
             self._mask_ions_for_element(element)
 
-        # Create masked array for cell and model spectra
+        # Create masked array for cell and model spectra, but only in a special
+        # mode set by a global variable lol
 
-        for cell_spec_type in self.spectra:
-            self.wind[cell_spec_type].spectra = np.ma.masked_where(self.wind["inwind"] < 0,
-                                                                   self.wind[cell_spec_type].spectra)
+        if DEBUG_MASK_CELL_SPEC:
+            for cell_spec_type in self.spectra:
+                self.wind[cell_spec_type].spectra = np.ma.masked_where(self.wind["inwind"] < 0,
+                                                                       self.wind[cell_spec_type].spectra)
 
     def create_wind_tables(self):
         """Force the creation of wind save tables for the model.
@@ -2215,3 +2287,4 @@ __all__.append("run_py_wind")
 
 from pypython.plot import (ax_add_line_ids, common_lines, normalize_figure_style, set_axes_scales)
 from pypython.plot.wind import plot_1d_wind, plot_2d_wind
+from pypython.util import run_command

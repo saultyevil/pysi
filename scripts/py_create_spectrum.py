@@ -7,6 +7,7 @@ import argparse as ap
 import numpy as np
 from matplotlib import pyplot as plt
 
+import pypython.plot.spectrum
 from pypython import Spectrum, plot, smooth_array
 from pypython.physics import convert
 from pypython.spectrum import create
@@ -203,20 +204,19 @@ def plot(root,
         else:
             index = 1
 
-        ax.plot(filtered_spectrum[:-1, index],
-                smooth_array(filtered_spectrum[:-1, i + 2], sm),
-                linewidth=1.4,
-                alpha=0.75,
-                label="Filtered Spectrum")
+        x, y = pypython.plot.get_x_subset(filtered_spectrum[:-1, index],
+                                          smooth_array(filtered_spectrum[:-1, i + 2], sm),
+                                          xmin,
+                                          xmax)
 
-        if scale == "loglog" or scale == "logx":
-            ax.set_xscale("log")
-        if scale == "loglog" or scale == "logy":
-            ax.set_yscale("log")
-        ax.set_xlim(xmin, xmax)
-        ax.set_ylim(
-            plot.get_y_lims_for_x_lims(filtered_spectrum[:-1, index], smooth_array(filtered_spectrum[:-1, i + 2], sm),
-                                       xmin, xmax))
+        ax.plot(x, y, alpha=0.75, label="Filtered Spectrum")
+
+        ax = pypython.plot.set_axes_scales(ax, scale)
+
+        # ax.set_xlim(xmin, xmax)
+        # ax.set_ylim(
+        #     plot.get_y_lims_for_x_lims(filtered_spectrum[:-1, index], smooth_array(filtered_spectrum[:-1, i + 2], sm),
+        #                                xmin, xmax))
 
         ax.legend(loc="lower right", fontsize=15)
         ax.set_xlabel(r"Wavelength [$\AA$]", fontsize=15)

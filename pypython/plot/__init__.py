@@ -10,7 +10,7 @@ spectrum files and the wind save tables.
 import numpy as np
 from matplotlib import pyplot as plt
 
-from pypython import SPECTRUM_UNITS_FNU, SPECTRUM_UNITS_LNU
+from pypython import SPECTRUM_UNITS_FNU, SPECTRUM_UNITS_LNU, get_array_index
 from pypython.constants import ANGSTROM, C
 from pypython.error import DimensionError, InvalidParameter
 
@@ -52,18 +52,14 @@ def plot(x,
 
     ax.plot(x, y, label=label, alpha=alpha)
 
-    if scale == "loglog" or scale == "logx":
-        ax.set_xscale("log")
-    if scale == "loglog" or scale == "logy":
-        ax.set_yscale("log")
-
     if xlabel:
         ax.set_xlabel(xlabel)
     if ylabel:
         ax.set_ylabel(ylabel)
 
-    ax.set_xlim(xmin, xmax)
-    ax.set_ylim(get_y_lims_for_x_lims(x, y, xmin, xmax))
+    ax.set_xlim(xmin, xmax, auto=True)
+    ax.set_ylim(auto=True)
+    ax = set_axes_scales(ax, scale)
 
     if display:
         plt.show()
@@ -145,6 +141,41 @@ def normalize_figure_style():
     return parameters
 
 
+set_style = set_figure_style = normalize_figure_style
+
+
+def finish_figure(fig, title=None, hspace=None, wspace=None):
+    """Add finishing touches to a figure.
+
+    This function can be used to add a title or adjust the spacing between
+    subplot panels. The subplots will also be given a tight layout.
+
+    Parameters
+    ----------
+    fig:
+        The figure object to update.
+    title: str
+        The title of the figure. Underscores are automatically modified so
+        LaTeX doesn't complain.
+    hspace: float
+        The amount of vertical space between subplots.
+    wspace: float
+        The amount of horizontal space between subplots.
+    """
+
+    if title:
+        fig.suptitle(title.replace("_", r"\_"))
+
+    fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+
+    if hspace:
+        fig.subplots_adjust(hspace=hspace)
+    if wspace:
+        fig.subplots_adjust(wspace=wspace)
+
+    return fig
+
+
 def subplot_dims(n_plots):
     """Get the number of rows and columns for the give number of plots.
 
@@ -220,6 +251,20 @@ def remove_extra_axes(fig, ax, n_wanted, n_panel):
     return fig, ax
 
 
+def get_x_subset(x, y, xmin, xmax):
+
+    if xmin:
+        idx = get_array_index(x, xmin)
+        x = x[:idx]
+        y = y[:idx]
+    if xmax:
+        idx = get_array_index(x, xmax)
+        x = x[idx:]
+        y = y[idx:]
+
+    return x, y
+
+
 def get_y_lims_for_x_lims(x, y, xmin, xmax, scale=10):
     """Determine the lower and upper y for the given x range.
 
@@ -252,7 +297,7 @@ def get_y_lims_for_x_lims(x, y, xmin, xmax, scale=10):
     if x.shape[0] != y.shape[0]:
         raise DimensionError("{}: x and y are of different dimensions x {} y {}".format(n, x.shape, y.shape))
 
-    if not xmin or not xmax:
+    if xmin is None or xmax is None:
         return None, None
 
     # Determine indices which are within the wavelength range
@@ -274,7 +319,7 @@ def get_y_lims_for_x_lims(x, y, xmin, xmax, scale=10):
     return ymin, ymax
 
 
-def _convert_labels_to_frequency_space(lines, freq=None, spectrum=None):
+def _convert_labels_to_frequency_space(lines, freq=False, spectrum=None):
     """Convert the given list of lines/edges from Angstrom to Hz.
 
     Parameters
@@ -294,9 +339,9 @@ def _convert_labels_to_frequency_space(lines, freq=None, spectrum=None):
     elif freq:
         for i in range(len(lines)):
             lines[i][1] = C / (lines[i][1] * ANGSTROM)
-    else:
-        raise ValueError("Unable to convert to label locations to frequency space when arguments freq or spectrum"
-                         "aren't provided")
+    # else:
+    #     raise ValueError("_convert_labels_to_frequency_space: Unable to convert to label locations to frequency space "
+    #                      "when arguments freq or spectrum aren't provided")
 
     return lines
 

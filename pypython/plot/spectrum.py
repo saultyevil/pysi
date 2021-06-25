@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 from pypython import (SPECTRUM_UNITS_FLM, SPECTRUM_UNITS_LNU, Spectrum, get_root_name)
 from pypython.plot import (_check_axes_scale_string, ax_add_line_ids, common_lines, get_y_lims_for_x_lims,
                            normalize_figure_style, photoionization_edges, remove_extra_axes, set_axes_scales,
-                           subplot_dims)
+                           subplot_dims, get_x_subset)
 
 MIN_SPEC_COMP_FLUX = 1e-15
 
@@ -103,6 +103,9 @@ def _plot_subplot(ax, spectrum, things_to_plot, xmin, xmax, alpha, scale, use_fl
 
     n_skipped = 0
 
+    xlims = []
+    ylims = []
+
     for thing in things_to_plot:
 
         y = spectrum[thing]
@@ -124,56 +127,57 @@ def _plot_subplot(ax, spectrum, things_to_plot, xmin, xmax, alpha, scale, use_fl
         else:
             x = spectrum["Freq."]
 
+        x, y = get_x_subset(x, y, xmin, xmax)
+
         ax.plot(x, y, label=thing, alpha=alpha)
+
+        xlims.append([x.min(), x.max()])
+        ylims.append([y.min(), y.max()])
 
     if n_skipped == len(things_to_plot):
         print("Nothing was plotted due to all the spectra being too sparse")
         return ax
 
-    # ax.set_xlim(xmin, xmax)
-    # ax.set_ylim(get_y_lims_for_x_lims(x, y, xmin, xmax, 2))
     ax.legend(loc="lower left")
     ax = set_axes_scales(ax, scale)
-    ax = _set_spectrum_axes_labels(ax, spectrum.units, spectrum.distance, use_flux)
+    ax = set_spectrum_axes_labels(ax, spectrum, use_flux)
 
     return ax
 
 
-def _set_spectrum_axes_labels(ax, units, distance, use_flux):
+def set_spectrum_axes_labels(ax, spectrum, use_flux):
     """Set the units of a given matplotlib axes.
 
     Parameters
     ----------
     ax: plt.Axes
         The axes object to update.
-    units: str
-        The units of the spectrum.
-    distance: str or float or int
-        The distance of the spectrum.
+    spectrum: pypython.Spectrum
+        The spectrum being plotted. Used to determine the axes labels.
     use_flux: bool
         If flux/nu Lnu is being plotted instead of flux density or
         luminosity.
     """
     if use_flux:
-        if units == SPECTRUM_UNITS_LNU:
+        if spectrum.units == SPECTRUM_UNITS_LNU:
             ax.set_xlabel(r"Rest-frame Frequency [Hz]")
             ax.set_ylabel(r"$\nu L_{\nu}$ [erg s$^{-1}$]")
-        elif units == SPECTRUM_UNITS_FLM:
+        elif spectrum.units == SPECTRUM_UNITS_FLM:
             ax.set_xlabel(r"Rest-frame Wavelength [\AA]")
-            ax.set_ylabel(r"$\lambda F_{\lambda}$" + f"{distance} pc " + r"[erg s$^{-1}$]")
+            ax.set_ylabel(r"$\lambda F_{\lambda}$ at " + f"{spectrum.distance } pc " + r"[erg s$^{-1}$]")
         else:
             ax.set_xlabel(r"Rest-frame Frequency [Hz]")
-            ax.set_ylabel(r"$\nu F_{\nu}$" + f"{distance} pc " + r"[erg s$^{-1}$ cm$^{-2}$]")
+            ax.set_ylabel(r"$\nu F_{\nu}$ at " + f"{spectrum.distance } pc " + r"[erg s$^{-1}$ cm$^{-2}$]")
     else:
-        if units == SPECTRUM_UNITS_LNU:
+        if spectrum.units == SPECTRUM_UNITS_LNU:
             ax.set_xlabel(r"Rest-frame Frequency [Hz]")
             ax.set_ylabel(r"$L_{\nu}$ [erg s$^{-1}$ Hz$^{-1}$]")
-        elif units == SPECTRUM_UNITS_FLM:
+        elif spectrum.units == SPECTRUM_UNITS_FLM:
             ax.set_xlabel(r"Rest-frame Wavelength [\AA]")
-            ax.set_ylabel(r"$F_{\lambda}$" + f"{distance} pc " + r"[erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
+            ax.set_ylabel(r"$F_{\lambda}$ at " + f"{spectrum.distance } pc " + r"[erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
         else:
             ax.set_xlabel(r"Rest-frame Frequency [Hz]")
-            ax.set_ylabel(r"$F_{\nu}$" + f"{distance} pc " + r"[erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
+            ax.set_ylabel(r"$F_{\nu}$ at " + f"{spectrum.distance } pc " + r"[erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
 
     return ax
 
@@ -614,8 +618,8 @@ def multiple_spectra(output_name,
     fig, ax = remove_extra_axes(fig, ax, n_to_plot, n_rows * n_cols)
     ax = ax.flatten()
 
-    ymin = 1e99
-    ymax = 0
+    # ymin = 1e99
+    # ymax = 0
 
     for n, thing in enumerate(things_to_plot):
         for spectrum in spectra_to_plot:
@@ -638,44 +642,46 @@ def multiple_spectra(output_name,
             else:
                 x = spectrum["Freq."]
 
+            x, y = get_x_subset(x, y, xmin, xmax)
+
             label = spectrum.fp.replace("_", r"\_") + spectrum.root.replace("_", r"\_")
             ax[n].plot(x, y, label=label, alpha=alpha)
 
             # Calculate the y-axis limits to keep all spectra within the
             # plot area
 
-            if not xmin:
-                xmin = x.min()
-            if not xmax:
-                xmax = x.max()
+            # if not xmin:
+            #     xmin = x.min()
+            # if not xmax:
+            #     xmax = x.max()
+            #
+            # if scale == "linlin" or scale == "logx":
+            #     white_space_factor = 1.1
+            # else:
+            #     white_space_factor = 10
 
-            if scale == "linlin" or scale == "logx":
-                white_space_factor = 1.1
-            else:
-                white_space_factor = 10
+            # test_ymin, test_ymax = get_y_lims_for_x_lims(x, y, xmin, xmax, white_space_factor)
+            #
+            # if test_ymin < ymin:
+            #     ymin = test_ymin
+            # if test_ymax > ymax:
+            #     ymax = test_ymax
 
-            test_ymin, test_ymax = get_y_lims_for_x_lims(x, y, xmin, xmax, white_space_factor)
-
-            if test_ymin < ymin:
-                ymin = test_ymin
-            if test_ymax > ymax:
-                ymax = test_ymax
-
-        if ymin == +1e99:
-            ymin = None
-        if ymax == 0:
-            ymax = None
+        # if ymin == +1e99:
+        #     ymin = None
+        # if ymax == 0:
+        #     ymax = None
 
         ax[n] = set_axes_scales(ax[n], scale)
-        ax[n] = _set_spectrum_axes_labels(ax[n], spectra_to_plot[0].units, spectra_to_plot[0].distance, use_flux)
+        ax[n] = set_spectrum_axes_labels(ax[n], spectra_to_plot[0], use_flux)
 
         if thing.isdigit():
             ax[n].set_title(f"{thing}" + r"$^{\circ}$")
         else:
             ax[n].set_title(f"{thing}")
 
-        ax[n].set_xlim(xmin, xmax)
-        ax[n].set_ylim(ymin, ymax)
+        # ax[n].set_xlim(xmin, xmax)
+        # ax[n].set_ylim(ymin, ymax)
 
         if label_lines:
             ax[n] = _add_line_labels(ax[n], common_lines(spectrum=spectra_to_plot[0]), scale, linestyle="none")
