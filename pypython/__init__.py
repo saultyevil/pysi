@@ -73,38 +73,6 @@ def _check_ascending(x):
     return np.all(np.diff(x) >= 0)
 
 
-def check_python_version():
-    """Check the version of Python available in $PATH.
-
-    There are a number of features in this package which are not
-    available in older versions of Python.
-    """
-
-    cmd = run_command(["py", "--version"])
-    stdout = cmd.stdout.decode("utf-8").split("\n")
-    stderr = cmd.stderr.decode("utf-8")
-
-    if stderr:
-        raise SystemError(f"{stderr}")
-
-    version = None
-    for line in stdout:
-        if line.startswith("Python Version"):
-            version = line[len("Python Version") + 1:]
-
-    if version is None:
-        raise SystemError("Unable to determine Python version")
-
-    sub_version = version.lstrip("0123456789")
-    main_version = version[:version.index(sub_version)]
-
-    if main_version < MINIMUM_PY_VERSION or sub_version < MINIMUM_PY_VERSION:
-        raise SystemError(f"Python version {main_version}{sub_version} below minimum version of {MINIMUM_PY_VERSION}"
-                          f"{MINIMUM_PY_SUB_VERSION}")
-
-    return version
-
-
 def check_sorted_array_ascending(x):
     """Check if an array is sorted in ascending or descending order.
 
@@ -184,122 +152,6 @@ def cleanup_data(fp=".", verbose=False):
     return n_del
 
 
-def find(pattern, fp="."):
-    """Find files of the given pattern recursively.
-
-    This is used to find a number files given a gloable pattern, i.e. *.spec,
-    *.pf. When *.py is used, it'll ignore out.pf and py_wind.pf files. To find
-    py_wind.pf files, use py_wind.pf as the pattern.
-
-    Parameters
-    ----------
-    pattern: str
-        Patterns to search recursively for, i.e. *.pf, *.spec, tde_std.pf
-    fp: str [optional]
-        The directory to search from, if not specified in the pattern.
-    """
-
-    files = [str(file_) for file_ in Path(f"{fp}").rglob(pattern)]
-    if ".pf" in pattern:
-        files = [file_ for file_ in files if "out.pf" not in file_ and "py_wind" not in file_]
-
-    try:
-        files.sort(key=lambda var: [int(x) if x.isdigit() else x for x in re.findall(r'[^0-9]|[0-9]+', var)])
-    except TypeError as e:
-        print(e)
-        print(f"warning: {find.__name__}: have been unable to sort output, be careful as results may not be "
-              f"reproducible")
-
-    return files
-
-
-def get_array_index(x, target):
-    """Return the index for a given value in an array.
-
-    If an array with duplicate values is passed, the first instance of that
-    value will be returned. The array must also be sorted, in either ascending
-    or descending order.
-
-    Parameters
-    ----------
-    x: np.ndarray
-        The array of values.
-    target: float
-        The value, or closest value, to find the index of.
-
-    Returns
-    -------
-    The index for the target value in the array x.
-    """
-    if check_sorted_array_ascending(x):
-        if target < np.min(x):
-            return 0
-        if target > np.max(x):
-            return -1
-    else:
-        if target < np.min(x):
-            return -1
-        if target > np.max(x):
-            return 0
-
-    return np.abs(x - target).argmin()
-
-
-def get_root_name(fp):
-    """Get the root name of a Python simulation.
-
-    Extracts both the file path and the root name of the simulation.
-
-    Parameters
-    ----------
-    fp: str
-        The directory path to a Python .pf file
-
-    Returns
-    -------
-    root: str
-        The root name of the Python simulation
-    where: str
-        The directory path containing the provided Python .pf file
-    """
-    if type(fp) is not str:
-        raise TypeError("expected a string as input for the file path, not whatever you put")
-
-    dot = fp.rfind(".")
-    slash = fp.rfind("/")
-
-    root = fp[slash + 1:dot]
-    fp = fp[:slash + 1]
-
-    if fp == "":
-        fp = "./"
-
-    return root, fp
-
-
-def smooth_array(array, width):
-    """Smooth a 1D array of data using a boxcar filter.
-
-    Parameters
-    ----------
-    array: np.array[float]
-        The array to be smoothed.
-    width: int
-        The size of the boxcar filter.
-
-    Returns
-    -------
-    smoothed: np.ndarray
-        The smoothed array
-    """
-    if width is None or width == 0:
-        return array
-
-    array = np.reshape(array, (len(array), ))  # todo: why do I have to do this? safety probably
-
-    return convolve(array, boxcar(width) / float(width), mode="same")
-
-
 def create_wind_save_tables(root, fp=".", ion_density=False, cell_spec=False, version=None, verbose=False):
     """Run windsave2table in a directory to create the standard data tables.
 
@@ -361,6 +213,159 @@ def create_wind_save_tables(root, fp=".", ion_density=False, cell_spec=False, ve
             Path(f"{fp}/{new}").rename(f"{fp}/tables/{new}")
 
     return cmd.returncode
+
+
+def find(pattern, fp="."):
+    """Find files of the given pattern recursively.
+
+    This is used to find a number files given a gloable pattern, i.e. *.spec,
+    *.pf. When *.py is used, it'll ignore out.pf and py_wind.pf files. To find
+    py_wind.pf files, use py_wind.pf as the pattern.
+
+    Parameters
+    ----------
+    pattern: str
+        Patterns to search recursively for, i.e. *.pf, *.spec, tde_std.pf
+    fp: str [optional]
+        The directory to search from, if not specified in the pattern.
+    """
+
+    files = [str(file_) for file_ in Path(f"{fp}").rglob(pattern)]
+    if ".pf" in pattern:
+        files = [file_ for file_ in files if "out.pf" not in file_ and "py_wind" not in file_]
+
+    try:
+        files.sort(key=lambda var: [int(x) if x.isdigit() else x for x in re.findall(r'[^0-9]|[0-9]+', var)])
+    except TypeError as e:
+        print(e)
+        print(f"warning: {find.__name__}: have been unable to sort output, be careful as results may not be "
+              f"reproducible")
+
+    return files
+
+
+def get_array_index(x, target):
+    """Return the index for a given value in an array.
+
+    If an array with duplicate values is passed, the first instance of that
+    value will be returned. The array must also be sorted, in either ascending
+    or descending order.
+
+    Parameters
+    ----------
+    x: np.ndarray
+        The array of values.
+    target: float
+        The value, or closest value, to find the index of.
+
+    Returns
+    -------
+    The index for the target value in the array x.
+    """
+    if check_sorted_array_ascending(x):
+        if target < np.min(x):
+            return 0
+        if target > np.max(x):
+            return -1
+    else:
+        if target < np.min(x):
+            return -1
+        if target > np.max(x):
+            return 0
+
+    return np.abs(x - target).argmin()
+
+
+def get_python_version():
+    """Check the version of Python available in $PATH.
+
+    There are a number of features in this package which are not
+    available in older versions of Python.
+
+    Returns
+    -------
+    version: str
+        The version string of the currently compiled Python.
+    """
+
+    command = run_command(["py", "--version"])
+    stdout = command.stdout.decode("utf-8").split("\n")
+    stderr = command.stderr.decode("utf-8")
+
+    if stderr:
+        raise SystemError(f"{stderr}")
+
+    version = None
+    for line in stdout:
+        if line.startswith("Python Version"):
+            version = line[len("Python Version") + 1:]
+
+    # if version is None:
+    #     raise SystemError("Unable to determine Python version")
+    #
+    # sub_version = version.lstrip("0123456789")
+    # main_version = version[:version.index(sub_version)]
+    #
+    # if main_version < MINIMUM_PY_VERSION or sub_version < MINIMUM_PY_VERSION:
+    #     raise SystemError(f"Python version {main_version}{sub_version} below minimum version of {MINIMUM_PY_VERSION}"
+    #                       f"{MINIMUM_PY_SUB_VERSION}")
+
+    return version
+
+
+def get_root_name(fp):
+    """Get the root name of a Python simulation.
+
+    Extracts both the file path and the root name of the simulation.
+
+    Parameters
+    ----------
+    fp: str
+        The directory path to a Python .pf file
+
+    Returns
+    -------
+    root: str
+        The root name of the Python simulation
+    where: str
+        The directory path containing the provided Python .pf file
+    """
+    if type(fp) is not str:
+        raise TypeError("expected a string as input for the file path, not whatever you put")
+
+    dot = fp.rfind(".")
+    slash = fp.rfind("/")
+
+    root = fp[slash + 1:dot]
+    fp = fp[:slash + 1]
+
+    if fp == "":
+        fp = "./"
+
+    return root, fp
+
+
+def smooth_array(array, width):
+    """Smooth a 1D array of data using a boxcar filter.
+
+    Parameters
+    ----------
+    array: np.array[float]
+        The array to be smoothed.
+    width: int
+        The size of the boxcar filter.
+
+    Returns
+    -------
+    smoothed: np.ndarray
+        The smoothed array
+    """
+    if width is None or width == 0:
+        return array
+
+    array = np.reshape(array, (len(array), ))  # todo: why do I have to do this? safety probably
+
+    return convolve(array, boxcar(width) / float(width), mode="same")
 
 
 def run_py_optical_depth(root, photosphere=None, fp=".", verbose=False):
@@ -2328,17 +2333,20 @@ for loader, module_name, is_pkg in pkgutil.walk_packages(__path__):
     _module = loader.find_module(module_name).load_module(module_name)
     globals()[module_name] = _module
 
-__all__.append("Spectrum")
-__all__.append("CellSpectra")
-__all__.append("Wind")
-__all__.append("check_python_version")
+__all__.append("check_sorted_array_ascending")
 __all__.append("cleanup_data")
-__all__.append("get_files")
-__all__.append("get_array_index")
-__all__.append("get_root")
-__all__.append("smooth_array")
 __all__.append("create_wind_save_tables")
+__all__.append("find")
+__all__.append("get_array_index")
+__all__.append("get_python_version")
+__all__.append("get_root_name")
+__all__.append("smooth_array")
+__all__.append("run_py_optical_depth")
 __all__.append("run_py_wind")
+__all__.append("CellSpectra")
+__all__.append("ModelledCellSpectra")
+__all__.append("Spectrum")
+__all__.append("Wind")
 
 # These are put here to solve a circular dependency ----------------------------
 
