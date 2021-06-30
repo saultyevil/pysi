@@ -505,7 +505,7 @@ def main():
     # Find models to run by searching recursively from the calling directory
     # for .pf files
 
-    parameter_files = pypython.get_files("*.pf")
+    parameter_files = pypython.find("*.pf")
     n_models = len(parameter_files)
 
     if not n_models:

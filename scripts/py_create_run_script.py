@@ -30,7 +30,7 @@ def create_run_script(commands):
 
     # Find any python parameter file in the directory and subdirectories
     directories = []
-    pfs = pypython.get_files("*.pf")
+    pfs = pypython.find("*.pf")
     for pf in pfs:
         root, directory = pypython.get_root_name(pf)
         directories.append(directory)

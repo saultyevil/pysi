@@ -13,6 +13,40 @@ from sys import exit
 from pypython.error import EXIT_FAIL
 
 
+def remove_bound_bound_transitions_ion(atomic_number, ionization_state):
+    """Remove all bound-bound transitions for a single ion.
+
+    This is achieved by setting the oscillator strengths of the transition, f,
+    to f = 0, effectively removing the transition.
+
+    Parameters
+    ----------
+    atomic_number: int
+        The atomic number for the ion/atom the line is associated with.
+    ionization_state: int
+        The ionization state of the ion/atom the line is associated with.
+    """
+
+    filename = getenv("PYTHON") + "/xdata/atomic/lines_linked_ver_2.dat"
+
+    atomic_number = str(atomic_number)
+    ionization_state = str(ionization_state)
+
+    with open(filename, "r") as f:
+        lines = f.readlines()
+
+    for i in range(len(lines)):
+        line = lines[i].split() + ["\n"]
+        if line[1] == atomic_number and line[2] == ionization_state:
+            line[4] = "0.000000"
+        lines[i] = " ".join(line)
+
+    with open("lines_linked_ver_2.dat", "w") as f:
+        f.writelines(lines)
+
+    return
+
+
 def remove_photoionization_edge(data, atomic_number, ionization_state, new_value=9e99):
     """Remove a transition or element from some atomic data.
 
@@ -88,39 +122,5 @@ def remove_photoionization_edge(data, atomic_number, ionization_state, new_value
 
     with open(data_name, "w") as f:
         f.writelines(new)
-
-    return
-
-
-def remove_bound_bound_transitions_ion(atomic_number, ionization_state):
-    """Remove all bound-bound transitions for a single ion.
-
-    This is achieved by setting the oscillator strengths of the transition, f,
-    to f = 0, effectively removing the transition.
-
-    Parameters
-    ----------
-    atomic_number: int
-        The atomic number for the ion/atom the line is associated with.
-    ionization_state: int
-        The ionization state of the ion/atom the line is associated with.
-    """
-
-    filename = getenv("PYTHON") + "/xdata/atomic/lines_linked_ver_2.dat"
-
-    atomic_number = str(atomic_number)
-    ionization_state = str(ionization_state)
-
-    with open(filename, "r") as f:
-        lines = f.readlines()
-
-    for i in range(len(lines)):
-        line = lines[i].split() + ["\n"]
-        if line[1] == atomic_number and line[2] == ionization_state:
-            line[4] = "0.000000"
-        lines[i] = " ".join(line)
-
-    with open("lines_linked_ver_2.dat", "w") as f:
-        f.writelines(lines)
 
     return

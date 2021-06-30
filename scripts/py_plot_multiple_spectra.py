@@ -8,8 +8,8 @@ Spectrum files are recursively searched from the calling directory.
 
 import argparse as ap
 
-from pypython import get_files
-from pypython.plot.spectrum import multiple_spectra
+from pypython import find
+from pypython.plot.spectrum import multiple_models
 
 
 def setup_script():
@@ -52,20 +52,20 @@ def main():
 
     output_name, wd, inclination, xmin, xmax, label_lines, axes_scales, smooth, display = setup_script()
 
-    spectra_fp = get_files("*.spec")
+    spectra_fp = find("*.spec")
     if len(spectra_fp) == 0:
         raise ValueError("Unable to find any spectrum files")
 
-    fig, ax = multiple_spectra(output_name,
-                               spectra_fp,
-                               "spec",
-                               inclination,
-                               xmin=xmin,
-                               xmax=xmax,
-                               scale=axes_scales,
-                               smooth=smooth,
-                               label_lines=label_lines,
-                               display=display)
+    fig, ax = multiple_models(output_name,
+                              spectra_fp,
+                              "spec",
+                              inclination,
+                              xmin=xmin,
+                              xmax=xmax,
+                              scale=axes_scales,
+                              smooth=smooth,
+                              label_lines=label_lines,
+                              display=display)
 
     return fig, ax
 

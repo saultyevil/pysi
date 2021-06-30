@@ -15,13 +15,14 @@ from os import listdir, path, remove
 from pathlib import Path
 from platform import system
 from shutil import which
-from subprocess import PIPE, Popen, run
+from subprocess import run
 
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.signal import boxcar, convolve
 
 from pypython.constants import (BOLTZMANN, CMS_TO_KMS, PARSEC, PI, PLANCK, VLIGHT)
+from pypython.error import RunError
 from pypython.math import vector
 from pypython.physics.blackhole import gravitational_radius
 from pypython.simulation.grid import get_parameter_value
@@ -32,7 +33,44 @@ MINIMUM_PY_VERSION = "85"
 MINIMUM_PY_SUB_VERSION = ""
 PY_VERSION = ""
 
+SPECTRUM_UNITS_LNU = "erg/s/Hz"
+SPECTRUM_UNITS_FNU = "erg/s/cm^-2/Hz"
+SPECTRUM_UNITS_FLM = "erg/s/cm^-2/A"
+SPECTRUM_UNITS_UNKNOWN = "unknown"
+
+LEN_WHEN_1D_MODEL = 4
+
+WIND_COORD_TYPE_CYLINDRICAL = WIND_COORD_TYPE_CARTESIAN = "rectilinear"
+WIND_COORD_TYPE_POLAR = "polar"
+WIND_COORD_TYPE_SPHERICAL = "spherical"
+WIND_COORD_TYPE_UNKNOWN = "unknown"
+
+WIND_VELOCITY_UNITS_KMS = "kms"
+WIND_VELOCITY_UNITS_CMS = "cms"
+WIND_VELOCITY_UNITS_LIGHT = "c"
+
+WIND_DISTANCE_UNITS_CM = "cm"
+WIND_DISTANCE_UNITS_M = "m"
+WIND_DISTANCE_UNITS_KM = "km"
+WIND_DISTANCE_UNITS_RG = "rg"
+
+CELL_MODEL_POWERLAW = 1
+CELL_MODEL_EXPONENTIAL = 2
+
+DEBUG_MASK_CELL_SPEC = False
+
 # Functions --------------------------------------------------------------------
+
+
+def _check_ascending(x):
+    """Check if an array is sorted in ascending order.
+
+    Parameters
+    ----------
+    x: np.ndarray, list
+        The array to check.
+    """
+    return np.all(np.diff(x) >= 0)
 
 
 def check_python_version():
@@ -42,9 +80,9 @@ def check_python_version():
     available in older versions of Python.
     """
 
-    command = run("py --version", stdout=PIPE, stderr=PIPE, shell=True)
-    stdout = command.stdout.decode("utf-8").split("\n")
-    stderr = command.stderr.decode("utf-8")
+    cmd = run_command(["py", "--version"])
+    stdout = cmd.stdout.decode("utf-8").split("\n")
+    stderr = cmd.stderr.decode("utf-8")
 
     if stderr:
         raise SystemError(f"{stderr}")
@@ -65,6 +103,30 @@ def check_python_version():
                           f"{MINIMUM_PY_SUB_VERSION}")
 
     return version
+
+
+def check_sorted_array_ascending(x):
+    """Check if an array is sorted in ascending or descending order.
+
+    If the array is not sorted, a ValueError will be raised.
+
+    Parameters
+    ----------
+    x: np.ndarray, list
+        The array to check.
+
+    Returns
+    -------
+        Returns True if the array is in ascending order, otherwise will return
+        False if in descending order.
+    """
+    if not _check_ascending(x):
+        if _check_ascending(x.copy()[::-1]):
+            return False
+        else:
+            raise ValueError("check_sorted_array_ascending: the array provided is not sorted at all")
+
+    return True
 
 
 def cleanup_data(fp=".", verbose=False):
@@ -94,27 +156,26 @@ def cleanup_data(fp=".", verbose=False):
         raise OSError("your OS does not work with this function, sorry!")
 
     # - type l will only search for symbolic links
-    cmd = f"cd {fp}; find . -type l -name 'data'"
-    stdout, stderr = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
-    stdout = stdout.decode("utf-8")
-    stderr = stderr.decode("utf-8")
+
+    cmd = run_command(["find", ".", "-type", "l", "-name", "data"], path.expanduser(fp))
+    stdout, stderr = cmd.stdout, cmd.stderr
 
     if stderr:
         print("sent from stderr")
-        print(stderr)
+        print(stderr.decode("utf-8"))
 
     if stdout and verbose:
-        print(f"deleting data symbolic links in the following directories:\n\n{stdout[:-1]}")
+        print(f"Deleting data symbolic links in the following directories:\n\n{stdout.decode('utf-8')[:-1]}")
     else:
-        print("no data symlinks to delete")
+        print("No data symlinks to delete")
         return n_del
 
-    directories = stdout.split()
+    directories = stdout.decode("utf-8").split()
 
     for directory in directories:
         current = fp + directory[1:]
-        cmd = f"rm {current}"
-        stdout, stderr = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
+        sh = run_command(["rm", current], fp)
+        stdout, stderr = sh.stdout, sh.stderr
         if stderr:
             print(stderr.decode("utf-8"))
         else:
@@ -123,10 +184,12 @@ def cleanup_data(fp=".", verbose=False):
     return n_del
 
 
-def get_files(pattern, fp="."):
+def find(pattern, fp="."):
     """Find files of the given pattern recursively.
 
-    Used to blah blah
+    This is used to find a number files given a gloable pattern, i.e. *.spec,
+    *.pf. When *.py is used, it'll ignore out.pf and py_wind.pf files. To find
+    py_wind.pf files, use py_wind.pf as the pattern.
 
     Parameters
     ----------
@@ -144,7 +207,8 @@ def get_files(pattern, fp="."):
         files.sort(key=lambda var: [int(x) if x.isdigit() else x for x in re.findall(r'[^0-9]|[0-9]+', var)])
     except TypeError as e:
         print(e)
-        print(f"{get_files.__name__}: have been unable to sort output, be careful as results may not be reproducible")
+        print(f"warning: {find.__name__}: have been unable to sort output, be careful as results may not be "
+              f"reproducible")
 
     return files
 
@@ -152,8 +216,9 @@ def get_files(pattern, fp="."):
 def get_array_index(x, target):
     """Return the index for a given value in an array.
 
-    This function will not be happy if you pass an array with duplicate values.
-    It will always return the first instance of the duplicate array.
+    If an array with duplicate values is passed, the first instance of that
+    value will be returned. The array must also be sorted, in either ascending
+    or descending order.
 
     Parameters
     ----------
@@ -166,10 +231,16 @@ def get_array_index(x, target):
     -------
     The index for the target value in the array x.
     """
-    if target < np.min(x):
-        return 0
-    if target > np.max(x):
-        return -1
+    if check_sorted_array_ascending(x):
+        if target < np.min(x):
+            return 0
+        if target > np.max(x):
+            return -1
+    else:
+        if target < np.min(x):
+            return -1
+        if target > np.max(x):
+            return 0
 
     return np.abs(x - target).argmin()
 
@@ -229,7 +300,7 @@ def smooth_array(array, width):
     return convolve(array, boxcar(width) / float(width), mode="same")
 
 
-def create_wind_save_tables(root, fp=".", ion_density=False, cell_spec=False, verbose=False):
+def create_wind_save_tables(root, fp=".", ion_density=False, cell_spec=False, version=None, verbose=False):
     """Run windsave2table in a directory to create the standard data tables.
 
     The function can also create a root.all.complete.txt file which merges all
@@ -245,19 +316,25 @@ def create_wind_save_tables(root, fp=".", ion_density=False, cell_spec=False, ve
         Use windsave2table in the ion density version instead of ion fractions
     cell_spec: bool [optional]
         Use windsave2table to get the cell spectra.
+    version: str [optional]
+        The version number of windsave2table to use
     verbose: bool [optional]
         Enable verbose output
     """
-    in_path = which("windsave2table")
+    name = "windsave2table"
+    if version:
+        name += version
+
+    in_path = which(name)
     if not in_path:
-        raise OSError("windsave2table not in $PATH and executable")
+        raise OSError(f"{name} not in $PATH and executable")
 
     files_before = listdir(fp)
 
     if not Path(f"{fp}/data").exists():
         run_command("Setup_Py_Dir", fp)
 
-    command = ["windsave2table"]
+    command = [name]
     if ion_density:
         command.append("-d")
     if cell_spec:
@@ -265,6 +342,9 @@ def create_wind_save_tables(root, fp=".", ion_density=False, cell_spec=False, ve
     command.append(root)
 
     cmd = run_command(command, fp, verbose)
+    if cmd.returncode != 0:
+        raise RunError(
+            f"windsave2table has failed to run, possibly due to an incompatible version\n{cmd.stdout.decode('utf-8')}")
 
     files_after = listdir(fp)
 
@@ -283,11 +363,21 @@ def create_wind_save_tables(root, fp=".", ion_density=False, cell_spec=False, ve
     return cmd.returncode
 
 
-def run_py_optical_depth(root, photosphere=None, fp="."):
+def run_py_optical_depth(root, photosphere=None, fp=".", verbose=False):
 
     command = ["py_optical_depth"]
     if photosphere:
         command.append(f"-p {float(photosphere)}")
+    command.append(root)
+
+    cmd = run_command(command, fp)
+    stdout, stderr = cmd.stdout, cmd.stderr
+
+    if verbose:
+        print(stdout.decode("utf-8"))
+
+    if stderr:
+        print(stderr.decode("utf-8"))
 
 
 def run_py_wind(root, commands, fp="."):
@@ -313,8 +403,10 @@ def run_py_wind(root, commands, fp="."):
         for i in range(len(commands)):
             f.write(f"{commands[i]}\n")
 
-    sh = Popen(f"cd {fp}; py_wind {root} < .tmpcmds.txt", stdout=PIPE, stderr=PIPE, shell=True)
-    stdout, stderr = sh.communicate()
+    with open(cmd_file, "r") as stdin:
+        sh = run(["py_wind", root], stdin=stdin, capture_output=True, cwd=fp)
+
+    stdout, stderr = sh.stdout, sh.stderr
     if stderr:
         print(stderr.decode("utf-8"))
 
@@ -323,69 +415,37 @@ def run_py_wind(root, commands, fp="."):
     return stdout.decode("utf-8").split("\n")
 
 
-# These are put here to solve a circular dependency ----------------------------
-
-SPECTRUM_UNITS_LNU = "erg/s/Hz"
-SPECTRUM_UNITS_FNU = "erg/s/cm^-2/Hz"
-SPECTRUM_UNITS_FLM = "erg/s/cm^-2/A"
-SPECTRUM_UNITS_UNKNOWN = "unknown"
-
-LEN_WHEN_1D_MODEL = 4
-
-WIND_COORD_TYPE_CYLINDRICAL = WIND_COORD_TYPE_CARTESIAN = "rectilinear"
-WIND_COORD_TYPE_POLAR = "polar"
-WIND_COORD_TYPE_SPHERICAL = "spherical"
-WIND_COORD_TYPE_UNKNOWN = "unknown"
-
-WIND_VELOCITY_UNITS_KMS = "kms"
-WIND_VELOCITY_UNITS_CMS = "cms"
-WIND_VELOCITY_UNITS_LIGHT = "c"
-
-WIND_DISTANCE_UNITS_CM = "cm"
-WIND_DISTANCE_UNITS_M = "m"
-WIND_DISTANCE_UNITS_KM = "km"
-WIND_DISTANCE_UNITS_RG = "rg"
-
-CELL_MODEL_POWERLAW = 1
-CELL_MODEL_EXPONENTIAL = 2
-
-DEBUG_MASK_CELL_SPEC = False
-
-# Spectrum class ---------------------------------------------------------------
+# Cell spectra -----------------------------------------------------------------
 
 
-class Spectrum:
-    """A class to store PYTHON .spec and .log_spec files.
+class CellSpectra:
+    """A class to store the cell spectra accumulated during the ionization
+    cycles.
 
-    The Python spectra are read in and stored within a dict of dicts,
-    where each column name is the spectrum name and the columns in that
-    dict are the names of the columns in the spectrum file. The data is
-    stored as numpy arrays.
+    Cells which do not have a spectrum will return None.
     """
-    def __init__(self, root, fp=".", default=None, log_spec=True, smooth=None, distance=None, delim=None):
-        """Create the Spectrum object.
+    def __init__(self, root, fp=".", nx=0, nz=0, force_make_spectra=False, delim=None):
+        """Initialize the object.
 
-        Construct the file path of the spectrum files given the
-        root, directory and whether the logarithmic spectrum is used or not.
-        The different spectra are then read in, with either the .spec or the
-        first spectrum file read in being the default index choice.
+        Reads in the cell spectra into a 1D list. This function will attempt
+        to run windsave2table to create the cell spectra files if they do not
+        exist.
 
         Parameters
         ----------
         root: str
-            The root name of the model.
+            The root name of the Python simulation.
         fp: str [optional]
             The directory containing the model.
-        default: str [optional]
-            The default spectrum to make the available spectrum for indexing.
-        log_spec: bool [optional]
-            Read in the logarithmic version of the spectra.
-        smooth: int [optional]
-            The amount of smoothing to use.
-        distance: float [optional]
-            The distance of the spectrum flux, in units of parsec.
+        nx: int [optional]
+            The number of cells in the x direction.
+        nz: int [optional]
+            The number of cells in the z direction.
+        force_make_spectra: bool [optional]
+            Force windsave2table to be run to re-make the files in the
+            tables directory.
         delim: str [optional]
-            The deliminator in the spectrum file.
+            The delimiter used in the wind table files.
         """
         self.root = root
 
@@ -394,322 +454,186 @@ class Spectrum:
             self.fp += "/"
         self.pf = self.fp + self.root + ".pf"
 
-        self.log_spec = log_spec
-        if default and self.log_spec:
-            if not default.startswith("log_"):
-                default = "log_" + default
+        # Set initial conditions to create member variables
 
-        # Initialize the important members
-        # These are for the "current/target" spectrum. This is done like this
-        # so you can use spectrum.distance to look at the currently set spectrum
-        # without having to index like spectrum.distance["spec"].
+        self.nx = int(nx)
+        self.nz = int(nz)
+        self.header = None
+        self.cells = None
+        self.spectra = None
 
-        self.spectrum = {}
-        self.columns = ()
-        self.inclinations = ()
-        self.n_inclinations = 0
-        self.units = SPECTRUM_UNITS_UNKNOWN
-        self.distance = 100
+        self.original = None
 
-        # Anything with avail_ are for recording all of the spectra.
-        # todo: I wish I had a better way to do this lol
+        # Try to read in the spectra, if we can't then we'll try and run
+        # windsave2table. It is also possible to force the re-creation of the
+        # spectra files
 
-        self.original_spectra = None
+        if force_make_spectra:
+            self.create_wind_tables()
 
-        self.available = []
-        self.avail_spectrum = {}
-        self.avail_columns = {}
-        self.avail_inclinations = {}
-        self.avail_n_inclinations = {}
-        self.avail_units = {}
-        self.avail_distance = {}
-
-        # Now we can read in the spectra and set the default/target spectrum
-        # for the object. We can also re-scale to a different distance.
-
-        self.get_spectra(delim)
-        if default:
-            if default in self.available:
-                self.current = default
-            else:
-                raise ValueError(f"{self.root}.{default} is not available as it has not been read in")
-        else:
-            self.current = self.available[0]
-
-        self._set_current(self.current)
-
-        if distance:
-            self.rescale_to_distance(distance)
-
-        # Smooth all the spectra. A copy of the unsmoothed spectra is kept
-        # in the member self.original.
-
-        if smooth:
-            self.smooth(smooth)
-
-    # Private methods ----------------------------------------------------------
-
-    def _plot_observer_spectrum(self, label_lines=False):
-        """Plot the spectrum components and observer spectra on a 1x2 panel
-        plot. The left panel has the components, whilst the right panel has the
-        observer spectrum.
-
-        Parameters
-        ----------
-        label_lines: bool
-            Plot line IDs.
-        """
-        if "spec" not in self.available and "log_spec" not in self.available:
-            raise IOError("A .spec/.log_spec file was not read in, cannot use this function")
-
-        normalize_figure_style()
-
-        fig, ax = plt.subplots(1, 2, figsize=(12, 5), sharey="row")
-
-        # Plot the components of the observer spectrum, i.e Emitted, Created,
-        # Disc, etc.
-
-        for component in self.columns[:-self.n_inclinations]:
-            if component in ["Lambda", "Freq."]:
-                continue
-            ax[0] = self._plot_thing(component, label_lines, ax[0])
-
-        for line in ax[0].get_lines():  # Set the different spectra to have a transparency
-            line.set_alpha(0.7)
-        ax[0].legend(ncol=2, loc="upper right").set_zorder(0)
-
-        # Now plot the observer spectra
-
-        for inclination in self.inclinations:
-            ax[1] = self._plot_thing(inclination, label_lines, ax[1])
-
-        for label, line in zip(self.inclinations, ax[1].get_lines()):
-            line.set_alpha(0.7)
-            line.set_label(str(label) + r"$^{\circ}$")
-        ax[1].set_ylabel("")
-        ax[1].legend(ncol=2, loc="upper right").set_zorder(0)
-
-        # Final clean up to make a nice spectrum
-
-        ax[0].set_title("Components")
-        ax[1].set_title("Observer spectra")
-        fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
-        fig.subplots_adjust(wspace=0)
-
-        return fig, ax
-
-    def _plot_thing(self, thing, label_lines=False, ax_update=None):
-        """Plot a specific column in a spectrum file.
-
-        Parameters
-        ----------
-        thing: str
-            The name of the thing to be plotted.
-        label_lines: bool
-            Plot line IDs.
-        ax_update: plt.Axes
-            An plt.Axes object to update, i.e. to plot on.
-        """
-        normalize_figure_style()
-
-        if ax_update:
-            ax = ax_update
-        else:
-            fig, ax = plt.subplots(figsize=(9, 5))
-
-        ax.set_yscale("log")
-        ax.set_xscale("log")
-
-        # How things are plotted depends on the units of the spectrum
-
-        if self.units == SPECTRUM_UNITS_FLM:
-            ax.plot(self.spectrum["Lambda"], self.spectrum[thing], label=thing)
-            ax.set_xlabel(r"Wavelength [\AA]")
-            ax.set_ylabel(r"Flux Density " + f"{self.distance:.2e}" + r"pc [erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
-            if label_lines:
-                ax = ax_add_line_ids(ax, common_lines(freq=False), logx=True)
-        else:
-            ax.plot(self.spectrum["Freq."], self.spectrum[thing], label=thing)
-            ax.set_xlabel("Frequency [Hz]")
-            if self.units == SPECTRUM_UNITS_LNU:
-                ax.set_ylabel(r"Luminosity [erg s$^{-1}$ Hz$^{-1}$]")
-            else:
-                ax.set_ylabel(r"Flux Density " + f"{self.distance:.2e}" + r"pc [erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
-            if label_lines:
-                ax = ax_add_line_ids(ax, common_lines(freq=True), logx=True)
-
-        if ax_update:
-            return ax
-        else:
-            fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
-            return fig, ax
-
-    def _set_current(self, target):
-        """Set the current target spectrum.
-
-        Parameters
-        ----------
-        target: str
-            The name of the spectrum to become the current.
-        """
-        if target not in self.available:
-            raise IndexError(f"spectrum {target} is not available: available are {self.available}")
-
-        self.spectrum = self.avail_spectrum[target]
-        self.columns = self.avail_columns[target]
-        self.inclinations = self.avail_inclinations[target]
-        self.n_inclinations = self.avail_n_inclinations[target]
-        self.units = self.avail_units[target]
-        self.distance = self.avail_distance[target]
+        try:
+            self.get_cell_spectra(delim)
+        except IOError:
+            create_wind_save_tables(root, fp, cell_spec=True)
+            self.get_cell_spectra(delim)
 
     # Methods ------------------------------------------------------------------
 
-    def get_spectra(self, delim=None):
-        """Read in a spectrum file given in self.filepath. The spectrum is
-        stored as a dictionary in self.spectrum where each key is the name of
-        the columns.
+    def create_wind_tables(self):
+        """Force the creation of wind save tables for the model.
 
-        Parameters
-        ----------
-        delim: str [optional]
-            A custom delimiter, useful for reading in files which have sometimes
-            between delimited with commas instead of spaces.
+        This is best used when a simulation has been re-run, as the
+        library is unable to detect when the currently available wind
+        tables do not reflect a new simulation. This function will
+        create the standard wind tables, as well as the fractional and
+        density ion tables and create the xspec cell spectra files.
         """
-        n_read = 0
-        files_to_read = ["spec", "spec_tot", "spec_tot_wind", "spec_wind", "spec_tau"]
 
-        # Read in each spec file type, and store each spectrum as a key in
-        # self.avail_spec, etc.
+        create_wind_save_tables(self.root, self.fp, ion_density=True)
+        create_wind_save_tables(self.root, self.fp, ion_density=False)
+        create_wind_save_tables(self.root, self.fp, cell_spec=True)
 
-        for spec_type in files_to_read:
-            fp = self.fp + self.root + "."
-            if self.log_spec and spec_type != "spec_tau":
-                spec_type = "log_" + spec_type
-            fp += spec_type
-            if not path.exists(fp):
-                continue
+    def get_cell_spectra(self, delim=None):
+        """Read in the cell spectra.
 
-            n_read += 1
-            self.avail_spectrum[spec_type] = {}
-            self.avail_units[spec_type] = SPECTRUM_UNITS_UNKNOWN
-            self.avail_distance[spec_type] = 0.0
+        This function will read in spectra from across multiple files,
+        if there are multiple files at least.
+        """
+        self.header = []
+        cell_spectra = []
+        frequency_bins = []
+
+        # Loop over each file. Each time self.header is updated, but we store
+        # the rest into an array which gets hstacked to make a single array
+
+        for fp in find("*xspec.*.txt", self.fp):
 
             with open(fp, "r") as f:
                 spectrum_file = f.readlines()
 
-            # Read in the spectrum file. Ignore empty lines and lines which have
-            # been commented out by #
-
-            spectrum = []
+            spectra_lines = []
 
             for line in spectrum_file:
-                line = line.strip()
+                if len(line) == 0 or line.startswith("#"):
+                    continue
                 if delim:
                     line = line.split(delim)
                 else:
                     line = line.split()
-                if "Units:" in line:
-                    self.avail_units[spec_type] = line[4][1:-1]
-                    if self.avail_units[spec_type] in [SPECTRUM_UNITS_FLM, SPECTRUM_UNITS_FNU]:
-                        self.avail_distance[spec_type] = float(line[6])
-                    else:
-                        self.avail_distance[spec_type] = 0
-                if len(line) == 0 or line[0] == "#":
-                    continue
-                spectrum.append(line)
 
-            # Extract the header columns of the spectrum. This assumes the first
-            # read line in the spectrum is the header.
+                spectra_lines.append(line)
 
-            header = []  # wish this was short enough to do in a list comprehension
+            self.header += spectra_lines[0][1:]
+            array = np.array(spectra_lines[1:], dtype=np.float64)
+            frequency_bins.append(array[:, 0])
+            cell_spectra.append(array[:, 1:])
 
-            for i, column_name in enumerate(spectrum[0]):
-                if column_name[0] == "A":
-                    j = column_name.find("P")
-                    column_name = column_name[1:j].lstrip("0")  # remove leading 0's for, i.e., 01 degrees
-                header.append(column_name)
+        cell_spectra = [np.hstack(cell_spectra)]
+        frequency_bins = np.array(frequency_bins[0], dtype=np.float64)  # assuming they're all the same...
+        cell_spectra = cell_spectra[0]
 
-            spectrum = np.array(spectrum[1:], dtype=np.float64)
+        # Now extract the cell indices from the header, of course done
+        # differently depending on if the model is 1D or 2D.
 
-            # Add the spectrum to self.avail_spectrum[spec_type]. The keys of
-            # the dictionary are the column names in the spectrum, i.e. what
-            # is in the header
+        if len(self.header[0]) > LEN_WHEN_1D_MODEL:
+            self.cells = [(int(cell[1:4]), int(cell[5:])) for cell in self.header]
+        else:
+            self.cells = [(int(cell[1:4]), 0) for cell in self.header]
 
-            for i, column_name in enumerate(header):
-                self.avail_spectrum[spec_type][column_name] = spectrum[:, i]
+        # If nx or nz were not given, then determine the number of coordinates
+        # from the parameter files or from the cells array
 
-            inclinations = []  # this could almost be a list comprehension...
+        if self.nx == 0 or self.nz == 0:
+            try:
+                self.nx = int(get_parameter_value(self.pf, "Wind.dim.in.x_or_r.direction"))
+                if len(self.header[1]) > LEN_WHEN_1D_MODEL:
+                    self.nz = int(get_parameter_value(self.pf, "Wind.dim.in.z_or_theta.direction"))
+            except (ValueError, IOError):
+                self.nx = self.cells[-1][0] + 1
+                self.nz = self.cells[-1][1] + 1
 
-            for col in header:
-                if col.isdigit() and col not in inclinations:
-                    inclinations.append(col)
+        # The final step is to create a 2D array of Nones and then populate the
+        # cells which have spectra with a dict with keys Freq. and Flux
 
-            self.avail_columns[spec_type] = tuple(header)
-            self.avail_inclinations[spec_type] = tuple(inclinations)
-            self.avail_n_inclinations[spec_type] = len(inclinations)
+        self.spectra = np.array([None for _ in range(self.nx * self.nz)], dtype=dict).reshape(self.nx, self.nz)
+        for n, (i, j) in enumerate(self.cells):
+            self.spectra[i, j] = {"Freq.": np.copy(frequency_bins), "Flux": cell_spectra[:, n]}
 
-        if n_read == 0:
-            raise IOError(f"Unable to open any spectrum files for {self.root} in {self.fp}")
+    def get_elem_number_from_ij(self, i, j):
+        """Get the wind element number for a given i and j index.
 
-        self.available = tuple(self.avail_spectrum.keys())
-
-    def plot(self, name=None, spec_type=None, label_lines=False):
-        """Plot the spectra or a single component in a single figure. By
-        default this creates a 1 x 2 of the components on the left and the
-        observer spectra on the right. Useful for when in an interactive
-        session.
+        Used when indexing into a 1D array, such as in Python itself.
 
         Parameters
         ----------
-        name: str
-            The name of the thing to plot.
-        spec_type: str
-            The spectrum the thing to plot belongs in.
-        label_lines: bool
-            Plot line IDs.
+        i: int
+            The i-th index of the cell.
+        j: int
+            The j-th index of the cell.
         """
-        current = self.current  # keep track of this
+        return int(self.nz * i + j)
 
-        # If name is given, then plot that column of the spectrum. Otherwise
-        # assume we just want to plot all columns in the spec file
+    def get_ij_from_elem_number(self, elem):
+        """Get the i and j index for a given wind element number.
 
-        if name:
-            if spec_type:
-                self.set(spec_type)
-            if name not in self.columns:
-                raise ValueError(f"{name} is not available in the {self.current} spectrum")
-            fig, ax = self._plot_thing(name, label_lines)
-            if name.isdigit():
-                name += r"$^{\circ}$"
-            ax.set_title(name.replace("_", r"\_"))
+        Used when converting a wind element number into two indices for use
+        in this package.
+
+        Parameters
+        ----------
+        elem: int
+            The element number.
+        """
+        return np.unravel_index(elem, (self.nx, self.nz))
+
+    def plot(self, i, j, energetic=True, scale="loglog", fig=None, ax=None, figsize=(12, 6)):
+        """Plot the spectrum for cell (i, j).
+
+        Simple plotting function, if you want something more advanced then
+        check out pypython.plot.spectrum.
+
+        Parameters
+        ----------
+        i: int
+            The i-th index for the cell.
+        j: int
+            The j-th index for the cell.
+        energetic: bool
+            Plot in energetic (nu * J_nu) units.
+        scale: str
+            The axes scaling for the plot.
+        fig: pyplot.Figure
+            A matplotlib Figure object to edit. Needs ax to also be supplied.
+        ax: pyplot.Axes
+            A matplotlib Axes object to edit. Needs fig to also be supplied.
+        figsize: tuple(int, int)
+            The size of the figure (width, height) in inches (sigh).
+        """
+        spectrum = self.spectra[i, j]
+        if spectrum is None:
+            raise ValueError(f"no modelled cell spectra for cell ({i}, {j}) as cell is probably not in the wind")
+
+        if not fig and not ax:
+            plot.normalize_figure_style()
+            fig, ax = plt.subplots(figsize=figsize)
+        elif not fig and ax or fig and not ax:
+            raise ValueError("fig and ax need to be supplied together")
+
+        if energetic:
+            ax.plot(spectrum["Freq."], spectrum["Freq."] * spectrum["Flux"], label="Spectrum")
+            ax.set_ylabel(r"$\nu J_{\nu}$ [ergs s$^{-1}$ cm$^{-2}$]")
         else:
-            self.current = "spec"
-            fig, ax = self._plot_observer_spectrum(label_lines)
+            ax.plot(spectrum["Freq."], spectrum["Flux"], label="Spectrum")
+            ax.set_ylabel(r"$J_{\nu}$ [ergs s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
 
-        # self.current can be changed by the above functions, so we must now
-        # change it back now. This is bad programming, and shouldn't be
-        # required really.
-
-        self.current = current
+        ax.set_xlabel("Rest-frame Frequency")
+        ax = set_axes_scales(ax, scale)
+        fig.suptitle(f"Spectrum in cell ({i}, {j})")
 
         return fig, ax
 
-    def set(self, name):
-        """Set a spectrum as the default.
-
-        Sets a different spectrum to be the currently available spectrum for
-        indexing.
-
-        Parameters
-        ----------
-        name: str
-            The name of the spectrum, i.e. log_spec or spec_tot, etc. The
-            available spectrum types are stored in self.available.
-        """
-        if self.log_spec and not name.startswith("log_") and name != "spec_tau":
-            name = "log_" + name
-
-        self._set_current(name)
+    def smooth(self):
+        raise NotImplementedError()
 
     @staticmethod
     def show(block=True):
@@ -724,105 +648,18 @@ class Spectrum:
         """
         plt.show(block=block)
 
-    def smooth(self, width=5, to_smooth=None):
-        """Smooth the spectrum flux/luminosity bins.
-
-        If this is used after the spectrum has already been smoothed, then the
-        "original" is copied back into the spectrum before smoothing again. This
-        way the function does not smooth an already smoothed spectrum.
-
-        Parameters
-        ----------
-        width: int [optional]
-            The width of the boxcar filter (in bins).
-        to_smooth: list or tuple of strings [optional]
-            A list or tuple
-        """
-        if self.original_spectra is None:
-            self.original_spectra = copy.deepcopy(self.spectrum)
-        else:
-            self.spectrum = copy.deepcopy(self.original_spectra)
-
-        if to_smooth is None:
-            to_smooth = ("Created", "WCreated", "Emitted", "CenSrc", "Disk", "Wind", "HitSurf", "Scattered") + tuple(
-                self.inclinations)
-        elif type(to_smooth) is str:
-            to_smooth = to_smooth,
-        elif type(to_smooth) is tuple or type(to_smooth) is list:
-            pass
-        else:
-            raise ValueError("unknown format for argument to_smooth, must be a tuple/list of str or str")
-
-        # Loop over each available spectrum and smooth it
-
-        for key in self.available:
-            if key == "spec_tau":  # todo: cleaner way to skip spec_tau
-                continue
-            for thing_to_smooth in to_smooth:
-                try:
-                    self.avail_spectrum[key][thing_to_smooth] = \
-                        smooth_array(self.avail_spectrum[key][thing_to_smooth], width)
-                except KeyError:
-                    pass  # some spectra do not have the inclination angles...
-
-    def rescale_to_distance(self, distance):
-        """Rescale the flux to the given distance.
-
-        Parameters
-        ----------
-        distance: float or int
-            The distance to scale the flux to.
-        """
-        if type(distance) is not float and type(distance) is not int:
-            raise ValueError("distance is not a float or integer")
-
-        for spectrum in self.available:
-            if spectrum == "spec_tau":
-                continue
-            if self.avail_units[spectrum] == SPECTRUM_UNITS_LNU:
-                continue
-            for key in self.avail_spectrum[spectrum].keys():
-                if key in ["Lambda", "Freq."]:
-                    continue
-                self.avail_spectrum[spectrum][key] *= \
-                    (self.avail_distance[spectrum] * PARSEC)**2 / (distance * PARSEC)**2
-            self.avail_distance[spectrum] = distance
-
-        self.distance = distance
-
-    def restore_original_spectra(self):
-        """Restore the spectrum to its original unsmoothed form."""
-
-        self.spectrum = copy.deepcopy(self.original_spectra)
-
     # Built in stuff -----------------------------------------------------------
 
-    def __getitem__(self, key):
-        if key not in self.available:
-            return self.spectrum[key]
-        else:
-            return self.avail_spectrum[key]
+    def __getitem__(self, pos):
+        i, j = pos
+        return self.spectra[i, j]
 
-    def __setitem__(self, key, value):
-        if key not in self.available:
-            self.spectrum[key] = value
-        else:
-            self.avail_spectrum[key] = value
+    def __setitem__(self, pos, value):
+        i, j = pos
+        self.spectra[i, j] = value
 
     def __str__(self):
-        msg = f"Spectrum for the model {self.root} in {self.fp}\n"
-        msg += f"Available spectra: {self.available}\n"
-        msg += f"Current spectrum {self.current}\n"
-        if "spec" in self.available or "log_spec" in self.available:
-            if self.log_spec:
-                key = "log_spec"
-            else:
-                key = "spec"
-            msg += f"Spectrum inclinations: {self.avail_inclinations[key]}\n"
-        if "tau_spec" in self.available:
-            msg += f"Optical depth inclinations {self.avail_inclinations['tau_spec']}\n"
-
-        return textwrap.dedent(msg)
+        return print(self.spectra)
 
 
 # Modelled cell spectra --------------------------------------------------------
@@ -1123,37 +960,41 @@ class ModelledCellSpectra:
         return print(self.spectra)
 
 
-# Cell spectra -----------------------------------------------------------------
+# Spectrum class ---------------------------------------------------------------
 
 
-class CellSpectra:
-    """A class to store the cell spectra accumulated during the ionization
-    cycles.
+class Spectrum:
+    """A class to store PYTHON .spec and .log_spec files.
 
-    Cells which do not have a spectrum will return None.
+    The Python spectra are read in and stored within a dict of dicts,
+    where each column name is the spectrum name and the columns in that
+    dict are the names of the columns in the spectrum file. The data is
+    stored as numpy arrays.
     """
-    def __init__(self, root, fp=".", nx=0, nz=0, force_make_spectra=False, delim=None):
-        """Initialize the object.
+    def __init__(self, root, fp=".", default=None, log_spec=True, smooth=None, distance=None, delim=None):
+        """Create the Spectrum object.
 
-        Reads in the cell spectra into a 1D list. This function will attempt
-        to run windsave2table to create the cell spectra files if they do not
-        exist.
+        Construct the file path of the spectrum files given the
+        root, directory and whether the logarithmic spectrum is used or not.
+        The different spectra are then read in, with either the .spec or the
+        first spectrum file read in being the default index choice.
 
         Parameters
         ----------
         root: str
-            The root name of the Python simulation.
+            The root name of the model.
         fp: str [optional]
             The directory containing the model.
-        nx: int [optional]
-            The number of cells in the x direction.
-        nz: int [optional]
-            The number of cells in the z direction.
-        force_make_spectra: bool [optional]
-            Force windsave2table to be run to re-make the files in the
-            tables directory.
+        default: str [optional]
+            The default spectrum to make the available spectrum for indexing.
+        log_spec: bool [optional]
+            Read in the logarithmic version of the spectra.
+        smooth: int [optional]
+            The amount of smoothing to use.
+        distance: float [optional]
+            The distance of the spectrum flux, in units of parsec.
         delim: str [optional]
-            The delimiter used in the wind table files.
+            The deliminator in the spectrum file.
         """
         self.root = root
 
@@ -1162,186 +1003,310 @@ class CellSpectra:
             self.fp += "/"
         self.pf = self.fp + self.root + ".pf"
 
-        # Set initial conditions to create member variables
+        self.log_spec = log_spec
+        if default and self.log_spec:
+            if not default.startswith("log_") and default != "spec_tau":
+                default = "log_" + default
 
-        self.nx = int(nx)
-        self.nz = int(nz)
-        self.header = None
-        self.cells = None
-        self.spectra = None
+        # Initialize the important members
+        # These are for the "current/target" spectrum. This is done like this
+        # so you can use spectrum.distance to look at the currently set spectrum
+        # without having to index like spectrum.distance["spec"].
 
-        self.original = None
+        self.spectrum = {}
+        self.columns = ()
+        self.inclinations = ()
+        self.n_inclinations = 0
+        self.units = SPECTRUM_UNITS_UNKNOWN
+        self.distance = 100
 
-        # Try to read in the spectra, if we can't then we'll try and run
-        # windsave2table. It is also possible to force the re-creation of the
-        # spectra files
+        # Anything with avail_ are for recording all of the spectra.
+        # todo: I wish I had a better way to do this lol
 
-        if force_make_spectra:
-            self.create_wind_tables()
+        self.original_spectra = None
 
-        try:
-            self.get_cell_spectra(delim)
-        except IOError:
-            create_wind_save_tables(root, fp, cell_spec=True)
-            self.get_cell_spectra(delim)
+        self.available = []
+        self.avail_spectrum = {}
+        self.avail_columns = {}
+        self.avail_inclinations = {}
+        self.avail_n_inclinations = {}
+        self.avail_units = {}
+        self.avail_distance = {}
+
+        # Now we can read in the spectra and set the default/target spectrum
+        # for the object. We can also re-scale to a different distance.
+
+        self.get_spectra(delim)
+
+        if default:
+            self.current = default
+        else:
+            self.current = self.available[0]
+
+        self.set(self.current)
+
+        if distance:
+            self.rescale_to_distance(distance)
+
+        # Smooth all the spectra. A copy of the unsmoothed spectra is kept
+        # in the member self.original.
+
+        if smooth:
+            self.smooth(smooth)
+
+    # Private methods ----------------------------------------------------------
+
+    def _plot_observer_spectrum(self, label_lines=False):
+        """Plot the spectrum components and observer spectra on a 1x2 panel
+        plot. The left panel has the components, whilst the right panel has the
+        observer spectrum.
+
+        Parameters
+        ----------
+        label_lines: bool
+            Plot line IDs.
+        """
+        if "spec" not in self.available and "log_spec" not in self.available:
+            raise IOError("A .spec/.log_spec file was not read in, cannot use this function")
+
+        normalize_figure_style()
+
+        fig, ax = plt.subplots(1, 2, figsize=(12, 5), sharey="row")
+
+        # Plot the components of the observer spectrum, i.e Emitted, Created,
+        # Disc, etc.
+
+        for component in self.columns[:-self.n_inclinations]:
+            if component in ["Lambda", "Freq."]:
+                continue
+            ax[0] = self._plot_thing(component, label_lines, ax[0])
+
+        for line in ax[0].get_lines():  # Set the different spectra to have a transparency
+            line.set_alpha(0.7)
+        ax[0].legend(ncol=2, loc="upper right").set_zorder(0)
+
+        # Now plot the observer spectra
+
+        for inclination in self.inclinations:
+            ax[1] = self._plot_thing(inclination, label_lines, ax[1])
+
+        for label, line in zip(self.inclinations, ax[1].get_lines()):
+            line.set_alpha(0.7)
+            line.set_label(str(label) + r"$^{\circ}$")
+        ax[1].set_ylabel("")
+        ax[1].legend(ncol=2, loc="upper right").set_zorder(0)
+
+        # Final clean up to make a nice spectrum
+
+        ax[0].set_title("Components")
+        ax[1].set_title("Observer spectra")
+        fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+        fig.subplots_adjust(wspace=0)
+
+        return fig, ax
+
+    def _plot_thing(self, thing, label_lines=False, ax_update=None):
+        """Plot a specific column in a spectrum file.
+
+        Parameters
+        ----------
+        thing: str
+            The name of the thing to be plotted.
+        label_lines: bool
+            Plot line IDs.
+        ax_update: plt.Axes
+            An plt.Axes object to update, i.e. to plot on.
+        """
+        normalize_figure_style()
+
+        if ax_update:
+            ax = ax_update
+        else:
+            fig, ax = plt.subplots(figsize=(9, 5))
+
+        ax.set_yscale("log")
+        ax.set_xscale("log")
+
+        # How things are plotted depends on the units of the spectrum
+
+        if self.units == SPECTRUM_UNITS_FLM:
+            ax.plot(self.spectrum["Lambda"], self.spectrum[thing], label=thing)
+            ax.set_xlabel(r"Wavelength [\AA]")
+            ax.set_ylabel(r"Flux Density " + f"{self.distance:.2e}" + r"pc [erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
+            if label_lines:
+                ax = add_line_ids(ax, common_lines(freq=False), logx=True)
+        else:
+            ax.plot(self.spectrum["Freq."], self.spectrum[thing], label=thing)
+            ax.set_xlabel("Frequency [Hz]")
+            if self.units == SPECTRUM_UNITS_LNU:
+                ax.set_ylabel(r"Luminosity [erg s$^{-1}$ Hz$^{-1}$]")
+            else:
+                ax.set_ylabel(r"Flux Density " + f"{self.distance:.2e}" + r"pc [erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
+            if label_lines:
+                ax = add_line_ids(ax, common_lines(freq=True), logx=True)
+
+        if ax_update:
+            return ax
+        else:
+            fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+            return fig, ax
 
     # Methods ------------------------------------------------------------------
 
-    def create_wind_tables(self):
-        """Force the creation of wind save tables for the model.
+    def get_spectra(self, delim=None):
+        """Read in a spectrum file given in self.filepath. The spectrum is
+        stored as a dictionary in self.spectrum where each key is the name of
+        the columns.
 
-        This is best used when a simulation has been re-run, as the
-        library is unable to detect when the currently available wind
-        tables do not reflect a new simulation. This function will
-        create the standard wind tables, as well as the fractional and
-        density ion tables and create the xspec cell spectra files.
+        Parameters
+        ----------
+        delim: str [optional]
+            A custom delimiter, useful for reading in files which have sometimes
+            between delimited with commas instead of spaces.
         """
+        n_read = 0
+        files_to_read = ["spec", "spec_tot", "spec_tot_wind", "spec_wind", "spec_tau"]
 
-        create_wind_save_tables(self.root, self.fp, ion_density=True)
-        create_wind_save_tables(self.root, self.fp, ion_density=False)
-        create_wind_save_tables(self.root, self.fp, cell_spec=True)
+        # Read in each spec file type, and store each spectrum as a key in
+        # self.avail_spec, etc.
 
-    def get_cell_spectra(self, delim=None):
-        """Read in the cell spectra.
+        for spec_type in files_to_read:
+            fp = self.fp + self.root + "."
+            if self.log_spec and spec_type != "spec_tau":
+                spec_type = "log_" + spec_type
+            fp += spec_type
+            if not path.exists(fp):
+                continue
 
-        This function will read in spectra from across multiple files,
-        if there are multiple files at least.
-        """
-        self.header = []
-        cell_spectra = []
-        frequency_bins = []
-
-        # Loop over each file. Each time self.header is updated, but we store
-        # the rest into an array which gets hstacked to make a single array
-
-        for fp in get_files("*xspec.*.txt", self.fp):
+            n_read += 1
+            self.avail_spectrum[spec_type] = {}
+            self.avail_units[spec_type] = SPECTRUM_UNITS_UNKNOWN
+            self.avail_distance[spec_type] = 0.0
 
             with open(fp, "r") as f:
                 spectrum_file = f.readlines()
 
-            spectra_lines = []
+            # Read in the spectrum file. Ignore empty lines and lines which have
+            # been commented out by #
+
+            spectrum = []
 
             for line in spectrum_file:
-                if len(line) == 0 or line.startswith("#"):
-                    continue
+                line = line.strip()
                 if delim:
                     line = line.split(delim)
                 else:
                     line = line.split()
+                if "Units:" in line:
+                    self.avail_units[spec_type] = line[4][1:-1]
+                    if self.avail_units[spec_type] in [SPECTRUM_UNITS_FLM, SPECTRUM_UNITS_FNU]:
+                        self.avail_distance[spec_type] = float(line[6])
+                    else:
+                        self.avail_distance[spec_type] = 0
+                if len(line) == 0 or line[0] == "#":
+                    continue
+                spectrum.append(line)
 
-                spectra_lines.append(line)
+            # Extract the header columns of the spectrum. This assumes the first
+            # read line in the spectrum is the header.
 
-            self.header += spectra_lines[0][1:]
-            array = np.array(spectra_lines[1:], dtype=np.float64)
-            frequency_bins.append(array[:, 0])
-            cell_spectra.append(array[:, 1:])
+            header = []  # wish this was short enough to do in a list comprehension
 
-        cell_spectra = [np.hstack(cell_spectra)]
-        frequency_bins = np.array(frequency_bins[0], dtype=np.float64)  # assuming they're all the same...
-        cell_spectra = cell_spectra[0]
+            for i, column_name in enumerate(spectrum[0]):
+                if column_name[0] == "A":
+                    j = column_name.find("P")
+                    column_name = column_name[1:j].lstrip("0")  # remove leading 0's for, i.e., 01 degrees
+                header.append(column_name)
 
-        # Now extract the cell indices from the header, of course done
-        # differently depending on if the model is 1D or 2D.
+            spectrum = np.array(spectrum[1:], dtype=np.float64)
 
-        if len(self.header[0]) > LEN_WHEN_1D_MODEL:
-            self.cells = [(int(cell[1:4]), int(cell[5:])) for cell in self.header]
+            # Add the spectrum to self.avail_spectrum[spec_type]. The keys of
+            # the dictionary are the column names in the spectrum, i.e. what
+            # is in the header
+
+            for i, column_name in enumerate(header):
+                self.avail_spectrum[spec_type][column_name] = spectrum[:, i]
+
+            inclinations = []  # this could almost be a list comprehension...
+
+            for col in header:
+                if col.isdigit() and col not in inclinations:
+                    inclinations.append(col)
+
+            self.avail_columns[spec_type] = tuple(header)
+            self.avail_inclinations[spec_type] = tuple(inclinations)
+            self.avail_n_inclinations[spec_type] = len(inclinations)
+
+        if n_read == 0:
+            raise IOError(f"Unable to open any spectrum files for {self.root} in {self.fp}")
+
+        self.available = tuple(self.avail_spectrum.keys())
+
+    def plot(self, name=None, spec_type=None, label_lines=False):
+        """Plot the spectra or a single component in a single figure. By
+        default this creates a 1 x 2 of the components on the left and the
+        observer spectra on the right. Useful for when in an interactive
+        session.
+
+        Parameters
+        ----------
+        name: str
+            The name of the thing to plot.
+        spec_type: str
+            The spectrum the thing to plot belongs in.
+        label_lines: bool
+            Plot line IDs.
+        """
+        current = self.current  # keep track of this
+
+        # If name is given, then plot that column of the spectrum. Otherwise
+        # assume we just want to plot all columns in the spec file
+
+        if name:
+            if spec_type:
+                self.set(spec_type)
+            if name not in self.columns:
+                raise ValueError(f"{name} is not available in the {self.current} spectrum")
+            fig, ax = self._plot_thing(name, label_lines)
+            if name.isdigit():
+                name += r"$^{\circ}$"
+            ax.set_title(name.replace("_", r"\_"))
         else:
-            self.cells = [(int(cell[1:4]), 0) for cell in self.header]
+            self.current = "spec"
+            fig, ax = self._plot_observer_spectrum(label_lines)
 
-        # If nx or nz were not given, then determine the number of coordinates
-        # from the parameter files or from the cells array
+        # self.current can be changed by the above functions, so we must now
+        # change it back now. This is bad programming, and shouldn't be
+        # required really.
 
-        if self.nx == 0 or self.nz == 0:
-            try:
-                self.nx = int(get_parameter_value(self.pf, "Wind.dim.in.x_or_r.direction"))
-                if len(self.header[1]) > LEN_WHEN_1D_MODEL:
-                    self.nz = int(get_parameter_value(self.pf, "Wind.dim.in.z_or_theta.direction"))
-            except (ValueError, IOError):
-                self.nx = self.cells[-1][0] + 1
-                self.nz = self.cells[-1][1] + 1
-
-        # The final step is to create a 2D array of Nones and then populate the
-        # cells which have spectra with a dict with keys Freq. and Flux
-
-        self.spectra = np.array([None for _ in range(self.nx * self.nz)], dtype=dict).reshape(self.nx, self.nz)
-        for n, (i, j) in enumerate(self.cells):
-            self.spectra[i, j] = {"Freq.": np.copy(frequency_bins), "Flux": cell_spectra[:, n]}
-
-    def get_elem_number_from_ij(self, i, j):
-        """Get the wind element number for a given i and j index.
-
-        Used when indexing into a 1D array, such as in Python itself.
-
-        Parameters
-        ----------
-        i: int
-            The i-th index of the cell.
-        j: int
-            The j-th index of the cell.
-        """
-        return int(self.nz * i + j)
-
-    def get_ij_from_elem_number(self, elem):
-        """Get the i and j index for a given wind element number.
-
-        Used when converting a wind element number into two indices for use
-        in this package.
-
-        Parameters
-        ----------
-        elem: int
-            The element number.
-        """
-        return np.unravel_index(elem, (self.nx, self.nz))
-
-    def plot(self, i, j, energetic=True, scale="loglog", fig=None, ax=None, figsize=(12, 6)):
-        """Plot the spectrum for cell (i, j).
-
-        Simple plotting function, if you want something more advanced then
-        check out pypython.plot.spectrum.
-
-        Parameters
-        ----------
-        i: int
-            The i-th index for the cell.
-        j: int
-            The j-th index for the cell.
-        energetic: bool
-            Plot in energetic (nu * J_nu) units.
-        scale: str
-            The axes scaling for the plot.
-        fig: pyplot.Figure
-            A matplotlib Figure object to edit. Needs ax to also be supplied.
-        ax: pyplot.Axes
-            A matplotlib Axes object to edit. Needs fig to also be supplied.
-        figsize: tuple(int, int)
-            The size of the figure (width, height) in inches (sigh).
-        """
-        spectrum = self.spectra[i, j]
-        if spectrum is None:
-            raise ValueError(f"no modelled cell spectra for cell ({i}, {j}) as cell is probably not in the wind")
-
-        if not fig and not ax:
-            plot.normalize_figure_style()
-            fig, ax = plt.subplots(figsize=figsize)
-        elif not fig and ax or fig and not ax:
-            raise ValueError("fig and ax need to be supplied together")
-
-        if energetic:
-            ax.plot(spectrum["Freq."], spectrum["Freq."] * spectrum["Flux"], label="Spectrum")
-            ax.set_ylabel(r"$\nu J_{\nu}$ [ergs s$^{-1}$ cm$^{-2}$]")
-        else:
-            ax.plot(spectrum["Freq."], spectrum["Flux"], label="Spectrum")
-            ax.set_ylabel(r"$J_{\nu}$ [ergs s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
-
-        ax.set_xlabel("Rest-frame Frequency")
-        ax = set_axes_scales(ax, scale)
-        fig.suptitle(f"Spectrum in cell ({i}, {j})")
+        self.current = current
 
         return fig, ax
 
-    def smooth(self):
-        raise NotImplementedError()
+    def set(self, name):
+        """Set a spectrum as the default.
+
+        Sets a different spectrum to be the currently available spectrum for
+        indexing.
+
+        Parameters
+        ----------
+        name: str
+            The name of the spectrum, i.e. log_spec or spec_tot, etc. The
+            available spectrum types are stored in self.available.
+        """
+        if self.log_spec and not name.startswith("log_") and name != "spec_tau":
+            name = "log_" + name
+
+        if name not in self.available:
+            raise IndexError(f"spectrum {name} is not available: available are {self.available}")
+
+        self.spectrum = self.avail_spectrum[name]
+        self.columns = self.avail_columns[name]
+        self.inclinations = self.avail_inclinations[name]
+        self.n_inclinations = self.avail_n_inclinations[name]
+        self.units = self.avail_units[name]
+        self.distance = self.avail_distance[name]
 
     @staticmethod
     def show(block=True):
@@ -1356,18 +1321,105 @@ class CellSpectra:
         """
         plt.show(block=block)
 
+    def smooth(self, width=5, to_smooth=None):
+        """Smooth the spectrum flux/luminosity bins.
+
+        If this is used after the spectrum has already been smoothed, then the
+        "original" is copied back into the spectrum before smoothing again. This
+        way the function does not smooth an already smoothed spectrum.
+
+        Parameters
+        ----------
+        width: int [optional]
+            The width of the boxcar filter (in bins).
+        to_smooth: list or tuple of strings [optional]
+            A list or tuple
+        """
+        if self.original_spectra is None:
+            self.original_spectra = copy.deepcopy(self.spectrum)
+        else:
+            self.spectrum = copy.deepcopy(self.original_spectra)
+
+        if to_smooth is None:
+            to_smooth = ("Created", "WCreated", "Emitted", "CenSrc", "Disk", "Wind", "HitSurf", "Scattered") + tuple(
+                self.inclinations)
+        elif type(to_smooth) is str:
+            to_smooth = to_smooth,
+        elif type(to_smooth) is tuple or type(to_smooth) is list:
+            pass
+        else:
+            raise ValueError("unknown format for argument to_smooth, must be a tuple/list of str or str")
+
+        # Loop over each available spectrum and smooth it
+
+        for key in self.available:
+            if key == "spec_tau":  # todo: cleaner way to skip spec_tau
+                continue
+            for thing_to_smooth in to_smooth:
+                try:
+                    self.avail_spectrum[key][thing_to_smooth] = \
+                        smooth_array(self.avail_spectrum[key][thing_to_smooth], width)
+                except KeyError:
+                    pass  # some spectra do not have the inclination angles...
+
+    def rescale_to_distance(self, distance):
+        """Rescale the flux to the given distance.
+
+        Parameters
+        ----------
+        distance: float or int
+            The distance to scale the flux to.
+        """
+        if type(distance) is not float and type(distance) is not int:
+            raise ValueError("distance is not a float or integer")
+
+        for spectrum in self.available:
+            if spectrum == "spec_tau":
+                continue
+            if self.avail_units[spectrum] == SPECTRUM_UNITS_LNU:
+                continue
+            for key in self.avail_spectrum[spectrum].keys():
+                if key in ["Lambda", "Freq."]:
+                    continue
+                self.avail_spectrum[spectrum][key] *= \
+                    (self.avail_distance[spectrum] * PARSEC)**2 / (distance * PARSEC)**2
+            self.avail_distance[spectrum] = distance
+
+        self.distance = distance
+
+    def restore_original_spectra(self):
+        """Restore the spectrum to its original unsmoothed form."""
+
+        self.spectrum = copy.deepcopy(self.original_spectra)
+
     # Built in stuff -----------------------------------------------------------
 
-    def __getitem__(self, pos):
-        i, j = pos
-        return self.spectra[i, j]
+    def __getitem__(self, key):
+        if key not in self.available:
+            return self.spectrum[key]
+        else:
+            return self.avail_spectrum[key]
 
-    def __setitem__(self, pos, value):
-        i, j = pos
-        self.spectra[i, j] = value
+    def __setitem__(self, key, value):
+        if key not in self.available:
+            self.spectrum[key] = value
+        else:
+            self.avail_spectrum[key] = value
 
     def __str__(self):
-        return print(self.spectra)
+        msg = f"Spectrum for the model {self.root} in {self.fp}\n"
+        msg += f"Available spectra: {self.available}\n"
+        msg += f"Current spectrum {self.current}\n"
+        if "spec" in self.available or "log_spec" in self.available:
+            if self.log_spec:
+                key = "log_spec"
+            else:
+                key = "spec"
+            msg += f"Spectrum inclinations: {self.avail_inclinations[key]}\n"
+        if "tau_spec" in self.available:
+            msg += f"Optical depth inclinations {self.avail_inclinations['tau_spec']}\n"
+
+        return textwrap.dedent(msg)
 
 
 # Wind class -------------------------------------------------------------------
@@ -1389,6 +1441,7 @@ class Wind:
                  velocity_units="kms",
                  masked=True,
                  force_make_tables=False,
+                 version=None,
                  delim=None):
         """Initialize the Wind object.
 
@@ -1429,6 +1482,8 @@ class Wind:
             self.fp += "/"
         self.pf = self.fp + self.root + ".pf"
 
+        self.version = version
+
         # Set initial conditions for all of the important variables
 
         self.nx = 1
@@ -1452,10 +1507,8 @@ class Wind:
         if spatial_units not in [
                 WIND_DISTANCE_UNITS_CM, WIND_DISTANCE_UNITS_M, WIND_DISTANCE_UNITS_KM, WIND_DISTANCE_UNITS_RG
         ]:
-            raise ValueError(
-                f"Unknown distance units {spatial_units}: allowed are {WIND_DISTANCE_UNITS_CM}, "
-                f"{WIND_DISTANCE_UNITS_M}, {WIND_DISTANCE_UNITS_KM} or {WIND_DISTANCE_UNITS_RG}"
-            )
+            raise ValueError(f"Unknown distance units {spatial_units}: allowed are {WIND_DISTANCE_UNITS_CM}, "
+                             f"{WIND_DISTANCE_UNITS_M}, {WIND_DISTANCE_UNITS_KM} or {WIND_DISTANCE_UNITS_RG}")
 
         self._set_velocity_conversion_factor(velocity_units)
 
@@ -1615,10 +1668,8 @@ class Wind:
 
         units = units.lower()
         if units not in [WIND_VELOCITY_UNITS_CMS, WIND_VELOCITY_UNITS_KMS, WIND_VELOCITY_UNITS_LIGHT]:
-            raise ValueError(
-                f"unknown velocity units {units}. Allowed units [{WIND_VELOCITY_UNITS_KMS}, "
-                f"{WIND_VELOCITY_UNITS_CMS}, {WIND_VELOCITY_UNITS_LIGHT}]"
-            )
+            raise ValueError(f"unknown velocity units {units}. Allowed units [{WIND_VELOCITY_UNITS_KMS}, "
+                             f"{WIND_VELOCITY_UNITS_CMS}, {WIND_VELOCITY_UNITS_LIGHT}]")
 
         self.velocity_units = units
 
@@ -1701,6 +1752,7 @@ class Wind:
 
         self.spatial_units = WIND_DISTANCE_UNITS_RG
         self.gravitational_radius = rg
+        self._setup_coords()
 
         return rg
 
@@ -1741,6 +1793,7 @@ class Wind:
 
         self.spatial_units = WIND_DISTANCE_UNITS_CM
         self.gravitational_radius = rg
+        self._setup_coords()
 
         return rg
 
@@ -1835,9 +1888,9 @@ class Wind:
         density ion tables and create the xspec cell spectra files.
         """
 
-        create_wind_save_tables(self.root, self.fp, ion_density=True)
-        create_wind_save_tables(self.root, self.fp, ion_density=False)
-        create_wind_save_tables(self.root, self.fp, cell_spec=True)
+        create_wind_save_tables(self.root, self.fp, ion_density=True, version=self.version)
+        create_wind_save_tables(self.root, self.fp, ion_density=False, version=self.version)
+        create_wind_save_tables(self.root, self.fp, cell_spec=True, version=self.version)
 
     def get(self, parameter):
         """Get a parameter array. This is just another way to access the
@@ -1876,9 +1929,13 @@ class Wind:
         self.get_wind_parameters(delim)
         self.get_wind_elements(delim=delim)
         if get_cell_spec:
-            self.wind["cell_spec"] = CellSpectra(self.root, self.fp, self.nx, self.nz)
-            self.wind["cell_model"] = ModelledCellSpectra(self.root, self.fp)
-            self.spectra += ("cell_spec", "cell_model")
+            try:  # In case someone asks for cell spec when we can't get them
+                self.wind["cell_spec"] = CellSpectra(self.root, self.fp, self.nx, self.nz)
+                self.wind["cell_model"] = ModelledCellSpectra(self.root, self.fp)
+                self.spectra += ("cell_spec", "cell_model")
+            except ValueError:
+                print(f"unable to load cell or model spectra for model {self.fp}{self.root} as windsave2table is too "
+                      f"old")
 
     def get_elem_number_from_ij(self, i, j):
         """Get the wind element number for a given i and j index.
@@ -2285,6 +2342,7 @@ __all__.append("run_py_wind")
 
 # These are put here to solve a circular dependency ----------------------------
 
-from pypython.plot import (ax_add_line_ids, common_lines, normalize_figure_style, set_axes_scales)
+from pypython.plot import normalize_figure_style, set_axes_scales
+from pypython.plot.spectrum import add_line_ids, common_lines
 from pypython.plot.wind import plot_1d_wind, plot_2d_wind
 from pypython.util import run_command

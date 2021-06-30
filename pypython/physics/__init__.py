@@ -9,7 +9,7 @@ quantities.
 """
 
 from pypython.constants import ANGSTROM, C
-from pypython.physics import accretiondisc, blackbody, blackhole
+from pypython.physics import accretiondisc, blackbody, blackhole, models
 
 
 def angstrom_to_hz(wavelength):

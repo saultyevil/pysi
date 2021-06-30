@@ -6,7 +6,7 @@ processes for a bunch of simulations.
 todo: this will only work for a simulation which didn't crash.......... according to past me at least.
 """
 
-from pypython import get_files, get_root_name
+from pypython import find, get_root_name
 from pypython.simulation import model_error_summary
 
 COL_LEN = 80
@@ -15,7 +15,7 @@ COL_LEN = 80
 def main():
     """Main function of the script."""
 
-    parameter_files = get_files("*.pf")
+    parameter_files = find("*.pf")
 
     if len(parameter_files) == 0:
         raise IOError("No Python simulations were found in this directory.")

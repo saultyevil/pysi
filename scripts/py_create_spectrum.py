@@ -204,10 +204,8 @@ def plot(root,
         else:
             index = 1
 
-        x, y = pypython.plot.get_x_subset(filtered_spectrum[:-1, index],
-                                          smooth_array(filtered_spectrum[:-1, i + 2], sm),
-                                          xmin,
-                                          xmax)
+        x, y = pypython.plot.get_xy_subset(filtered_spectrum[:-1, index],
+                                           smooth_array(filtered_spectrum[:-1, i + 2], sm), xmin, xmax)
 
         ax.plot(x, y, alpha=0.75, label="Filtered Spectrum")
 

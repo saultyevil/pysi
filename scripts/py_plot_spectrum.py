@@ -71,8 +71,8 @@ def main():
 
     try:
         spectrum.set("spec")
-        plot.spectrum.spectrum_observer(spectrum, "all", xmin, xmax, scales, flux, label_lines, display)
-        plot.spectrum.spectrum_components(spectrum, xmin, xmax, scales, use_flux=flux, display=display)
+        plot.spectrum.observer(spectrum, "all", xmin, xmax, scales, flux, label_lines, display)
+        plot.spectrum.components(spectrum, xmin, xmax, scales, use_flux=flux, display=display)
     except IndexError as e:
         print(e)
         print(f"unable to plot observer spectra as no {fp}/{root}.spec file exists")
@@ -81,7 +81,7 @@ def main():
 
     try:
         spectrum.set("spec_tot")
-        plot.spectrum.spectrum_components(spectrum, xmin, xmax, scales, use_flux=flux, display=display)
+        plot.spectrum.components(spectrum, xmin, xmax, scales, use_flux=flux, display=display)
     except IndexError as e:
         print(e)
         print(f"unable to plot ionization spectra as no {fp}/{root}.spec_tot file exists")
@@ -90,7 +90,7 @@ def main():
 
     try:
         spectrum.set("spec_tot_wind")
-        plot.spectrum.spectrum_components(spectrum, xmin, xmax, scales, use_flux=flux, display=display)
+        plot.spectrum.components(spectrum, xmin, xmax, scales, use_flux=flux, display=display)
     except IndexError as e:
         print(e)
         print(f"unable to plot ionization spectra of wind photons as no {fp}/{root}.spec_tot_wind file exists")

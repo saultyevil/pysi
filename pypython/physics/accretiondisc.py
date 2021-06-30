@@ -46,80 +46,6 @@ def alpha_disc_effective_temperature(ri, r_co, m_co, mdot):
     return teff4**0.25
 
 
-def modified_eddington_alpha_disc_effective_temperature(ri, m_co, mdot):
-    """The effective temperature profile from Strubbe and Quataert 2009.
-
-    Parameters
-    ----------
-    ri: np.ndarray or float
-        An array of radii or a single radius to calculate the temperature at.
-    m_co: float
-        The mass of the central object in units of solar masses.
-    mdot: float
-        The accretion rate onto the central object in units of solar masses per
-        year.
-
-    Returns
-    -------
-    teff: np.ndarray or float
-        The effective temperature at the provided radius or radii.
-    """
-
-    risco = innermost_stable_circular_orbit(m_co)
-    rg = gravitational_radius(m_co)
-    ledd = eddington_luminosity_limit(m_co)
-
-    m_co *= MSOL
-    mdot *= MSOL_PER_YEAR
-
-    with np.errstate(all="ignore"):
-        fnt = 1 - np.sqrt(risco / ri)
-        teff4 = (3 * G * m_co * mdot * fnt) / (8 * PI * ri**3 * STEFAN_BOLTZMANN)
-        teff4 *= (0.5 + (0.25 + 6 * fnt * (mdot * C**2 / ledd)**2 * (ri / rg)**-2)**0.5)**-1
-
-    return teff4**0.25
-
-
-def eddington_accretion_limit(mbh, efficiency):
-    """Calculate the Eddington accretion limit for a black hole. Note that the
-    accretion rate can be larger than the Eddington accretion rate. See, for
-    example, Foundations of High-Energy Astrophysics by Mario Vietri.
-
-    Parameters
-    ----------
-    mbh: float
-        The mass of the black hole in units of msol.
-    efficiency: float
-        The efficiency of the accretion process. Less than 1.
-
-    Returns
-    -------
-    The Eddington accretion rate in units of grams / second.
-    """
-
-    mbh *= MSOL
-
-    return (4 * PI * G * mbh * MPROT) / (efficiency * C * THOMPSON)
-
-
-def eddington_luminosity_limit(mbh):
-    """Calculate the Eddington luminosity for accretion onto a black hole.
-
-    Parameters
-    ----------
-    mbh: float
-        The mass of the black hole in units of msol.
-
-    Returns
-    -------
-    The Eddington luminosity for the black hole in units of ergs / second.
-    """
-
-    mbh *= MSOL
-
-    return (4 * PI * G * mbh * C * MPROT) / THOMPSON
-
-
 def create_disc_spectrum(m_co, mdot, r_in, r_out, freq_min, freq_max, freq_units=True, n_freq=5000, n_rings=1000):
     """Create a crude accretion disc spectrum. This works by approximating an
     accretion disc as being a collection of annuli radiating at different
@@ -187,3 +113,77 @@ def create_disc_spectrum(m_co, mdot, r_in, r_out, freq_min, freq_max, freq_units
     s["Lum."] = lum
 
     return s
+
+
+def eddington_accretion_limit(mbh, efficiency):
+    """Calculate the Eddington accretion limit for a black hole. Note that the
+    accretion rate can be larger than the Eddington accretion rate. See, for
+    example, Foundations of High-Energy Astrophysics by Mario Vietri.
+
+    Parameters
+    ----------
+    mbh: float
+        The mass of the black hole in units of msol.
+    efficiency: float
+        The efficiency of the accretion process. Less than 1.
+
+    Returns
+    -------
+    The Eddington accretion rate in units of grams / second.
+    """
+
+    mbh *= MSOL
+
+    return (4 * PI * G * mbh * MPROT) / (efficiency * C * THOMPSON)
+
+
+def eddington_luminosity_limit(mbh):
+    """Calculate the Eddington luminosity for accretion onto a black hole.
+
+    Parameters
+    ----------
+    mbh: float
+        The mass of the black hole in units of msol.
+
+    Returns
+    -------
+    The Eddington luminosity for the black hole in units of ergs / second.
+    """
+
+    mbh *= MSOL
+
+    return (4 * PI * G * mbh * C * MPROT) / THOMPSON
+
+
+def modified_eddington_alpha_disc_effective_temperature(ri, m_co, mdot):
+    """The effective temperature profile from Strubbe and Quataert 2009.
+
+    Parameters
+    ----------
+    ri: np.ndarray or float
+        An array of radii or a single radius to calculate the temperature at.
+    m_co: float
+        The mass of the central object in units of solar masses.
+    mdot: float
+        The accretion rate onto the central object in units of solar masses per
+        year.
+
+    Returns
+    -------
+    teff: np.ndarray or float
+        The effective temperature at the provided radius or radii.
+    """
+
+    risco = innermost_stable_circular_orbit(m_co)
+    rg = gravitational_radius(m_co)
+    ledd = eddington_luminosity_limit(m_co)
+
+    m_co *= MSOL
+    mdot *= MSOL_PER_YEAR
+
+    with np.errstate(all="ignore"):
+        fnt = 1 - np.sqrt(risco / ri)
+        teff4 = (3 * G * m_co * mdot * fnt) / (8 * PI * ri**3 * STEFAN_BOLTZMANN)
+        teff4 *= (0.5 + (0.25 + 6 * fnt * (mdot * C**2 / ledd)**2 * (ri / rg)**-2)**0.5)**-1
+
+    return teff4**0.25

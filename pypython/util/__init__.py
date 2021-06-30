@@ -6,13 +6,13 @@ Includes functions for creating slurm files, bash "run scripts", as well
 as getting system info and a logging utility.
 """
 
-import textwrap
 import subprocess
+import textwrap
 from typing import List
 
 from psutil import cpu_count
 
-from pypython import get_files, get_root_name
+from pypython import find, get_root_name
 
 
 def create_run_script(commands):
@@ -26,7 +26,7 @@ def create_run_script(commands):
     """
 
     paths = []
-    pf_fp = get_files("*.pf")
+    pf_fp = find("*.pf")
     for fp in pf_fp:
         root, path = get_root_name(fp)
         paths.append(path)
@@ -160,8 +160,8 @@ def run_command(command, fp=".", verbose=False):
 
     return sh
 
-# Logging functions ------------------------------------------------------------
 
+# Logging functions ------------------------------------------------------------
 
 LOGFILE = None
 

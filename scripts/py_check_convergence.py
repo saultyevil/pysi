@@ -121,7 +121,7 @@ def get_convergence(root, fp="./"):
 def main():
     """Main function of the script."""
 
-    parameter_files = pypython.get_files("*.pf")
+    parameter_files = pypython.find("*.pf")
 
     if len(parameter_files) == 0:
         raise IOError("No Python simulations were found in this directory.")

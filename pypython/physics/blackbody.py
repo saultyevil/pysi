@@ -11,31 +11,6 @@ import numpy as np
 from pypython.constants import (ANGSTROM, BOLTZMANN, VLIGHT, WIEN_FREQUENCY, WIEN_WAVELENGTH, H)
 
 
-def planck_nu(temperature, frequency):
-    """Calculate the monochromatic intensity for a black body given a
-    temperature and frequency of interest.
-
-    Parameters
-    ----------
-    temperature: float
-        The temperature of the blackbody.
-    frequency: np.ndarray or float
-        The frequency points to calculate the vale at, in units of Hz.
-
-    Returns
-    -------
-    b_nu: float
-        The value of the Planck function with the provided temperature and
-        frequency. Has units ergs s^-1 cm^-2 Hz^-1.
-    """
-
-    with np.errstate(all="ignore"):
-        x = H * frequency / (BOLTZMANN * temperature)
-        b_nu = (2 * H * frequency**3) / (VLIGHT**2 * (np.exp(x) - 1))
-
-    return b_nu
-
-
 def planck_lambda(temperature, lamda):
     """Calculate the monochromatic intensity for a black body given a
     temperature and frequency of interest.
@@ -61,6 +36,31 @@ def planck_lambda(temperature, lamda):
         b_lamda = y / (np.exp(x) - 1)
 
     return b_lamda
+
+
+def planck_nu(temperature, frequency):
+    """Calculate the monochromatic intensity for a black body given a
+    temperature and frequency of interest.
+
+    Parameters
+    ----------
+    temperature: float
+        The temperature of the blackbody.
+    frequency: np.ndarray or float
+        The frequency points to calculate the vale at, in units of Hz.
+
+    Returns
+    -------
+    b_nu: float
+        The value of the Planck function with the provided temperature and
+        frequency. Has units ergs s^-1 cm^-2 Hz^-1.
+    """
+
+    with np.errstate(all="ignore"):
+        x = H * frequency / (BOLTZMANN * temperature)
+        b_nu = (2 * H * frequency**3) / (VLIGHT**2 * (np.exp(x) - 1))
+
+    return b_nu
 
 
 def wien_law(temperature, freq_space=False):

@@ -5,7 +5,8 @@
 from matplotlib import pyplot as plt
 
 from pypython import smooth_array
-from pypython.plot import ax_add_line_ids, common_lines, normalize_figure_style
+from pypython.plot import normalize_figure_style
+from pypython.plot.spectrum import add_line_ids, common_lines
 
 
 def plot_spectrum_physics_process_contributions(contribution_spectra,
@@ -56,7 +57,7 @@ def plot_spectrum_physics_process_contributions(contribution_spectra,
             logx = True
         else:
             logx = False
-        ax = ax_add_line_ids(ax, common_lines(), logx=logx)
+        ax = add_line_ids(ax, common_lines(), logx=logx)
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
     fig.savefig("{}/{}_spec_processes.{}".format(wd, root, file_ext), dpi=300)

@@ -4,10 +4,11 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-from pypython import (SPECTRUM_UNITS_FLM, SPECTRUM_UNITS_LNU, Spectrum, get_root_name)
-from pypython.plot import (_check_axes_scale_string, ax_add_line_ids, common_lines, get_y_lims_for_x_lims,
-                           normalize_figure_style, photoionization_edges, remove_extra_axes, set_axes_scales,
-                           subplot_dims, get_x_subset)
+import pypython
+from pypython import (SPECTRUM_UNITS_FLM, SPECTRUM_UNITS_FNU, SPECTRUM_UNITS_LNU, Spectrum, get_root_name)
+from pypython.constants import ANGSTROM, C
+from pypython.plot import (_check_axes_scale_string, finish_figure, get_xy_subset, normalize_figure_style,
+                           remove_extra_axes, set_axes_scales, subplot_dims)
 
 MIN_SPEC_COMP_FLUX = 1e-15
 
@@ -30,9 +31,33 @@ def _add_line_labels(ax, labels, scale, linestyle="dashed", offset=0.0):
         logx = True
     else:
         logx = False
-    ax = ax_add_line_ids(ax, labels, linestyle=linestyle, logx=logx, offset=offset)
+    ax = add_line_ids(ax, labels, linestyle=linestyle, logx=logx, offset=offset)
 
     return ax
+
+
+def _convert_labels_to_frequency_space(lines, freq=False, spectrum=None):
+    """Convert the given list of lines/edges from Angstrom to Hz.
+
+    Parameters
+    ----------
+    lines: List[str, float]
+        The list of labels to convert from wavelength to frequency space.
+    freq: bool
+        The flag to indicate to convert to frequency space
+    spectrum: pypython.Spectrum
+        A spectrum object, used to find the units of the spectrum.
+    """
+
+    if spectrum:
+        if spectrum.units in [SPECTRUM_UNITS_FNU, SPECTRUM_UNITS_LNU]:
+            for i in range(len(lines)):
+                lines[i][1] = C / (lines[i][1] * ANGSTROM)
+    elif freq:
+        for i in range(len(lines)):
+            lines[i][1] = C / (lines[i][1] * ANGSTROM)
+
+    return lines
 
 
 def _get_inclinations(spectrum, inclinations):
@@ -49,6 +74,9 @@ def _get_inclinations(spectrum, inclinations):
     inclinations: list
         A list of inclination angles wanted to be plotted.
     """
+    if type(inclinations) != list:
+        inclinations = str(inclinations)
+
     if type(inclinations) == str:
         inclinations = [inclinations]
 
@@ -127,7 +155,7 @@ def _plot_subplot(ax, spectrum, things_to_plot, xmin, xmax, alpha, scale, use_fl
         else:
             x = spectrum["Freq."]
 
-        x, y = get_x_subset(x, y, xmin, xmax)
+        x, y = get_xy_subset(x, y, xmin, xmax)
 
         ax.plot(x, y, label=thing, alpha=alpha)
 
@@ -145,6 +173,175 @@ def _plot_subplot(ax, spectrum, things_to_plot, xmin, xmax, alpha, scale, use_fl
     return ax
 
 
+def add_line_ids(ax,
+                 lines,
+                 linestyle="dashed",
+                 ynorm=0.90,
+                 logx=False,
+                 offset=25,
+                 rotation="vertical",
+                 fontsize=15,
+                 whitespace_scale=2):
+    """Add labels for line transitions or other regions of interest onto a
+    matplotlib figure. Labels are placed at the top of the panel and dashed
+    lines, with zorder = 0, are drawn from top to bottom.
+
+    Parameters
+    ----------
+    ax: plt.Axes
+        The axes (plt.Axes) to add line labels too
+    lines: list
+        A list containing the line name and wavelength in Angstroms
+        (ordered by wavelength)
+    linestyle: str [optional]
+        The type of line to draw to show where the transitions are. Allowed
+        values [none, dashed, top]
+    ynorm: float [optional]
+        The normalized y coordinate to place the label.
+    logx: bool [optional]
+        Use when the x-axis is logarithmic
+    offset: float [optional]
+        The amount to offset line labels along the x-axis
+    rotation: str [optional]
+        Vertical or horizontal rotation for text ids
+    fontsize: int [optional]
+        The fontsize of the labels
+    whitespace_scale: float [optional]
+        The amount to scale the upper y limit of the plot by, to add whitespace
+        for the line labels.
+
+    Returns
+    -------
+    ax: plt.Axes
+        The updated axes object.
+    """
+    nlines = len(lines)
+    xlims = ax.get_xlim()
+    ylims = ax.get_ylim()
+
+    for i in range(nlines):
+        x = lines[i][1]
+        if x < xlims[0]:
+            continue
+        if x > xlims[1]:
+            continue
+        label = lines[i][0]
+        if linestyle == "dashed":
+            ax.axvline(x, linestyle="--", linewidth=0.5, color="k", zorder=1)
+        if linestyle == "thick":
+            ax.axvline(x, linestyle="-", linewidth=2, color="k", zorder=1)
+        elif linestyle == "top":
+            pass  # todo: implement
+        x = x - offset
+
+        # Calculate the x location of the label in axes coordinates
+
+        if logx:
+            xnorm = (np.log10(x) - np.log10(xlims[0])) / (np.log10(xlims[1]) - np.log10(xlims[0]))
+        else:
+            xnorm = (x - xlims[0]) / (xlims[1] - xlims[0])
+
+        ax.text(xnorm,
+                ynorm,
+                label,
+                ha="center",
+                va="center",
+                rotation=rotation,
+                fontsize=fontsize,
+                transform=ax.transAxes)
+
+    ax.set_ylim(ylims[0], ylims[1] * whitespace_scale)
+
+    return ax
+
+
+def common_lines(freq=False, spectrum=None):
+    """Return a list containing the names of line transitions and the
+    wavelength of the transition in Angstroms. Instead of returning the
+    wavelength, the frequency can be returned instead. It is also possible to
+    return in log space.
+
+    Parameters
+    ----------
+    freq: bool [optional]
+        Label the transitions in frequency space
+    spectrum: pypython.Spectrum
+        The spectrum object. Used to get the units.
+
+    Returns
+    -------
+    line: List[List[str, float]]
+        A list of lists where each element of the list is the name of the
+        transition/edge and the rest wavelength of that transition in
+        Angstroms.
+    """
+
+    lines = [
+        [r"N \textsc{iii} / O \textsc{iii}", 305],
+        [r"P \textsc{v}", 1118],
+        [r"Ly$\alpha$ / N \textsc{v}", 1216],
+        ["", 1242],
+        [r"O \textsc{v} / Si \textsc{iv}", 1371],
+        ["", 1400],
+        [r"N \textsc{iv}", 1489],
+        [r"C \textsc{iv}", 1548],
+        ["", 1550],
+        [r"He \textsc{ii}", 1640],
+        [r"N \textsc{iii]}", 1750],
+        [r"Al \textsc{iii}", 1854],
+        [r"C \textsc{iii]}", 1908],
+        [r"Mg \textsc{ii}", 2798],
+        [r"Ca \textsc{ii}", 3934],
+        ["", 3969],
+        [r"H$_{\delta}$", 4101],
+        [r"H$_{\gamma}$", 4340],
+        [r"He \textsc{ii}", 4389],
+        [r"He \textsc{ii}", 4686],
+        [r"H$_{\beta}$", 4861],
+        [r"Na \textsc{i}", 5891],
+        ["", 5897],
+        [r"H$_{\alpha}$", 6564],
+    ]
+
+    lines = _convert_labels_to_frequency_space(lines, freq, spectrum)
+
+    return lines
+
+
+def photoionization_edges(freq=False, spectrum=False):
+    """Return a list containing the names of line transitions and the
+    wavelength of the transition in Angstroms. Instead of returning the
+    wavelength, the frequency can be returned instead. It is also possible to
+    return in log space.
+
+    Parameters
+    ----------
+    freq: bool [optional]
+        Label the transitions in frequency space
+    spectrum: pypython.Spectrum
+        The spectrum object. Used to get the units.
+
+    Returns
+    -------
+    edges: List[List[str, float]]
+        A list of lists where each element of the list is the name of the
+        transition/edge and the rest wavelength of that transition in
+        Angstroms.
+    """
+
+    edges = [
+        [r"He \textsc{ii}", 229],
+        [r"He \textsc{i}", 504],
+        ["Lyman", 912],
+        ["Balmer", 3646],
+        ["Paschen", 8204],
+    ]
+
+    edges = _convert_labels_to_frequency_space(edges, freq, spectrum)
+
+    return edges
+
+
 def set_spectrum_axes_labels(ax, spectrum, use_flux):
     """Set the units of a given matplotlib axes.
 
@@ -157,6 +354,11 @@ def set_spectrum_axes_labels(ax, spectrum, use_flux):
     use_flux: bool
         If flux/nu Lnu is being plotted instead of flux density or
         luminosity.
+
+    Returns
+    -------
+    ax: plt.Axes
+        The updated axes object.
     """
     if use_flux:
         if spectrum.units == SPECTRUM_UNITS_LNU:
@@ -198,7 +400,6 @@ def optical_depth(spectrum,
     Create a plot of the continuum optical depth against either frequency or
     wavelength. Frequency space is the default and preferred. This function
     returns the Figure and Axes object.
-    todo: handle the situation when restricted x range may have bad y limits
 
     Parameters
     ----------
@@ -230,7 +431,6 @@ def optical_depth(spectrum,
     if spectrum.current != "spec_tau":
         spectrum.set("spec_tau")
 
-    _check_axes_scale_string(scale)
     normalize_figure_style()
     fig, ax = plt.subplots(1, 1, figsize=(12, 7))
 
@@ -258,10 +458,12 @@ def optical_depth(spectrum,
                 continue
         label = f"{inclination}" + r"$^{\circ}$"
 
-        if np.count_nonzero(spectrum[inclination]) == 0:  # skip arrays which are all zeros
+        x, y = get_xy_subset(spectrum[xlabel], spectrum[inclination], xmin, xmax)
+
+        if np.count_nonzero(y) == 0:  # skip arrays which are all zeros
             continue
 
-        ax.plot(spectrum[xlabel], spectrum[inclination], linewidth=2, label=label)
+        ax.plot(x, y, linewidth=2, label=label)
 
     ax = set_axes_scales(ax, scale)
     ax.set_ylabel(r"Continuum Optical Depth")
@@ -271,19 +473,16 @@ def optical_depth(spectrum,
     else:
         ax.set_xlabel(r"Rest-frame Wavelength [$\AA$]")
 
-    ax.set_xlim(xmin, xmax)
     ax.legend(loc="upper left")
 
     if label_edges:
         ax = _add_line_labels(ax, photoionization_edges(frequency_space), scale)
 
-    fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+    fig = finish_figure(fig)
     fig.savefig(f"{spectrum.fp}/{spectrum.root}_spec_optical_depth.png")
 
     if display:
         plt.show()
-    else:
-        plt.close()
 
     return fig, ax
 
@@ -344,8 +543,7 @@ def reprocessing(spectrum, xmin=None, xmax=None, scale="loglog", label_edges=Tru
     spectrum.set("spec")
 
     for thing in ["Created", "Emitted"]:
-        x = spectrum["Freq."]
-        y = spectrum[thing]
+        x, y = get_xy_subset(spectrum["Freq."], spectrum[thing], xmin, xmax)
 
         if spectrum.spatial_units == SPECTRUM_UNITS_FLM:
             y *= spectrum["Lambda"]
@@ -355,7 +553,6 @@ def reprocessing(spectrum, xmin=None, xmax=None, scale="loglog", label_edges=Tru
         ax2.plot(x, y, label=thing, alpha=alpha)
 
     ax2.legend(loc="upper right")
-    ax2.set_xlim(xmin, xmax)
     ax2.set_ylabel(f"Flux {spectrum.distance} pc " + r"[erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$]")
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
@@ -363,13 +560,11 @@ def reprocessing(spectrum, xmin=None, xmax=None, scale="loglog", label_edges=Tru
 
     if display:
         plt.show()
-    else:
-        plt.close()
 
     return fig, ax
 
 
-def spectrum_components(spectrum, xmin=None, xmax=None, scale="loglog", alpha=0.65, use_flux=False, display=False):
+def components(spectrum, xmin=None, xmax=None, scale="loglog", alpha=0.65, use_flux=False, display=False):
     """Plot the different components of the spectrum.
 
     The components are the columns labelled with words, rather than inclination
@@ -414,20 +609,18 @@ def spectrum_components(spectrum, xmin=None, xmax=None, scale="loglog", alpha=0.
 
     if display:
         plt.show()
-    else:
-        plt.close()
 
     return fig, ax
 
 
-def spectrum_observer(spectrum,
-                      inclinations,
-                      xmin=None,
-                      xmax=None,
-                      scale="logy",
-                      use_flux=False,
-                      label_lines=True,
-                      display=False):
+def observer(spectrum,
+             inclinations,
+             xmin=None,
+             xmax=None,
+             scale="logy",
+             use_flux=False,
+             label_lines=True,
+             display=False):
     """Plot the request observer spectrum.
 
     If all is passed to inclinations, then all the observer angles will be
@@ -497,26 +690,24 @@ def spectrum_observer(spectrum,
 
     if display:
         plt.show()
-    else:
-        plt.close()
 
     return fig, ax
 
 
-def multiple_spectra(output_name,
-                     filepaths,
-                     spectrum_type,
-                     things_to_plot,
-                     xmin=None,
-                     xmax=None,
-                     use_flux=False,
-                     alpha=0.7,
-                     scale="loglog",
-                     label_lines=True,
-                     log_spec=False,
-                     smooth=None,
-                     distance=None,
-                     display=False):
+def multiple_models(output_name,
+                    spectra,
+                    spectrum_type,
+                    things_to_plot,
+                    xmin=None,
+                    xmax=None,
+                    use_flux=False,
+                    alpha=0.7,
+                    scale="loglog",
+                    label_lines=True,
+                    log_spec=False,
+                    smooth=None,
+                    distance=None,
+                    display=False):
     """Plot multiple spectra, from multiple models, given in the list of
     spectra provided.
 
@@ -534,7 +725,7 @@ def multiple_spectra(output_name,
     ----------
     output_name: str
         The name of the output .png file.
-    filepaths: str
+    spectra: str
         The file paths of the spectra to plot.
     spectrum_type: str
         The type of spectrum to plot, i.e. spec or spec_tot.
@@ -572,17 +763,20 @@ def multiple_spectra(output_name,
     normalize_figure_style()
     _check_axes_scale_string(scale)
 
-    if type(filepaths) is str:
-        filepaths = list(filepaths)
+    if type(spectra) is str:
+        spectra = list(spectra)
 
-    if len(filepaths) == 0:
-        raise ValueError("An empty argument was passed for filepaths")
+    if len(spectra) == 0:
+        raise ValueError("An empty argument was passed for spectra")
 
     spectra_to_plot = []
 
-    for spectrum in filepaths:
-        root, fp = get_root_name(spectrum)
-        spectra_to_plot.append(Spectrum(root, fp, spectrum_type, log_spec, smooth, distance))
+    for spectrum in spectra:
+        if type(spectrum) is not Spectrum:
+            root, fp = get_root_name(spectrum)
+            spectra_to_plot.append(Spectrum(root, fp, spectrum_type, log_spec, smooth, distance))
+        else:
+            spectra_to_plot.append(spectrum)
 
     units = list(dict.fromkeys([spectrum.units for spectrum in spectra_to_plot]))
 
@@ -618,9 +812,6 @@ def multiple_spectra(output_name,
     fig, ax = remove_extra_axes(fig, ax, n_to_plot, n_rows * n_cols)
     ax = ax.flatten()
 
-    # ymin = 1e99
-    # ymax = 0
-
     for n, thing in enumerate(things_to_plot):
         for spectrum in spectra_to_plot:
             try:
@@ -642,7 +833,7 @@ def multiple_spectra(output_name,
             else:
                 x = spectrum["Freq."]
 
-            x, y = get_x_subset(x, y, xmin, xmax)
+            x, y = get_xy_subset(x, y, xmin, xmax)
 
             label = spectrum.fp.replace("_", r"\_") + spectrum.root.replace("_", r"\_")
             ax[n].plot(x, y, label=label, alpha=alpha)
@@ -667,11 +858,6 @@ def multiple_spectra(output_name,
             # if test_ymax > ymax:
             #     ymax = test_ymax
 
-        # if ymin == +1e99:
-        #     ymin = None
-        # if ymax == 0:
-        #     ymax = None
-
         ax[n] = set_axes_scales(ax[n], scale)
         ax[n] = set_spectrum_axes_labels(ax[n], spectra_to_plot[0], use_flux)
 
@@ -679,9 +865,6 @@ def multiple_spectra(output_name,
             ax[n].set_title(f"{thing}" + r"$^{\circ}$")
         else:
             ax[n].set_title(f"{thing}")
-
-        # ax[n].set_xlim(xmin, xmax)
-        # ax[n].set_ylim(ymin, ymax)
 
         if label_lines:
             ax[n] = _add_line_labels(ax[n], common_lines(spectrum=spectra_to_plot[0]), scale, linestyle="none")
@@ -692,7 +875,5 @@ def multiple_spectra(output_name,
 
     if display:
         plt.show()
-    else:
-        plt.close()
 
     return fig, ax
