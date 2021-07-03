@@ -342,7 +342,7 @@ def photoionization_edges(freq=False, spectrum=False):
     return edges
 
 
-def set_spectrum_axes_labels(ax, spectrum, use_flux):
+def set_spectrum_axes_labels(ax, spectrum, use_flux=False):
     """Set the units of a given matplotlib axes.
 
     Parameters
@@ -366,20 +366,21 @@ def set_spectrum_axes_labels(ax, spectrum, use_flux):
             ax.set_ylabel(r"$\nu L_{\nu}$ [erg s$^{-1}$]")
         elif spectrum.units == SPECTRUM_UNITS_FLM:
             ax.set_xlabel(r"Rest-frame Wavelength [\AA]")
-            ax.set_ylabel(r"$\lambda F_{\lambda}$ at " + f"{spectrum.distance } pc " + r"[erg s$^{-1}$]")
+            ax.set_ylabel(r"$\lambda F_{\lambda}$ at " + f"{spectrum.distance:.1e} pc " + r"[erg s$^{-1}$]")
         else:
             ax.set_xlabel(r"Rest-frame Frequency [Hz]")
-            ax.set_ylabel(r"$\nu F_{\nu}$ at " + f"{spectrum.distance } pc " + r"[erg s$^{-1}$ cm$^{-2}$]")
+            ax.set_ylabel(r"$\nu F_{\nu}$ at " + f"{spectrum.distance:.1e} pc " + r"[erg s$^{-1}$ cm$^{-2}$]")
     else:
         if spectrum.units == SPECTRUM_UNITS_LNU:
             ax.set_xlabel(r"Rest-frame Frequency [Hz]")
             ax.set_ylabel(r"$L_{\nu}$ [erg s$^{-1}$ Hz$^{-1}$]")
         elif spectrum.units == SPECTRUM_UNITS_FLM:
             ax.set_xlabel(r"Rest-frame Wavelength [\AA]")
-            ax.set_ylabel(r"$F_{\lambda}$ at " + f"{spectrum.distance } pc " + r"[erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
+            ax.set_ylabel(r"$F_{\lambda}$ at " + f"{spectrum.distance:.1e} pc " +
+                          r"[erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
         else:
             ax.set_xlabel(r"Rest-frame Frequency [Hz]")
-            ax.set_ylabel(r"$F_{\nu}$ at " + f"{spectrum.distance } pc " + r"[erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
+            ax.set_ylabel(r"$F_{\nu}$ at " + f"{spectrum.distance:.1e} pc " + r"[erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
 
     return ax
 
