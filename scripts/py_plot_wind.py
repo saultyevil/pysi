@@ -100,10 +100,10 @@ def plot_wind_parameters(w,
             if log_plot:
                 with np.errstate(divide="ignore"):
                     to_plot = np.log10(w[parameters_to_plot[wind_index]])
-                ax[i, j].set_title("log(" + parameters_to_plot[wind_index] + ")")
+                ax[i, j].set_title("log(" + parameters_to_plot[wind_index].replace("_", r"\_") + ")")
             else:
                 to_plot = w[parameters_to_plot[wind_index]]
-                ax[i, j].set_title(parameters_to_plot[wind_index])
+                ax[i, j].set_title(parameters_to_plot[wind_index].replace("_", r"\_"))
 
             fig, ax = wind.plot(w, to_plot, scale=axes_scales, fig=fig, ax=ax, i=i, j=j)
             wind_index += 1
@@ -247,7 +247,7 @@ def main():
 
     root, fp, use_ion_density, velocity_units, axes_scales, use_cell_indices, display = setup_script()
 
-    w = Wind(root, fp, spatial_units="rg", velocity_units=velocity_units, get_cell_spec=False)
+    w = Wind(root, fp, spatial_units="cm", velocity_units=velocity_units, get_cell_spec=False)
 
     if w.coord_system == "polar":
         subplot_kw = {"projection": "polar"}

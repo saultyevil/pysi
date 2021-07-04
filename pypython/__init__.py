@@ -2358,8 +2358,8 @@ class Wind:
     def __getitem__(self, key):
         return self.wind[key]
 
-    def __setattr__(self, key, value):
-        self.wind[key] = value
+    # def __setattr__(self, key, value):
+    #     self.wind[key] = value
 
     def __setitem__(self, key, value):
         self.wind[key] = value

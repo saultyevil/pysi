@@ -143,7 +143,7 @@ def plot_2d_wind(m_points,
             ax[i, j].set_xlabel(r"$x$ [cm]")
             ax[i, j].set_ylabel(r"$z$ [cm]")
         else:
-            ax[i, j].set_xlabel(r"$x / R_{g}$]")
+            ax[i, j].set_xlabel(r"$x / R_{g}$")
             ax[i, j].set_ylabel(r"$z / R_{g}$")
         ax[i, j].set_xlim(np.min(m_points[m_points > 0]), np.max(m_points))
         ax[i, j] = set_axes_scales(ax[i, j], scale)
