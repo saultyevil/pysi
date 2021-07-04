@@ -34,6 +34,7 @@ MINIMUM_PY_SUB_VERSION = ""
 PY_VERSION = ""
 
 SPECTRUM_UNITS_LNU = "erg/s/Hz"
+SPECTRUM_UNITS_LLM = "erg/s/A"
 SPECTRUM_UNITS_FNU = "erg/s/cm^-2/Hz"
 SPECTRUM_UNITS_FLM = "erg/s/cm^-2/A"
 SPECTRUM_UNITS_UNKNOWN = "unknown"
@@ -619,7 +620,6 @@ class CellSpectra:
             raise ValueError(f"no modelled cell spectra for cell ({i}, {j}) as cell is probably not in the wind")
 
         if not fig and not ax:
-            plot.normalize_figure_style()
             fig, ax = plt.subplots(figsize=figsize)
         elif not fig and ax or fig and not ax:
             raise ValueError("fig and ax need to be supplied together")
@@ -920,7 +920,6 @@ class ModelledCellSpectra:
             raise ValueError(f"no modelled cell spectra for cell ({i}, {j}) as cell is probably not in the wind")
 
         if not fig and not ax:
-            plot.normalize_figure_style()
             fig, ax = plt.subplots(figsize=figsize)
         elif not fig and ax or fig and not ax:
             raise ValueError("fig and ax need to be supplied together")
@@ -963,6 +962,34 @@ class ModelledCellSpectra:
 
     def __str__(self):
         return print(self.spectra)
+
+
+# Dictionary class -------------------------------------------------------------
+
+
+class AttributeDict(dict):
+    """A modified dictionary class.
+
+    This class allows users to use . (dot) notation to also access the
+    contents of a dictionary.
+    """
+    def __getattr__(self, key):
+        try:
+            return self[key]
+        except KeyError as k:
+            raise AttributeError(k)
+
+    def __setattr__(self, key, value):
+        self[key] = value
+
+    def __delattr__(self, key):
+        try:
+            del self[key]
+        except KeyError as k:
+            raise AttributeError(k)
+
+    def __repr__(self):
+        return dict.__repr__(self)
 
 
 # Spectrum class ---------------------------------------------------------------
@@ -1014,29 +1041,13 @@ class Spectrum:
                 default = "log_" + default
 
         # Initialize the important members
-        # These are for the "current/target" spectrum. This is done like this
-        # so you can use spectrum.distance to look at the currently set spectrum
-        # without having to index like spectrum.distance["spec"].
+        # Each spectrum is stored as a key in a dictionary. Each dictionary
+        # contains keys for each column in the spectrum file, as well as other
+        # meta info such as the distance of the spectrum
 
-        self.spectrum = {}
-        self.columns = ()
-        self.inclinations = ()
-        self.n_inclinations = 0
-        self.units = SPECTRUM_UNITS_UNKNOWN
-        self.distance = 100
-
-        # Anything with avail_ are for recording all of the spectra.
-        # todo: I wish I had a better way to do this lol
-
-        self.original_spectra = None
-
+        self.spectra = AttributeDict({})
+        self._original_spectra = None
         self.available = []
-        self.avail_spectrum = {}
-        self.avail_columns = {}
-        self.avail_inclinations = {}
-        self.avail_n_inclinations = {}
-        self.avail_units = {}
-        self.avail_distance = {}
 
         # Now we can read in the spectra and set the default/target spectrum
         # for the object. We can also re-scale to a different distance.
@@ -1051,7 +1062,7 @@ class Spectrum:
         self.set(self.current)
 
         if distance:
-            self.rescale_to_distance(distance)
+            self.set_distance(distance)
 
         # Smooth all the spectra. A copy of the unsmoothed spectra is kept
         # in the member self.original.
@@ -1060,6 +1071,25 @@ class Spectrum:
             self.smooth(smooth)
 
     # Private methods ----------------------------------------------------------
+
+    def _get_spec_key(self, name):
+        """Get the key depending on if the log or linear version of a spectrum
+        was read in.
+
+        Parameters
+        ----------
+        name: str
+            The name of the spectrum to get the key for.
+
+        Returns
+        -------
+        name: str
+            The key for the spectrum requested.
+        """
+        if self.log_spec and not name.startswith("log_") and name != "spec_tau":
+            name = "log_" + name
+
+        return name
 
     def _plot_observer_spectrum(self, label_lines=False):
         """Plot the spectrum components and observer spectra on a 1x2 panel
@@ -1071,10 +1101,9 @@ class Spectrum:
         label_lines: bool
             Plot line IDs.
         """
-        if "spec" not in self.available and "log_spec" not in self.available:
+        name = self._get_spec_key("spec")
+        if name not in self.available:
             raise IOError("A .spec/.log_spec file was not read in, cannot use this function")
-
-        normalize_figure_style()
 
         fig, ax = plt.subplots(1, 2, figsize=(12, 5), sharey="row")
 
@@ -1084,7 +1113,7 @@ class Spectrum:
         for component in self.columns[:-self.n_inclinations]:
             if component in ["Lambda", "Freq."]:
                 continue
-            ax[0] = self._plot_thing(component, label_lines, ax[0])
+            ax[0] = self._plot_thing(component, name, label_lines=label_lines, ax_update=ax[0])
 
         for line in ax[0].get_lines():  # Set the different spectra to have a transparency
             line.set_alpha(0.7)
@@ -1093,7 +1122,7 @@ class Spectrum:
         # Now plot the observer spectra
 
         for inclination in self.inclinations:
-            ax[1] = self._plot_thing(inclination, label_lines, ax[1])
+            ax[1] = self._plot_thing(inclination, name, label_lines=label_lines, ax_update=ax[1])
 
         for label, line in zip(self.inclinations, ax[1].get_lines()):
             line.set_alpha(0.7)
@@ -1105,62 +1134,89 @@ class Spectrum:
 
         ax[0].set_title("Components")
         ax[1].set_title("Observer spectra")
-        fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
-        fig.subplots_adjust(wspace=0)
+        fig = finish_figure(fig, wspace=0)
 
         return fig, ax
 
-    def _plot_thing(self, thing, label_lines=False, ax_update=None):
+    def _plot_thing(self, thing, spec_type, scale="loglog", label_lines=False, ax_update=None):
         """Plot a specific column in a spectrum file.
 
         Parameters
         ----------
         thing: str
             The name of the thing to be plotted.
+        scale: str
+            The scale of the axes, i.e. loglog, logx, logy, linlin.
         label_lines: bool
             Plot line IDs.
         ax_update: plt.Axes
             An plt.Axes object to update, i.e. to plot on.
         """
-        normalize_figure_style()
+        current = self.current
 
         if ax_update:
             ax = ax_update
         else:
             fig, ax = plt.subplots(figsize=(9, 5))
 
-        ax.set_yscale("log")
-        ax.set_xscale("log")
+        ax = set_axes_scales(ax, scale)
 
         # How things are plotted depends on the units of the spectrum
 
-        if self.units == SPECTRUM_UNITS_FLM:
-            ax.plot(self.spectrum["Lambda"], self.spectrum[thing], label=thing)
-            ax.set_xlabel(r"Wavelength [\AA]")
-            ax.set_ylabel(r"Flux Density " + f"{self.distance:.2e}" + r"pc [erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
-            if label_lines:
-                ax = add_line_ids(ax, common_lines(freq=False), logx=True)
+        if spec_type is None:
+            spec_type = self.current
         else:
-            ax.plot(self.spectrum["Freq."], self.spectrum[thing], label=thing)
-            ax.set_xlabel("Frequency [Hz]")
-            if self.units == SPECTRUM_UNITS_LNU:
-                ax.set_ylabel(r"Luminosity [erg s$^{-1}$ Hz$^{-1}$]")
-            else:
-                ax.set_ylabel(r"Flux Density " + f"{self.distance:.2e}" + r"pc [erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
+            self.set(spec_type)
+
+        units = self.spectra[spec_type].units
+        ax = set_spectrum_axes_labels(ax, self)
+
+        if units == SPECTRUM_UNITS_FLM or units == SPECTRUM_UNITS_LLM:
+            ax.plot(self.spectra[spec_type]["Lambda"], self.spectra[spec_type][thing], label=thing, zorder=0)
             if label_lines:
-                ax = add_line_ids(ax, common_lines(freq=True), logx=True)
+                ax = add_line_ids(ax, common_lines(freq=False), linestyle="none", fontsize=10)
+        else:
+            ax.plot(self.spectra[spec_type]["Freq."], self.spectra[spec_type][thing], label=thing, zorder=0)
+            if label_lines:
+                ax = add_line_ids(ax, common_lines(freq=True), linestyle="none", fontsize=10)
+
+        self.set(current)
 
         if ax_update:
             return ax
         else:
-            fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+            fig = finish_figure(fig)
             return fig, ax
 
     # Methods ------------------------------------------------------------------
 
+    def convert_flux_to_luminosity(self):
+        """Convert the spectrum from flux into luminosity units.
+
+        This is easily done using the relationship F = L / (4 pi d^2). This
+        method is applied to all the spectra currently loaded in the class,
+        but only if the units are already a flux.
+        """
+        for spectrum in self.available:
+            distance = self.spectra[spectrum]["distance"]
+            units = self.spectra[spectrum]["units"]
+            if units in [SPECTRUM_UNITS_LLM, SPECTRUM_UNITS_LNU]:
+                continue
+
+            for column in self.spectra[spectrum].columns:
+                self.spectra[spectrum][column] *= 4 * np.pi * distance**2
+
+            if units == SPECTRUM_UNITS_FNU:
+                self.spectra[spectrum].units = SPECTRUM_UNITS_LNU
+            else:
+                self.spectra[spectrum].units = SPECTRUM_UNITS_LLM
+
+    def convert_luminosity_to_flux(self, distance):
+        pass
+
     def get_spectra(self, delim=None):
         """Read in a spectrum file given in self.filepath. The spectrum is
-        stored as a dictionary in self.spectrum where each key is the name of
+        stored as a dictionary in self.spectra where each key is the name of
         the columns.
 
         Parameters
@@ -1184,9 +1240,10 @@ class Spectrum:
                 continue
 
             n_read += 1
-            self.avail_spectrum[spec_type] = {}
-            self.avail_units[spec_type] = SPECTRUM_UNITS_UNKNOWN
-            self.avail_distance[spec_type] = 0.0
+
+            self.spectra[spec_type] = AttributeDict({
+                "units": SPECTRUM_UNITS_UNKNOWN,
+            })
 
             with open(fp, "r") as f:
                 spectrum_file = f.readlines()
@@ -1203,13 +1260,15 @@ class Spectrum:
                 else:
                     line = line.split()
                 if "Units:" in line:
-                    self.avail_units[spec_type] = line[4][1:-1]
-                    if self.avail_units[spec_type] in [SPECTRUM_UNITS_FLM, SPECTRUM_UNITS_FNU]:
-                        self.avail_distance[spec_type] = float(line[6])
+                    self.spectra[spec_type]["units"] = line[4][1:-1]
+                    if self.spectra[spec_type]["units"] in [SPECTRUM_UNITS_FLM, SPECTRUM_UNITS_FNU]:
+                        self.spectra[spec_type]["distance"] = float(line[6])
                     else:
-                        self.avail_distance[spec_type] = 0
+                        self.spectra[spec_type]["distance"] = 0
+
                 if len(line) == 0 or line[0] == "#":
                     continue
+
                 spectrum.append(line)
 
             # Extract the header columns of the spectrum. This assumes the first
@@ -1223,6 +1282,7 @@ class Spectrum:
                     column_name = column_name[1:j].lstrip("0")  # remove leading 0's for, i.e., 01 degrees
                 header.append(column_name)
 
+            columns = [column for column in header if column not in ["Freq.", "Lambda"]]
             spectrum = np.array(spectrum[1:], dtype=np.float64)
 
             # Add the spectrum to self.avail_spectrum[spec_type]. The keys of
@@ -1230,7 +1290,7 @@ class Spectrum:
             # is in the header
 
             for i, column_name in enumerate(header):
-                self.avail_spectrum[spec_type][column_name] = spectrum[:, i]
+                self.spectra[spec_type][column_name] = spectrum[:, i]
 
             inclinations = []  # this could almost be a list comprehension...
 
@@ -1238,16 +1298,16 @@ class Spectrum:
                 if col.isdigit() and col not in inclinations:
                     inclinations.append(col)
 
-            self.avail_columns[spec_type] = tuple(header)
-            self.avail_inclinations[spec_type] = tuple(inclinations)
-            self.avail_n_inclinations[spec_type] = len(inclinations)
+            self.spectra[spec_type]["columns"] = tuple(columns)
+            self.spectra[spec_type]["inclinations"] = tuple(inclinations)
+            self.spectra[spec_type]["n_inclinations"] = len(inclinations)
 
         if n_read == 0:
             raise IOError(f"Unable to open any spectrum files for {self.root} in {self.fp}")
 
-        self.available = tuple(self.avail_spectrum.keys())
+        self.available = tuple(self.spectra.keys())
 
-    def plot(self, name=None, spec_type=None, label_lines=False):
+    def plot(self, name=None, spec_type=None, scale="loglog", label_lines=False):
         """Plot the spectra or a single component in a single figure. By
         default this creates a 1 x 2 of the components on the left and the
         observer spectra on the right. Useful for when in an interactive
@@ -1259,32 +1319,26 @@ class Spectrum:
             The name of the thing to plot.
         spec_type: str
             The spectrum the thing to plot belongs in.
+        scale: str
+            The scale of the axes, i.e. loglog, logx, logy or linlin.
         label_lines: bool
             Plot line IDs.
         """
-        current = self.current  # keep track of this
-
         # If name is given, then plot that column of the spectrum. Otherwise
         # assume we just want to plot all columns in the spec file
 
         if name:
-            if spec_type:
-                self.set(spec_type)
-            if name not in self.columns:
+            name = str(name)
+            if spec_type is None:
+                spec_type = self.current
+            if name not in self.spectra[spec_type].columns:
                 raise ValueError(f"{name} is not available in the {self.current} spectrum")
-            fig, ax = self._plot_thing(name, label_lines)
+            fig, ax = self._plot_thing(name, spec_type, scale, label_lines)
             if name.isdigit():
                 name += r"$^{\circ}$"
             ax.set_title(name.replace("_", r"\_"))
         else:
-            self.current = "spec"
             fig, ax = self._plot_observer_spectrum(label_lines)
-
-        # self.current can be changed by the above functions, so we must now
-        # change it back now. This is bad programming, and shouldn't be
-        # required really.
-
-        self.current = current
 
         return fig, ax
 
@@ -1300,18 +1354,34 @@ class Spectrum:
             The name of the spectrum, i.e. log_spec or spec_tot, etc. The
             available spectrum types are stored in self.available.
         """
-        if self.log_spec and not name.startswith("log_") and name != "spec_tau":
-            name = "log_" + name
-
+        name = self._get_spec_key(name)
         if name not in self.available:
             raise IndexError(f"spectrum {name} is not available: available are {self.available}")
+        
+        self.current = name
 
-        self.spectrum = self.avail_spectrum[name]
-        self.columns = self.avail_columns[name]
-        self.inclinations = self.avail_inclinations[name]
-        self.n_inclinations = self.avail_n_inclinations[name]
-        self.units = self.avail_units[name]
-        self.distance = self.avail_distance[name]
+    def set_distance(self, distance):
+        """Rescale the flux to the given distance.
+
+        Parameters
+        ----------
+        distance: float or int
+            The distance to scale the flux to.
+        """
+        if type(distance) is not float and type(distance) is not int:
+            raise ValueError("distance is not a float or integer")
+
+        for spectrum in self.available:
+            if spectrum == "spec_tau":
+                continue
+            if self.spectra[spectrum].units == SPECTRUM_UNITS_LNU:
+                continue
+            for key in self.spectra[spectrum].columns:
+                if key in ["Lambda", "Freq."]:
+                    continue
+                self.spectra[spectrum][key] *= \
+                    (self.spectra[spectrum].distance * PARSEC)**2 / (distance * PARSEC)**2
+            self.spectra[spectrum].distance = distance
 
     @staticmethod
     def show(block=True):
@@ -1326,7 +1396,7 @@ class Spectrum:
         """
         plt.show(block=block)
 
-    def smooth(self, width=5, to_smooth=None):
+    def smooth(self, width=5):
         """Smooth the spectrum flux/luminosity bins.
 
         If this is used after the spectrum has already been smoothed, then the
@@ -1337,92 +1407,62 @@ class Spectrum:
         ----------
         width: int [optional]
             The width of the boxcar filter (in bins).
-        to_smooth: list or tuple of strings [optional]
-            A list or tuple
         """
-        if self.original_spectra is None:
-            self.original_spectra = copy.deepcopy(self.spectrum)
+        if self._original_spectra is None:
+            self._original_spectra = copy.deepcopy(self.spectra)
         else:
-            self.spectrum = copy.deepcopy(self.original_spectra)
-
-        if to_smooth is None:
-            to_smooth = ("Created", "WCreated", "Emitted", "CenSrc", "Disk", "Wind", "HitSurf", "Scattered") + tuple(
-                self.inclinations)
-        elif type(to_smooth) is str:
-            to_smooth = to_smooth,
-        elif type(to_smooth) is tuple or type(to_smooth) is list:
-            pass
-        else:
-            raise ValueError("unknown format for argument to_smooth, must be a tuple/list of str or str")
+            self.spectra = copy.deepcopy(self._original_spectra)
 
         # Loop over each available spectrum and smooth it
 
-        for key in self.available:
-            if key == "spec_tau":  # todo: cleaner way to skip spec_tau
+        for spectrum in self.available:
+            if spectrum == "spec_tau":  # todo: cleaner way to skip spec_tau
                 continue
-            for thing_to_smooth in to_smooth:
+
+            for thing_to_smooth in self.spectra[spectrum].columns:
                 try:
-                    self.avail_spectrum[key][thing_to_smooth] = \
-                        smooth_array(self.avail_spectrum[key][thing_to_smooth], width)
+                    self.spectra[spectrum][thing_to_smooth] = smooth_array(self.spectra[spectrum][thing_to_smooth],
+                                                                           width)
                 except KeyError:
                     pass  # some spectra do not have the inclination angles...
 
-    def rescale_to_distance(self, distance):
-        """Rescale the flux to the given distance.
-
-        Parameters
-        ----------
-        distance: float or int
-            The distance to scale the flux to.
-        """
-        if type(distance) is not float and type(distance) is not int:
-            raise ValueError("distance is not a float or integer")
-
-        for spectrum in self.available:
-            if spectrum == "spec_tau":
-                continue
-            if self.avail_units[spectrum] == SPECTRUM_UNITS_LNU:
-                continue
-            for key in self.avail_spectrum[spectrum].keys():
-                if key in ["Lambda", "Freq."]:
-                    continue
-                self.avail_spectrum[spectrum][key] *= \
-                    (self.avail_distance[spectrum] * PARSEC)**2 / (distance * PARSEC)**2
-            self.avail_distance[spectrum] = distance
-
-        self.distance = distance
-
     def restore_original_spectra(self):
         """Restore the spectrum to its original unsmoothed form."""
-
-        self.spectrum = copy.deepcopy(self.original_spectra)
+        self.spectra = copy.deepcopy(self._original_spectra)
 
     # Built in stuff -----------------------------------------------------------
 
+    def __getattr__(self, key):
+        return self.spectra[self.current][key]
+
     def __getitem__(self, key):
-        if key not in self.available:
-            return self.spectrum[key]
+        if self._get_spec_key(key) in self.available:
+            return self.spectra[self._get_spec_key(key)]
         else:
-            return self.avail_spectrum[key]
+            return self.spectra[self.current][key]
+
+    # def __setattr__(self, name, value):
+    #     self.spectra[self.current][name] = value
 
     def __setitem__(self, key, value):
-        if key not in self.available:
-            self.spectrum[key] = value
+        if self._get_spec_key(key) in self.available:
+            self.spectra[self._get_spec_key(key)] = value
         else:
-            self.avail_spectrum[key] = value
+            self.spectra[self.current][key] = value
 
     def __str__(self):
-        msg = f"Spectrum for the model {self.root} in {self.fp}\n"
-        msg += f"Available spectra: {self.available}\n"
-        msg += f"Current spectrum {self.current}\n"
+        msg = f"Spectrum for the model {self.root}\n"
+        msg += f"\nDirectory {self.fp}"
+        msg += f"\nAvailable spectra {self.available}"
+        msg += f"\nCurrent spectrum {self.current}"
         if "spec" in self.available or "log_spec" in self.available:
             if self.log_spec:
                 key = "log_spec"
             else:
                 key = "spec"
-            msg += f"Spectrum inclinations: {self.avail_inclinations[key]}\n"
+            msg += f"\nSpectrum inclinations: {self.spectra[key].inclinations}"
         if "tau_spec" in self.available:
-            msg += f"Optical depth inclinations {self.avail_inclinations['tau_spec']}\n"
+            msg += f"\nOptical depth inclinations {self.spectra.tau_spec.inclinations}"
 
         return textwrap.dedent(msg)
 
@@ -1502,7 +1542,7 @@ class Wind:
         self.parameters = ()
         self.elements = ()
         self.spectra = ()
-        self.wind = {}
+        self.wind = AttributeDict({})
         self.coord_system = WIND_COORD_TYPE_UNKNOWN
         self.gravitational_radius = -1
 
@@ -2037,7 +2077,7 @@ class Wind:
 
         for element in elements_to_get:
             element = element.capitalize()
-            self.wind[element] = {}
+            self.wind[element] = AttributeDict({})
 
             # Loop over the different ion "types", i.e. frac or den.
             # ion_type_index_name is used to give the name for the keys in the
@@ -2089,7 +2129,7 @@ class Wind:
                 # Now we can populate the dictionary with the different columns
                 # of the file
 
-                self.wind[element][ion_type_index_name] = {}
+                self.wind[element][ion_type_index_name] = AttributeDict({})
                 for index, col in enumerate(columns):
                     self.wind[element][ion_type_index_name][col] = wind_lines[:, index].reshape(self.nx, self.nz)
 
@@ -2350,7 +2390,9 @@ __all__.append("Wind")
 
 # These are put here to solve a circular dependency ----------------------------
 
-from pypython.plot import normalize_figure_style, set_axes_scales
-from pypython.plot.spectrum import add_line_ids, common_lines
+from pypython.plot import (finish_figure, normalize_figure_style, set_axes_scales)
+from pypython.plot.spectrum import (add_line_ids, common_lines, set_spectrum_axes_labels)
 from pypython.plot.wind import plot_1d_wind, plot_2d_wind
 from pypython.util import run_command
+
+normalize_figure_style()

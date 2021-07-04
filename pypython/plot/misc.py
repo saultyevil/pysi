@@ -57,7 +57,7 @@ def plot_spectrum_physics_process_contributions(contribution_spectra,
             logx = True
         else:
             logx = False
-        ax = add_line_ids(ax, common_lines(), logx=logx)
+        ax = add_line_ids(ax, common_lines())
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
     fig.savefig("{}/{}_spec_processes.{}".format(wd, root, file_ext), dpi=300)

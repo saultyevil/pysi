@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """General functions for working with photometry.
 
-This module contains functions for converting magnitudes to fluxes, and 
+This module contains functions for converting magnitudes to fluxes, and
 the reverse. Also contained are the zero-points for commons filters.
 """
 
@@ -88,13 +88,12 @@ FILTERS = {
     }
 }
 
-
 filters = FILTERS
 
 
 def error_in_flux(e_magnitude, flux):
     """Calculate the error from flux from the error in magnitude.
-    
+
     Parameters
     ----------
     e_magnitude: float
@@ -114,9 +113,9 @@ def error_in_flux(e_magnitude, flux):
     return error
 
 
-def magnitude_to_flux(magnitude, filter, error=None, host_mag=None, flux_type="Lambda"):
+def magnitude_to_flux(magnitude, filter, error=None, host_magnitude=None, flux_type="Lambda"):
     """Convert a magnitude value to a flux.
-    
+
     If m - m0 = -2.5 * log10(F / F0), then F = F_0 * 10^(-m / 2.5) where
     F_0 is flux for the zero point magnitude of the instrument/filter.
 
@@ -124,20 +123,19 @@ def magnitude_to_flux(magnitude, filter, error=None, host_mag=None, flux_type="L
     ----------
     magnitude: float
         The magnitude of the point.
-    filer: str
+    filter: str
         The filter the point was taken in.
     error: float
         The error on the measurement.
-    host_mag: float
+    host_magnitude: float
         The magnitude of the host galaxy.
     flux_type: str
-        Whether the flux is per unit wavelength or frequency.    
+        Whether the flux is per unit wavelength or frequency.
 
     Returns
     -------
     flux: float
         The magnitude converted into a flux.
-    
     """
     if filter not in FILTERS.keys():
         raise ValueError(f"unknown {filter}: known are {FILTERS.keys()}")
@@ -147,8 +145,8 @@ def magnitude_to_flux(magnitude, filter, error=None, host_mag=None, flux_type="L
         raise NotImplementedError("This filter does not have a flux zero point in Freq. units")
 
     flux = FILTERS[filter][flux_type] * 10**(-magnitude / 2.5)
-    if host_mag:
-        host_flux = FILTERS[filter][flux_type] * 10**(-host_mag / 2.5)
+    if host_magnitude:
+        host_flux = FILTERS[filter][flux_type] * 10**(-host_magnitude / 2.5)
         flux -= host_flux
 
     if error:
@@ -156,4 +154,3 @@ def magnitude_to_flux(magnitude, filter, error=None, host_mag=None, flux_type="L
         return flux, error
     else:
         return flux
-

@@ -77,7 +77,7 @@ def measure_equivalent_width(wavelength, flux, display_xmin, display_xmax, ret_f
     # ax.set_ylim(get_y_lims_for_x_lims(wavelength, flux, display_xmin, display_xmax, scale=2.0))
     ax.set_xlabel("Wavelength")
     ax.set_ylabel("Flux")
-    ax = add_line_ids(ax, common_lines(), logx=True)
+    ax = add_line_ids(ax, common_lines())
     ax.set_title("Mark the blue and then red end of the line")
     cid = fig.canvas.mpl_connect("button_press_event", onclick)
     plt.show()

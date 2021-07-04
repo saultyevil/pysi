@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 
 from pypython import (WIND_COORD_TYPE_CYLINDRICAL, WIND_COORD_TYPE_SPHERICAL, WIND_DISTANCE_UNITS_CM)
 from pypython.constants import PI
-from pypython.plot import normalize_figure_style, set_axes_scales
+from pypython.plot import set_axes_scales
 
 
 def plot_1d_wind(m_points, parameter_points, units, scale="logx", fig=None, ax=None, i=0, j=0):
@@ -39,8 +39,6 @@ def plot_1d_wind(m_points, parameter_points, units, scale="logx", fig=None, ax=N
     ax: plt.Axes
         The (updated) axes array for the plot.
     """
-    normalize_figure_style()
-
     if fig is None or ax is None:
         fig, ax = plt.subplots(figsize=(6, 5), squeeze=False)
 
@@ -111,8 +109,6 @@ def plot_2d_wind(m_points,
     ax: plt.Axes
         The (updated) axes array for the plot.
     """
-    normalize_figure_style()
-
     if fig is None or ax is None:
         if coordinate_system == "rectilinear":
             fig, ax = plt.subplots(figsize=(6, 5), squeeze=False)

@@ -26,7 +26,7 @@ def deredden(wavelength, flux, r_v, e_bv, curve="CCM89"):
     ----------
     wavelength: np.ndarray
         The wavelength bins of the spectrum.
-    flux: np.ndarray 
+    flux: np.ndarray
         The flux bins of the spectrum.
     r_v: float
         The selective extinction coefficient.
