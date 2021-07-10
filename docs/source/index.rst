@@ -20,7 +20,7 @@ in general.
 
 .. toctree::
    :caption: Table of Contents
-   :maxdepth: 4
+   :maxdepth: 6
 
    Quickstart            <quickstart>
    Running models        <running>

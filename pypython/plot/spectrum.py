@@ -363,7 +363,7 @@ def set_spectrum_axes_labels(ax, spectrum, use_flux=False):
         if spectrum.units == SPECTRUM_UNITS_LNU:
             ax.set_xlabel(r"Rest-frame frequency [Hz]")
             ax.set_ylabel(r"$L_{\nu}$ [erg s$^{-1}$ Hz$^{-1}$]")
-        if spectrum.units == SPECTRUM_UNITS_LLM:
+        elif spectrum.units == SPECTRUM_UNITS_LLM:
             ax.set_xlabel(r"Rest-frame wavelength [\AA]")
             ax.set_ylabel(r"$L_{\lambda}$ [erg s$^{-1}$ \AA$^{-1}$]")
         elif spectrum.units == SPECTRUM_UNITS_FLM:

@@ -44,9 +44,23 @@ Plotting a spectrum file
     s.show()
 
     # Or, create a plot using what is contained in plot.spectrum
-    fig, ax = pypython.plot.spectrum.spectrum_observer(s, "all", use_flux=True, label_lines=True, display=True)
+    fig, ax = pypython.plot.spectrum.observer(s, "all", use_flux=True, label_lines=True, display=True)
 
     # And to plot, i.e., the spec_tot file
     s.set("spec_tot")
-    fig, ax = pypython.plot.spectrum.spectrum_components(s, display=True)
+    fig, ax = pypython.plot.spectrum.components(s, display=True)
 
+Plotting the wind
+^^^^^^^^^^^^^^^^^
+
+::
+
+    import pypython
+
+    # Create a plot using the class
+    w = pypython.Wind("tde_optical", spatial_units="rg", version="84g")
+    fig, ax = w.plot("te")
+    w.show()
+
+    # Or, similar to spectra, you can use what is contained in plot.wind
+    fig, ax = pypython.plot.wind.plot_1d_wind(w["r"], w["ne"], w.spatial_units, scale="loglog", display=True)

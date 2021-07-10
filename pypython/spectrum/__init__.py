@@ -10,7 +10,10 @@ widths.
 """
 import astropy.units as u
 from dust_extinction.parameter_averages import CCM89, F99
+from scipy.integrate import simpson
 
+import pypython
+from pypython import SPECTRUM_UNITS_FLM, SPECTRUM_UNITS_LLM
 from pypython.spectrum import create, lines, photometry
 
 
@@ -54,3 +57,51 @@ def deredden(wavelength, flux, r_v, e_bv, curve="CCM89"):
     flux /= curve.extinguish(wavelength, Ebv=e_bv)
 
     return flux
+
+
+def integrate(spectrum, name, xmin, xmax, spec_type=None):
+    """Integrate a sub-range of a spectrum.
+
+    By integrating a spectrum in luminosity units between [xmin, xmax], it
+    is possible to calculate the total luminosity of a given wavelength band.
+    For example, by using xmin, xmax = 3000, 8000 Angstroms, the total optical
+    luminosity can be estimated.
+
+    This function uses Simpson's rule to approximate the integral given the
+    wavelength/frequency bins (used as the sample points) and the luminosity
+    bins.
+
+    Parameters
+    ----------
+    spectrum: pypython.Spectrum
+        The spectrum class containing the spectrum to integrate.
+    name: str
+        The name of the spectrum to integrate, i.e. "60", "Emitted".
+    xmin: float
+        The lower integration bound, in Angstroms.
+    xmax: float
+        The upper integration bound, in Angstroms.
+    spec_type: str [optional]
+        The spectrum type to use. If this is None, then spectrum.current is
+        used
+
+    Returns
+    -------
+    The integral between of the spectrum between xmin and xmax.
+    """
+    if spec_type:
+        key = spec_type
+    else:
+        key = spectrum.current
+
+    if spectrum.units == SPECTRUM_UNITS_LLM or spectrum.units == SPECTRUM_UNITS_FLM:
+        sample_points = spectrum[key]["Lambda"]
+    else:
+        sample_points = spectrum[key]["Freq."]
+        tmp = xmin
+        xmin = pypython.physics.angstrom_to_hz(xmax)
+        xmax = pypython.physics.angstrom_to_hz(tmp)
+
+    sample_points, y = pypython.get_xy_subset(sample_points, spectrum[key][name], xmin, xmax)
+
+    return simpson(y, sample_points)

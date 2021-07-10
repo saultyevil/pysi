@@ -11,7 +11,9 @@ import pkgutil
 import re
 import textwrap
 import time
+from enum import Enum
 from os import listdir, path, remove
+from os.path import expanduser
 from pathlib import Path
 from platform import system
 from shutil import which
@@ -26,6 +28,48 @@ from pypython.error import RunError
 from pypython.math import vector
 from pypython.physics.blackhole import gravitational_radius
 from pypython.simulation.grid import get_parameter_value
+
+
+# Enumerators ------------------------------------------------------------------
+
+
+class SpectrumUnits(Enum):
+    """Possible units for the spectra created in Python.
+
+    Note that there is a typo in the flux units. This is a typo in Python
+    and the behaviour is kept the same in pypython.
+    """
+    LNU = "erg/s/Hz"
+    LLM = "erg/s/A"
+    FNU = "erg/s/cm^-2/Hz"
+    FLM = "erg/s/cm^-2/A"
+
+
+class WindCoordSystem(Enum):
+    """Allowed coordinates systems for a Python model in pypython."""
+    CYLINDRICAL = CARTESIAN = "rectilinear"
+    POLAR = "polar"
+    SPHERICAL = "spherical"
+    UNKNOWN = "unknown"
+
+
+class WindVelocityUnits(Enum):
+    KMS = "kms"
+    CMS = "cms"
+    LIGHT = "c"
+
+
+class WindDistanceUnits(Enum):
+    CM = "cm"
+    M = "m"
+    KM = "km"
+    RG = "rg"
+
+
+class CellModelType(Enum):
+    POWERLAW = 1
+    EXPONENTIAL = 2
+
 
 # Constants --------------------------------------------------------------------
 
@@ -59,6 +103,7 @@ CELL_MODEL_POWERLAW = 1
 CELL_MODEL_EXPONENTIAL = 2
 
 DEBUG_MASK_CELL_SPEC = False
+
 
 # Functions --------------------------------------------------------------------
 
@@ -346,6 +391,54 @@ def get_root_name(fp):
     return root, fp
 
 
+def get_xy_subset(x, y, xmin, xmax):
+    """Get a subset of values from two array given xmin and xmax.
+
+    The array must be sorted in ascending or descending order.
+
+    Parameters
+    ----------
+    x: np.ndarray
+        The first array to get the subset from, set by xmin and xmax.
+    y: np.ndarray
+        The second array to get the subset from.
+    xmin: float
+        The minimum x value
+    xmax: float
+        The maximum x value
+
+    Returns
+    -------
+    x, y: np.ndarray
+        The subset arrays.
+    """
+    assert len(x) == len(y)
+
+    # The array has to be indexed differently depending on if it is ascending
+    # or descending
+
+    if check_sorted_array_ascending(x):
+        if xmin:
+            idx = get_array_index(x, xmin)
+            x = x[idx:]
+            y = y[idx:]
+        if xmax:
+            idx = get_array_index(x, xmax)
+            x = x[:idx]
+            y = y[:idx]
+    else:
+        if xmin:
+            idx = get_array_index(x, xmin)
+            x = x[:idx]
+            y = y[:idx]
+        if xmax:
+            idx = get_array_index(x, xmax)
+            x = x[idx:]
+            y = y[idx:]
+
+    return x, y
+
+
 def smooth_array(array, width):
     """Smooth a 1D array of data using a boxcar filter.
 
@@ -421,6 +514,34 @@ def run_py_wind(root, commands, fp="."):
     return stdout.decode("utf-8").split("\n")
 
 
+# Dictionary class -------------------------------------------------------------
+
+
+class AttributeDict(dict):
+    """A modified dictionary class.
+
+    This class allows users to use . (dot) notation to also access the
+    contents of a dictionary.
+    """
+    def __getattr__(self, key):
+        try:
+            return self[key]
+        except KeyError as k:
+            raise AttributeError(k)
+
+    def __setattr__(self, key, value):
+        self[key] = value
+
+    def __delattr__(self, key):
+        try:
+            del self[key]
+        except KeyError as k:
+            raise AttributeError(k)
+
+    def __repr__(self):
+        return dict.__repr__(self)
+
+
 # Cell spectra -----------------------------------------------------------------
 
 
@@ -455,7 +576,7 @@ class CellSpectra:
         """
         self.root = root
 
-        self.fp = fp
+        self.fp = expanduser(fp)
         if self.fp[-1] != "/":
             self.fp += "/"
         self.pf = self.fp + self.root + ".pf"
@@ -696,7 +817,7 @@ class ModelledCellSpectra:
         """
         self.root = root
 
-        self.fp = fp
+        self.fp = expanduser(fp)
         if self.fp[-1] != "/":
             self.fp += "/"
         self.pf = self.fp + self.root + ".pf"
@@ -964,34 +1085,6 @@ class ModelledCellSpectra:
         return print(self.spectra)
 
 
-# Dictionary class -------------------------------------------------------------
-
-
-class AttributeDict(dict):
-    """A modified dictionary class.
-
-    This class allows users to use . (dot) notation to also access the
-    contents of a dictionary.
-    """
-    def __getattr__(self, key):
-        try:
-            return self[key]
-        except KeyError as k:
-            raise AttributeError(k)
-
-    def __setattr__(self, key, value):
-        self[key] = value
-
-    def __delattr__(self, key):
-        try:
-            del self[key]
-        except KeyError as k:
-            raise AttributeError(k)
-
-    def __repr__(self):
-        return dict.__repr__(self)
-
-
 # Spectrum class ---------------------------------------------------------------
 
 
@@ -1030,7 +1123,7 @@ class Spectrum:
         """
         self.root = root
 
-        self.fp = fp
+        self.fp = expanduser(fp)
         if self.fp[-1] != "/":
             self.fp += "/"
         self.pf = self.fp + self.root + ".pf"
@@ -1055,7 +1148,7 @@ class Spectrum:
         self.get_spectra(delim)
 
         if default:
-            self.current = default
+            self.current = self._get_spec_key(default)
         else:
             self.current = self.available[0]
 
@@ -1152,7 +1245,6 @@ class Spectrum:
         ax_update: plt.Axes
             An plt.Axes object to update, i.e. to plot on.
         """
-        current = self.current
 
         if ax_update:
             ax = ax_update
@@ -1163,24 +1255,22 @@ class Spectrum:
 
         # How things are plotted depends on the units of the spectrum
 
-        if spec_type is None:
-            spec_type = self.current
+        if spec_type:
+            key = spec_type
         else:
-            self.set(spec_type)
+            key = self.current
 
-        units = self.spectra[spec_type].units
+        units = self.spectra[key].units
         ax = set_spectrum_axes_labels(ax, self)
 
         if units == SPECTRUM_UNITS_FLM or units == SPECTRUM_UNITS_LLM:
-            ax.plot(self.spectra[spec_type]["Lambda"], self.spectra[spec_type][thing], label=thing, zorder=0)
+            ax.plot(self.spectra[key]["Lambda"], self.spectra[key][thing], label=thing, zorder=0)
             if label_lines:
                 ax = add_line_ids(ax, common_lines(freq=False), linestyle="none", fontsize=10)
         else:
-            ax.plot(self.spectra[spec_type]["Freq."], self.spectra[spec_type][thing], label=thing, zorder=0)
+            ax.plot(self.spectra[key]["Freq."], self.spectra[key][thing], label=thing, zorder=0)
             if label_lines:
                 ax = add_line_ids(ax, common_lines(freq=True), linestyle="none", fontsize=10)
-
-        self.set(current)
 
         if ax_update:
             return ax
@@ -1198,13 +1288,15 @@ class Spectrum:
         but only if the units are already a flux.
         """
         for spectrum in self.available:
+            if spectrum == "spec_tau":
+                continue
             distance = self.spectra[spectrum]["distance"]
             units = self.spectra[spectrum]["units"]
             if units in [SPECTRUM_UNITS_LLM, SPECTRUM_UNITS_LNU]:
                 continue
 
             for column in self.spectra[spectrum].columns:
-                self.spectra[spectrum][column] *= 4 * np.pi * distance**2
+                self.spectra[spectrum][column] *= 4 * np.pi * (distance * PARSEC)**2
 
             if units == SPECTRUM_UNITS_FNU:
                 self.spectra[spectrum].units = SPECTRUM_UNITS_LNU
@@ -1329,11 +1421,11 @@ class Spectrum:
 
         if name:
             name = str(name)
-            if spec_type is None:
-                spec_type = self.current
-            if name not in self.spectra[spec_type].columns:
-                raise ValueError(f"{name} is not available in the {self.current} spectrum")
+            # if name not in self.spectra[spec_type].columns:
+            #     raise ValueError(f"{name} is not available in the {self.current} spectrum")
+
             fig, ax = self._plot_thing(name, spec_type, scale, label_lines)
+
             if name.isdigit():
                 name += r"$^{\circ}$"
             ax.set_title(name.replace("_", r"\_"))
@@ -1357,7 +1449,7 @@ class Spectrum:
         name = self._get_spec_key(name)
         if name not in self.available:
             raise IndexError(f"spectrum {name} is not available: available are {self.available}")
-        
+
         self.current = name
 
     def set_distance(self, distance):
@@ -1522,7 +1614,7 @@ class Wind:
         """
         self.root = root
 
-        self.fp = fp
+        self.fp = expanduser(fp)
         if self.fp[-1] != "/":
             self.fp += "/"
         self.pf = self.fp + self.root + ".pf"
@@ -2045,6 +2137,7 @@ class Wind:
         for x_index, z in enumerate(z_coords):  # todo: I wonder if this can be vectorized
             z_index = get_array_index(z_array, z)
             values[x_index] = w_array[x_index, z_index]
+        values = np.nan_to_num(values)
 
         return np.array(self.x_coords), z_array, values
 

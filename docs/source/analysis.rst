@@ -13,7 +13,7 @@ creating diagnostic plots to determine the ionization structure of the wind.
 The spectrum
 ------------
 
-The spectrum files are 
+The main type of output from Python are the :code:`.spec` files.
 
 Reading the files
 ^^^^^^^^^^^^^^^^^

@@ -10,7 +10,7 @@ spectrum files and the wind save tables.
 import numpy as np
 from matplotlib import pyplot as plt
 
-from pypython import check_sorted_array_ascending, get_array_index
+from pypython import get_xy_subset
 from pypython.error import InvalidParameter
 
 # Generic plotting function ----------------------------------------------------
@@ -107,60 +107,12 @@ def finish_figure(fig, title=None, hspace=None, wspace=None):
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
 
-    if hspace:
+    if hspace is not None:
         fig.subplots_adjust(hspace=hspace)
-    if wspace:
+    if wspace is not None:
         fig.subplots_adjust(wspace=wspace)
 
     return fig
-
-
-def get_xy_subset(x, y, xmin, xmax):
-    """Get a subset of values from two array given xmin and xmax.
-
-    The array must be sorted in ascending or descending order.
-
-    Parameters
-    ----------
-    x: np.ndarray
-        The first array to get the subset from, set by xmin and xmax.
-    y: np.ndarray
-        The second array to get the subset from.
-    xmin: float
-        The minimum x value
-    xmax: float
-        The maximum x value
-
-    Returns
-    -------
-    x, y: np.ndarray
-        The subset arrays.
-    """
-    assert len(x) == len(y)
-
-    # The array has to be indexed differently depending on if it is ascending
-    # or descending
-
-    if check_sorted_array_ascending(x):
-        if xmin:
-            idx = get_array_index(x, xmin)
-            x = x[idx:]
-            y = y[idx:]
-        if xmax:
-            idx = get_array_index(x, xmax)
-            x = x[:idx]
-            y = y[:idx]
-    else:
-        if xmin:
-            idx = get_array_index(x, xmin)
-            x = x[:idx]
-            y = y[:idx]
-        if xmax:
-            idx = get_array_index(x, xmax)
-            x = x[idx:]
-            y = y[idx:]
-
-    return x, y
 
 
 def normalize_figure_style():
@@ -298,4 +250,5 @@ def subplot_dims(n_plots):
 
 from pypython.plot import misc, spectrum, wind
 
+get_xy_subset = get_xy_subset
 set_style = set_figure_style = normalize_figure_style

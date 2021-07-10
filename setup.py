@@ -5,10 +5,10 @@ from setuptools import setup
 
 setup(
       name="pypython",
-      python_requires='>=3.5',
-      version="2.0",
-      description="A Python package to make using Python a wee bit easier.",
-      url="https://github.com/saultyevil/pyPython",
+      python_requires='>=3.7',
+      version="3.2",
+      description="A package to make using Python a wee bit easier.",
+      url="https://github.com/saultyevil/pypython",
       author="Edward J. Parkinson",
       author_email="e.j.parkinson@soton.ac.uk",
       license="MIT",
@@ -17,8 +17,8 @@ setup(
       zip_safe=False,
       install_requires=[
             "matplotlib", "scipy", "numpy", "pandas", "astropy", "numba",
-            "psutil", "pathlib", "argparse", "google-api-python-client",
-            "google-auth-httplib2", "google-auth-oauthlib", "sphinx",
-            "karma_sphinx_theme", "sqlalchemy"
+            "psutil", "google-api-python-client", "google-auth-httplib2",
+            "google-auth-oauthlib", "sphinx", "karma_sphinx_theme", "sqlalchemy",
+            "dust_extinction", "protobuf"
       ]
 )

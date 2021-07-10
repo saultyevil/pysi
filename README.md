@@ -1,25 +1,24 @@
 # pypython
 
-pypython is a Python package designed to make using the Monte Carlo radiative 
-transfer and ionization code Python a wee bit easier. Historically this package 
-was supposed to be simple and focused on creating a tool to plot the output from
-Python with a variety of plotting scripts. However, it has now become the final
-resting place for a lot of other code abd scripts used throughout my PhD. Some 
-of them are quite useful, but some of them are quite specific to certain computing
-environments and users.
+pypython is a package designed to make using the Monte Carlo radiative 
+transfer and ionization code [Python](https://github.com/agnwinds/python) a wee 
+bit easier. 
 
-## Dependencies
+The main purpose of the package is to provide tools to easily plot and analyse
+the output from a Python simulation. However, a number of tools also exist to
+set up and run a grid of models, as well aid the analysis in determining the
+quality of a converged model.
 
-pypython requires Python 3.5+, as there is a lot of type hinting throughout.
+## Requirements
 
-There are not too many dependencies for pypython and they can all be installed
-using pip. The required dependencies should be automatically if you install
-using pip.
+A minimum Python version of 3.7 is required (i.e., something from June 2018 onwards).
+There are also minimum versions required for packages used in pypython, which
+are located in `requirements.txt` and can be installed using `pip install -r requirements.txt`.
 
 ## Installation
 
-pypython is easiest used and installed by using pip. For example, it can be
-installed as follows,
+pypython is easiest used and installed by using pip to add it to your Python path.
+For example, it can be  installed as follows,
 
 ```bash
 $ pip install .
@@ -27,7 +26,7 @@ $ pip install .
 
 You may need to use --user if installing on a shared machine where you do not
 have administrator privileges, or do not want to install it for all users. If
-you are a development user, it's probably best to use,
+you are a development user, install the package in "editable" mode using,
 
 ```bash
 $ pip install -e .
@@ -35,24 +34,21 @@ $ pip install -e .
 
 ## Documentation
 
-Documentation of the module can be built by using Sphinx and is located in
-the `docs` directory. To build the documentation, run the following command
-in the `docs` directory,
+The barely completely documentation can be built using Sphinx and is located
+in the `docs` directory. To build the HTML version of the documentation,
+run the following command in the `docs` directory
 
 ```bash
-make html
+$ make html
 ```
 
-HTML documentation will be created in `docs/build/html` and the root 
-documentation file will be named `index.html`. At current, there is no 
-documentation hosted online and it is also quite incomplete.
+HTML files will be created in `docs/build/html` and the root 
+file will be named `index.html`.
 
 ## Usage
 
-Provided in the `scripts` directory are scripts which use various parts of
-pypython to, for example, plot spectra, process the atomic data or some 
-general error checking for models. 
+Helpful scripts are in the `scripts` which are used to plot output from Python,
+or to setup and run Python models and determine the quality of their convergence.
 
-The most useful script is plot `py_plot.py` which creates plots of the various
-wind parameters, ions and velocities as well as spectra. `py_run.py` is also
-quite nice at helping taking the stress away from running multiple models.
+The most useful scripts are the various `py_plot_*` and `py_check_*` scripts 
+and `py_run.py`.
