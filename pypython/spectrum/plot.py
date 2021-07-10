@@ -4,37 +4,14 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-import pypython
-from pypython import (SPECTRUM_UNITS_FLM, SPECTRUM_UNITS_FNU, SPECTRUM_UNITS_LLM, SPECTRUM_UNITS_LNU, Spectrum,
-                      get_root_name)
+from pypython import get_root_name
 from pypython.constants import ANGSTROM, C
-from pypython.plot import (_check_axes_scale_string, finish_figure, get_xy_subset, remove_extra_axes, set_axes_scales,
-                           subplot_dims)
+from pypython.plot import finish_figure, get_xy_subset, remove_extra_axes, set_axes_scales, subplot_dims
+from pypython.spectrum import Spectrum, SpectrumUnits
 
 MIN_FLUX = 1e-20
 
 # Helper functions -------------------------------------------------------------
-
-
-def _add_line_labels(ax, labels, scale, linestyle="dashed", offset=0.0):
-    """Add labels of lines or absorption edges to ax.
-
-    Parameters
-    ----------
-    ax: plt.Axes
-        The subplot to add labels to.
-    labels: tuple or list
-        The labels to add.
-    scale: str
-        The scaling of the axes.
-    """
-    if scale == "loglog" or scale == "logx":
-        logx = True
-    else:
-        logx = False
-    ax = add_line_ids(ax, labels, linestyle=linestyle, offset=offset)
-
-    return ax
 
 
 def _convert_labels_to_frequency_space(lines, freq=False, spectrum=None):
@@ -51,7 +28,7 @@ def _convert_labels_to_frequency_space(lines, freq=False, spectrum=None):
     """
 
     if spectrum:
-        if spectrum.units in [SPECTRUM_UNITS_FNU, SPECTRUM_UNITS_LNU]:
+        if spectrum.units in [SpectrumUnits.f_nu, Spectrum.l_nu]:
             for i in range(len(lines)):
                 lines[i][1] = C / (lines[i][1] * ANGSTROM)
     elif freq:
@@ -136,12 +113,12 @@ def _plot_subplot(ax, spectrum, things_to_plot, xmin, xmax, alpha, scale, use_fl
         # to be converted in nu F nu
 
         if use_flux:
-            if spectrum.units == SPECTRUM_UNITS_FLM:
+            if spectrum.units == SpectrumUnits.f_lm:
                 y *= spectrum["Lambda"]
             else:
                 y *= spectrum["Freq."]
 
-        if spectrum.units == SPECTRUM_UNITS_FLM:
+        if spectrum.units == SpectrumUnits.f_lm:
             x = spectrum["Lambda"]
         else:
             x = spectrum["Freq."]
@@ -347,26 +324,26 @@ def set_spectrum_axes_labels(ax, spectrum, use_flux=False):
         The updated axes object.
     """
     if use_flux:
-        if spectrum.units == SPECTRUM_UNITS_LNU:
+        if spectrum.units == SpectrumUnits.l_nu:
             ax.set_xlabel(r"Rest-frame frequency [Hz]")
             ax.set_ylabel(r"$\nu L_{\nu}$ [erg s$^{-1}$]")
-        elif spectrum.units == SPECTRUM_UNITS_LLM:
+        elif spectrum.units == SpectrumUnits.l_lm:
             ax.set_xlabel(r"Rest-frame wavelength [\AA]")
             ax.set_ylabel(r"$\lambda L_{\lambda}$ [erg s$^{-1}$]")
-        elif spectrum.units == SPECTRUM_UNITS_FLM:
+        elif spectrum.units == SpectrumUnits.f_lm:
             ax.set_xlabel(r"Rest-frame wavelength [\AA]")
             ax.set_ylabel(r"$\lambda F_{\lambda}$ at " + f"{spectrum.distance:g} pc " + r"[erg s$^{-1}$]")
         else:
             ax.set_xlabel(r"Rest-frame frequency [Hz]")
             ax.set_ylabel(r"$\nu F_{\nu}$ at " + f"{spectrum.distance:g} pc " + r"[erg s$^{-1}$ cm$^{-2}$]")
     else:
-        if spectrum.units == SPECTRUM_UNITS_LNU:
+        if spectrum.units == SpectrumUnits.l_nu:
             ax.set_xlabel(r"Rest-frame frequency [Hz]")
             ax.set_ylabel(r"$L_{\nu}$ [erg s$^{-1}$ Hz$^{-1}$]")
-        elif spectrum.units == SPECTRUM_UNITS_LLM:
+        elif spectrum.units == SpectrumUnits.l_lm:
             ax.set_xlabel(r"Rest-frame wavelength [\AA]")
             ax.set_ylabel(r"$L_{\lambda}$ [erg s$^{-1}$ \AA$^{-1}$]")
-        elif spectrum.units == SPECTRUM_UNITS_FLM:
+        elif spectrum.units == SpectrumUnits.f_lm:
             ax.set_xlabel(r"Rest-frame wavelength [\AA]")
             ax.set_ylabel(r"$F_{\lambda}$ at " + f"{spectrum.distance:g} pc " + r"[erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
         else:
@@ -503,7 +480,7 @@ def multiple_models(output_name,
     for spectrum in spectra:
         if type(spectrum) is not Spectrum:
             root, fp = get_root_name(spectrum)
-            spectra_to_plot.append(Spectrum(root, fp, spectrum_type, log_spec, smooth, distance))
+            spectra_to_plot.append(Spectrum(root, fp, log_spec, smooth, distance, spectrum_type))
         else:
             spectra_to_plot.append(spectrum)
 
@@ -552,12 +529,12 @@ def multiple_models(output_name,
                 continue
 
             if use_flux:
-                if spectrum.units == SPECTRUM_UNITS_FLM:
+                if spectrum.units == SpectrumUnits.f_lm:
                     y *= spectrum["Lambda"]
                 else:
                     y *= spectrum["Freq."]
 
-            if spectrum.units == SPECTRUM_UNITS_FLM:
+            if spectrum.units == SpectrumUnits.f_lm:
                 x = spectrum["Lambda"]
             else:
                 x = spectrum["Freq."]
@@ -576,7 +553,7 @@ def multiple_models(output_name,
             ax[n].set_title(f"{thing}")
 
         if label_lines:
-            ax[n] = _add_line_labels(ax[n], common_lines(spectrum=spectra_to_plot[0]), scale, linestyle="none")
+            ax[n] = add_line_ids(ax[n], common_lines(spectrum=spectra_to_plot[0]), "none")
 
     ax[0].legend(fontsize=10).set_zorder(0)
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
@@ -657,7 +634,7 @@ def observer(spectrum,
     ax = _plot_subplot(ax, spectrum, inclinations, xmin, xmax, 1.0, scale, use_flux)
 
     if label_lines:
-        ax = _add_line_labels(ax, common_lines(spectrum=spectrum), scale, linestyle="none")
+        ax = add_line_ids(ax, common_lines(spectrum=spectrum), "none")
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
     fig.savefig(f"{spectrum.fp}/{spectrum.root}_{spectrum.current}.png")
@@ -756,7 +733,7 @@ def optical_depth(spectrum,
     ax.legend(loc="upper left")
 
     if label_edges:
-        ax = _add_line_labels(ax, photoionization_edges(frequency_space), scale)
+        ax = add_line_ids(ax, photoionization_edges(frequency_space))
 
     fig = finish_figure(fig)
     fig.savefig(f"{spectrum.fp}/{spectrum.root}_spec_optical_depth.png")
@@ -811,7 +788,7 @@ def reprocessing(spectrum, xmin=None, xmax=None, scale="loglog", label_edges=Tru
     ax.set_ylabel("Continuum Optical Depth")
 
     if label_edges:
-        ax = _add_line_labels(ax, photoionization_edges(freq=True), scale, linestyle="none")
+        ax = add_line_ids(ax, photoionization_edges(freq=True), "none")
 
     ax.set_zorder(ax2.get_zorder() + 1)
     ax.patch.set_visible(False)
@@ -823,7 +800,7 @@ def reprocessing(spectrum, xmin=None, xmax=None, scale="loglog", label_edges=Tru
     for thing in ["Created", "Emitted"]:
         x, y = get_xy_subset(spectrum["Freq."], spectrum[thing], xmin, xmax)
 
-        if spectrum.spatial_units == SPECTRUM_UNITS_FLM:
+        if spectrum.spatial_units == SpectrumUnits.f_lm:
             y *= spectrum["Lambda"]
         else:
             y *= spectrum["Freq."]

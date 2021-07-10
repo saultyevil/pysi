@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 
 from pypython import smooth_array
 from pypython.plot import normalize_figure_style
-from pypython.plot.spectrum import add_line_ids, common_lines
+from pypython.spectrum.plot import add_line_ids, common_lines
 
 
 def plot_spectrum_physics_process_contributions(contribution_spectra,
@@ -53,10 +53,6 @@ def plot_spectrum_physics_process_contributions(contribution_spectra,
     ax.set_ylabel(r"Flux F$_{\lambda}$ [erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$]")
 
     if line_labels:
-        if scale == "logx" or scale == "loglog":
-            logx = True
-        else:
-            logx = False
         ax = add_line_ids(ax, common_lines())
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])

@@ -246,9 +246,4 @@ def subplot_dims(n_plots):
     return n_rows, n_cols
 
 
-# This is placed here due to a circular dependency -----------------------------
-
-from pypython.plot import misc, spectrum, wind
-
-get_xy_subset = get_xy_subset
 set_style = set_figure_style = normalize_figure_style

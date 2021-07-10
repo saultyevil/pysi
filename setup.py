@@ -17,8 +17,7 @@ setup(
       zip_safe=False,
       install_requires=[
             "matplotlib", "scipy", "numpy", "pandas", "astropy", "numba",
-            "psutil", "google-api-python-client", "google-auth-httplib2",
-            "google-auth-oauthlib", "sphinx", "karma_sphinx_theme", "sqlalchemy",
+            "psutil", "sphinx", "karma_sphinx_theme", "sqlalchemy",
             "dust_extinction", "protobuf"
       ]
 )

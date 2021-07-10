@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 from pypython import get_array_index
 from pypython.error import EXIT_FAIL
 from pypython.plot import get_xy_subset
-from pypython.plot.spectrum import add_line_ids, common_lines
+from pypython.spectrum.plot import add_line_ids, common_lines
 
 
 def fit_gaussian():

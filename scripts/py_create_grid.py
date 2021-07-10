@@ -105,12 +105,12 @@ def run_grid():
     """Main controlling function of the script."""
 
     # This is the parameter which will be changed
-    root = "../../tde_uv.pf"
-    parameter = "SV.v_infinity(in_units_of_vescape"
-    short = "Vinf"
+    root = "tde_opt_cmf"
+    parameter = "SV.mdot_r_exponent"
+    short = "lambda"
 
     # These parameters are for creating the pf files
-    tmp = [0.1, 0.5, 0.8]
+    tmp = [-2, -1.5, -1, -0.5, 0.5, 1, 1.5, 2]
     grid = []
     for i in range(len(tmp)):
         grid.append("{:.4e}".format(tmp[i]))

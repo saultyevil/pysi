@@ -18,10 +18,11 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from pypython import Spectrum, Wind
 from pypython.constants import PARSEC, C
 from pypython.error import EXIT_FAIL
 from pypython.physics import angstrom_to_hz, hz_to_angstrom
+from pypython.spectrum import Spectrum
+from pypython.wind import Wind
 
 BOUND_FREE_NRES = 20000
 UNFILTERED_SPECTRUM = -999

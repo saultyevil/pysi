@@ -9,9 +9,6 @@ function of frequency.
 
 import argparse as ap
 
-import numpy as np
-from matplotlib import pyplot as plt
-
 from pypython import Spectrum
 from pypython.plot.spectrum import reprocessing
 

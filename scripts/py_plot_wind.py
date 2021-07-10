@@ -14,8 +14,8 @@ import argparse as ap
 import numpy as np
 from matplotlib import pyplot as plt
 
-from pypython import WIND_COORD_TYPE_CYLINDRICAL, Wind, plot
-from pypython.plot import wind
+from pypython import plot
+from pypython.wind import Wind, plot, WindCoordSystem
 
 default_wind_parameters = ("t_e", "t_r", "ne", "rho", "c4", "ip")
 
@@ -105,7 +105,7 @@ def plot_wind_parameters(w,
                 to_plot = w[parameters_to_plot[wind_index]]
                 ax[i, j].set_title(parameters_to_plot[wind_index].replace("_", r"\_"))
 
-            fig, ax = wind.plot(w, to_plot, scale=axes_scales, fig=fig, ax=ax, i=i, j=j)
+            fig, ax = plot.plot(w, to_plot, scale=axes_scales, fig=fig, ax=ax, i=i, j=j)
             wind_index += 1
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
@@ -154,7 +154,7 @@ def plot_wind_velocity(w,
                 ax[i,
                    j].set_title(wind_velocities_to_plot[wind_index].replace("_", r"\_") + " [" + w.velocity_units + "]")
 
-            fig, ax = wind.plot(w, to_plot, scale=axes_scales, fig=fig, ax=ax, i=i, j=j)
+            fig, ax = plot.plot(w, to_plot, scale=axes_scales, fig=fig, ax=ax, i=i, j=j)
             wind_index += 1
 
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
@@ -210,7 +210,7 @@ def plot_wind_ions(w,
             for j in range(n_cols):
                 ion_key = "i{:02d}".format(ion_index)
                 with np.errstate(divide="ignore"):
-                    fig, ax = wind.plot(w,
+                    fig, ax = plot.plot(w,
                                         np.log10(w[element][ion_type_key][ion_key]),
                                         scale=axes_scales,
                                         vmin=vmin,
@@ -247,7 +247,7 @@ def main():
 
     root, fp, use_ion_density, velocity_units, axes_scales, use_cell_indices, display = setup_script()
 
-    w = Wind(root, fp, spatial_units="cm", velocity_units=velocity_units, get_cell_spec=False)
+    w = Wind(root, fp, distance_units="cm", velocity_units=velocity_units)
 
     if w.coord_system == "polar":
         subplot_kw = {"projection": "polar"}
@@ -256,7 +256,7 @@ def main():
 
     plot_wind_parameters(w, default_wind_parameters, axes_scales=axes_scales, subplot_kw=subplot_kw, display=display)
 
-    if w.coord_system == WIND_COORD_TYPE_CYLINDRICAL:
+    if w.coord_system == WindCoordSystem.cylindrical:
         plot_wind_velocity(w, default_wind_velocities, velocity_units, subplot_kw, axes_scales, display)
 
     plot_wind_ions(w, default_wind_ions, default_ion_fig_dims, default_ion_figsize, use_ion_density, axes_scales,
