@@ -107,6 +107,8 @@ def cleanup_data(fp="."):
         The number of symbolic links deleted
     """
     links = [d for d in find("data", fp) if islink(d)]
+    links += [d for d in find("xmod*", fp) if islink(d)]
+
     for directory in links:
         Path(directory).unlink()
 

@@ -16,13 +16,12 @@ from sys import argv, exit
 from pypython import cleanup_data
 
 if len(argv) == 1:
-    cleanup_data("~/PySims", verbose=True)
+    cleanup_data()
 elif len(argv) == 2:
     if argv[1] == "-h" or argv[1] == "--help":
         print(__doc__)
-
         exit(0)
-    cleanup_data(argv[1], verbose=True)
+    cleanup_data(argv[1])
 else:
     print("Unknown number of arguments.")
     print(__doc__)

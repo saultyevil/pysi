@@ -15,6 +15,7 @@ from pypython.physics.blackhole import gravitational_radius
 from pypython.plot import set_axes_scales
 from pypython.simulation.grid import get_parameter_value
 
+
 # Enumerators ------------------------------------------------------------------
 
 

@@ -196,25 +196,31 @@ class Spectrum:
         else:
             fig, ax = plt.subplots(figsize=(9, 5))
 
-        ax = set_axes_scales(ax, scale)
-
-        # How things are plotted depends on the units of the spectrum
-
         if spec_type:
             key = spec_type
         else:
             key = self.current
 
         units = self.spectra[key].units
-        ax = plot.set_spectrum_axes_labels(ax, self)
+        distance = self.spectra[key].distance
+        ax = set_axes_scales(ax, scale)
+        ax = plot.set_spectrum_axes_labels(ax, units=units, distance=distance)
+
+        # How things are plotted depends on the units of the spectrum
 
         if units == SpectrumUnits.f_lm or units == SpectrumUnits.l_lm:
-            ax.plot(self.spectra[key]["Lambda"], self.spectra[key][thing], label=thing, zorder=0)
+            x_thing = "Lambda"
         else:
-            ax.plot(self.spectra[key]["Freq."], self.spectra[key][thing], label=thing, zorder=0)
+            x_thing = "Freq."
+
+        label = thing
+        if thing.isdigit():
+            label += r"$^{\circ}$"
+
+        ax.plot(self.spectra[key][x_thing], self.spectra[key][thing], label=label, zorder=0)
 
         if label_lines:
-            ax = plot.add_line_ids(ax, plot.common_lines(spectrum=self), linestyle="none", fontsize=10)
+            ax = plot.add_line_ids(ax, plot.common_lines(units), linestyle="none", fontsize=10)
 
         if ax_update:
             return ax
@@ -302,7 +308,7 @@ class Spectrum:
                 else:
                     line = line.split()
                 if "Units:" in line:
-                    self.spectra[spec_type]["units"] = line[4][1:-1]
+                    self.spectra[spec_type]["units"] = SpectrumUnits(line[4][1:-1])
                     if self.spectra[spec_type]["units"] in [SpectrumUnits.f_lm, SpectrumUnits.f_nu]:
                         self.spectra[spec_type]["distance"] = float(line[6])
                     else:
@@ -349,7 +355,7 @@ class Spectrum:
 
         self.available = tuple(self.spectra.keys())
 
-    def plot(self, name=None, spec_type=None, scale="loglog", label_lines=False):
+    def plot(self, names=None, spec_type=None, scale="loglog", label_lines=False):
         """Plot the spectra or a single component in a single figure. By
         default this creates a 1 x 2 of the components on the left and the
         observer spectra on the right. Useful for when in an interactive
@@ -357,7 +363,7 @@ class Spectrum:
 
         Parameters
         ----------
-        name: str
+        names: str
             The name of the thing to plot.
         spec_type: str
             The spectrum the thing to plot belongs in.
@@ -369,16 +375,14 @@ class Spectrum:
         # If name is given, then plot that column of the spectrum. Otherwise
         # assume we just want to plot all columns in the spec file
 
-        if name:
-            name = str(name)
-            # if name not in self.spectra[spec_type].columns:
-            #     raise ValueError(f"{name} is not available in the {self.current} spectrum")
-
-            fig, ax = self._plot_thing(name, spec_type, scale, label_lines)
-
-            if name.isdigit():
-                name += r"$^{\circ}$"
-            ax.set_title(name.replace("_", r"\_"))
+        if names:
+            if type(names) is not list:
+                names = [names]
+            fig, ax = self._plot_thing(str(names[0]), spec_type, scale, label_lines)
+            if len(names) > 1:
+                for name in names[1:]:
+                    ax = self._plot_thing(str(name), spec_type, scale, label_lines, ax_update=ax)
+            ax.legend()
         else:
             fig, ax = self._plot_observer_spectrum(label_lines)
 
@@ -547,7 +551,7 @@ def integrate(spectrum, name, xmin, xmax, spec_type=None):
     else:
         key = spectrum.current
 
-    if spectrum.units == SpectrumUnits.l_lm or spectrum.units == SpectrumUnits.f_lmn:
+    if spectrum[key].units == SpectrumUnits.l_lm or spectrum[key].units == SpectrumUnits.f_lm:
         sample_points = spectrum[key]["Lambda"]
     else:
         sample_points = spectrum[key]["Freq."]

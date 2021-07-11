@@ -14,7 +14,7 @@ MIN_FLUX = 1e-20
 # Helper functions -------------------------------------------------------------
 
 
-def _convert_labels_to_frequency_space(lines, freq=False, spectrum=None):
+def _convert_labels_to_frequency_space(lines, units=None, spectrum=None):
     """Convert the given list of lines/edges from Angstrom to Hz.
 
     Parameters
@@ -26,12 +26,13 @@ def _convert_labels_to_frequency_space(lines, freq=False, spectrum=None):
     spectrum: pypython.Spectrum
         A spectrum object, used to find the units of the spectrum.
     """
+    if units is None and Spectrum is None:
+        raise ValueError("need units or spectrum")
 
-    if spectrum:
-        if spectrum.units in [SpectrumUnits.f_nu, Spectrum.l_nu]:
-            for i in range(len(lines)):
-                lines[i][1] = C / (lines[i][1] * ANGSTROM)
-    elif freq:
+    if units is None:
+        units = spectrum.units
+
+    if units in [SpectrumUnits.f_nu, SpectrumUnits.l_nu]:
         for i in range(len(lines)):
             lines[i][1] = C / (lines[i][1] * ANGSTROM)
 
@@ -218,7 +219,7 @@ def add_line_ids(ax,
     return ax
 
 
-def common_lines(freq=False, spectrum=None):
+def common_lines(units=None, spectrum=None):
     """Return a list containing the names of line transitions and the
     wavelength of the transition in Angstroms. Instead of returning the
     wavelength, the frequency can be returned instead. It is also possible to
@@ -266,7 +267,7 @@ def common_lines(freq=False, spectrum=None):
         [r"H$_{\alpha}$", 6564],
     ]
 
-    lines = _convert_labels_to_frequency_space(lines, freq, spectrum)
+    lines = _convert_labels_to_frequency_space(lines, units, spectrum)
 
     return lines
 
@@ -305,8 +306,44 @@ def photoionization_edges(freq=False, spectrum=False):
     return edges
 
 
-def set_spectrum_axes_labels(ax, spectrum, use_flux=False):
+def _ax_labels_flux(ax, units, distance):
+    if units == SpectrumUnits.l_nu:
+        ax.set_xlabel(r"Rest-frame frequency [Hz]")
+        ax.set_ylabel(r"$\nu L_{\nu}$ [erg s$^{-1}$]")
+    elif units == SpectrumUnits.l_lm:
+        ax.set_xlabel(r"Rest-frame wavelength [\AA]")
+        ax.set_ylabel(r"$\lambda L_{\lambda}$ [erg s$^{-1}$]")
+    elif units == SpectrumUnits.f_lm:
+        ax.set_xlabel(r"Rest-frame wavelength [\AA]")
+        ax.set_ylabel(r"$\lambda F_{\lambda}$ at " + f"{distance:g} pc " + r"[erg s$^{-1}$]")
+    else:
+        ax.set_xlabel(r"Rest-frame frequency [Hz]")
+        ax.set_ylabel(r"$\nu F_{\nu}$ at " + f"{distance:g} pc " + r"[erg s$^{-1}$ cm$^{-2}$]")
+
+    return ax
+
+
+def _ax_labels(ax, units, distance):
+    if units == SpectrumUnits.l_nu:
+        ax.set_xlabel(r"Rest-frame frequency [Hz]")
+        ax.set_ylabel(r"$L_{\nu}$ [erg s$^{-1}$ Hz$^{-1}$]")
+    elif units == SpectrumUnits.l_lm:
+        ax.set_xlabel(r"Rest-frame wavelength [\AA]")
+        ax.set_ylabel(r"$L_{\lambda}$ [erg s$^{-1}$ \AA$^{-1}$]")
+    elif units == SpectrumUnits.f_lm:
+        ax.set_xlabel(r"Rest-frame wavelength [\AA]")
+        ax.set_ylabel(r"$F_{\lambda}$ at " + f"{distance:g} pc " + r"[erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
+    else:
+        ax.set_xlabel(r"Rest-frame frequency [Hz]")
+        ax.set_ylabel(r"$F_{\nu}$ at " + f"{distance:g} pc " + r"[erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
+
+    return ax
+
+
+def set_spectrum_axes_labels(ax, spectrum=None, units=None, distance=None, use_flux=False):
     """Set the units of a given matplotlib axes.
+
+    todo: should have an else if the units are unknown, not for f_nu
 
     Parameters
     ----------
@@ -314,6 +351,10 @@ def set_spectrum_axes_labels(ax, spectrum, use_flux=False):
         The axes object to update.
     spectrum: pypython.Spectrum
         The spectrum being plotted. Used to determine the axes labels.
+    units: SpectrumUnits
+        The units of the spectrum
+    distance: float
+        The distance of the spectrum
     use_flux: bool
         If flux/nu Lnu is being plotted instead of flux density or
         luminosity.
@@ -323,32 +364,20 @@ def set_spectrum_axes_labels(ax, spectrum, use_flux=False):
     ax: plt.Axes
         The updated axes object.
     """
+    if spectrum is None and units is None and distance is None:
+        raise ValueError("either the spectrum or the units and distance needs to be provided")
+
+    if units and distance is None or distance and units is None:
+        raise ValueError("the units and distance have to be provided together")
+
+    if units is None and distance is None:
+        units = spectrum.units
+        distance = spectrum.distance
+
     if use_flux:
-        if spectrum.units == SpectrumUnits.l_nu:
-            ax.set_xlabel(r"Rest-frame frequency [Hz]")
-            ax.set_ylabel(r"$\nu L_{\nu}$ [erg s$^{-1}$]")
-        elif spectrum.units == SpectrumUnits.l_lm:
-            ax.set_xlabel(r"Rest-frame wavelength [\AA]")
-            ax.set_ylabel(r"$\lambda L_{\lambda}$ [erg s$^{-1}$]")
-        elif spectrum.units == SpectrumUnits.f_lm:
-            ax.set_xlabel(r"Rest-frame wavelength [\AA]")
-            ax.set_ylabel(r"$\lambda F_{\lambda}$ at " + f"{spectrum.distance:g} pc " + r"[erg s$^{-1}$]")
-        else:
-            ax.set_xlabel(r"Rest-frame frequency [Hz]")
-            ax.set_ylabel(r"$\nu F_{\nu}$ at " + f"{spectrum.distance:g} pc " + r"[erg s$^{-1}$ cm$^{-2}$]")
+        ax = _ax_labels_flux(ax, units, distance)
     else:
-        if spectrum.units == SpectrumUnits.l_nu:
-            ax.set_xlabel(r"Rest-frame frequency [Hz]")
-            ax.set_ylabel(r"$L_{\nu}$ [erg s$^{-1}$ Hz$^{-1}$]")
-        elif spectrum.units == SpectrumUnits.l_lm:
-            ax.set_xlabel(r"Rest-frame wavelength [\AA]")
-            ax.set_ylabel(r"$L_{\lambda}$ [erg s$^{-1}$ \AA$^{-1}$]")
-        elif spectrum.units == SpectrumUnits.f_lm:
-            ax.set_xlabel(r"Rest-frame wavelength [\AA]")
-            ax.set_ylabel(r"$F_{\lambda}$ at " + f"{spectrum.distance:g} pc " + r"[erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
-        else:
-            ax.set_xlabel(r"Rest-frame frequency [Hz]")
-            ax.set_ylabel(r"$F_{\nu}$ at " + f"{spectrum.distance:g} pc " + r"[erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
+        ax = _ax_labels(ax, units, distance)
 
     return ax
 
