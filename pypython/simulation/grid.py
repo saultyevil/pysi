@@ -80,14 +80,14 @@ def create_grid(fp, name, values, extra_name=None, backup=True, verbose=False):
         raise IOError(f"provided file path {fp} is not a .pf parameter file")
 
     for i in range(n_grid):
-        fp = fp[:ext]
+        fp_new = fp[:ext]
         if extra_name:
-            fp += "_{}".format(extra_name)
-        fp += "_{}".format(values[i]) + ".pf"
-        print(fp)
-        copyfile(fp, fp)
-        update_single_parameter(fp, name, values[i], backup=False, verbose=verbose)
-        grid.append(fp)
+            fp_new += "_{}".format(extra_name)
+        fp_new += "_{}".format(values[i]) + ".pf"
+        print(fp_new)
+        copyfile(fp, fp_new)
+        update_single_parameter(fp_new, name, values[i], backup=False, verbose=verbose)
+        grid.append(fp_new)
 
     return grid
 

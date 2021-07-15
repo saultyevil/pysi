@@ -9,7 +9,7 @@ from pypython.plot import finish_figure, set_axes_scales
 from pypython.wind import WindCoordSystem, WindDistanceUnits
 
 
-def plot_1d_wind(m_points, parameter_points, units, scale="logx", fig=None, ax=None, i=0, j=0):
+def wind1d(m_points, parameter_points, units, scale="logx", fig=None, ax=None, i=0, j=0):
     """Plot a 1D wind.
 
     Parameters
@@ -40,7 +40,7 @@ def plot_1d_wind(m_points, parameter_points, units, scale="logx", fig=None, ax=N
         The (updated) axes array for the plot.
     """
     if fig is None or ax is None:
-        fig, ax = plt.subplots(figsize=(6, 5), squeeze=False)
+        fig, ax = plt.subplots(figsize=(8, 6), squeeze=False)
 
     ax[i, j].plot(m_points, parameter_points)
 
@@ -48,26 +48,26 @@ def plot_1d_wind(m_points, parameter_points, units, scale="logx", fig=None, ax=N
         ax[i, j].set_xlabel(r"$R$ [cm]")
     else:
         ax[i, j].set_xlabel(r"$r / R_{g}$")
-    ax[i, j].set_xlim(np.min(m_points[m_points > 0]), np.max(m_points))
+    # ax[i, j].set_xlim(np.min(m_points[m_points > 0]), np.max(m_points))
     ax[i, j] = set_axes_scales(ax[i, j], scale)
     fig = finish_figure(fig)
 
     return fig, ax
 
 
-def plot_2d_wind(m_points,
-                 n_points,
-                 parameter_points,
-                 units,
-                 coordinate_system,
-                 inclinations_to_plot=None,
-                 scale="loglog",
-                 vmin=None,
-                 vmax=None,
-                 fig=None,
-                 ax=None,
-                 i=0,
-                 j=0):
+def wind2d(m_points,
+           n_points,
+           parameter_points,
+           units,
+           coordinate_system,
+           inclinations_to_plot=None,
+           scale="loglog",
+           vmin=None,
+           vmax=None,
+           fig=None,
+           ax=None,
+           i=0,
+           j=0):
     """Plot a 2D wind using a contour plot.
 
     Parameters
@@ -110,16 +110,16 @@ def plot_2d_wind(m_points,
     """
     if fig is None or ax is None:
         if coordinate_system == WindCoordSystem.cylindrical or coordinate_system == WindCoordSystem.cartesian:
-            fig, ax = plt.subplots(figsize=(6, 5), squeeze=False)
+            fig, ax = plt.subplots(figsize=(8, 6), squeeze=False)
         elif coordinate_system == WindCoordSystem.polar:
-            fig, ax = plt.subplots(figsize=(6, 5), squeeze=False, subplot_kw={"projection": "polar"})
+            fig, ax = plt.subplots(figsize=(8, 6), squeeze=False, subplot_kw={"projection": "polar"})
         else:
             raise ValueError(
                 f"Unknown projection, expected {WindCoordSystem.cylindrical}, {WindCoordSystem.cartesian} or "
                 f"{WindCoordSystem.polar}")
 
     im = ax[i, j].pcolormesh(m_points, n_points, parameter_points, shading="auto", vmin=vmin, vmax=vmax)
-    cbar = fig.colorbar(im, ax=ax[i, j])
+    fig.colorbar(im, ax=ax[i, j])
 
     # this plots lines representing sight lines for different observers of
     # different inclinations
@@ -138,7 +138,7 @@ def plot_2d_wind(m_points,
 
     # Clean up the axes with labs and set up scales, limits etc
 
-    if coordinate_system == "rectilinear":
+    if coordinate_system == WindCoordSystem.cylindrical or coordinate_system == WindCoordSystem.cartesian:
         if units == WindDistanceUnits.cm:
             ax[i, j].set_xlabel(r"$x$ [cm]")
             ax[i, j].set_ylabel(r"$z$ [cm]")
@@ -164,13 +164,14 @@ def plot_2d_wind(m_points,
     return fig, ax
 
 
-def plot(wind,
+def wind(wind,
          parameter,
-         use_cell_coordinates=True,
          inclinations_to_plot=None,
+         log_parameter=True,
          scale="loglog",
          vmin=None,
          vmax=None,
+         use_coordinates=True,
          fig=None,
          ax=None,
          i=0,
@@ -185,20 +186,23 @@ def plot(wind,
     ----------
     wind: Wind
         The Wind object.
-    parameter: np.ndarray
+    parameter: np.ndarray or str
         The wind parameter to be plotted, in the same shape as the coordinate
         arrays. Can also be the name of the variable.
-    use_cell_coordinates: bool [optional]
-        Plot the wind either using the cell coordinates or the cell indices.
     inclinations_to_plot: List[str] [optional]
         A list of inclination angles to plot onto the ax[0, 0] sub panel. Must
         be strings and 0 < inclination < 90.
+    log_parameter: bool [optional]
+        If the name of the parameter is provided, rather than an array. This
+        can be used to plot the variable on a log10 or linear color scale.
     scale: str [optional]
         The scaling of the axes: [logx, logy, loglog, linlin]
     vmin: float or None [optional]
         The minimum value to plot.
     vmax: float or None [optional]
         The maximum value to plot.
+    use_coordinates: bool [optional]
+        Plot the wind either using the cell coordinates or the cell indices.
     fig: plt.Figure [optional]
         A Figure object to update, otherwise a new one will be created.
     ax: plt.Axes [optional]
@@ -215,35 +219,40 @@ def plot(wind,
     ax: plt.Axes
         The (updated) axes array for the plot.
     """
+    # If parameter is a string, get the parameter ourself. If it's a numpy
+    # array, then map parameter to parameter_points
+
     if type(parameter) is str:
         parameter_points = wind.get(parameter)
+        if log_parameter:
+            parameter_points = np.log10(parameter_points)
     elif type(parameter) in [np.ndarray, np.ma.core.MaskedArray]:
         parameter_points = parameter
     else:
-        print(f"Incompatible type {type(parameter)} for parameter")
-        return fig, ax
+        raise ValueError(f"Incompatible type {type(parameter)} for parameter, has to be an numpy array or string")
 
-    # Finally plot the variable depending on the coordinate type
+    # The stuff can now be passed to the the appropriate plotting function
+    # depending on the coordinate system of the wind
 
-    if wind.coord_system == WindCoordSystem.polar:
-        if use_cell_coordinates:
-            n = wind["r"]
+    if wind.coord_system == WindCoordSystem.spherical:
+        if use_coordinates:
+            r = wind["r"]
         else:
-            n = wind["i"]
-        fig, ax = plot_1d_wind(n, parameter_points, wind.spatial_units, "loglog", fig, ax, i, j)
+            r = wind["i"]
+        fig, ax = wind1d(r, parameter_points, wind.spatial_units, scale, fig, ax, i, j)
     elif wind.coord_system == WindCoordSystem.cylindrical:
-        if use_cell_coordinates:
-            n = wind["x"]
-            m = wind["z"]
+        if use_coordinates:
+            x = wind["x"]
+            z = wind["z"]
         else:
-            n = wind["i"]
-            m = wind["j"]
-        fig, ax = plot_2d_wind(n, m, parameter_points, wind.spatial_units, wind.coord_system, inclinations_to_plot,
-                               scale, vmin, vmax, fig, ax, i, j)
+            x = wind["i"]
+            z = wind["j"]
+        fig, ax = wind2d(x, z, parameter_points, wind.spatial_units, wind.coord_system, inclinations_to_plot, scale,
+                         vmin, vmax, fig, ax, i, j)
     else:
-        if not use_cell_coordinates:
-            raise ValueError("use_indices cannot be used with polar winds")
-        fig, ax = plot_2d_wind(np.deg2rad(wind["theta"]), np.log10(wind["r"]), parameter_points, wind.spatial_units,
-                               wind.coord_system, inclinations_to_plot, scale, vmin, vmax, fig, ax, i, j)
+        if not use_coordinates:
+            raise ValueError("cannot use cell indices to plot a polar wind")
+        fig, ax = wind2d(np.deg2rad(wind["theta"]), np.log10(wind["r"]), parameter_points, wind.spatial_units,
+                         wind.coord_system, inclinations_to_plot, scale, vmin, vmax, fig, ax, i, j)
 
     return fig, ax

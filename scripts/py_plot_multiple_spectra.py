@@ -9,7 +9,7 @@ Spectrum files are recursively searched from the calling directory.
 import argparse as ap
 
 from pypython import find
-from pypython.plot.spectrum import multiple_models
+from pypython.spectrum.plot import multiple_models
 
 
 def setup_script():

@@ -362,7 +362,7 @@ def run_model(root, fp, use_mpi, n_cores, resume_model=False, restart_from_spec_
             grid.update_single_parameter(fp + pf, "Spectrum_cycles", "0", backup=True)
         else:
             grid.update_single_parameter(fp + pf, "Photons_per_cycle", "1e6", backup=False)
-            grid.update_single_parameter(fp + pf, "Spectrum_cycles", "5", backup=False)
+            grid.update_single_parameter(fp + pf, "Spectrum_cycles", "15", backup=False)
 
     # Construct shell command to run Python and use subprocess to run
 

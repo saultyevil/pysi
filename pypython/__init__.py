@@ -55,6 +55,37 @@ class _AttributeDict(dict):
 # Functions --------------------------------------------------------------------
 
 
+def _cleanup_root(string, fp="."):
+    """Clean up a string which includes the root name and directory.
+
+    The root name will also be cleaned up of .pf is appended to the name,
+    similar to PYTHON's behaviour.
+
+    Parameters
+    ----------
+    string: str
+        The string to processes.
+    fp: str [optional]
+        The file path, in case string is just the root.
+
+    Returns
+    -------
+    root: str
+        The root name of the simulation.
+    fp: str
+        The directory containing the simulation.
+    """
+
+    if string.rfind("/") != -1:
+        root, fp = get_root_name(string)
+    else:
+        root, fp = string, fp
+        if root.endswith(".pf"):
+            root = root[:-3]
+
+    return root, fp
+
+
 def _check_ascending(x):
     """Check if an array is sorted in ascending order.
 
@@ -181,6 +212,7 @@ def create_slurm_file(name, n_cores, n_hours, n_minutes, py_flags, py_run_flags,
         module load conda/py3-latest
         source activate pypython
         python /home/ejp1n17/PythonScripts/py_run.py -n {n_cores} {py_run_flags} -f='{py_flags}'
+        echo "Done!" > completed.txt
         """)
 
     if fp[-1] != "/":

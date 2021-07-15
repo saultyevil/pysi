@@ -20,7 +20,6 @@ def plot_spectrum_physics_process_contributions(contribution_spectra,
                                                 scale="logy",
                                                 line_labels=True,
                                                 sm=5,
-                                                lw=2,
                                                 alpha=0.75,
                                                 file_ext="png",
                                                 display=False):

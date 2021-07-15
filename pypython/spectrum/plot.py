@@ -6,12 +6,75 @@ from matplotlib import pyplot as plt
 
 from pypython import get_root_name
 from pypython.constants import ANGSTROM, C
-from pypython.plot import finish_figure, get_xy_subset, remove_extra_axes, set_axes_scales, subplot_dims
+from pypython.plot import (finish_figure, get_xy_subset, remove_extra_axes, set_axes_scales, subplot_dims)
 from pypython.spectrum import Spectrum, SpectrumUnits
 
 MIN_FLUX = 1e-20
 
 # Helper functions -------------------------------------------------------------
+
+
+def _ax_labels_spatial_units(ax, units, distance):
+    """Add spectrum labels for flux, or luminosity multiplied by the spatial
+    unit.
+
+    Parameters
+    ----------
+    units: SpectrumUnits
+        The units of the spectrum
+    distance: float
+        The distance of the spectrum
+
+    Returns
+    -------
+    ax: plt.Axes
+        The updated Axes object with axes labels.
+    """
+    if units == SpectrumUnits.l_nu:
+        ax.set_xlabel(r"Rest-frame frequency [Hz]")
+        ax.set_ylabel(r"$\nu L_{\nu}$ [erg s$^{-1}$]")
+    elif units == SpectrumUnits.l_lm:
+        ax.set_xlabel(r"Rest-frame wavelength [\AA]")
+        ax.set_ylabel(r"$\lambda L_{\lambda}$ [erg s$^{-1}$]")
+    elif units == SpectrumUnits.f_lm:
+        ax.set_xlabel(r"Rest-frame wavelength [\AA]")
+        ax.set_ylabel(r"$\lambda F_{\lambda}$ at " + f"{distance:g} pc " + r"[erg s$^{-1}$]")
+    else:
+        ax.set_xlabel(r"Rest-frame frequency [Hz]")
+        ax.set_ylabel(r"$\nu F_{\nu}$ at " + f"{distance:g} pc " + r"[erg s$^{-1}$ cm$^{-2}$]")
+
+    return ax
+
+
+def _ax_labels(ax, units, distance):
+    """Add spectrum labels for a flux density, or luminosity.
+
+    Parameters
+    ----------
+    units: SpectrumUnits
+        The units of the spectrum
+    distance: float
+        The distance of the spectrum
+
+    Returns
+    -------
+    ax: plt.Axes
+        The updated Axes object with axes labels.
+    """
+    if units == SpectrumUnits.l_nu:
+        ax.set_xlabel(r"Rest-frame frequency [Hz]")
+        ax.set_ylabel(r"$L_{\nu}$ [erg s$^{-1}$ Hz$^{-1}$]")
+    elif units == SpectrumUnits.l_lm:
+        ax.set_xlabel(r"Rest-frame wavelength [\AA]")
+        ax.set_ylabel(r"$L_{\lambda}$ [erg s$^{-1}$ \AA$^{-1}$]")
+    elif units == SpectrumUnits.f_lm:
+        ax.set_xlabel(r"Rest-frame wavelength [\AA]")
+        ax.set_ylabel(r"$F_{\lambda}$ at " + f"{distance:g} pc " + r"[erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
+    else:
+        ax.set_xlabel(r"Rest-frame frequency [Hz]")
+        ax.set_ylabel(r"$F_{\nu}$ at " + f"{distance:g} pc " + r"[erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
+
+    return ax
 
 
 def _convert_labels_to_frequency_space(lines, units=None, spectrum=None):
@@ -26,8 +89,8 @@ def _convert_labels_to_frequency_space(lines, units=None, spectrum=None):
     spectrum: pypython.Spectrum
         A spectrum object, used to find the units of the spectrum.
     """
-    if units is None and Spectrum is None:
-        raise ValueError("need units or spectrum")
+    if units is None and spectrum is None:
+        return lines
 
     if units is None:
         units = spectrum.units
@@ -130,7 +193,7 @@ def _plot_subplot(ax, spectrum, things_to_plot, xmin, xmax, alpha, scale, use_fl
 
     ax.legend(loc="lower left")
     ax = set_axes_scales(ax, scale)
-    ax = set_spectrum_axes_labels(ax, spectrum, use_flux)
+    ax = set_spectrum_axes_labels(ax, spectrum, multiply_by_spatial_units=use_flux)
 
     return ax
 
@@ -227,7 +290,7 @@ def common_lines(units=None, spectrum=None):
 
     Parameters
     ----------
-    freq: bool [optional]
+    units: bool [optional]
         Label the transitions in frequency space
     spectrum: pypython.Spectrum
         The spectrum object. Used to get the units.
@@ -267,12 +330,10 @@ def common_lines(units=None, spectrum=None):
         [r"H$_{\alpha}$", 6564],
     ]
 
-    lines = _convert_labels_to_frequency_space(lines, units, spectrum)
-
-    return lines
+    return _convert_labels_to_frequency_space(lines, units, spectrum)
 
 
-def photoionization_edges(freq=False, spectrum=False):
+def photoionization_edges(units=None, spectrum=None):
     """Return a list containing the names of line transitions and the
     wavelength of the transition in Angstroms. Instead of returning the
     wavelength, the frequency can be returned instead. It is also possible to
@@ -280,7 +341,7 @@ def photoionization_edges(freq=False, spectrum=False):
 
     Parameters
     ----------
-    freq: bool [optional]
+    units: bool [optional]
         Label the transitions in frequency space
     spectrum: pypython.Spectrum
         The spectrum object. Used to get the units.
@@ -301,48 +362,11 @@ def photoionization_edges(freq=False, spectrum=False):
         ["Paschen", 8204],
     ]
 
-    edges = _convert_labels_to_frequency_space(edges, freq, spectrum)
-
-    return edges
+    return _convert_labels_to_frequency_space(edges, units, spectrum)
 
 
-def _ax_labels_flux(ax, units, distance):
-    if units == SpectrumUnits.l_nu:
-        ax.set_xlabel(r"Rest-frame frequency [Hz]")
-        ax.set_ylabel(r"$\nu L_{\nu}$ [erg s$^{-1}$]")
-    elif units == SpectrumUnits.l_lm:
-        ax.set_xlabel(r"Rest-frame wavelength [\AA]")
-        ax.set_ylabel(r"$\lambda L_{\lambda}$ [erg s$^{-1}$]")
-    elif units == SpectrumUnits.f_lm:
-        ax.set_xlabel(r"Rest-frame wavelength [\AA]")
-        ax.set_ylabel(r"$\lambda F_{\lambda}$ at " + f"{distance:g} pc " + r"[erg s$^{-1}$]")
-    else:
-        ax.set_xlabel(r"Rest-frame frequency [Hz]")
-        ax.set_ylabel(r"$\nu F_{\nu}$ at " + f"{distance:g} pc " + r"[erg s$^{-1}$ cm$^{-2}$]")
-
-    return ax
-
-
-def _ax_labels(ax, units, distance):
-    if units == SpectrumUnits.l_nu:
-        ax.set_xlabel(r"Rest-frame frequency [Hz]")
-        ax.set_ylabel(r"$L_{\nu}$ [erg s$^{-1}$ Hz$^{-1}$]")
-    elif units == SpectrumUnits.l_lm:
-        ax.set_xlabel(r"Rest-frame wavelength [\AA]")
-        ax.set_ylabel(r"$L_{\lambda}$ [erg s$^{-1}$ \AA$^{-1}$]")
-    elif units == SpectrumUnits.f_lm:
-        ax.set_xlabel(r"Rest-frame wavelength [\AA]")
-        ax.set_ylabel(r"$F_{\lambda}$ at " + f"{distance:g} pc " + r"[erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
-    else:
-        ax.set_xlabel(r"Rest-frame frequency [Hz]")
-        ax.set_ylabel(r"$F_{\nu}$ at " + f"{distance:g} pc " + r"[erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
-
-    return ax
-
-
-def set_spectrum_axes_labels(ax, spectrum=None, units=None, distance=None, use_flux=False):
+def set_spectrum_axes_labels(ax, spectrum=None, units=None, distance=None, multiply_by_spatial_units=False):
     """Set the units of a given matplotlib axes.
-
     todo: should have an else if the units are unknown, not for f_nu
 
     Parameters
@@ -355,7 +379,7 @@ def set_spectrum_axes_labels(ax, spectrum=None, units=None, distance=None, use_f
         The units of the spectrum
     distance: float
         The distance of the spectrum
-    use_flux: bool
+    multiply_by_spatial_units: bool
         If flux/nu Lnu is being plotted instead of flux density or
         luminosity.
 
@@ -374,8 +398,8 @@ def set_spectrum_axes_labels(ax, spectrum=None, units=None, distance=None, use_f
         units = spectrum.units
         distance = spectrum.distance
 
-    if use_flux:
-        ax = _ax_labels_flux(ax, units, distance)
+    if multiply_by_spatial_units:
+        ax = _ax_labels_spatial_units(ax, units, distance)
     else:
         ax = _ax_labels(ax, units, distance)
 
@@ -385,7 +409,13 @@ def set_spectrum_axes_labels(ax, spectrum=None, units=None, distance=None, use_f
 # Plotting functions -----------------------------------------------------------
 
 
-def components(spectrum, xmin=None, xmax=None, scale="loglog", alpha=0.65, use_flux=False, display=False):
+def components(spectrum,
+               xmin=None,
+               xmax=None,
+               scale="loglog",
+               alpha=0.65,
+               multiply_by_spatial_units=False,
+               display=False):
     """Plot the different components of the spectrum.
 
     The components are the columns labelled with words, rather than inclination
@@ -405,7 +435,7 @@ def components(spectrum, xmin=None, xmax=None, scale="loglog", alpha=0.65, use_f
         The scaling of the axes.
     alpha: float [optional]
         The line transparency on the plot.
-    use_flux: bool [optional]
+    multiply_by_spatial_units: bool [optional]
         Plot in flux or nu Lnu instead of flux density or luminosity.
     display: bool [optional]
         Display the object once plotted.
@@ -419,11 +449,12 @@ def components(spectrum, xmin=None, xmax=None, scale="loglog", alpha=0.65, use_f
     """
     fig, ax = plt.subplots(2, 1, figsize=(12, 10))
 
-    ax[0] = _plot_subplot(ax[0], spectrum, ["CenSrc", "Disk", "WCreated"], xmin, xmax, alpha, scale, use_flux)
+    ax[0] = _plot_subplot(ax[0], spectrum, ["CenSrc", "Disk", "WCreated"], xmin, xmax, alpha, scale,
+                          multiply_by_spatial_units)
     ax[1] = _plot_subplot(ax[1], spectrum, ["Created", "Emitted", "Wind", "HitSurf"], xmin, xmax, alpha, scale,
-                          use_flux)
+                          multiply_by_spatial_units)
 
-    fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+    fig = finish_figure(fig)
     fig.savefig(f"{spectrum.fp}/{spectrum.root}_{spectrum.current}_components.png")
 
     if display:
@@ -438,7 +469,7 @@ def multiple_models(output_name,
                     things_to_plot,
                     xmin=None,
                     xmax=None,
-                    use_flux=False,
+                    multiply_by_spatial_units=False,
                     alpha=0.7,
                     scale="loglog",
                     label_lines=True,
@@ -473,7 +504,7 @@ def multiple_models(output_name,
         The lower x boundary of the plot
     xmax: float [optional]
         The upper x boundary for the plot
-    use_flux: bool [optional]
+    multiply_by_spatial_units: bool [optional]
         Plot in flux units, instead of flux density.
     alpha: float [optional]
         The transparency of the plotted spectra.
@@ -557,7 +588,7 @@ def multiple_models(output_name,
             if np.count_nonzero(y) == 0:  # skip arrays which are all zeros
                 continue
 
-            if use_flux:
+            if multiply_by_spatial_units:
                 if spectrum.units == SpectrumUnits.f_lm:
                     y *= spectrum["Lambda"]
                 else:
@@ -569,12 +600,11 @@ def multiple_models(output_name,
                 x = spectrum["Freq."]
 
             x, y = get_xy_subset(x, y, xmin, xmax)
-
             label = spectrum.fp.replace("_", r"\_") + spectrum.root.replace("_", r"\_")
             ax[n].plot(x, y, label=label, alpha=alpha)
 
         ax[n] = set_axes_scales(ax[n], scale)
-        ax[n] = set_spectrum_axes_labels(ax[n], spectra_to_plot[0], use_flux)
+        ax[n] = set_spectrum_axes_labels(ax[n], spectra_to_plot[0], multiply_by_spatial_units=multiply_by_spatial_units)
 
         if thing.isdigit():
             ax[n].set_title(f"{thing}" + r"$^{\circ}$")
@@ -585,7 +615,7 @@ def multiple_models(output_name,
             ax[n] = add_line_ids(ax[n], common_lines(spectrum=spectra_to_plot[0]), "none")
 
     ax[0].legend(fontsize=10).set_zorder(0)
-    fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+    fig = finish_figure(fig)
     fig.savefig(f"{output_name}.png")
 
     if display:
@@ -599,7 +629,7 @@ def observer(spectrum,
              xmin=None,
              xmax=None,
              scale="logy",
-             use_flux=False,
+             multiply_by_spatial_units=False,
              label_lines=True,
              display=False):
     """Plot the request observer spectrum.
@@ -623,7 +653,7 @@ def observer(spectrum,
         The upper x boundary of the plot.
     scale: str [optional]
         The scale of the axes.
-    use_flux: bool [optional]
+    multiply_by_spatial_units: bool [optional]
         Plot the flux instead of flux density.
     label_lines: bool [optional]
         Label common spectrum lines.
@@ -660,12 +690,12 @@ def observer(spectrum,
         print(f"Returning empty figure without creating plot as there is nothing to plot")
         return fig, ax
 
-    ax = _plot_subplot(ax, spectrum, inclinations, xmin, xmax, 1.0, scale, use_flux)
+    ax = _plot_subplot(ax, spectrum, inclinations, xmin, xmax, 1.0, scale, multiply_by_spatial_units)
 
     if label_lines:
         ax = add_line_ids(ax, common_lines(spectrum=spectrum), "none")
 
-    fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+    fig = finish_figure(fig)
     fig.savefig(f"{spectrum.fp}/{spectrum.root}_{spectrum.current}.png")
 
     if display:
@@ -749,7 +779,7 @@ def optical_depth(spectrum,
         if np.count_nonzero(y) == 0:  # skip arrays which are all zeros
             continue
 
-        ax.plot(x, y, linewidth=2, label=label)
+        ax.plot(x, y, label=label)
 
     ax = set_axes_scales(ax, scale)
     ax.set_ylabel(r"Continuum Optical Depth")
@@ -805,11 +835,7 @@ def reprocessing(spectrum, xmin=None, xmax=None, scale="loglog", label_edges=Tru
         y = spectrum[inclination]
         if np.count_nonzero == 0:
             continue
-        ax.plot(spectrum["Freq."],
-                y,
-                color=f"C{n + 2}",
-                label=r"$\tau_{" + f"{inclination}" + r"^{\circ}}$",
-                alpha=alpha)
+        ax.plot(spectrum["Freq."], y, label=str(inclination) + r"$^{\circ}$", alpha=alpha)
 
     ax.legend(loc="upper left")
     ax.set_xlim(xmin, xmax)
@@ -817,7 +843,7 @@ def reprocessing(spectrum, xmin=None, xmax=None, scale="loglog", label_edges=Tru
     ax.set_ylabel("Continuum Optical Depth")
 
     if label_edges:
-        ax = add_line_ids(ax, photoionization_edges(freq=True), "none")
+        ax = add_line_ids(ax, photoionization_edges(spectrum=spectrum), "none")
 
     ax.set_zorder(ax2.get_zorder() + 1)
     ax.patch.set_visible(False)
@@ -839,7 +865,7 @@ def reprocessing(spectrum, xmin=None, xmax=None, scale="loglog", label_edges=Tru
     ax2.legend(loc="upper right")
     ax2.set_ylabel(f"Flux {spectrum.distance} pc " + r"[erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$]")
 
-    fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+    fig = finish_figure(fig)
     fig.savefig(f"{spectrum.fp}/{spectrum.root}_reprocessing.png")
 
     if display:

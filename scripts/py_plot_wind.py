@@ -15,7 +15,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from pypython import plot
-from pypython.wind import Wind, plot, WindCoordSystem
+from pypython.wind import Wind, WindCoordSystem, plot
 
 default_wind_parameters = ("t_e", "t_r", "ne", "rho", "c4", "ip")
 

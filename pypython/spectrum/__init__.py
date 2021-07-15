@@ -10,7 +10,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from scipy.integrate import simpson
 
-from pypython import _AttributeDict, get_xy_subset, smooth_array
+from pypython import _AttributeDict, _cleanup_root, get_xy_subset, smooth_array
 from pypython.constants import PARSEC
 from pypython.physics import angstrom_to_hz
 from pypython.plot import finish_figure, set_axes_scales
@@ -67,8 +67,9 @@ class Spectrum:
         delim: str [optional]
             The deliminator in the spectrum file.
         """
-        self.root = root
+        root, fp = _cleanup_root(root, fp)
 
+        self.root = root
         self.fp = path.expanduser(fp)
         if self.fp[-1] != "/":
             self.fp += "/"

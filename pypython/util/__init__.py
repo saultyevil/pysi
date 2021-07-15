@@ -7,12 +7,9 @@ as getting system info and a logging utility.
 """
 
 import subprocess
-import textwrap
 from typing import List
 
 from psutil import cpu_count
-
-from pypython import find, get_root_name
 
 
 def get_cpu_count(enable_smt=False):

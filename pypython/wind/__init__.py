@@ -8,13 +8,12 @@ from os import path
 import numpy as np
 from matplotlib import pyplot as plt
 
-from pypython import (_AttributeDict, create_wind_save_tables, find, get_array_index)
+from pypython import (_AttributeDict, _cleanup_root, create_wind_save_tables, find, get_array_index)
 from pypython.constants import BOLTZMANN, CMS_TO_KMS, PI, PLANCK, VLIGHT
 from pypython.math import vector
 from pypython.physics.blackhole import gravitational_radius
 from pypython.plot import set_axes_scales
 from pypython.simulation.grid import get_parameter_value
-
 
 # Enumerators ------------------------------------------------------------------
 
@@ -91,8 +90,9 @@ class CellSpectra:
         delim: str [optional]
             The delimiter used in the wind table files.
         """
-        self.root = root
+        root, fp = _cleanup_root(root, fp)
 
+        self.root = root
         self.fp = path.expanduser(fp)
         if self.fp[-1] != "/":
             self.fp += "/"
@@ -338,8 +338,9 @@ class ModelledCellSpectra:
         delim: str [optional]
             The delimiter used in the wind table files.
         """
-        self.root = root
+        root, fp = _cleanup_root(root, fp)
 
+        self.root = root
         self.fp = path.expanduser(fp)
         if self.fp[-1] != "/":
             self.fp += "/"
@@ -667,8 +668,9 @@ class Wind:
         delim: str [optional]
             The delimiter used in the wind table files.
         """
-        self.root = root
+        root, fp = _cleanup_root(root, fp)
 
+        self.root = root
         self.fp = path.expanduser(fp)
         if self.fp[-1] != "/":
             self.fp += "/"
@@ -1398,16 +1400,11 @@ class Wind:
             n_points, m_points = self._get_wind_indices()
 
         if self.coord_system == WindCoordSystem.spherical:
-            fig, ax = plot.plot_1d_wind(n_points, variable, self.spatial_units, scale=scale)
+            fig, ax = plot.wind1d(n_points, variable, self.spatial_units, scale=scale)
         else:
             if log_variable:
                 variable = np.log10(variable)
-            fig, ax = plot.plot_2d_wind(n_points,
-                                        m_points,
-                                        variable,
-                                        self.spatial_units,
-                                        self.coord_system,
-                                        scale=scale)
+            fig, ax = plot.wind2d(n_points, m_points, variable, self.spatial_units, self.coord_system, scale=scale)
 
         if len(ax) == 1:
             ax = ax[0, 0]
