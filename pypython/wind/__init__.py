@@ -1403,7 +1403,8 @@ class Wind:
             fig, ax = plot.wind1d(n_points, variable, self.spatial_units, scale=scale)
         else:
             if log_variable:
-                variable = np.log10(variable)
+                with np.errstate(divide="ignore"):
+                    variable = np.log10(variable)
             fig, ax = plot.wind2d(n_points, m_points, variable, self.spatial_units, self.coord_system, scale=scale)
 
         if len(ax) == 1:

@@ -10,6 +10,8 @@ simulation.
 import re
 from copy import copy
 from glob import glob
+from matplotlib import pyplot as plt
+import numpy as np
 
 import pypython.simulation.grid
 
@@ -280,3 +282,41 @@ def model_error_summary(root, wd=".", n_cores=-1, print_errors=False):
             print("  {:6d} -- {}".format(n_error, key))
 
     return total_errors
+
+
+def plot_model_convergence(root, fp=".", display=False):
+    """Plot the convergence of a model"""
+    fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+
+    convergence = check_model_convergence(root, fp, return_per_cycle=True)
+    converging = check_model_convergence(root, fp, return_per_cycle=True, return_converging=True)
+    tr, te, te_max, hc = model_convergence_components(root, fp)
+
+    cycles = np.arange(1, len(convergence) + 1, 1)
+    ax.set_ylim(0, 1)
+
+    # As the bare minimum, we need the convergence per cycle but if the other
+    # convergence stats are passed as well, plot those too
+
+    ax.plot(cycles, convergence, label="Convergence")
+    ax.plot(cycles, converging, label="Converging")
+    ax.plot(cycles, tr, "--", label="Radiation temperature", alpha=0.65)
+    ax.plot(cycles, te, "--", label="Electron temperature", alpha=0.65)
+    ax.plot(cycles, hc, "--", label="Heating and cooling", alpha=0.65)
+
+    for value in te_max:
+        if value > 0:
+            ax.plot(cycles, te_max, "--", label="Electron temperature max", alpha=0.65)
+            break
+
+    ax.legend()
+    ax.set_xlabel("Cycle")
+    ax.set_ylabel("Fraction of cells passed")
+    fig = pypython.plot.finish_figure(fig, f"Final convergence = {float(convergence[-1]) * 100:4.2f}%")
+
+    if display:
+        plt.show()
+    else:
+        plt.close()
+
+    return fig, ax

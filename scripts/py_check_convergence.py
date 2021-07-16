@@ -38,7 +38,7 @@ def plot_convergence(root, convergence, converging=None, tr=None, te=None, te_ma
         The directory containing the Python simulation.
     """
 
-    pypython.plot.normalize_figure_style()
+
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     n_cycles = len(convergence)
     cycles = np.arange(1, n_cycles + 1, 1)

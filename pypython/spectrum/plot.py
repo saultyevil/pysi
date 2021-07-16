@@ -224,7 +224,7 @@ def add_line_ids(ax,
         The normalized y coordinate to place the label.
     logx: bool [optional]
         Use when the x-axis is logarithmic
-    offset: float [optional]
+    offset: float or int [optional]
         The amount to offset line labels along the x-axis
     rotation: str [optional]
         Vertical or horizontal rotation for text ids
@@ -745,18 +745,19 @@ def optical_depth(spectrum,
     ax: plt.Axes
         matplotlib Axes object.
     """
-    if spectrum.current != "spec_tau":
-        spectrum.set("spec_tau")
-
     fig, ax = plt.subplots(1, 1, figsize=(12, 7))
+    current = spectrum.current
+    spectrum.set("spec_tau")
 
     # Determine if we're plotting in frequency or wavelength space and then
     # determine the inclinations we want to plot
 
     if frequency_space:
         xlabel = "Freq."
+        units = SpectrumUnits.f_nu
     else:
         xlabel = "Lambda"
+        units = SpectrumUnits.f_lm
 
     if not xmin:
         xmin = np.min(spectrum[xlabel])
@@ -772,14 +773,12 @@ def optical_depth(spectrum,
         if inclination != "all":
             if inclination not in spectrum.inclinations:  # Skip inclinations which don't exist
                 continue
-        label = f"{inclination}" + r"$^{\circ}$"
 
         x, y = get_xy_subset(spectrum[xlabel], spectrum[inclination], xmin, xmax)
-
         if np.count_nonzero(y) == 0:  # skip arrays which are all zeros
             continue
 
-        ax.plot(x, y, label=label)
+        ax.plot(x, y, label=f"{inclination}" + r"$^{\circ}$")
 
     ax = set_axes_scales(ax, scale)
     ax.set_ylabel(r"Continuum Optical Depth")
@@ -792,8 +791,9 @@ def optical_depth(spectrum,
     ax.legend(loc="upper left")
 
     if label_edges:
-        ax = add_line_ids(ax, photoionization_edges(frequency_space))
+        ax = add_line_ids(ax, photoionization_edges(units=units), linestyle="none", offset=0)
 
+    spectrum.set(current)
     fig = finish_figure(fig)
     fig.savefig(f"{spectrum.fp}/{spectrum.root}_spec_optical_depth.png")
 
