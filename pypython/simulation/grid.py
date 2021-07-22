@@ -84,7 +84,6 @@ def create_grid(fp, name, values, extra_name=None, backup=True, verbose=False):
         if extra_name:
             fp_new += "_{}".format(extra_name)
         fp_new += "_{}".format(values[i]) + ".pf"
-        print(fp_new)
         copyfile(fp, fp_new)
         update_single_parameter(fp_new, name, values[i], backup=False, verbose=verbose)
         grid.append(fp_new)

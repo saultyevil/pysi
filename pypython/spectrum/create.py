@@ -480,8 +480,8 @@ def wind_bin_interaction_weight(root, nres, cd=".", n_cores=1):
     """
 
     w = Wind(root, cd, masked=False)
-    x_points = np.array(w.x_coords)
-    z_points = np.array(w.y_coords)
+    x_points = np.array(w.x_axis_coords)
+    z_points = np.array(w.y_axis_coords)
 
     photons = read_delay_dump(root, cd, False)
     if photons.empty:

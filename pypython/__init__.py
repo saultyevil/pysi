@@ -552,6 +552,9 @@ __all__ = [
     "spectrum",
     "util",
     "wind",
+    # classes
+    "Wind",
+    "Spectrum",
     # other things
     "constants"
 ]

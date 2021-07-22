@@ -228,7 +228,10 @@ class CellSpectra:
         elem: int
             The element number.
         """
-        return np.unravel_index(elem, (self.nx, self.nz))
+        i = int(elem / self.nz)
+        j = int(elem - i * self.nz)
+
+        return i, j
 
     def plot(self, i, j=0, energetic=True, scale="loglog", fig=None, ax=None, figsize=(12, 6)):
         """Plot the spectrum for cell (i, j).
@@ -467,7 +470,10 @@ class ModelledCellSpectra:
         elem: int
             The element number.
         """
-        return np.unravel_index(elem, (self.nx, self.nz))
+        i = int(elem / self.nz)
+        j = int(elem - i * self.nz)
+
+        return i, j
 
     def get_model_spectra(self, delim):
         """Read in the model spectrum parameters.
@@ -639,10 +645,10 @@ class Wind:
         """Initialize the Wind object.
 
         Each of the available wind save tables or ion tables are read in, and
-        stored in the same dictionary. To access each paramter, using the get()
-        method is perferred. However, it is also possible to index using the
+        stored in the same dictionary. To access each parameter, using the get()
+        method is preferred. However, it is also possible to index using the
         regular [ ] operator. To get an ion, the index is as follows
-        w["H"]["density"]["i01"]. If using get(), it is insted as
+        w["H"]["density"]["i01"]. If using get(), it is instead as
         get("H_i01d") or get("H_i01f") for the ion fractions.
 
         Parameters
@@ -683,10 +689,10 @@ class Wind:
         self.nx = 1
         self.nz = 1
         self.n_elem = 1
-        self.x_coords = None
-        self.y_coords = None
-        self.x_cen_coords = None
-        self.y_cen_coords = None
+        self.x_axis_coords = None
+        self.y_axis_coords = None
+        self.x_axis_cen_coords = None
+        self.y_axis_cen_coords = None
         self.axes = None
         self.parameters = ()
         self.elements = ()
@@ -865,24 +871,6 @@ class Wind:
     def _setup_coords(self):
         """Set up the various coordinate variables."""
 
-        # Setup the x/r coordinates
-
-        if "x" in self.parameters:
-            self.x_coords = tuple(np.unique(self.wind["x"]))
-            self.x_cen_coords = tuple(np.unique(self.wind["xcen"]))
-        else:
-            self.x_coords = tuple(np.unique(self.wind["r"]))
-            self.x_cen_coords = tuple(np.unique(self.wind["rcen"]))
-
-        # Setup the z/theta coordinates
-
-        if "z" in self.parameters:
-            self.y_coords = tuple(np.unique(self.wind["z"]))
-            self.y_cen_coords = tuple(np.unique(self.wind["zcen"]))
-        elif "theta" in self.parameters:
-            self.y_coords = tuple(np.unique(self.wind["theta"]))
-            self.y_cen_coords = tuple(np.unique(self.wind["theta_cen"]))
-
         # Set up the coordinate system in used and the axes names available
 
         if self.nz == 1:
@@ -894,6 +882,27 @@ class Wind:
         else:
             self.coord_system = WindCoordSystem.cylindrical
             self.axes = ["x", "z", "x_cen", "z_cen"]
+
+        # Setup the x/r coordinates
+
+        if self.coord_system == WindCoordSystem.cylindrical:
+            self.x_axis_coords = tuple(np.unique(self.wind["x"]))
+            self.x_axis_cen_coords = tuple(np.unique(self.wind["xcen"]))
+        else:
+            self.x_axis_coords = tuple(np.unique(self.wind["r"]))
+            try:
+                self.x_axis_cen_coords = tuple(np.unique(self.wind["r_cen"]))
+            except KeyError:  # todo: update windsave2table so rcen is consistent, above is polar below is spherical
+                self.x_axis_cen_coords = tuple(np.unique(self.wind["rcen"]))
+
+        # Setup the z/theta coordinates
+
+        if self.coord_system == WindCoordSystem.cylindrical:
+            self.y_axis_coords = tuple(np.unique(self.wind["z"]))
+            self.y_axis_cen_coords = tuple(np.unique(self.wind["zcen"]))
+        elif self.coord_system == WindCoordSystem.polar:
+            self.y_axis_coords = tuple(np.unique(self.wind["theta"]))
+            self.y_axis_cen_coords = tuple(np.unique(self.wind["theta_cen"]))
 
     # Methods ------------------------------------------------------------------
 
@@ -1144,18 +1153,27 @@ class Wind:
         elem: int
             The element number.
         """
-        return np.unravel_index(elem, (self.nx, self.nz))
+        i = int(elem / self.nz)
+        j = int(elem - i * self.nz)
 
-    def get_sight_line_coordinates(self, theta):
+        return i, j
+
+    def _get_sight_line_coordinates(self, theta):
         """Get the vertical z coordinates for a given set of x coordinates and
         inclination angle.
+
+        For a wind with a polar coordinate system, this returns an array of
+        the given theta the size of the x axis.
 
         Parameters
         ----------
         theta: float
             The angle of the sight line to extract from. Given in degrees.
         """
-        return np.array(self.x_coords, dtype=np.float64) * np.tan(PI / 2 - np.deg2rad(theta))
+        if self.coord_system == WindCoordSystem.polar:
+            return np.ones_like(self.x_axis_coords) * theta
+        else:
+            return np.array(self.x_axis_coords, dtype=np.float64) * np.tan(PI / 2 - np.deg2rad(theta))
 
     def get_variable_along_sight_line(self, theta, parameter):
         """Extract a variable along a given sight line.
@@ -1167,24 +1185,20 @@ class Wind:
         parameter: str
             The parameter to extract.
         """
-        if self.coord_system == WindCoordSystem.polar:
-            raise NotImplementedError("This hasn't been implemented for polar winds, lol")
-
         if type(theta) is not float:
             theta = float(theta)
 
-        z_array = np.array(self.y_coords, dtype=np.float64)
-        z_coords = self.get_sight_line_coordinates(theta)
-
+        z_coords = self._get_sight_line_coordinates(theta)
         values = np.zeros_like(z_coords, dtype=np.float64)
         w_array = self.get(parameter)
 
-        for x_index, z in enumerate(z_coords):  # todo: I wonder if this can be vectorized
-            z_index = get_array_index(z_array, z)
+        for x_index, z in enumerate(z_coords):
+            z_index = get_array_index(self.y_axis_coords, z)
             values[x_index] = w_array[x_index, z_index]
+
         values = np.nan_to_num(values)
 
-        return np.array(self.x_coords), z_array, values
+        return np.array(self.x_axis_coords), z_coords, values
 
     def get_wind_elements(self, elements_to_get=None, delim=None):
         """Read in the ion parameters.
@@ -1373,7 +1387,7 @@ class Wind:
         self.wind["v_y"] *= self.velocity_conversion_factor
         self.wind["v_z"] *= self.velocity_conversion_factor
 
-    def plot(self, variable_name, use_cell_coordinates=True, scale="loglog", log_variable=True):
+    def plot(self, variable_name, use_cell_coordinates=True, scale="loglog", log_variable=True, vmin=None, vmax=None):
         """Create a plot of the wind for the given variable.
 
         Only one thing can be plotted at once, in their own figure window. More
@@ -1405,7 +1419,8 @@ class Wind:
             if log_variable:
                 with np.errstate(divide="ignore"):
                     variable = np.log10(variable)
-            fig, ax = plot.wind2d(n_points, m_points, variable, self.spatial_units, self.coord_system, scale=scale)
+            fig, ax = plot.wind2d(n_points, m_points, variable, self.spatial_units, self.coord_system, scale=scale,
+                                  vmin=vmin, vmax=vmax)
 
         if len(ax) == 1:
             ax = ax[0, 0]

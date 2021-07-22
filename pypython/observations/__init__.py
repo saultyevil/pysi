@@ -9,6 +9,15 @@ the zero-points for common filters.
 
 import astropy.units as u
 from dust_extinction.parameter_averages import CCM89, F99
+from enum import Enum
+
+# Zero-point enumerator --------------------------------------------------------
+
+
+class ZeroPointUnits(Enum):
+    freq = "Freq."
+    wavelength = "Lambda"
+
 
 # Photometry -------------------------------------------------------------------
 
@@ -147,7 +156,7 @@ def magnitude_to_flux(magnitude, filter, error=None, host_magnitude=None, flux_t
         raise ValueError(f"unknown {filter}: known are {FILTERS.keys()}")
     if flux_type not in ["Freq.", "Lambda"]:
         raise ValueError(f"unknown flux units {flux_type}: know are Freq. or Lambda")
-    if FILTERS[flux_type] is None:
+    if FILTERS[filter][flux_type] is None:
         raise NotImplementedError("This filter does not have a flux zero point in Freq. units")
 
     flux = FILTERS[filter][flux_type] * 10**(-magnitude / 2.5)

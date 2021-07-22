@@ -8,7 +8,7 @@ for example if one wishes to restart a Python simulation.
 
 import argparse
 
-from pypython.util import create_slurm_file
+from pypython import create_slurm_file
 
 
 def parse_arguments():
@@ -56,7 +56,7 @@ def main():
 
     name, n_cores, t_hours, t_minutes, split_cycle, root, flags = parse_arguments()
     flags += " -t {} ".format(int(t_hours * 3600 + t_minutes * 60))
-    create_slurm_file(name, n_cores, split_cycle, t_hours, t_minutes, root, flags)
+    create_slurm_file(name, n_cores, t_hours, t_minutes, flags, "-sc -c 0")
 
     return
 

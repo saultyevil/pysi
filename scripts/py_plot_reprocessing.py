@@ -10,7 +10,7 @@ function of frequency.
 import argparse as ap
 
 from pypython import Spectrum
-from pypython.plot.spectrum import reprocessing
+from pypython.spectrum.plot import reprocessing
 
 
 def setup_script():

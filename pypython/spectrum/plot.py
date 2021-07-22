@@ -532,9 +532,6 @@ def multiple_models(output_name,
     if type(spectra) is str:
         spectra = list(spectra)
 
-    if len(spectra) == 0:
-        raise ValueError("An empty argument was passed for spectra")
-
     spectra_to_plot = []
 
     for spectrum in spectra:
