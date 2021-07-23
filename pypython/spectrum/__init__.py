@@ -567,4 +567,4 @@ def integrate(spectrum, name, xmin, xmax, spec_type=None):
 
 # This is placed here due to a circular dependency -----------------------------
 
-from pypython.spectrum import plot
+from pypython.spectrum import plot, create
