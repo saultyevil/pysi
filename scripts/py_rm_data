@@ -1,0 +1,34 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import argparse
+from pypython import cleanup_data
+
+
+def get_arguments():
+    """Get arguments from the command line.
+
+    Returns
+    -------
+    args.fp: str
+        The file path to search for data symlink from.
+    """
+
+    p = argparse.ArgumentParser(description="Remove 'data' symbolic links recursively.")
+    p.add_argument("-fp", default=".", help="The directory to search from")
+
+    args = p.parse_args()
+
+    return args.fp
+
+
+def main():
+    """Main function of the script."""
+
+    fp = get_arguments()
+    n_deleted = cleanup_data(fp)
+    print(f"{n_deleted} symbolic links were removed")
+
+
+if __name__ == "__main__":
+    main()

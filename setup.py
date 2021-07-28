@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from setuptools import setup
+from pypython import find
+
 
 setup(
       name="pypython",
@@ -14,6 +16,7 @@ setup(
       license="MIT",
       packages=["pypython", "pypython/math", "pypython/physics", "pypython/plot",
                 "pypython/simulation", "pypython/spectrum", "pypython/util"],
+      scripts=find("*.py", "scripts"),
       zip_safe=False,
       install_requires=[
             "matplotlib", "scipy", "numpy", "pandas", "astropy", "numba",

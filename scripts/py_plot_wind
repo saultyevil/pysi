@@ -20,16 +20,19 @@ import pypython.wind
 
 default_wind_parameters = ("t_e", "t_r", "ne", "rho", "c4", "ip")
 default_wind_velocities = ("v_x", "v_y", "v_z", "v_l", "v_rot", "v_r")
-default_ion_fig_dims = ((1, 2), (1, 3), (3, 2), (4, 2), (4, 2), (5, 3))
-default_ion_figsize = ((7.5, 4.46), (19.25, 6.46), (13, 14.01), (13, 18.68), (13, 18.68), (19.25, 23.25))
+default_ion_fig_dims = ((1, 2), (1, 3), (3, 2), (4, 2), (4, 2), (4, 3), (5, 3))
+default_ion_figsize = ((7.5, 4.46), (19.25, 6.46), (13, 14.01), (13, 18.68), (13, 18.68), (13, 18.68), (19.25, 23.25))
 default_wind_ions = (
     ["H", 2],
     ["He", 3],
     ["C", 6],
     ["N", 8],
     ["O", 9],
+    ["Na", 12],
     ["Si", 15],
 )
+
+assert(len(default_ion_fig_dims) == len(default_ion_figsize) == len(default_wind_ions))
 
 
 def setup_script():
@@ -145,7 +148,7 @@ def plot_wind_velocity(w,
                 with np.errstate(divide="ignore"):
                     to_plot = np.log10(w[wind_velocities_to_plot[wind_index]])
                 ax[i, j].set_title("log(" + wind_velocities_to_plot[wind_index].replace("_", r"\_") + ")" + " [" +
-                                   w.velocity_units + "]")
+                                   w.velocity_units.value + "]")
             else:
                 to_plot = w[wind_velocities_to_plot[wind_index]]
                 ax[i,

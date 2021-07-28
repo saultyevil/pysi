@@ -20,23 +20,25 @@ def setup():
     p = ap.ArgumentParser(description=__doc__)
     p.add_argument("root", help="The root name of the simulation")
     p.add_argument("-fp", "--filepath", default=".", help="The directory containing the simulation")
-    p.add_argument("-q", "--quiet", default=False, action="store_true", help="Suppress the output from the script")
+    p.add_argument("-v", "--version", default=None, help="The version of windsave2table to use")
+    p.add_argument("-l", "--loud", default=False, action="store_true", help="Suppress the output from the script")
 
     args = p.parse_args()
 
-    return args.root, args.filepath, args.quiet
+    return args.root, args.filepath, args.version, args.loud
 
 
 def main():
     """Main function of the script."""
 
-    verbose = True
-    root, fp, quiet = setup()
-    if quiet:
-        verbose = False
+    root, fp, version, loud = setup()
 
-    pypython.create_wind_save_tables(root, fp, False, True, verbose)
-    pypython.create_wind_save_tables(root, fp, True, verbose)
+    # ion fractions
+    pypython.create_wind_save_tables(root, fp, False, False, version, loud)
+    # ion densities
+    pypython.create_wind_save_tables(root, fp, True, False, version, loud)
+    # cell spectra
+    pypython.create_wind_save_tables(root, fp, False, True, version, loud)
 
     return
 
