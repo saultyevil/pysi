@@ -2,7 +2,27 @@
 # -*- coding: utf-8 -*-
 
 from setuptools import setup
-from pypython import find
+
+
+scripts = [
+      "scripts/py_add_parameter",
+      "scripts/py_change_parameter",
+      "scripts/py_check_convergence",
+      "scripts/py_check_errors",
+      "scripts/py_create_run_script",
+      "scripts/py_create_spectrum",
+      "scripts/py_create_wind_tables",
+      "scripts/py_plot_multiple_spectra",
+      "scripts/py_plot_optical_depth",
+      "scripts/py_plot_reprocessing",
+      "scripts/py_plot_spectrum",
+      "scripts/py_plot_wind",
+      "scripts/py_rm_data",
+      "scripts/py_run",
+      "scripts/slurm_add",
+      "scripts/slurm_clear",
+      "scripts/slurm_create"
+]
 
 
 setup(
@@ -14,9 +34,9 @@ setup(
       author="Edward J. Parkinson",
       author_email="e.j.parkinson@soton.ac.uk",
       license="MIT",
-      packages=["pypython", "pypython/math", "pypython/physics", "pypython/plot",
-                "pypython/simulation", "pypython/spectrum", "pypython/util"],
-      scripts=find("*.py", "scripts"),
+      packages=["pypython", "pypython/math", "pypython/observations", "pypython/physics", "pypython/plot",
+                "pypython/simulation", "pypython/spectrum", "pypython/util", "pypython/wind"],
+      scripts=scripts,
       zip_safe=False,
       install_requires=[
             "matplotlib", "scipy", "numpy", "pandas", "astropy", "numba",
