@@ -33,20 +33,21 @@ def setup_script():
     p = ap.ArgumentParser(description=__doc__)
 
     p.add_argument("root", help="The root name of simulation.")
-    p.add_argument("-wd", "--working_directory", default=".", help="The directory containing the simulation.")
-    p.add_argument("-sm", "--smooth_amount", type=int, default=5, help="The amount of smoothing to use on the spectra.")
+    p.add_argument("-fp", "--file_path", default=".", help="The directory containing the simulation.")
+    p.add_argument("-sm", "--smooth_amount", type=int, default=1, help="The amount of smoothing to use on the spectra.")
+    p.add_argument("--linear", default=True, action="store_false", help="Use a linear version of the spectrum.")
     p.add_argument("--display", action="store_true", default=False, help="Display the figure.")
 
     args = p.parse_args()
 
-    return args.root, args.working_directory, args.smooth_amount, args.display
+    return args.root, args.file_path, args.smooth_amount, args.linear, args.display
 
 
 def main():
     """Main function of the script."""
 
-    root, wd, smooth, display = setup_script()
-    reprocessing(Spectrum(root, wd, smooth=smooth), display=display)
+    root, fp, smooth, log_spec, display = setup_script()
+    reprocessing(Spectrum(root, fp, smooth=smooth, log_spec=log_spec), display=display)
 
     return
 
