@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Classes for analysing the wind in a Python simulation."""
+import copy
 import textwrap
 from enum import Enum
 from os import path
 
 import numpy as np
+import pypython
 from matplotlib import pyplot as plt
 
 from pypython import (_AttributeDict, _cleanup_root, create_wind_save_tables, find, get_array_index)
@@ -67,7 +69,7 @@ class CellSpectra:
 
     Cells which do not have a spectrum will return None.
     """
-    def __init__(self, root, fp=".", nx=0, nz=0, force_make_spectra=False, delim=None):
+    def __init__(self, root, fp=".", nx=0, nz=0, make_tables=False, delim=None):
         """Initialize the object.
 
         Reads in the cell spectra into a 1D list. This function will attempt
@@ -81,10 +83,12 @@ class CellSpectra:
         fp: str [optional]
             The directory containing the model.
         nx: int [optional]
-            The number of cells in the x direction.
+            The number of cells in the x direction. If not provided, this will
+            try to be determined.
         nz: int [optional]
-            The number of cells in the z direction.
-        force_make_spectra: bool [optional]
+            The number of cells in the z direction. If not provided, this will
+            try to be determined.
+        make_tables: bool [optional]
             Force windsave2table to be run to re-make the files in the
             tables directory.
         delim: str [optional]
@@ -105,14 +109,13 @@ class CellSpectra:
         self.header = None
         self.cells = None
         self.spectra = None
-
         self.original = None
 
         # Try to read in the spectra, if we can't then we'll try and run
         # windsave2table. It is also possible to force the re-creation of the
         # spectra files
 
-        if force_make_spectra:
+        if make_tables:
             self.create_wind_tables()
 
         try:
@@ -278,8 +281,28 @@ class CellSpectra:
 
         return fig, ax
 
-    def smooth(self):
-        raise NotImplementedError()
+    def restore_original_spectra(self):
+        """Restore the original spectra after being smoothed."""
+        if self.original is None:
+            self.original = copy.deepcopy(self.spectra)
+            return
+
+        self.spectra = copy.deepcopy(self.original)
+
+    def smooth(self, smooth):
+        """Smooth the cell spectra.
+
+        Parameters
+        ----------
+        smooth: int
+            The width of the smoothing filter.
+        """
+        if self.original is None:
+            self.original = copy.deepcopy(self.spectra)
+
+        for i in range(self.nx):
+            for j in range(self.nz):
+                self.spectra[i, j]["Flux"] = pypython.smooth_array(self.spectra[i, j]["Flux"], smooth)
 
     @staticmethod
     def show(block=True):
@@ -323,7 +346,7 @@ class ModelledCellSpectra:
 
     Cells which do not have a spectrum will return None.
     """
-    def __init__(self, root, fp=".", force_make_tables=False, delim=None):
+    def __init__(self, root, fp=".", make_tables=False, delim=None):
         """Initialize the object.
 
         Reads in the root.spec.txt file, which contains a bunch of parameters
@@ -335,7 +358,7 @@ class ModelledCellSpectra:
             The root name of the Python simulation.
         fp: str [optional]
             The directory containing the model.
-        force_make_tables: bool [optional]
+        make_tables: bool [optional]
             Force windsave2table to be run to re-make the files in the
             tables directory.
         delim: str [optional]
@@ -366,7 +389,7 @@ class ModelledCellSpectra:
         # convert those into a flux. The wind tables can be forcibly created
         # if need be
 
-        if force_make_tables:
+        if make_tables:
             self.create_wind_tables()
 
         self.get_model_spectra(delim)
@@ -629,7 +652,6 @@ class Wind:
 
     Contains methods to extract variables, as well as convert various
     indices into other indices.
-    todo: I should include kwargs in a bunch of these functions
     """
     def __init__(self,
                  root,
@@ -637,9 +659,8 @@ class Wind:
                  distance_units="cm",
                  velocity_units="kms",
                  co_mass=None,
-                 get_cell_spec=True,
                  masked=True,
-                 force_make_tables=False,
+                 make_tables=False,
                  version=None,
                  delim=None):
         """Initialize the Wind object.
@@ -657,8 +678,6 @@ class Wind:
             The root name of the Python simulation.
         fp: str
             The directory containing the model.
-        get_cell_spec: bool
-            Load in the the cell spectra as well.
         distance_units: str
             The distance units of the wind.
         co_mass: float
@@ -668,7 +687,7 @@ class Wind:
             The velocity units of the wind.
         masked: bool [optional]
             Store the wind parameters as masked arrays.
-        force_make_tables: bool [optional]
+        make_tables: bool [optional]
             Force windsave2table to be run to re-make the files in the
             tables directory.
         delim: str [optional]
@@ -712,14 +731,14 @@ class Wind:
         # will script raise an exception. It is also possible to force the
         # re-creation of the tables.
 
-        if force_make_tables:
+        if make_tables:
             self.create_wind_tables()
 
         try:
-            self.get_all_tables(get_cell_spec, delim)
+            self.get_all_tables(delim)
         except IOError:
             self.create_wind_tables()
-            self.get_all_tables(get_cell_spec, delim)
+            self.get_all_tables(delim)
 
         self.columns = self.wind.keys()
 
@@ -728,12 +747,11 @@ class Wind:
 
         # Now we can convert or set the units, as the wind has been read in
 
-        self.spatial_units = "unknown"
-
+        self.distance_units = "unknown"
         if distance_units == WindDistanceUnits.rg:
             self.convert_cm_to_rg(co_mass)  # self.spatial_units is set in here whenever we convert between units
         else:
-            self.spatial_units = distance_units
+            self.distance_units = distance_units
 
     # Private methods ----------------------------------------------------------
 
@@ -762,6 +780,9 @@ class Wind:
             variable = self.wind[element_name]["density"][ion_name]
 
         return variable
+
+    def _get_kwargs(self, **kwargs):
+        """Get the keyword arguments."""
 
     def _get_wind_coordinates(self):
         """Get coordinates of the wind.
@@ -923,7 +944,7 @@ class Wind:
             The gravitational radius for the model.
         """
 
-        if self.spatial_units == WindDistanceUnits.rg:
+        if self.distance_units == WindDistanceUnits.rg:
             return
 
         if not co_mass_in_msol:
@@ -941,7 +962,7 @@ class Wind:
             self.wind["x"] /= rg
             self.wind["z"] /= rg
 
-        self.spatial_units = WindDistanceUnits.rg
+        self.distance_units = WindDistanceUnits.rg
         self.gravitational_radius = rg
         self._setup_coords()
 
@@ -964,7 +985,7 @@ class Wind:
             The gravitational radius for the model.
         """
 
-        if self.spatial_units == WindDistanceUnits.cm:
+        if self.distance_units == WindDistanceUnits.cm:
             return
 
         if not co_mass_in_msol:
@@ -982,7 +1003,7 @@ class Wind:
             self.wind["x"] *= rg
             self.wind["z"] *= rg
 
-        self.spatial_units = WindDistanceUnits.cm
+        self.distance_units = WindDistanceUnits.cm
         self.gravitational_radius = rg
         self._setup_coords()
 
@@ -1106,27 +1127,25 @@ class Wind:
 
         return variable
 
-    def get_all_tables(self, get_cell_spec, delim):
+    def get_all_tables(self, delim):
         """Read all the wind save tables into the object.
 
         Parameters
         ----------
-        get_cell_spec: bool
-            Also read in the cell spectra. In old version of Python, these were
-            not available.
         delim: str
             The file delimiter.
         """
         self.get_wind_parameters(delim)
         self.get_wind_elements(delim=delim)
-        if get_cell_spec:
-            try:  # In case someone asks for cell spec when we can't get them
-                self.wind["cell_spec"] = CellSpectra(self.root, self.fp, self.nx, self.nz)
-                self.wind["cell_model"] = ModelledCellSpectra(self.root, self.fp)
-                self.spectra += ("cell_spec", "cell_model")
-            except ValueError:
-                print(f"unable to load cell or model spectra for model {self.fp}{self.root} as windsave2table is too "
-                      f"old")
+
+        try:  # In case someone asks for cell spec when we can't get them
+            self.wind["cell_spec"] = CellSpectra(self.root, self.fp, self.nx, self.nz)
+            self.wind["cell_model"] = ModelledCellSpectra(self.root, self.fp)
+            self.spectra += ("cell_spec", "cell_model")
+        except ValueError:
+            self.wind["cell_spec"] = None
+            self.wind["cell_model"] = None
+            self.spectra = None
 
     def get_elem_number_from_ij(self, i, j):
         """Get the wind element number for a given i and j index.
@@ -1218,7 +1237,7 @@ class Wind:
             The file delimiter.
         """
         if elements_to_get is None:
-            elements_to_get = ("H", "He", "C", "N", "O", "Si", "Fe")
+            elements_to_get = ("H", "He", "C", "N", "O", "Na", "Si", "Fe")
         else:
             if type(elements_to_get) not in [str, list, tuple]:
                 raise TypeError("ions_to_get should be a tuple/list of strings or a string")
@@ -1237,14 +1256,11 @@ class Wind:
             # fraction and density
 
             for ion_type, ion_type_index_name in zip(["frac", "den"], ["fraction", "density"]):
-
                 fp = self.fp + self.root + "." + element + "." + ion_type + ".txt"
-
                 if not path.exists(fp):
                     fp = self.fp + "tables/" + self.root + "." + element + "." + ion_type + ".txt"
                     if not path.exists(fp):
                         continue
-
                 n_elements_read += 1
 
                 if element not in self.elements:
@@ -1414,12 +1430,12 @@ class Wind:
             n_points, m_points = self._get_wind_indices()
 
         if self.coord_system == WindCoordSystem.spherical:
-            fig, ax = plot.wind1d(n_points, variable, self.spatial_units, scale=scale)
+            fig, ax = plot.wind1d(n_points, variable, self.distance_units, scale=scale)
         else:
             if log_variable:
                 with np.errstate(divide="ignore"):
                     variable = np.log10(variable)
-            fig, ax = plot.wind2d(n_points, m_points, variable, self.spatial_units, self.coord_system, scale=scale,
+            fig, ax = plot.wind2d(n_points, m_points, variable, self.distance_units, self.coord_system, scale=scale,
                                   vmin=vmin, vmax=vmax)
 
         if len(ax) == 1:
@@ -1429,6 +1445,34 @@ class Wind:
                 ax.set_ylabel(title)
             else:
                 ax.set_title(title)
+
+        return fig, ax
+
+    def plot_along_sight_line(self, thetas, parameter, scale="loglog"):
+        """Plot a variable along a sight line or selection of sight lines.
+
+        Parameters
+        ----------
+        thetas: float or list[float]
+            The sight line(s) to plot. This must be in degrees.
+        parameter: str
+            The parameter to plot.
+        scale: str
+            The scaling of the axes.
+        """
+        fig, ax = plt.subplots(figsize=(12, 6))
+        if type(thetas) is not list:
+            thetas = list(thetas)
+
+        for theta in thetas:
+            x, z, w = self.get_variable_along_sight_line(theta, parameter)
+            ax.plot(np.sqrt(x**2 + z**2), w, label=f"{theta:.1f}" + r"$^{\circ}$")
+
+        ax.legend()
+        ax.set_xlabel(f"R [{self.distance_units.value}]")
+        ax.set_ylabel(parameter)
+        ax = set_axes_scales(ax, scale)
+        fig = plot.finish_figure(fig)
 
         return fig, ax
 

@@ -193,7 +193,7 @@ def _plot_subplot(ax, spectrum, things_to_plot, xmin, xmax, alpha, scale, use_fl
 
     ax.legend(loc="lower left")
     ax = set_axes_scales(ax, scale)
-    ax = set_spectrum_axes_labels(ax, spectrum, multiply_by_spatial_units=use_flux)
+    ax = set_axes_labels(ax, spectrum, multiply_by_spatial_units=use_flux)
 
     return ax
 
@@ -365,7 +365,7 @@ def photoionization_edges(units=None, spectrum=None):
     return _convert_labels_to_frequency_space(edges, units, spectrum)
 
 
-def set_spectrum_axes_labels(ax, spectrum=None, units=None, distance=None, multiply_by_spatial_units=False):
+def set_axes_labels(ax, spectrum=None, units=None, distance=None, multiply_by_spatial_units=False):
     """Set the units of a given matplotlib axes.
     todo: should have an else if the units are unknown, not for f_nu
 
@@ -601,7 +601,7 @@ def multiple_models(output_name,
             ax[n].plot(x, y, label=label, alpha=alpha)
 
         ax[n] = set_axes_scales(ax[n], scale)
-        ax[n] = set_spectrum_axes_labels(ax[n], spectra_to_plot[0], multiply_by_spatial_units=multiply_by_spatial_units)
+        ax[n] = set_axes_labels(ax[n], spectra_to_plot[0], multiply_by_spatial_units=multiply_by_spatial_units)
 
         if thing.isdigit():
             ax[n].set_title(f"{thing}" + r"$^{\circ}$")
@@ -813,9 +813,9 @@ def reprocessing(spectrum, xmin=None, xmax=None, scale="loglog", label_edges=Tru
     ax: plt.Axes
         matplotlib Axes object.
     """
-    if "spec_tau" not in spectrum.avail_spectrum:
+    if "spec_tau" not in spectrum.available:
         raise ValueError("There is no spec_tau spectrum so cannot create this plot")
-    if "spec" not in spectrum.avail_spectrum and "log_spec" not in spectrum.avail_spectrum:
+    if "spec" not in spectrum.available and "log_spec" not in spectrum.available:
         raise ValueError("There is no observer spectrum so cannot create this plot")
 
     fig, ax = plt.subplots(figsize=(12, 7))
@@ -852,7 +852,7 @@ def reprocessing(spectrum, xmin=None, xmax=None, scale="loglog", label_edges=Tru
     for thing in ["Created", "Emitted"]:
         x, y = get_xy_subset(spectrum["Freq."], spectrum[thing], xmin, xmax)
 
-        if spectrum.spatial_units == SpectrumUnits.f_lm:
+        if spectrum.units == SpectrumUnits.f_lm:
             y *= spectrum["Lambda"]
         else:
             y *= spectrum["Freq."]
@@ -860,7 +860,7 @@ def reprocessing(spectrum, xmin=None, xmax=None, scale="loglog", label_edges=Tru
         ax2.plot(x, y, label=thing, alpha=alpha)
 
     ax2.legend(loc="upper right")
-    ax2.set_ylabel(f"Flux {spectrum.distance} pc " + r"[erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$]")
+    ax2 = set_axes_labels(ax2, spectrum)
 
     fig = finish_figure(fig)
     fig.savefig(f"{spectrum.fp}/{spectrum.root}_reprocessing.png")

@@ -9,7 +9,7 @@ from pypython.plot import finish_figure, set_axes_scales
 from pypython.wind import WindCoordSystem, WindDistanceUnits
 
 
-def wind1d(m_points, parameter_points, units, scale="logx", fig=None, ax=None, i=0, j=0):
+def wind1d(m_points, parameter_points, distance_units, scale="logx", fig=None, ax=None, i=0, j=0):
     """Plot a 1D wind.
 
     Parameters
@@ -19,7 +19,7 @@ def wind1d(m_points, parameter_points, units, scale="logx", fig=None, ax=None, i
     parameter_points: np.ndarray
         The wind parameter to be plotted, in the same shape as the n_points and
         m_points arrays.
-    units: str
+    distance_units: pypython.wind.WindDistanceUnits
         The units of the distance axis.
     scale: str [optional]
         The scaling of the axes: [logx, logy, loglog, linlin]
@@ -44,7 +44,7 @@ def wind1d(m_points, parameter_points, units, scale="logx", fig=None, ax=None, i
 
     ax[i, j].plot(m_points, parameter_points)
 
-    if units == WindDistanceUnits.cm:
+    if distance_units == WindDistanceUnits.cm:
         ax[i, j].set_xlabel(r"$R$ [cm]")
     else:
         ax[i, j].set_xlabel(r"$r / R_{g}$")
@@ -58,7 +58,7 @@ def wind1d(m_points, parameter_points, units, scale="logx", fig=None, ax=None, i
 def wind2d(m_points,
            n_points,
            parameter_points,
-           units,
+           distance_units,
            coordinate_system,
            inclinations_to_plot=None,
            scale="loglog",
@@ -79,7 +79,7 @@ def wind2d(m_points,
     parameter_points: np.ndarray
         The wind parameter to be plotted, in the same shape as the n_points and
         m_points arrays.
-    units: str
+    distance_units: pypython.wind.WindDistanceUnits
         The units of the distance axes.
     coordinate_system: pypython.wind.WindCoordSystem
         The coordinate system in use, either rectilinear or polar.
@@ -127,7 +127,7 @@ def wind2d(m_points,
     if inclinations_to_plot:
         n_coords = np.unique(m_points)
         for inclination in inclinations_to_plot:
-            if coordinate_system == "rectilinear":
+            if coordinate_system == WindCoordSystem.cylindrical or coordinate_system == WindCoordSystem.cartesian:
                 m_coords = n_coords * np.tan(0.5 * PI - np.deg2rad(float(inclination)))
             else:
                 x_coords = np.logspace(np.log10(0), np.max(n_points))
@@ -139,7 +139,7 @@ def wind2d(m_points,
     # Clean up the axes with labs and set up scales, limits etc
 
     if coordinate_system == WindCoordSystem.cylindrical or coordinate_system == WindCoordSystem.cartesian:
-        if units == WindDistanceUnits.cm:
+        if distance_units == WindDistanceUnits.cm:
             ax[i, j].set_xlabel(r"$x$ [cm]")
             ax[i, j].set_ylabel(r"$z$ [cm]")
         else:
@@ -153,7 +153,7 @@ def wind2d(m_points,
         ax[i, j].set_thetamin(0)
         ax[i, j].set_thetamax(90)
         ax[i, j].set_rlabel_position(90)
-        if units == WindDistanceUnits.cm:
+        if distance_units == WindDistanceUnits.cm:
             ax[i, j].set_ylabel(r"$\log_{10}(r)$ [cm]")
         else:
             ax[i, j].set_ylabel(r"$\log_{10}(r / R_{g})$")
@@ -239,7 +239,7 @@ def wind(wind,
             r = wind["r"]
         else:
             r = wind["i"]
-        fig, ax = wind1d(r, parameter_points, wind.spatial_units, scale, fig, ax, i, j)
+        fig, ax = wind1d(r, parameter_points, wind.distance_units, scale, fig, ax, i, j)
     elif wind.coord_system == WindCoordSystem.cylindrical:
         if use_coordinates:
             x = wind["x"]
@@ -247,12 +247,12 @@ def wind(wind,
         else:
             x = wind["i"]
             z = wind["j"]
-        fig, ax = wind2d(x, z, parameter_points, wind.spatial_units, wind.coord_system, inclinations_to_plot, scale,
+        fig, ax = wind2d(x, z, parameter_points, wind.distance_units, wind.coord_system, inclinations_to_plot, scale,
                          vmin, vmax, fig, ax, i, j)
     else:
         if not use_coordinates:
             raise ValueError("cannot use cell indices to plot a polar wind")
-        fig, ax = wind2d(np.deg2rad(wind["theta"]), np.log10(wind["r"]), parameter_points, wind.spatial_units,
+        fig, ax = wind2d(np.deg2rad(wind["theta"]), np.log10(wind["r"]), parameter_points, wind.distance_units,
                          wind.coord_system, inclinations_to_plot, scale, vmin, vmax, fig, ax, i, j)
 
     return fig, ax

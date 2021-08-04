@@ -5,7 +5,7 @@
 pypython is a companion python package to handle and analyse the data which
 comes out of a Python simulation.
 """
-
+import os.path
 import re
 import textwrap
 import time
@@ -299,7 +299,7 @@ def find(pattern, fp="."):
     fp: str [optional]
         The directory to search from, if not specified in the pattern.
     """
-
+    fp = os.path.expanduser(fp)
     files = [str(file_) for file_ in Path(f"{fp}").rglob(pattern)]
     if ".pf" in pattern:
         files = [this_file for this_file in files if "out.pf" not in this_file and "py_wind" not in this_file]

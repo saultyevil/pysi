@@ -205,7 +205,7 @@ class Spectrum:
         units = self.spectra[key].units
         distance = self.spectra[key].distance
         ax = set_axes_scales(ax, scale)
-        ax = plot.set_spectrum_axes_labels(ax, units=units, distance=distance)
+        ax = plot.set_axes_labels(ax, units=units, distance=distance)
 
         # How things are plotted depends on the units of the spectrum
 
