@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import argparse
+import pypython
+from enum import Enum
+import shutil
+import sys
+
+
+class ModeEnum(Enum):
+    ion = "ion"
+    spec = "spec"
+
+
+p = argparse.ArgumentParser()
+p.add_argument("root", help="Root name of the simulation")
+# todo; this should be a subparser, probably. For now, choices will be hardcoded
+p.add_argument("mode", choices=[ModeEnum.ion.value, ModeEnum.spec.value], help="Where to restart the model from")
+p.add_argument("-fp", default=".", help="The directory containing the simulation")
+
+args = p.parse_args()
+
+root, mode, fp = args.root, ModeEnum(args.mode), args.fp
+
+if mode == ModeEnum.spec:
+    new_name = f"{fp}/{root}_spec.pf"
+    shutil.copyfile(f"{fp}/{root}.pf", new_name)
+    pypython.simulation.grid.update_single_parameter(new_name, "Ionization_cycles", "0", False)
+    pypython.simulation.grid.update_single_parameter(new_name, "Spectrum_cycles", "15", False)
+    pypython.simulation.grid.update_single_parameter(new_name, "Photons_per_cycle", "1e6", False)
+    pypython.simulation.grid.update_single_parameter(new_name, "System_type(star,cv,bh,agn,previous)", "previous", False)
+    pypython.simulation.grid.add_single_parameter(new_name, "Wind.old_windfile(root_only)", root, False)
+elif mode == ModeEnum.ion:
+    pass
+else:
+    print("Unknown mode")
+    sys.exit(1)

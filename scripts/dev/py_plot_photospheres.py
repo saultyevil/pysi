@@ -60,11 +60,6 @@ def read_in_photosphere_locations(root, fp):
 def plot_2d(wind, variable, display):
     """2D version."""
 
-    # fig, ax = wind.plot(variable)
-
-    # get the photosphere locations
-
-    pypython.plot.normalize_figure_style()
     fig, ax = plt.subplots(1, 1, figsize=(6, 5))
     rg = pypython.physics.blackhole.gravitational_radius(5e6)
     # rg = 1

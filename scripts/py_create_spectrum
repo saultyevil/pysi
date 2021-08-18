@@ -7,9 +7,9 @@ import argparse as ap
 import numpy as np
 from matplotlib import pyplot as plt
 
-import pypython.plot.spectrum
+import pypython.spectrum.plot
 from pypython import Spectrum, plot, smooth_array
-from pypython.physics import convert
+from pypython import physics
 from pypython.spectrum import create
 
 
@@ -294,9 +294,9 @@ def main(setup=None):
     xmin = w_xmin
     xmax = w_xmax
     if w_xmax and frequency_space:
-        xmin = convert.angstrom_to_hz(w_xmax)
+        xmin = physics.angstrom_to_hz(w_xmax)
     if w_xmin and frequency_space:
-        xmax = convert.angstrom_to_hz(w_xmin)
+        xmax = physics.angstrom_to_hz(w_xmin)
 
     if mode == "create":
         create.create_spectrum(root,

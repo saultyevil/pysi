@@ -18,6 +18,12 @@ from pypython.plot import finish_figure, set_axes_scales
 # Units enumerators ------------------------------------------------------------
 
 
+class SpectrumThing(Enum):
+
+    frequency = "Hz"
+    wavelength = "Angstrom"
+
+
 class SpectrumUnits(Enum):
     """Possible units for the spectra created in Python.
 
@@ -567,4 +573,4 @@ def integrate(spectrum, name, xmin, xmax, spec_type=None):
 
 # This is placed here due to a circular dependency -----------------------------
 
-from pypython.spectrum import plot, create
+from pypython.spectrum import create, plot

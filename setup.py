@@ -9,6 +9,7 @@ scripts = [
       "scripts/py_change_parameter",
       "scripts/py_check_convergence",
       "scripts/py_check_errors",
+      "scripts/py_convert_to_previous",
       "scripts/py_create_run_script",
       "scripts/py_create_spectrum",
       "scripts/py_create_wind_tables",

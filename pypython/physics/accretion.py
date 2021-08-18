@@ -46,7 +46,8 @@ def alpha_disc_effective_temperature(ri, r_co, m_co, mdot):
     return teff4**0.25
 
 
-def create_disc_spectrum(m_co, mdot, r_in, r_out, freq_min, freq_max, freq_units=True, n_freq=5000, n_rings=1000):
+def create_disc_spectrum(m_co, mdot, r_in, r_out, freq_min, freq_max, n_freq=5000, n_rings=5000, modified_teff=False,
+                         freq_units=True):
     """Create a crude accretion disc spectrum. This works by approximating an
     accretion disc as being a collection of annuli radiating at different
     temperatures and treats them as a blackbody. The emerging spectrum is then
@@ -101,7 +102,10 @@ def create_disc_spectrum(m_co, mdot, r_in, r_out, freq_min, freq_max, freq_units
         r = (radii_range[i + 1] + radii_range[i]) * 0.5
         area_annulus = PI * (radii_range[i + 1]**2 - radii_range[i]**2)
 
-        t_eff = alpha_disc_effective_temperature(r, r_in, m_co, mdot)
+        if not modified_teff:
+            t_eff = alpha_disc_effective_temperature(r, r_in, m_co, mdot)
+        else:
+            t_eff = modified_eddington_alpha_disc_effective_temperature(r, m_co, mdot)
 
         if freq_units:
             f = planck_nu(t_eff, frequency_range)

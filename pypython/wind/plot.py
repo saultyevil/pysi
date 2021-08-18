@@ -9,7 +9,7 @@ from pypython.plot import finish_figure, set_axes_scales
 from pypython.wind import WindCoordSystem, WindDistanceUnits
 
 
-def wind1d(m_points, parameter_points, distance_units, scale="logx", fig=None, ax=None, i=0, j=0):
+def _wind1d(m_points, parameter_points, distance_units, scale="logx", fig=None, ax=None, i=0, j=0):
     """Plot a 1D wind.
 
     Parameters
@@ -55,19 +55,19 @@ def wind1d(m_points, parameter_points, distance_units, scale="logx", fig=None, a
     return fig, ax
 
 
-def wind2d(m_points,
-           n_points,
-           parameter_points,
-           distance_units,
-           coordinate_system,
-           inclinations_to_plot=None,
-           scale="loglog",
-           vmin=None,
-           vmax=None,
-           fig=None,
-           ax=None,
-           i=0,
-           j=0):
+def _wind2d(m_points,
+            n_points,
+            parameter_points,
+            distance_units,
+            coordinate_system,
+            inclinations_to_plot=None,
+            scale="loglog",
+            vmin=None,
+            vmax=None,
+            fig=None,
+            ax=None,
+            i=0,
+            j=0):
     """Plot a 2D wind using a contour plot.
 
     Parameters
@@ -109,16 +109,22 @@ def wind2d(m_points,
         The (updated) axes array for the plot.
     """
     if fig is None or ax is None:
-        if coordinate_system == WindCoordSystem.cylindrical or coordinate_system == WindCoordSystem.cartesian:
+        if coordinate_system == WindCoordSystem.cylindrical:
             fig, ax = plt.subplots(figsize=(8, 6), squeeze=False)
         elif coordinate_system == WindCoordSystem.polar:
             fig, ax = plt.subplots(figsize=(8, 6), squeeze=False, subplot_kw={"projection": "polar"})
         else:
-            raise ValueError(
-                f"Unknown projection, expected {WindCoordSystem.cylindrical}, {WindCoordSystem.cartesian} or "
-                f"{WindCoordSystem.polar}")
+            raise ValueError(f"Unknown projection, expected {WindCoordSystem.cylindrical} or {WindCoordSystem.polar}")
 
-    im = ax[i, j].pcolormesh(m_points, n_points, parameter_points, shading="auto", vmin=vmin, vmax=vmax)
+    im = ax[i, j].pcolormesh(m_points,
+                             n_points,
+                             parameter_points,
+                             shading="auto",
+                             vmin=vmin,
+                             vmax=vmax,
+                             linewidth=0,
+                             rasterized=True)
+
     fig.colorbar(im, ax=ax[i, j])
 
     # this plots lines representing sight lines for different observers of
@@ -127,18 +133,20 @@ def wind2d(m_points,
     if inclinations_to_plot:
         n_coords = np.unique(m_points)
         for inclination in inclinations_to_plot:
-            if coordinate_system == WindCoordSystem.cylindrical or coordinate_system == WindCoordSystem.cartesian:
+            if coordinate_system == WindCoordSystem.cylindrical:
                 m_coords = n_coords * np.tan(0.5 * PI - np.deg2rad(float(inclination)))
             else:
                 x_coords = np.logspace(np.log10(0), np.max(n_points))
                 m_coords = x_coords * np.tan(0.5 * PI - np.deg2rad(90 - float(inclination)))
                 m_coords = np.sqrt(x_coords**2 + m_coords**2)
+
             ax[0, 0].plot(n_coords, m_coords, label=inclination + r"$^{\circ}$")
+
         ax[0, 0].legend(loc="lower left")
 
     # Clean up the axes with labs and set up scales, limits etc
 
-    if coordinate_system == WindCoordSystem.cylindrical or coordinate_system == WindCoordSystem.cartesian:
+    if coordinate_system == WindCoordSystem.cylindrical:
         if distance_units == WindDistanceUnits.cm:
             ax[i, j].set_xlabel(r"$x$ [cm]")
             ax[i, j].set_ylabel(r"$z$ [cm]")
@@ -239,20 +247,20 @@ def wind(wind,
             r = wind["r"]
         else:
             r = wind["i"]
-        fig, ax = wind1d(r, parameter_points, wind.distance_units, scale, fig, ax, i, j)
+        fig, ax = _wind1d(r, parameter_points, wind.distance_units, scale, fig, ax, i, j)
     elif wind.coord_system == WindCoordSystem.cylindrical:
         if use_coordinates:
-            x = wind["x"]
-            z = wind["z"]
+            x, z = wind["x"], wind["z"]
         else:
-            x = wind["i"]
-            z = wind["j"]
-        fig, ax = wind2d(x, z, parameter_points, wind.distance_units, wind.coord_system, inclinations_to_plot, scale,
-                         vmin, vmax, fig, ax, i, j)
-    else:
+            x, z = wind["i"], wind["j"]
+        fig, ax = _wind2d(x, z, parameter_points, wind.distance_units, wind.coord_system, inclinations_to_plot, scale,
+                          vmin, vmax, fig, ax, i, j)
+    elif wind.coord_system == WindCoordSystem.polar:
         if not use_coordinates:
             raise ValueError("cannot use cell indices to plot a polar wind")
-        fig, ax = wind2d(np.deg2rad(wind["theta"]), np.log10(wind["r"]), parameter_points, wind.distance_units,
-                         wind.coord_system, inclinations_to_plot, scale, vmin, vmax, fig, ax, i, j)
+        fig, ax = _wind2d(np.deg2rad(wind["theta"]), np.log10(wind["r"]), parameter_points, wind.distance_units,
+                          wind.coord_system, inclinations_to_plot, scale, vmin, vmax, fig, ax, i, j)
+    else:
+        raise ValueError(f"Unknown coordinate system of type {wind.coord_system}")
 
     return fig, ax

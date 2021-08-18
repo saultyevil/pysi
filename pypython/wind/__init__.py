@@ -7,9 +7,9 @@ from enum import Enum
 from os import path
 
 import numpy as np
-import pypython
 from matplotlib import pyplot as plt
 
+import pypython
 from pypython import (_AttributeDict, _cleanup_root, create_wind_save_tables, find, get_array_index)
 from pypython.constants import BOLTZMANN, CMS_TO_KMS, PI, PLANCK, VLIGHT
 from pypython.math import vector
@@ -22,7 +22,7 @@ from pypython.simulation.grid import get_parameter_value
 
 class WindCoordSystem(Enum):
     """Possible grid coordinate systems in Python."""
-    cylindrical = cartesian = "rectilinear"
+    cylindrical = "rectilinear"
     polar = "polar"
     spherical = "spherical"
     unknown = "unknown"
@@ -1396,7 +1396,7 @@ class Wind:
         # Convert velocity into desired units and also calculate the cylindrical
         # velocities.
 
-        if self.coord_system == WindCoordSystem.cylindrical:
+        if self.coord_system != WindCoordSystem.spherical:
             self.project_cartesian_velocity_to_cylindrical()
 
         self.wind["v_x"] *= self.velocity_conversion_factor
@@ -1430,13 +1430,19 @@ class Wind:
             n_points, m_points = self._get_wind_indices()
 
         if self.coord_system == WindCoordSystem.spherical:
-            fig, ax = plot.wind1d(n_points, variable, self.distance_units, scale=scale)
+            fig, ax = plot._wind1d(n_points, variable, self.distance_units, scale=scale)
         else:
             if log_variable:
                 with np.errstate(divide="ignore"):
                     variable = np.log10(variable)
-            fig, ax = plot.wind2d(n_points, m_points, variable, self.distance_units, self.coord_system, scale=scale,
-                                  vmin=vmin, vmax=vmax)
+            fig, ax = plot._wind2d(n_points,
+                                   m_points,
+                                   variable,
+                                   self.distance_units,
+                                   self.coord_system,
+                                   scale=scale,
+                                   vmin=vmin,
+                                   vmax=vmax)
 
         if len(ax) == 1:
             ax = ax[0, 0]

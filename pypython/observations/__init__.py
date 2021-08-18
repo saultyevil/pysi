@@ -7,9 +7,10 @@ the reverse and a function for de-reddening spectra. Also contained are
 the zero-points for common filters.
 """
 
+from enum import Enum
+
 import astropy.units as u
 from dust_extinction.parameter_averages import CCM89, F99
-from enum import Enum
 
 # Zero-point enumerator --------------------------------------------------------
 

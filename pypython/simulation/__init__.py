@@ -10,8 +10,9 @@ simulation.
 import re
 from copy import copy
 from glob import glob
-from matplotlib import pyplot as plt
+
 import numpy as np
+from matplotlib import pyplot as plt
 
 import pypython.simulation.grid
 
@@ -285,7 +286,7 @@ def model_error_summary(root, wd=".", n_cores=-1, print_errors=False):
 
 
 def plot_model_convergence(root, fp=".", display=False):
-    """Plot the convergence of a model"""
+    """Plot the convergence of a model."""
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
 
     convergence = check_model_convergence(root, fp, return_per_cycle=True)
