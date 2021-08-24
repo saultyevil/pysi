@@ -1138,14 +1138,22 @@ class Wind:
         self.get_wind_parameters(delim)
         self.get_wind_elements(delim=delim)
 
+        self.spectra = []
+
+        try:
+            self.wind["cell_model"] = ModelledCellSpectra(self.root, self.fp)
+            self.spectra += ["cell_model"]
+        except ValueError:
+            self.wind["cell_model"] = None
+
         try:  # In case someone asks for cell spec when we can't get them
             self.wind["cell_spec"] = CellSpectra(self.root, self.fp, self.nx, self.nz)
-            self.wind["cell_model"] = ModelledCellSpectra(self.root, self.fp)
-            self.spectra += ("cell_spec", "cell_model")
+            self.spectra += ["cell_spec"]
         except ValueError:
             self.wind["cell_spec"] = None
-            self.wind["cell_model"] = None
-            self.spectra = None
+ 
+        self.spectra = tuple(self.spectra)
+
 
     def get_elem_number_from_ij(self, i, j):
         """Get the wind element number for a given i and j index.
