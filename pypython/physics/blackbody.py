@@ -9,7 +9,7 @@ is given in units of Angstroms.
 import numpy as np
 from numba import jit
 
-from pypython.constants import (ANGSTROM, BOLTZMANN, VLIGHT, WIEN_FREQUENCY, WIEN_WAVELENGTH, H)
+from pypython.constants import (ANGSTROM, BOLTZMANN, VLIGHT, WIEN_FREQUENCY, WIEN_WAVELENGTH, H, PI, STEFAN_BOLTZMANN)
 
 
 @jit
@@ -62,6 +62,25 @@ def planck_nu(temperature, frequency):
     b_nu = (2 * H * frequency**3) / (VLIGHT**2 * (np.exp(x) - 1))
 
     return b_nu
+
+
+def stefan_boltzmann(radius, temperature):
+    """Calculate the luminosity for a spherical blackbody following from
+    Stefan-Boltzmann.
+
+    Parameters
+    ----------
+    radius: float
+        The radius of the sphere.
+    temperature: float
+        The temperature of the blackbody.
+
+    Returns
+    -------
+    lum: float
+        The luminosity of the sphere.
+    """
+    return 4 * PI * radius**2 * STEFAN_BOLTZMANN * temperature**4
 
 
 def wien_law(temperature, freq_space=False):

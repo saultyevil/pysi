@@ -29,7 +29,7 @@ scripts = [
 setup(
       name="pypython",
       python_requires='>=3.7',
-      version="3.4",
+      version="3.5.0",
       description="A package to make using Python a wee bit easier.",
       url="https://github.com/saultyevil/pypython",
       author="Edward J. Parkinson",
