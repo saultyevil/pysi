@@ -183,8 +183,9 @@ def plot(root,
     scale: string
         The scales for the x and y axis, i.e. loglog or logx.
     frequency_space: bool
-
-    logbins
+        Plot the spectrum in frequency space, instead.
+    logbins: bool
+        Use when the spectrum is logarithmically spaced.
     plot_lines
     file_ext
     display

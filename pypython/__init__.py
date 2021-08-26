@@ -566,4 +566,4 @@ from pypython.spectrum import Spectrum
 from pypython.util import run_command
 from pypython.wind import Wind
 
-normalize_figure_style()
+# normalize_figure_style()
