@@ -186,9 +186,12 @@ def plot(root,
         Plot the spectrum in frequency space, instead.
     logbins: bool
         Use when the spectrum is logarithmically spaced.
-    plot_lines
-    file_ext
-    display
+    plot_lines: bool
+        Add labels for common spectral features.
+    file_ext: str
+        The file extension of the figure to be saved.
+    display: bool
+        Display the generated figure.
     """
 
     try:
@@ -220,8 +223,13 @@ def plot(root,
         # This is all tarting up and cleaning up the figure from here on out
 
         ax.legend(loc="lower right", fontsize=15)
-        ax.set_xlabel(r"Wavelength [$\AA$]", fontsize=15)
-        ax.set_ylabel(r"Flux at " + str(d_norm_pc) + r" Pc, F$_{\lambda}$ [ergs s$^{-1}$ cm$^{-2}$ $\AA^{-1}$]")
+
+        # ax.set_xlabel(r"Wavelength [$\AA$]", fontsize=15)
+        # ax.set_ylabel(r"Flux at " + str(d_norm_pc) + r" Pc, F$_{\lambda}$ [ergs s$^{-1}$ cm$^{-2}$ $\AA^{-1}$]")
+
+        ax.set_xlabel(r"Wavelength", fontsize=15)
+        ax.set_ylabel(r"Flux at " + str(d_norm_pc) + r" Pc")
+
         ax = pypython.plot.set_axes_scales(ax, scale)
         if plot_lines:
             pypython.spectrum.plot.add_line_ids(ax, pypython.spectrum.plot.common_lines(), offset=0, linestyle="none")
