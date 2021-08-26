@@ -8,7 +8,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 import pypython.spectrum.plot
-from pypython import Spectrum, plot, smooth_array
+from pypython import Spectrum, smooth_array
 from pypython import physics
 from pypython.spectrum import create
 
@@ -142,8 +142,8 @@ def setup_script():
 
 
 def plot(root,
-         wd,
-         filtered_spectrum,
+         fp,
+         delay_dump_spectrum,
          extract_line=(-1, ),
          sm=1,
          d_norm_pc=100,
@@ -155,14 +155,21 @@ def plot(root,
          plot_lines=False,
          file_ext=".png",
          display=False):
-    """Description of the function.
-    todo: create a new script for this
+    """Create a plot comparing the delay dump spectrum to the extracted
+    spectrum.
+
+    This isn't exactly a clean way to do it, but should be OK. In the future it
+    might be better to put this into a separate script.
 
     Parameters
     ----------
-    root
-    wd
-    filtered_spectrum
+    root: str
+        The root name of the model.
+    fp: str
+        The file path containing the spectra.
+    delay_dump_spectrum: np.ndarray
+        A numpy array containing the filtered spectra to plot. This is ideally
+        the return directly from pypython.spectrum.create.create_specum()
     extract_line
     sm
     d_norm_pc
@@ -173,70 +180,53 @@ def plot(root,
     logbins
     plot_lines
     file_ext
-    display"""
+    display
+    """
 
     try:
-        if logbins:
-            full_spectrum = Spectrum(root, wd)
-        else:
-            full_spectrum = Spectrum(root, wd)
-        full_spectrum.smooth(sm)
-        inclinations = full_spectrum.inclinations
-        include_full_spectrum = True
+        extract_spec = Spectrum(root, fp, log_spec=logbins, smooth=sm)
+        inclinations = extract_spec.inclinations
     except IOError:
-        include_full_spectrum = False
-        full_spectrum = None
-        inclinations = np.linspace(1, filtered_spectrum.shape[1] - 1, filtered_spectrum.shape[1] - 1).tolist()
+        extract_spec = None
+        inclinations = np.linspace(1, delay_dump_spectrum.shape[1] - 1, delay_dump_spectrum.shape[1] - 1).tolist()
 
     for i, inclination in enumerate(inclinations):
-
         fig, ax = plt.subplots(figsize=(12, 5))
+        if extract_spec is not None:
+            ax.plot(extract_spec["Lambda"], extract_spec[inclination], alpha=0.75, label="Extracted spectrum")
 
-        if include_full_spectrum:
-            ax.plot(full_spectrum["Lambda"],
-                    full_spectrum[inclination],
-                    linewidth=1.4,
-                    alpha=0.75,
-                    label="Full Spectrum")
+        # todo: what the fuck is this for?
 
         if frequency_space:
-            index = 0
+            index_from = 0
         else:
-            index = 1
+            index_from = 1
 
-        x, y = pypython.plot.get_xy_subset(filtered_spectrum[:-1, index],
-                                           smooth_array(filtered_spectrum[:-1, i + 2], sm), xmin, xmax)
+        # Plot the spectrum generated from the delay dump file
+
+        x, y = pypython.plot.get_xy_subset(delay_dump_spectrum[:-1, index_from],
+                                           smooth_array(delay_dump_spectrum[:-1, i + 2], sm), xmin, xmax)
 
         ax.plot(x, y, alpha=0.75, label="Filtered Spectrum")
 
-        ax = pypython.plot.set_axes_scales(ax, scale)
-
-        # ax.set_xlim(xmin, xmax)
-        # ax.set_ylim(
-        #     plot.get_y_lims_for_x_lims(filtered_spectrum[:-1, index], smooth_array(filtered_spectrum[:-1, i + 2], sm),
-        #                                xmin, xmax))
+        # This is all tarting up and cleaning up the figure from here on out
 
         ax.legend(loc="lower right", fontsize=15)
         ax.set_xlabel(r"Wavelength [$\AA$]", fontsize=15)
-        ax.set_ylabel(r"Flux at " + str(d_norm_pc) + r" Pc, F$_{\lambda}$ [ergs s$^{-1}$ cm$^{-2}$ $\AA^{-1}$]",
-                      fontsize=15)
-
+        ax.set_ylabel(r"Flux at " + str(d_norm_pc) + r" Pc, F$_{\lambda}$ [ergs s$^{-1}$ cm$^{-2}$ $\AA^{-1}$]")
+        ax = pypython.plot.set_axes_scales(ax, scale)
         if plot_lines:
-            if scale == "loglog" or scale == "logx":
-                logx = True
-            else:
-                logx = False
-            ax = plot.ax_add_line_ids(ax, plot.common_lines(freq=frequency_space), logx=logx)
+            pypython.spectrum.plot.add_line_ids(ax, pypython.spectrum.plot.common_lines(), offset=0, linestyle="none")
 
-        fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
+        fig = pypython.plot.finish_figure(fig)
 
         if extract_line[0] != create.UNFILTERED_SPECTRUM:
-            name = "{}/{}_line".format(wd, root)
+            name = "{}/{}_line".format(fp, root)
             for line in extract_line:
                 name += "_{}".format(line)
             name += "_i{}_delay_dump_spec".format(inclination)
         else:
-            name = "{}/{}_i{}_delay_dump_spec".format(wd, root, inclination)
+            name = "{}/{}_i{}_delay_dump_spec".format(fp, root, inclination)
 
         fig.savefig("{}.{}".format(name, file_ext), dpi=300)
         if file_ext != "png":  # Save both pdf and png versions
@@ -244,8 +234,6 @@ def plot(root,
 
     if display:
         plt.show()
-
-    return
 
 
 def main(setup=None):
@@ -293,6 +281,7 @@ def main(setup=None):
 
     xmin = w_xmin
     xmax = w_xmax
+
     if w_xmax and frequency_space:
         xmin = physics.angstrom_to_hz(w_xmax)
     if w_xmin and frequency_space:
@@ -316,8 +305,10 @@ def main(setup=None):
             name += ".delay_dump.spec"
         else:
             name = "{}/{}.delay_dump.spec".format(wd, root)
+
         # todo: see if this can be read in using a Spectrum object instead as an ascii
         filtered_spectrum = np.loadtxt(name, skiprows=2)
+
         plot(root, wd, filtered_spectrum, extract_nres, smooth_amount, d_norm_pc, w_xmin, w_xmax, axes_scales,
              frequency_space, True, common_lines, file_ext, display)
 
