@@ -119,8 +119,8 @@ def normalize_figure_style():
     """Set default pypython matplotlib parameters."""
 
     parameters = {
-        "text.usetex": True,
-        "text.latex.preamble": r"\usepackage{amsmath}",
+        # "text.usetex": True,
+        # "text.latex.preamble": r"\usepackage{amsmath}",
         "font.serif": "cm",
         "font.size": 18,
         "legend.fontsize": 14,

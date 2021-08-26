@@ -170,13 +170,20 @@ def plot(root,
     delay_dump_spectrum: np.ndarray
         A numpy array containing the filtered spectra to plot. This is ideally
         the return directly from pypython.spectrum.create.create_specum()
-    extract_line
-    sm
-    d_norm_pc
-    xmin
-    xmax
-    scale
-    frequency_space
+    extract_line: tuple
+        A tuple of specific nres photons to extract to create the spectrum.
+    sm: int
+        The width of the boxcar smoothing filter.
+    d_norm_pc: float
+        The distance normalization to use for the flux.
+    xmin: float
+        The lower boundary in the x axis.
+    xmax: float
+        The upper boundary in the x axis.
+    scale: string
+        The scales for the x and y axis, i.e. loglog or logx.
+    frequency_space: bool
+
     logbins
     plot_lines
     file_ext
@@ -184,7 +191,7 @@ def plot(root,
     """
 
     try:
-        extract_spec = Spectrum(root, fp, log_spec=logbins, smooth=sm)
+        extract_spec = Spectrum(root, fp, log_spec=logbins, smooth=sm, distance=d_norm_pc)
         inclinations = extract_spec.inclinations
     except IOError:
         extract_spec = None
@@ -219,6 +226,9 @@ def plot(root,
             pypython.spectrum.plot.add_line_ids(ax, pypython.spectrum.plot.common_lines(), offset=0, linestyle="none")
 
         fig = pypython.plot.finish_figure(fig)
+
+        # Complicated if statement for naming depending on what contributed to
+        # the spectrum
 
         if extract_line[0] != create.UNFILTERED_SPECTRUM:
             name = "{}/{}_line".format(fp, root)
