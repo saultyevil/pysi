@@ -9,6 +9,7 @@ spectrum files and the wind save tables.
 
 import numpy as np
 from matplotlib import pyplot as plt
+from distutils.spawn import find_executable
 
 from pypython import get_xy_subset
 from pypython.error import InvalidParameter
@@ -119,8 +120,6 @@ def normalize_figure_style():
     """Set default pypython matplotlib parameters."""
 
     parameters = {
-        # "text.usetex": True,
-        # "text.latex.preamble": r"\usepackage{amsmath}",
         "font.serif": "cm",
         "font.size": 18,
         "legend.fontsize": 14,
@@ -145,6 +144,10 @@ def normalize_figure_style():
         "savefig.dpi": 300,
         "pcolor.shading": "auto"
     }
+
+    if find_executable("pdflatex"):
+        parameters["text.usetex"] = True
+        parameters["text.latex.preamble"] = r"\usepackage{amsmath}"
 
     plt.rcParams.update(parameters)
 

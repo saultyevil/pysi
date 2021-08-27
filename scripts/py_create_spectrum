@@ -223,12 +223,8 @@ def plot(root,
         # This is all tarting up and cleaning up the figure from here on out
 
         ax.legend(loc="lower right", fontsize=15)
-
-        # ax.set_xlabel(r"Wavelength [$\AA$]", fontsize=15)
-        # ax.set_ylabel(r"Flux at " + str(d_norm_pc) + r" Pc, F$_{\lambda}$ [ergs s$^{-1}$ cm$^{-2}$ $\AA^{-1}$]")
-
-        ax.set_xlabel(r"Wavelength", fontsize=15)
-        ax.set_ylabel(r"Flux at " + str(d_norm_pc) + r" Pc")
+        ax.set_xlabel(r"Wavelength [\AA]", fontsize=15)
+        ax.set_ylabel(r"Flux density at " + str(d_norm_pc) + r" Pc [erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
 
         ax = pypython.plot.set_axes_scales(ax, scale)
         if plot_lines:
