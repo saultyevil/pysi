@@ -514,7 +514,7 @@ def create_spectrum(root,
                     spec_cycle_norm=1,
                     n_cores_norm=1,
                     logbins=True,
-                    mode_dev=False,
+                    mode_dev=True,
                     output_numpy=False):
     """Create a spectrum for each inclination angle using the photons which
     have been dumped to the root.delay_dump file.

@@ -9,18 +9,69 @@ spectrum.
 
 import numpy as np
 import pandas as pd
+from numba import jit, njit
 
 from pypython.constants import (MPROT, MSOL, MSOL_PER_YEAR, PI, STEFAN_BOLTZMANN, THOMPSON, C, G)
 from pypython.physics.blackbody import planck_lambda, planck_nu
 from pypython.physics.blackhole import (gravitational_radius, innermost_stable_circular_orbit)
 
 
-def alpha_disc_effective_temperature(ri, r_co, m_co, mdot):
+@njit
+def _calculate_disc_spectrum(m_co, mdot, radius, frequency_bins, modified_teff, freq_units):
+    """Calculate the accretion disc spectrum using jit.
+    
+    Parameters
+    ----------
+    m_co: float
+        The mass of the central object, in Msol.
+    mdot: float
+        The accretion rate onto the central object, in Msol/yr.
+    radius: np.ndarray
+        The radial points of the annuli of the disc.
+    frequency_bins: np.ndarray
+        The frequency bins to calculate the blackbody intensity for.
+    modified_teff: bool
+        Whether to use a modified Eddington T_eff profile or not.
+    freq_units: bool
+        Whether to return in frequency or wavelength units.
+
+    Returns
+    -------
+    lum: np.ndarray
+        The luminosity at the frequency bins.
+    """
+    
+    n_rings = len(radius)  
+    lum = np.zeros_like(frequency_bins)
+
+    for i in range(n_rings - 1):
+        # Use midpoint of annulus as point on r grid
+        r = (radius[i + 1] + radius[i]) * 0.5
+        area_annulus = PI * (radius[i + 1]**2 - radius[i]**2)
+
+        if modified_teff:
+            t_eff = modified_eddington_alpha_disc_effective_temperature(r, m_co, mdot)
+        else:
+        
+            t_eff = alpha_disc_effective_temperature(r, radius[0], m_co, mdot)
+
+        if freq_units:
+            f = planck_nu(t_eff, frequency_bins)
+        else:
+            f = planck_lambda(t_eff, frequency_bins)
+
+        lum += f * area_annulus * PI
+
+    return lum
+
+
+@jit
+def alpha_disc_effective_temperature(r, r_co, m_co, mdot):
     """Standard alpha-disc effective temperature profile.
 
     Parameters
     ----------
-    ri: np.ndarray or float
+    r: np.ndarray or float
         An array of radii or a single radius to calculate the temperature at.
     r_co: float
         The radius of the central object.
@@ -39,9 +90,8 @@ def alpha_disc_effective_temperature(ri, r_co, m_co, mdot):
     m_co *= MSOL
     mdot *= MSOL_PER_YEAR
 
-    with np.errstate(all="ignore"):
-        teff4 = (3 * G * m_co * mdot) / (8 * np.pi * ri**3 * STEFAN_BOLTZMANN)
-        teff4 *= 1 - (r_co / ri)**0.5
+    teff4 = (3 * G * m_co * mdot) / (8 * np.pi * r**3 * STEFAN_BOLTZMANN)
+    teff4 *= 1 - (r_co / r)**0.5
 
     return teff4**0.25
 
@@ -87,34 +137,13 @@ def create_disc_spectrum(m_co, mdot, r_in, r_out, freq_min, freq_max, n_freq=500
     else:
         xlabel = "Lambda"
 
-    radii_range = np.logspace(np.log10(r_in), np.log10(r_out), n_rings)
-    frequency_range = np.linspace(freq_min, freq_max, n_freq)
+    radius = np.logspace(np.log10(r_in), np.log10(r_out), n_rings)
+    frequency_bins = np.linspace(freq_min, freq_max, n_freq)
     s = pd.DataFrame(columns=[xlabel, "Lum."])
 
     # Initialise the data frame
-    s[xlabel] = frequency_range
-    lum = np.zeros_like(frequency_range)
-
-    # TODO: this can probably be vectorised to be faster
-
-    for i in range(n_rings - 1):
-        # Use midpoint of annulus as point on r grid
-        r = (radii_range[i + 1] + radii_range[i]) * 0.5
-        area_annulus = PI * (radii_range[i + 1]**2 - radii_range[i]**2)
-
-        if not modified_teff:
-            t_eff = alpha_disc_effective_temperature(r, r_in, m_co, mdot)
-        else:
-            t_eff = modified_eddington_alpha_disc_effective_temperature(r, m_co, mdot)
-
-        if freq_units:
-            f = planck_nu(t_eff, frequency_range)
-        else:
-            f = planck_lambda(t_eff, frequency_range)
-
-        lum += f * area_annulus * PI
-
-    s["Lum."] = lum
+    s[xlabel] = frequency_bins
+    s["Lum."] = _calculate_disc_spectrum(m_co, float(mdot), radius, frequency_bins, modified_teff, freq_units)
 
     return s
 
@@ -141,6 +170,7 @@ def eddington_accretion_limit(mbh, efficiency):
     return (4 * PI * G * mbh * MPROT) / (efficiency * C * THOMPSON)
 
 
+@jit
 def eddington_luminosity_limit(mbh):
     """Calculate the Eddington luminosity for accretion onto a black hole.
 
@@ -159,12 +189,13 @@ def eddington_luminosity_limit(mbh):
     return (4 * PI * G * mbh * C * MPROT) / THOMPSON
 
 
-def modified_eddington_alpha_disc_effective_temperature(ri, m_co, mdot):
+@jit
+def modified_eddington_alpha_disc_effective_temperature(r, m_co, mdot):
     """The effective temperature profile from Strubbe and Quataert 2009.
 
     Parameters
     ----------
-    ri: np.ndarray or float
+    r: np.ndarray or float
         An array of radii or a single radius to calculate the temperature at.
     m_co: float
         The mass of the central object in units of solar masses.
@@ -178,16 +209,15 @@ def modified_eddington_alpha_disc_effective_temperature(ri, m_co, mdot):
         The effective temperature at the provided radius or radii.
     """
 
-    risco = innermost_stable_circular_orbit(m_co)
+    r_isco = innermost_stable_circular_orbit(m_co)
     rg = gravitational_radius(m_co)
-    ledd = eddington_luminosity_limit(m_co)
+    l_edd = eddington_luminosity_limit(m_co)
 
     m_co *= MSOL
     mdot *= MSOL_PER_YEAR
 
-    with np.errstate(all="ignore"):
-        fnt = 1 - np.sqrt(risco / ri)
-        teff4 = (3 * G * m_co * mdot * fnt) / (8 * PI * ri**3 * STEFAN_BOLTZMANN)
-        teff4 *= (0.5 + (0.25 + 6 * fnt * (mdot * C**2 / ledd)**2 * (ri / rg)**-2)**0.5)**-1
+    fnt = 1 - np.sqrt(r_isco / r)
+    teff4 = (3 * G * m_co * mdot * fnt) / (8 * PI * r**3 * STEFAN_BOLTZMANN)
+    teff4 *= (0.5 + (0.25 + 6 * fnt * (mdot * C**2 / l_edd)**2 * (r / rg)**-2)**0.5)**-1
 
     return teff4**0.25

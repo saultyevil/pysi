@@ -7,10 +7,12 @@ is given in units of Angstroms.
 """
 
 import numpy as np
+from numba import jit
 
-from pypython.constants import (ANGSTROM, BOLTZMANN, VLIGHT, WIEN_FREQUENCY, WIEN_WAVELENGTH, H)
+from pypython.constants import (ANGSTROM, BOLTZMANN, VLIGHT, WIEN_FREQUENCY, WIEN_WAVELENGTH, H, PI, STEFAN_BOLTZMANN)
 
 
+@jit
 def planck_lambda(temperature, lamda):
     """Calculate the monochromatic intensity for a black body given a
     temperature and frequency of interest.
@@ -29,15 +31,15 @@ def planck_lambda(temperature, lamda):
         wavelength. Has units ergs s^-1 cm^-2 A^-1.
     """
 
-    with np.errstate(all="ignore"):
-        lcm = lamda * ANGSTROM
-        x = H * VLIGHT / lcm / BOLTZMANN / temperature
-        y = 2 * H * VLIGHT**2 / lcm**5
-        b_lamda = y / (np.exp(x) - 1)
+    lcm = lamda * ANGSTROM
+    x = H * VLIGHT / lcm / BOLTZMANN / temperature
+    y = 2 * H * VLIGHT**2 / lcm**5
+    b_lamda = y / (np.exp(x) - 1)
 
     return b_lamda
 
 
+@jit
 def planck_nu(temperature, frequency):
     """Calculate the monochromatic intensity for a black body given a
     temperature and frequency of interest.
@@ -56,11 +58,29 @@ def planck_nu(temperature, frequency):
         frequency. Has units ergs s^-1 cm^-2 Hz^-1.
     """
 
-    with np.errstate(all="ignore"):
-        x = H * frequency / (BOLTZMANN * temperature)
-        b_nu = (2 * H * frequency**3) / (VLIGHT**2 * (np.exp(x) - 1))
+    x = H * frequency / (BOLTZMANN * temperature)
+    b_nu = (2 * H * frequency**3) / (VLIGHT**2 * (np.exp(x) - 1))
 
     return b_nu
+
+
+def stefan_boltzmann(radius, temperature):
+    """Calculate the luminosity for a spherical blackbody following from
+    Stefan-Boltzmann.
+
+    Parameters
+    ----------
+    radius: float
+        The radius of the sphere.
+    temperature: float
+        The temperature of the blackbody.
+
+    Returns
+    -------
+    lum: float
+        The luminosity of the sphere.
+    """
+    return 4 * PI * radius**2 * STEFAN_BOLTZMANN * temperature**4
 
 
 def wien_law(temperature, freq_space=False):
