@@ -52,7 +52,11 @@ def main():
     else:
         root = args.root
 
-    change_pfs(find(f"*/{root}.pf"), args.parameter, args.value)
+    to_update = find(f"{root}.pf", fp=".")
+    if len(to_update) == 0:
+        raise ValueError("No parameter files were found")
+
+    change_pfs(to_update, args.parameter, args.value)
 
     return
 
