@@ -328,6 +328,7 @@ def common_lines(units=None, spectrum=None):
         [r"Na \textsc{i}", 5891],
         ["", 5897],
         [r"H$_{\alpha}$", 6564],
+        [r"He \textsc{i}", 7067]
     ]
 
     return _convert_labels_to_frequency_space(lines, units, spectrum)

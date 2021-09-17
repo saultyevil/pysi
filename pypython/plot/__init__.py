@@ -9,6 +9,7 @@ spectrum files and the wind save tables.
 
 import numpy as np
 from matplotlib import pyplot as plt
+from distutils.spawn import find_executable
 
 from pypython import get_xy_subset
 from pypython.error import InvalidParameter
@@ -39,8 +40,6 @@ def plot(x,
 
     # It doesn't make sense to provide only fig and not ax, or ax and not fig
     # so at this point we will throw an error message and return
-
-    normalize_figure_style()
 
     if fig and not ax:
         raise InvalidParameter("fig has been provided, but ax has not. Both are required.")
@@ -119,8 +118,6 @@ def normalize_figure_style():
     """Set default pypython matplotlib parameters."""
 
     parameters = {
-        # "text.usetex": True,
-        # "text.latex.preamble": r"\usepackage{amsmath}",
         "font.serif": "cm",
         "font.size": 18,
         "legend.fontsize": 14,
@@ -145,6 +142,10 @@ def normalize_figure_style():
         "savefig.dpi": 300,
         "pcolor.shading": "auto"
     }
+
+    if find_executable("pdflatex"):
+        parameters["text.usetex"] = True
+        parameters["text.latex.preamble"] = r"\usepackage{amsmath}"
 
     plt.rcParams.update(parameters)
 

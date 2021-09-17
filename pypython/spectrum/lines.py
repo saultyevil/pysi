@@ -110,23 +110,40 @@ def measure_equivalent_width(wavelength, flux, display_xmin, display_xmax, ret_f
     # Plot the spectrum and the fit to see how well it's doing, although if it's
     # a shit fit I do nothing about it and just let the code run its course :-)
 
-    fig, ax = plt.subplots(figsize=(12, 5))
-    wavelength, flux = get_xy_subset(wavelength, flux, display_xmin, display_xmax)
-    ax.loglog(wavelength, flux, linewidth=2, label="Spectrum")
-    # ax.plot(a, b, linewidth=2, label="Extracted bit")
-    wavelength, flux = get_xy_subset(a, fit(a), display_xmin, display_xmax)
-    ax.plot(wavelength, flux, label="Linear fit")
-    # ax.set_xlim(display_xmin, display_xmax)
-    # ax.set_ylim(get_y_lims_for_x_lims(wavelength, flux, display_xmin, display_xmax, scale=2.0))
-    ax.legend()
-    ax.set_xlabel("Wavelength")
-    ax.set_ylabel("Flux")
-    plt.show()
+    # fig, ax = plt.subplots(figsize=(12, 5))
+    # wavelength, flux = get_xy_subset(wavelength, flux, display_xmin, display_xmax)
+    # ax.loglog(wavelength, flux, linewidth=2, label="Spectrum")
+    # # ax.plot(a, b, linewidth=2, label="Extracted bit")
+    # wavelength, flux = get_xy_subset(a, fit(a), display_xmin, display_xmax)
+    # ax.plot(wavelength, flux, label="Linear fit")
+    # # ax.set_xlim(display_xmin, display_xmax)
+    # # ax.set_ylim(get_y_lims_for_x_lims(wavelength, flux, display_xmin, display_xmax, scale=2.0))
+    # ax.legend()
+    # ax.set_xlabel("Wavelength")
+    # ax.set_ylabel("Flux")
+    # plt.show()
 
     # Restrict the wavelength range to be around the line we are interested in
+    # The way we do it is probably really slow, but in the case where the
+    # spectrum is very finely gridded, we have a bit of trouble with the
+    # original method
 
-    i_line = get_array_index(wavelength, coords[0])
-    j_line = get_array_index(wavelength, coords[1])
+    # i_line = get_array_index(wavelength, coords[0])
+    # j_line = get_array_index(wavelength, coords[1])
+
+    i_line = 1
+    j_line = 2
+
+    for i_line, ww in enumerate(wavelength):
+        if ww > coords[0]:
+            break
+
+    for j_line, ww in enumerate(wavelength):
+        if ww > coords[1]:
+            break
+
+    i_line -= 1
+    j_line -= 1
 
     wavelength_ew = wavelength[i_line:j_line]
     flux_ew = flux[i_line:j_line]
@@ -136,7 +153,7 @@ def measure_equivalent_width(wavelength, flux, display_xmin, display_xmax, ret_f
     # W = \int_{\lambda_1}^{\lambda_2} \frac{F_{c} - F_{\lambda}}{F_{c}} d\lambda
     # W = Sum(Fc - Flamda / Fc * dlambda)
 
-    # todo: see if this can be speeded up, but n_bins is usually "small" so
+    # todo: see if this can be sped up, but n_bins is usually "small" so
     #       probably this doesn't matter
 
     w = 0
