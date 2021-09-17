@@ -38,7 +38,7 @@ def main():
     # ion densities
     pypython.create_wind_save_tables(root, fp, True, False, version, loud)
     # cell spectra
-    pypython.create_wind_save_tables(root, fp, False, True, version, loud)
+    # pypython.create_wind_save_tables(root, fp, False, True, version, loud)
 
     return
 

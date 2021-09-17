@@ -719,6 +719,7 @@ class Wind:
         self.wind = _AttributeDict({})
         self.coord_system = WindCoordSystem.unknown
         self.gravitational_radius = -1
+        self.gv = None
 
         # Get the conversion factors for distance and velocity units
 
@@ -826,6 +827,10 @@ class Wind:
         This acts as a wrapper function to reduce the number of indented for
         loops, improving readability of created_masked_arrays().
 
+        TODO: re-enable partially in-wind cells, once the SV extrapolation
+        problem has been fixed -- i.e. change self.wind["inwind"] != 0 to
+        self.wind["inwind"] < 0.
+
         Parameters
         ----------
         element_to_mask: str
@@ -835,7 +840,7 @@ class Wind:
 
         for ion_type in element.keys():
             for ion in element[ion_type]:
-                element[ion_type][ion] = np.ma.masked_where(self.wind["inwind"] < 0, element[ion_type][ion])
+                element[ion_type][ion] = np.ma.masked_where(self.wind["inwind"] != 0, element[ion_type][ion])
 
         self.wind[element_to_mask] = element
 
@@ -1059,6 +1064,10 @@ class Wind:
         is helpful when using pcolormesh, as matplotlib will ignore
         masked out cells so there will be no background colour to a
         color plot.
+
+        TODO: re-enable partially in-wind cells, once the SV extrapolation 
+        problem has been fixed -- i.e. change self.wind["inwind"] != 0 to
+        self.wind["inwind"] < 0.
         """
         to_mask_wind = list(self.parameters)
 
@@ -1120,8 +1129,12 @@ class Wind:
         element_name = parameter[:2].replace("_", "")
         ion_name = parameter[2:].replace("_", "")
 
+        # print(parameter)
+
         if element_name in self.elements:
+            # print(element_name, ion_name)
             variable = self._get_element_variable(element_name, ion_name)
+            # print(variable)
         else:
             variable = self.wind[parameter]
 
@@ -1143,17 +1156,16 @@ class Wind:
         try:
             self.wind["cell_model"] = ModelledCellSpectra(self.root, self.fp)
             self.spectra += ["cell_model"]
-        except ValueError:
+        except (OSError, ValueError):
             self.wind["cell_model"] = None
 
         try:  # In case someone asks for cell spec when we can't get them
             self.wind["cell_spec"] = CellSpectra(self.root, self.fp, self.nx, self.nz)
             self.spectra += ["cell_spec"]
-        except ValueError:
+        except (OSError, ValueError):
             self.wind["cell_spec"] = None
  
         self.spectra = tuple(self.spectra)
-
 
     def get_elem_number_from_ij(self, i, j):
         """Get the wind element number for a given i and j index.
@@ -1374,7 +1386,7 @@ class Wind:
             wind_all.append(np.array(wind_list[1:], dtype=np.float64))
 
         if n_read == 0:
-            raise IOError(f"Unable to open any wind tables for root {self.root} directory {self.fp}")
+            raise IOError(f"Unable to open any wind tables for root {self.fp}{self.root}")
 
         # Determine the number of nx and nz elements. There is a basic check to
         # only check for nz if a 'j' column exists, i.e. if it is a 2d model.
@@ -1397,6 +1409,10 @@ class Wind:
             if col in self.wind.keys():
                 continue
             self.wind[col] = wind_all[:, index].reshape(self.nx, self.nz)
+
+        # Set up the variables containing the coordinate points of the grid,
+        # as well as determine the grid type and record the parameters which
+        # have been read in
 
         self.parameters = tuple(self.wind.keys())
         self._setup_coords()
@@ -1549,6 +1565,11 @@ class Wind:
         self.wind["v_rot"] = v_rot * self.velocity_conversion_factor
         self.wind["v_r"] = v_r * self.velocity_conversion_factor
 
+        # Have to do this again to include polodial velocities in the tuple
+
+        self.parameters = tuple(self.wind.keys())
+
+
     @staticmethod
     def show(block=True):
         """Show a plot which has been created.
@@ -1565,16 +1586,18 @@ class Wind:
     # Built in stuff -----------------------------------------------------------
 
     def __getattr__(self, key):
-        return self.wind[key]
+        thing = self.wind.get(key)
+        return thing
 
     def __getitem__(self, key):
-        return self.wind[key]
+        thing = self.wind.get(key)
+        return thing
 
     # def __setattr__(self, key, value):
     #     self.wind[key] = value
 
-    def __setitem__(self, key, value):
-        self.wind[key] = value
+    # def __setitem__(self, key, value):
+    #     self.wind[key] = value
 
     def __str__(self):
         txt = f"root: {self.root}\nfilepath: {self.fp}\ncoordinate system: {self.coord_system}\n" \

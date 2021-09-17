@@ -41,8 +41,6 @@ def plot(x,
     # It doesn't make sense to provide only fig and not ax, or ax and not fig
     # so at this point we will throw an error message and return
 
-    normalize_figure_style()
-
     if fig and not ax:
         raise InvalidParameter("fig has been provided, but ax has not. Both are required.")
     elif not fig and ax:

@@ -117,12 +117,15 @@ def create_disc_spectrum(m_co, mdot, r_in, r_out, freq_min, freq_max, n_freq=500
         The low frequency boundary of the spectrum to create.
     freq_max: float
         The high frequency boundary of the spectrum to create.
-    freq_units: float
-        Calculate the spectrum in frequency units, or wavelength units if False.
     n_freq: int
         The number of frequency bins in the spectrum.
     n_rings: int
         The number of rings used to model the accretion disc.
+    modified_teff: bool
+        Use a modified Eddington disc approximation, for near critical
+        accretion.
+    freq_units: bool
+        Calculate the spectrum in frequency units, or wavelength units if False.
 
     Returns
     -------

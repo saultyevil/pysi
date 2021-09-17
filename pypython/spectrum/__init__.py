@@ -247,8 +247,10 @@ class Spectrum:
         for spectrum in self.available:
             if spectrum == "spec_tau":
                 continue
+
             distance = self.spectra[spectrum]["distance"]
             units = self.spectra[spectrum]["units"]
+
             if units in [SpectrumUnits.l_lm, SpectrumUnits.l_nu]:
                 continue
 
@@ -267,7 +269,24 @@ class Spectrum:
         method is applied to all the spectra currently loaded in the class,
         but only if the units are not a flux.
         """
-        raise NotImplementedError()
+
+        for spectrum in self.available:
+            if spectrum == "spec_tau":
+                continue
+
+            distance = self.spectra[spectrum]["distance"]
+            units = self.spectra[spectrum]["units"]
+
+            if units in [SpectrumUnits.f_lm, SpectrumUnits.f_nu]:
+                continue
+
+            for column in self.spectra[spectrum].columns:
+                self.spectra[spectrum][column] /= 4 * np.pi * (distance * PARSEC)**2
+
+            if units == SpectrumUnits.l_nu:
+                self.spectra[spectrum].units = SpectrumUnits.f_nu
+            else:
+                self.spectra[spectrum].units = SpectrumUnits.f_lm
 
     def get_spectra(self, delim=None):
         """Read in a spectrum file given in self.filepath. The spectrum is
@@ -573,4 +592,4 @@ def integrate(spectrum, name, xmin, xmax, spec_type=None):
 
 # This is placed here due to a circular dependency -----------------------------
 
-from pypython.spectrum import create, plot
+from pypython.spectrum import create, plot, lines
