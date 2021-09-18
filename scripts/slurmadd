@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Search recursively for .slurm files and add them to the slurm queue."""
+"""Search recursively (from the calling directory) for .slurm files and add
+them to the slurm queue.
+"""
 
 import argparse as ap
 from pathlib import Path
-from subprocess import PIPE, Popen
+import pypython
 
 
 def split_path_and_filename(filepath):
@@ -35,23 +37,22 @@ def split_path_and_filename(filepath):
     return slurm_file, directory
 
 
-def add_files_to_slurm_queue(slurm_files):
+def add_files_to_slurm_queue(files):
     """Add a bunch of slurm files to the slurm queue. Uses subprocess and so
     only works on macOS and Linux.
 
     Parameters
     ----------
-    slurm_files: List[str]
+    files: List[str]
         A list containing the slurm file paths to add to the queue.
     """
 
     rc = []
 
-    for filepath in slurm_files:
-        file, cd = split_path_and_filename(filepath)
-        cmd = "cd {}; sbatch {}".format(cd, file)
-        sh = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
-        stdout, stderr = sh.communicate()
+    for filepath in files:
+        fp, cd = split_path_and_filename(filepath)
+        sh = pypython.run_command(["sbatch", str(file)], fp=fp)
+        stdout, stderr = sh.stdout, sh.stderr
         if stderr:
             print(stderr.decode("utf-8"))
         rc.append(stdout.decode("utf-8").split()[-1])
@@ -79,21 +80,21 @@ def find_slurm_files(filepath="."):
         A list containing the relative paths of the slurm files.
     """
 
-    slurm_files = []
+    files = []
 
     for filename in Path(filepath).glob("**/*.slurm"):
         filename = str(filename)
         if filename[0] == "/":
             filename = filename[1:]
-        slurm_files.append(filename)
+        files.append(filename)
 
-    if len(slurm_files) == 0:
+    if len(files) == 0:
         print("No .slurm files were found.")
         exit(1)
 
-    slurm_files = sorted(slurm_files, key=str.lower)
+    files = sorted(files, key=str.lower)
 
-    return slurm_files
+    return files
 
 
 def setup():
@@ -117,22 +118,14 @@ def setup():
     return args.add_to_queue
 
 
-def main():
-    """Main function of the script."""
+add_to_queue = setup()
+slurm_files = find_slurm_files()
 
-    add_to_queue = setup()
-    slurm_files = find_slurm_files()
+print("The following {} .slurm files will be added to the queue:\n".format(len(slurm_files)))
+for n, file in enumerate(slurm_files):
+    print("{}\t{}".format(n + 1, file))
+print("")
 
-    print("The following {} .slurm files will be added to the queue:\n".format(len(slurm_files)))
-    for n, file in enumerate(slurm_files):
-        print("{}\t{}".format(n + 1, file))
-    print("")
+if add_to_queue:
+    add_files_to_slurm_queue(slurm_files)
 
-    if add_to_queue:
-        add_files_to_slurm_queue(slurm_files)
-
-    return
-
-
-if __name__ == "__main__":
-    main()

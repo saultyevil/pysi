@@ -1,0 +1,12 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""Create a shell script which runs a set of commands in multiple folders
+containing Python simulations. This script will search recursively from the
+calling directory for the simulations.
+"""
+
+from sys import argv
+import pypython
+
+print(pypython.create_run_script(argv[1:]))

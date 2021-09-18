@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Create and run a grid of Python simulations. Note that this script has to be
 edited before being called as I didn't want to add one billion command line
-arguments/switches to the script like with py_run.
+arguments/switches to the script like with pyrun.
 
 Usage
 

@@ -173,9 +173,10 @@ def create_run_script(commands):
         file += "\t# commands\n"
     file += "\tcd $cfp\ndone\n"
 
-    print(file)
     with open("commands.sh", "w") as f:
         f.write(file)
+
+    return file
 
 
 def create_slurm_file(name, n_cores, n_hours, n_minutes, py_flags, py_run_flags, fp="."):
@@ -196,7 +197,7 @@ def create_slurm_file(name, n_cores, n_hours, n_minutes, py_flags, py_run_flags,
     py_flags: str
         The run-time flags of which to execute Python with
     py_run_flags: str
-        The run-time flags to pass to py_run.py
+        The run-time flags to pass to pyrun.py
     fp: str
         The directory to write the file to
     """
@@ -211,7 +212,7 @@ def create_slurm_file(name, n_cores, n_hours, n_minutes, py_flags, py_run_flags,
         module load openmpi/3.0.0/gcc
         module load conda/py3-latest
         source activate pypython
-        python /home/ejp1n17/PythonScripts/py_run.py -n {n_cores} {py_run_flags} -f='{py_flags}'
+        python /home/ejp1n17/PythonScripts/pyrun -n {n_cores} {py_run_flags} -f='{py_flags}'
         echo "Done!" > completed.txt
         """)
 

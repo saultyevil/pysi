@@ -5,24 +5,24 @@ from setuptools import setup
 
 
 scripts = [
-      "scripts/py_add_parameter",
-      "scripts/py_change_parameter",
-      "scripts/py_check_convergence",
-      "scripts/py_check_errors",
-      "scripts/py_convert_to_previous",
-      "scripts/py_create_run_script",
-      "scripts/py_create_spectrum",
-      "scripts/py_create_wind_tables",
-      "scripts/py_plot_multiple_spectra",
-      "scripts/py_plot_optical_depth",
-      "scripts/py_plot_reprocessing",
-      "scripts/py_plot_spectrum",
-      "scripts/py_plot_wind",
-      "scripts/py_rm_data",
-      "scripts/py_run",
-      "scripts/slurm_add",
-      "scripts/slurm_clear",
-      "scripts/slurm_create"
+      "scripts/pyaddp",
+      "scripts/pymodp",
+      "scripts/pyconv",
+      "scripts/pyerr",
+      "scripts/pyprev",
+      "scripts/pyscript",
+      "scripts/pycspec",
+      "scripts/pyctables",
+      "scripts/p_mspec",
+      "scripts/p_optd",
+      "scripts/p_repro",
+      "scripts/p_spec",
+      "scripts/p_wind",
+      "scripts/pydeld",
+      "scripts/pyrun",
+      "scripts/slurmadd",
+      "scripts/slurmclear",
+      "scripts/slurmnew"
 ]
 
 
