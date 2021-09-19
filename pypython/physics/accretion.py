@@ -8,18 +8,15 @@ spectrum.
 """
 
 import numpy as np
-import pandas as pd
-from numba import jit, njit
 
 from pypython.constants import (MPROT, MSOL, MSOL_PER_YEAR, PI, STEFAN_BOLTZMANN, THOMPSON, C, G)
 from pypython.physics.blackbody import planck_lambda, planck_nu
 from pypython.physics.blackhole import (gravitational_radius, innermost_stable_circular_orbit)
 
 
-@njit
 def _calculate_disc_spectrum(m_co, mdot, radius, frequency_bins, modified_teff, freq_units):
     """Calculate the accretion disc spectrum using jit.
-    
+
     Parameters
     ----------
     m_co: float
@@ -40,8 +37,8 @@ def _calculate_disc_spectrum(m_co, mdot, radius, frequency_bins, modified_teff, 
     lum: np.ndarray
         The luminosity at the frequency bins.
     """
-    
-    n_rings = len(radius)  
+
+    n_rings = len(radius)
     lum = np.zeros_like(frequency_bins)
 
     for i in range(n_rings - 1):
@@ -52,7 +49,7 @@ def _calculate_disc_spectrum(m_co, mdot, radius, frequency_bins, modified_teff, 
         if modified_teff:
             t_eff = modified_eddington_alpha_disc_effective_temperature(r, m_co, mdot)
         else:
-        
+
             t_eff = alpha_disc_effective_temperature(r, radius[0], m_co, mdot)
 
         if freq_units:
@@ -65,7 +62,6 @@ def _calculate_disc_spectrum(m_co, mdot, radius, frequency_bins, modified_teff, 
     return lum
 
 
-@jit
 def alpha_disc_effective_temperature(r, r_co, m_co, mdot):
     """Standard alpha-disc effective temperature profile.
 
@@ -96,7 +92,15 @@ def alpha_disc_effective_temperature(r, r_co, m_co, mdot):
     return teff4**0.25
 
 
-def create_disc_spectrum(m_co, mdot, r_in, r_out, freq_min, freq_max, n_freq=5000, n_rings=5000, modified_teff=False,
+def create_disc_spectrum(m_co,
+                         mdot,
+                         r_in,
+                         r_out,
+                         freq_min,
+                         freq_max,
+                         n_freq=5000,
+                         n_rings=5000,
+                         modified_teff=False,
                          freq_units=True):
     """Create a crude accretion disc spectrum. This works by approximating an
     accretion disc as being a collection of annuli radiating at different
@@ -129,7 +133,7 @@ def create_disc_spectrum(m_co, mdot, r_in, r_out, freq_min, freq_max, n_freq=500
 
     Returns
     -------
-    s: pd.DataFrame
+    s: dict
         The accretion disc spectrum. If in frequency units, the columns are
         "Freq." (Hz) and "Lum" (ergs/s/cm^2/Hz). If in wavelength units, the columns are
         "Lambda" (A) and "Lum" (ergs/s/cm^2/A).
@@ -139,14 +143,10 @@ def create_disc_spectrum(m_co, mdot, r_in, r_out, freq_min, freq_max, n_freq=500
         xlabel = "Freq."
     else:
         xlabel = "Lambda"
-
+    xbins = np.linspace(freq_min, freq_max, n_freq)
     radius = np.logspace(np.log10(r_in), np.log10(r_out), n_rings)
-    frequency_bins = np.linspace(freq_min, freq_max, n_freq)
-    s = pd.DataFrame(columns=[xlabel, "Lum."])
 
-    # Initialise the data frame
-    s[xlabel] = frequency_bins
-    s["Lum."] = _calculate_disc_spectrum(m_co, float(mdot), radius, frequency_bins, modified_teff, freq_units)
+    s = {xlabel: xbins, "Lum.": _calculate_disc_spectrum(m_co, float(mdot), radius, xbins, modified_teff, freq_units)}
 
     return s
 
@@ -173,7 +173,6 @@ def eddington_accretion_limit(mbh, efficiency):
     return (4 * PI * G * mbh * MPROT) / (efficiency * C * THOMPSON)
 
 
-@jit
 def eddington_luminosity_limit(mbh):
     """Calculate the Eddington luminosity for accretion onto a black hole.
 
@@ -192,7 +191,6 @@ def eddington_luminosity_limit(mbh):
     return (4 * PI * G * mbh * C * MPROT) / THOMPSON
 
 
-@jit
 def modified_eddington_alpha_disc_effective_temperature(r, m_co, mdot):
     """The effective temperature profile from Strubbe and Quataert 2009.
 

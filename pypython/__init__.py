@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 """pypython - making using Python a wee bit easier.
 
 pypython is a companion python package to handle and analyse the data which
 comes out of a Python simulation.
 """
+
 import os.path
 import re
 import textwrap
@@ -18,11 +20,18 @@ from subprocess import run
 import numpy as np
 from scipy.signal import boxcar, convolve
 
-from pypython.constants import (BOLTZMANN, CMS_TO_KMS, PARSEC, PI, PLANCK, VLIGHT)
-from pypython.error import RunError
-from pypython.math import vector
-from pypython.physics.blackhole import gravitational_radius
-from pypython.simulation.grid import get_parameter_value
+# Import all the things which will be able to be seen
+
+import pypython.constants as c
+import pypython.error as err
+import pypython.math.vector
+import pypython.physics
+import pypython.plot
+import pypython.simulation
+import pypython.spectrum
+import pypython.util
+import pypython.wind
+
 
 # Dictionary class -------------------------------------------------------------
 
@@ -255,7 +264,7 @@ def create_wind_save_tables(root, fp=".", ion_density=False, cell_spec=False, ve
     files_before = listdir(fp)
 
     if not Path(f"{fp}/data").exists():
-        run_command("Setup_Py_Dir", fp)
+        pypython.util.run_command("Setup_Py_Dir", fp)
 
     command = [name]
     if ion_density:
@@ -264,9 +273,9 @@ def create_wind_save_tables(root, fp=".", ion_density=False, cell_spec=False, ve
         command.append("-xall")
     command.append(root)
 
-    cmd = run_command(command, fp, verbose)
+    cmd = pypython.util.run_command(command, fp, verbose)
     if cmd.returncode != 0:
-        raise RunError(
+        raise err.RunError(
             f"windsave2table has failed to run, possibly due to an incompatible version\n{cmd.stdout.decode('utf-8')}")
 
     files_after = listdir(fp)
@@ -357,7 +366,7 @@ def get_python_version():
         The version string of the currently compiled Python.
     """
 
-    command = run_command(["py", "--version"])
+    command = pypython.util.run_command(["py", "--version"])
     stdout = command.stdout.decode("utf-8").split("\n")
     stderr = command.stderr.decode("utf-8")
 
@@ -482,7 +491,7 @@ def run_py_optical_depth(root, photosphere=None, fp=".", verbose=False):
         command.append(f"-p {float(photosphere)}")
     command.append(root)
 
-    cmd = run_command(command, fp)
+    cmd = pypython.util.run_command(command, fp)
     stdout, stderr = cmd.stdout, cmd.stderr
 
     if verbose:
@@ -529,6 +538,9 @@ def run_py_wind(root, commands, fp="."):
 
 # Load in all the submodules ---------------------------------------------------
 
+Spectrum = pypython.spectrum.Spectrum
+Wind = pypython.wind.Wind
+
 __all__ = [
     # functions in pypython
     "check_sorted_array_ascending",
@@ -560,11 +572,4 @@ __all__ = [
     "constants"
 ]
 
-# These are put here to solve a circular dependency ----------------------------
-
-from pypython.plot import normalize_figure_style
-from pypython.spectrum import Spectrum
-from pypython.util import run_command
-from pypython.wind import Wind
-
-normalize_figure_style()
+pypython.plot.normalize_figure_style()

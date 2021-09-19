@@ -7,12 +7,13 @@ to finish the plot. Included in pypython are functions to plot the
 spectrum files and the wind save tables.
 """
 
-import numpy as np
-from matplotlib import pyplot as plt
 from distutils.spawn import find_executable
 
-from pypython import get_xy_subset
-from pypython.error import InvalidParameter
+import numpy as np
+from matplotlib import pyplot as plt
+
+import pypython
+import pypython.error as err
 
 # Generic plotting function ----------------------------------------------------
 
@@ -42,13 +43,13 @@ def plot(x,
     # so at this point we will throw an error message and return
 
     if fig and not ax:
-        raise InvalidParameter("fig has been provided, but ax has not. Both are required.")
+        raise err.InvalidParameter("fig has been provided, but ax has not. Both are required.")
     elif not fig and ax:
-        raise InvalidParameter("fig has not been provided, but ax has. Both are required.")
+        raise err.InvalidParameter("fig has not been provided, but ax has. Both are required.")
     elif not fig and not ax:
         fig, ax = plt.subplots(1, 1, figsize=(12, 5))
 
-    x, y = get_xy_subset(x, y, xmin, xmax)
+    x, y = pypython.get_xy_subset(x, y, xmin, xmax)
     ax.plot(x, y, label=label, alpha=alpha)
 
     if xlabel:

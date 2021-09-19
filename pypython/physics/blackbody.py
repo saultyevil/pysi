@@ -7,12 +7,10 @@ is given in units of Angstroms.
 """
 
 import numpy as np
-from numba import jit
 
-from pypython.constants import (ANGSTROM, BOLTZMANN, VLIGHT, WIEN_FREQUENCY, WIEN_WAVELENGTH, H, PI, STEFAN_BOLTZMANN)
+from pypython.constants import (ANGSTROM, BOLTZMANN, PI, STEFAN_BOLTZMANN, VLIGHT, WIEN_FREQUENCY, WIEN_WAVELENGTH, H)
 
 
-@jit
 def planck_lambda(temperature, lamda):
     """Calculate the monochromatic intensity for a black body given a
     temperature and frequency of interest.
@@ -39,7 +37,6 @@ def planck_lambda(temperature, lamda):
     return b_lamda
 
 
-@jit
 def planck_nu(temperature, frequency):
     """Calculate the monochromatic intensity for a black body given a
     temperature and frequency of interest.

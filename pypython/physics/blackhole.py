@@ -6,12 +6,9 @@ All functions require the mass to be in units of solar masses and
 accretion rates in solar masses per year.
 """
 
-from numba import jit
 from pypython.constants import GRAV, MSOL, RSOL, VLIGHT
 
 
-
-@jit
 def innermost_stable_circular_orbit(m_bh):
     """Calculate the radius of the innermost stable circular orbit of a black
     hole of given mass Mbh.
@@ -28,7 +25,6 @@ def innermost_stable_circular_orbit(m_bh):
     return 3 * schwarzschild_radius(m_bh)
 
 
-@jit
 def gravitational_radius(m_bh):
     """Calculate the gravitational radius of a black hole of given mass Mbh.
 
@@ -44,7 +40,6 @@ def gravitational_radius(m_bh):
     return GRAV * m_bh * MSOL / VLIGHT**2
 
 
-@jit
 def schwarzschild_radius(m_bh):
     """Calculate the Schwarzschild radius of a black hole of given mass Mbh.
 

@@ -10,10 +10,11 @@ import numpy as np
 from matplotlib import pyplot as plt
 from scipy.integrate import simpson
 
-from pypython import _AttributeDict, _cleanup_root, get_xy_subset, smooth_array
-from pypython.constants import PARSEC
-from pypython.physics import angstrom_to_hz
-from pypython.plot import finish_figure, set_axes_scales
+import pypython
+import pypython.constants as c
+import pypython.physics
+import pypython.plot as pyplt
+import pypython.spectrum.plot as splt
 
 # Units enumerators ------------------------------------------------------------
 
@@ -73,7 +74,7 @@ class Spectrum:
         delim: str [optional]
             The deliminator in the spectrum file.
         """
-        root, fp = _cleanup_root(root, fp)
+        root, fp = pypython._cleanup_root(root, fp)
 
         self.root = root
         self.fp = path.expanduser(fp)
@@ -91,7 +92,7 @@ class Spectrum:
         # contains keys for each column in the spectrum file, as well as other
         # meta info such as the distance of the spectrum
 
-        self.spectra = _AttributeDict({})
+        self.spectra = pypython._AttributeDict({})
         self._original_spectra = None
         self.available = []
 
@@ -180,7 +181,7 @@ class Spectrum:
 
         ax[0].set_title("Components")
         ax[1].set_title("Observer spectra")
-        fig = finish_figure(fig, wspace=0)
+        fig = pyplt.finish_figure(fig, wspace=0)
 
         return fig, ax
 
@@ -210,8 +211,8 @@ class Spectrum:
 
         units = self.spectra[key].units
         distance = self.spectra[key].distance
-        ax = set_axes_scales(ax, scale)
-        ax = plot.set_axes_labels(ax, units=units, distance=distance)
+        ax = pyplt.set_axes_scales(ax, scale)
+        ax = splt.set_axes_labels(ax, units=units, distance=distance)
 
         # How things are plotted depends on the units of the spectrum
 
@@ -232,7 +233,7 @@ class Spectrum:
         if ax_update:
             return ax
         else:
-            fig = finish_figure(fig)
+            fig = pyplt.finish_figure(fig)
             return fig, ax
 
     # Methods ------------------------------------------------------------------
@@ -255,7 +256,7 @@ class Spectrum:
                 continue
 
             for column in self.spectra[spectrum].columns:
-                self.spectra[spectrum][column] *= 4 * np.pi * (distance * PARSEC)**2
+                self.spectra[spectrum][column] *= 4 * np.pi * (distance * c.PARSEC)**2
 
             if units == SpectrumUnits.f_nu:
                 self.spectra[spectrum].units = SpectrumUnits.l_nu
@@ -281,7 +282,7 @@ class Spectrum:
                 continue
 
             for column in self.spectra[spectrum].columns:
-                self.spectra[spectrum][column] /= 4 * np.pi * (distance * PARSEC)**2
+                self.spectra[spectrum][column] /= 4 * np.pi * (distance * c.PARSEC)**2
 
             if units == SpectrumUnits.l_nu:
                 self.spectra[spectrum].units = SpectrumUnits.f_nu
@@ -315,7 +316,7 @@ class Spectrum:
 
             n_read += 1
 
-            self.spectra[spec_type] = _AttributeDict({
+            self.spectra[spec_type] = pypython._AttributeDict({
                 "units": SpectrumUnits.unknown,
             })
 
@@ -452,7 +453,7 @@ class Spectrum:
                 if key in ["Lambda", "Freq."]:
                     continue
                 self.spectra[spectrum][key] *= \
-                    (self.spectra[spectrum].distance * PARSEC) ** 2 / (distance * PARSEC) ** 2
+                    (self.spectra[spectrum].distance * c.PARSEC) ** 2 / (distance * c.PARSEC) ** 2
             self.spectra[spectrum].distance = distance
 
     @staticmethod
@@ -493,8 +494,8 @@ class Spectrum:
 
             for thing_to_smooth in self.spectra[spectrum].columns:
                 try:
-                    self.spectra[spectrum][thing_to_smooth] = smooth_array(self.spectra[spectrum][thing_to_smooth],
-                                                                           width)
+                    self.spectra[spectrum][thing_to_smooth] = pypython.smooth_array(self.spectra[spectrum][thing_to_smooth],
+                                                                                    width)
                 except KeyError:
                     pass  # some spectra do not have the inclination angles...
 
@@ -582,14 +583,10 @@ def integrate(spectrum, name, xmin, xmax, spec_type=None):
     else:
         sample_points = spectrum[key]["Freq."]
         tmp = xmin
-        xmin = angstrom_to_hz(xmax)
-        xmax = angstrom_to_hz(tmp)
+        xmin = pypython.physics.angstrom_to_hz(xmax)
+        xmax = pypython.physics.angstrom_to_hz(tmp)
 
-    sample_points, y = get_xy_subset(sample_points, spectrum[key][name], xmin, xmax)
+    sample_points, y = pypython.get_xy_subset(sample_points, spectrum[key][name], xmin, xmax)
 
     return simpson(y, sample_points)
 
-
-# This is placed here due to a circular dependency -----------------------------
-
-from pypython.spectrum import create, plot, lines
