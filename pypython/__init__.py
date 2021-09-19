@@ -24,7 +24,8 @@ from scipy.signal import boxcar, convolve
 
 import pypython.constants as c
 import pypython.error as err
-import pypython.math.vector
+import pypython.math
+import pypython.observations
 import pypython.physics
 import pypython.plot
 import pypython.simulation
