@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""Converts a Python model into a System_type=previous.
+
+It is possible to create a model which can go straight into the spectrum cycles,
+to, e.g., change the spectrum wavelength range or to create a delay_dump file.
+But the program can also create models which start from an ionization cycle.
+"""
+
 import argparse
 import pypython
 from enum import Enum
@@ -13,26 +20,50 @@ class ModeEnum(Enum):
     spec = "spec"
 
 
-p = argparse.ArgumentParser()
-p.add_argument("root", help="Root name of the simulation")
-# todo; this should be a subparser, probably. For now, choices will be hardcoded
-p.add_argument("mode", choices=[ModeEnum.ion.value, ModeEnum.spec.value], help="Where to restart the model from")
-p.add_argument("-fp", default=".", help="The directory containing the simulation")
+def setup():
+    """Get run time parameters from the command line.
 
-args = p.parse_args()
+    Returns
+    -------
+    args.root: str
+        The root name of the model
+    args.mode: ModeEnum
+        The mode to run the script in.
+    args.fp: str
+        The directory containing the simulation to convert.
+    """
 
-root, mode, fp = args.root, ModeEnum(args.mode), args.fp
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("root", help="Root name of the simulation")
+    p.add_argument("-fp", default=".", help="The directory containing the simulation")
+    # todo; this should be a subparser, probably. For now, choices will be hardcoded
+    p.add_argument("mode", choices=[ModeEnum.ion.value, ModeEnum.spec.value], help="Where to restart the model from")
+    args = p.parse_args()
 
-if mode == ModeEnum.spec:
-    new_name = f"{fp}/{root}_spec.pf"
-    shutil.copyfile(f"{fp}/{root}.pf", new_name)
-    pypython.simulation.grid.update_single_parameter(new_name, "Ionization_cycles", "0", False)
-    pypython.simulation.grid.update_single_parameter(new_name, "Spectrum_cycles", "15", False)
-    pypython.simulation.grid.update_single_parameter(new_name, "Photons_per_cycle", "1e6", False)
-    pypython.simulation.grid.update_single_parameter(new_name, "System_type(star,cv,bh,agn,previous)", "previous", False)
-    pypython.simulation.grid.add_single_parameter(new_name, "Wind.old_windfile(root_only)", root, False)
-elif mode == ModeEnum.ion:
-    pass
-else:
-    print("Unknown mode")
-    sys.exit(1)
+    return args.root, ModeEnum(args.mode), args.fp
+
+
+def main():
+    """Main function of the script.
+    """
+
+    root, mode, fp = setup()
+
+    if mode == ModeEnum.spec:
+        new_name = f"{fp}/{root}_spec.pf"
+        shutil.copyfile(f"{fp}/{root}.pf", new_name)
+        pypython.simulation.grid.update_single_parameter(new_name, "Ionization_cycles", "0", False)
+        pypython.simulation.grid.update_single_parameter(new_name, "Spectrum_cycles", "15", False)
+        pypython.simulation.grid.update_single_parameter(new_name, "Photons_per_cycle", "1e6", False)
+        pypython.simulation.grid.update_single_parameter(new_name, "System_type(star,cv,bh,agn,previous)", "previous", False)
+        pypython.simulation.grid.add_single_parameter(new_name, "Wind.old_windfile(root_only)", root, False)
+    elif mode == ModeEnum.ion:
+        pass
+    else:
+        print("Unknown mode")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
+

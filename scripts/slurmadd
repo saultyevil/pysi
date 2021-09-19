@@ -118,14 +118,21 @@ def setup():
     return args.add_to_queue
 
 
-add_to_queue = setup()
-slurm_files = find_slurm_files()
+def main():
+    """Main function of the script.
+    """
 
-print("The following {} .slurm files will be added to the queue:\n".format(len(slurm_files)))
-for n, file in enumerate(slurm_files):
-    print("{}\t{}".format(n + 1, file))
-print("")
+    add_to_queue = setup()
+    slurm_files = find_slurm_files()
 
-if add_to_queue:
-    add_files_to_slurm_queue(slurm_files)
+    print("The following {} .slurm files will be added to the queue:\n".format(len(slurm_files)))
+    for n, file in enumerate(slurm_files):
+        print("{}\t{}".format(n + 1, file))
+    print("")
 
+    if add_to_queue:
+        add_files_to_slurm_queue(slurm_files)
+
+
+if __name__ == "__main__":
+    main()

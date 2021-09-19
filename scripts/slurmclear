@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""Clear all jobs in the Slurm queue."""
+"""Clear all jobs in the Slurm queue.
+
+This does not discriminate, and will remove **everything** in the queue, so
+use at your own peril knowing what can happen.
+"""
 
 import pypython
 

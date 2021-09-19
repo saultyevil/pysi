@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 """Run a selection of Python models.
 This script searches recursively for parameter files and executes a
 number of commands, most importantly running the model, depending on
@@ -493,65 +494,73 @@ def run_all_models(parameter_files, use_mpi, n_cores):
     return return_codes
 
 
-setup_script()
-init_logfile("log.txt")
-log("------------------------\n")
-logsilent(f"{datetime.datetime.now()}")
+def main():
+    """Main function of the script.
+    """
 
-# Find models to run by searching recursively from the calling directory
-# for .pf files
+    setup_script()
+    init_logfile("log.txt")
+    log("------------------------\n")
+    logsilent(f"{datetime.datetime.now()}")
 
-parameter_files = pypython.find("*.pf")
-n_models = len(parameter_files)
+    # Find models to run by searching recursively from the calling directory
+    # for .pf files
 
-if not n_models:
-    log("No parameter files found, nothing to do!\n")
-    log("------------------------")
-    exit(EXIT_SUCCESS)
+    parameter_files = pypython.find("*.pf")
+    n_models = len(parameter_files)
 
-# Check to see how many processor cores are going to be use, and set the
-# mpirun flag appropriately
+    if not n_models:
+        log("No parameter files found, nothing to do!\n")
+        log("------------------------")
+        exit(EXIT_SUCCESS)
 
-if N_CORES:
-    n_cores_to_use = N_CORES
-else:
-    n_cores_to_use = util.get_cpu_count()
+    # Check to see how many processor cores are going to be use, and set the
+    # mpirun flag appropriately
 
-if n_cores_to_use > 1:
-    use_mpi = True
-else:
-    use_mpi = False
+    if N_CORES:
+        n_cores_to_use = N_CORES
+    else:
+        n_cores_to_use = util.get_cpu_count()
 
-# Print the models which are going to be run to the screen
+    if n_cores_to_use > 1:
+        use_mpi = True
+    else:
+        use_mpi = False
 
-log(f"The following {len(parameter_files)} parameter files were found:\n")
-for file in parameter_files:
-    log(f"{file}")
-log("")
+    # Print the models which are going to be run to the screen
 
-# If we're doing a dry-run, then we don't go any further
+    log(f"The following {len(parameter_files)} parameter files were found:\n")
+    for file in parameter_files:
+        log(f"{file}")
+    log("")
 
-if DRY_RUN:
-    log("------------------------")
-    exit(0)
+    # If we're doing a dry-run, then we don't go any further
 
-return_codes = run_all_models(parameter_files, use_mpi, n_cores_to_use)
+    if DRY_RUN:
+        log("------------------------")
+        exit(0)
 
-log("------------------------\n")
+    return_codes = run_all_models(parameter_files, use_mpi, n_cores_to_use)
 
-n_crashed = 0
-for pf, rc in zip(parameter_files, return_codes):
-    if rc > 0:
-        log(f"Model {pf} failed with rc {rc}")
-        n_crashed += 1
+    log("------------------------\n")
 
-if n_crashed == 0:
-    log("All models exited successfully")
+    n_crashed = 0
+    for pf, rc in zip(parameter_files, return_codes):
+        if rc > 0:
+            log(f"Model {pf} failed with rc {rc}")
+            n_crashed += 1
 
-log("\n------------------------")
-close_logfile()
+    if n_crashed == 0:
+        log("All models exited successfully")
 
-if n_crashed:
-    exit(n_crashed)
-else:
-    exit(0)
+    log("\n------------------------")
+    close_logfile()
+
+    if n_crashed:
+        exit(n_crashed)
+    else:
+        exit(0)
+
+
+if __name__ == "__main__":
+    main()
