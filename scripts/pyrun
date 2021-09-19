@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """Run a selection of Python models.
+
 This script searches recursively for parameter files and executes a
 number of commands, most importantly running the model, depending on
 what is requested by the user using a number of runtime flags.

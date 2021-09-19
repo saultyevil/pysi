@@ -6,7 +6,7 @@ from setuptools import setup
 
 scripts = [
       "scripts/pyaddp",
-      "scripts/pymodp",
+      "scripts/pyupdp",
       "scripts/pyconv",
       "scripts/pyerr",
       "scripts/pyprev",

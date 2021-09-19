@@ -1,0 +1,34 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""Update an existing parameter for some parameter file(s).
+
+The script will search recursively from the calling directory for
+parameter files. If a root name is provided, however, then the script
+will only operate  on pf files which have the same root name.
+"""
+
+import argparse as ap
+import sys
+
+from pypython import find
+from pypython.simulation import grid
+
+p = ap.ArgumentParser(description=__doc__)
+p.add_argument("parameter", help="Name of the parameter to add.")
+p.add_argument("value", help="The value for the new parameter.")
+p.add_argument("--root", default=None, help="Add the parameter to parameter files with this specific root name.")
+args = p.parse_args()
+
+if args.root is None:
+    root = "*"
+else:
+    root = args.root
+
+to_update = find(f"{root}.pf", fp=".")
+if len(to_update) == 0:
+    print("No parameter files were found")
+    sys.exit(0)
+
+for fp in to_update:
+    grid.update_single_parameter(fp, args.parameter, args.value, verbose=True)

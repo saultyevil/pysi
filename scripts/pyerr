@@ -1,36 +1,28 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""The purpose of this script is to collate the errors over all of the MPI
-processes for a bunch of simulations.
 
-todo: this will only work for a simulation which didn't crash.......... according to past me at least.
+"""Print the errors for a set of Python simulations.
+
+The purpose of this script is to collate the errors over all of the MPI
+processes for a bunch of simulations.
 """
 
+import sys
 from pypython import find, get_root_name
 from pypython.simulation import model_error_summary
 
-COL_LEN = 80
+parameter_files = find("*.pf")
 
-
-def main():
-    """Main function of the script."""
-
-    parameter_files = find("*.pf")
-
-    if len(parameter_files) == 0:
-        raise IOError("No Python simulations were found in this directory.")
-    else:
-        for pf in parameter_files:
-            print("-" * 80)
-            root, fp = get_root_name(pf)
-            if fp.find("continuum") != -1:
-                continue
-            model_error_summary(root, fp, print_errors=True)
-
+if len(parameter_files) == 0:
+    print("No Python models were found")
+    sys.exit(1)
+else:
+    for pf in parameter_files:
         print("-" * 80)
+        root, fp = get_root_name(pf)
+        if fp.find("continuum") != -1:
+            continue
+        model_error_summary(root, fp, print_errors=True)
 
-    return
+    print("-" * 80)
 
-
-if __name__ == "__main__":
-    main()
