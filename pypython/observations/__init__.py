@@ -9,8 +9,6 @@ the zero-points for common filters.
 
 from enum import Enum
 
-import astropy.units as u
-
 # Zero-point enumerator --------------------------------------------------------
 
 
@@ -200,7 +198,7 @@ def deredden(wavelength, flux, r_v, e_bv, curve="CCM89"):
     flux: np.ndarray
         The corrected flux.
     """
-
+    import astropy.units as u
     from dust_extinction.parameter_averages import CCM89, F99
 
     wavelength *= u.angstrom

@@ -8,7 +8,6 @@ from os import path
 
 import numpy as np
 from matplotlib import pyplot as plt
-from scipy.integrate import simpson
 
 import pypython
 import pypython.constants as c
@@ -573,6 +572,8 @@ def integrate(spectrum, name, xmin, xmax, spec_type=None):
     -------
     The integral between of the spectrum between xmin and xmax.
     """
+    from scipy.integrate import simpson
+
     if spec_type:
         key = spec_type
     else:

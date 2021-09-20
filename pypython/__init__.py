@@ -18,7 +18,6 @@ from shutil import which
 from subprocess import run
 
 import numpy as np
-from scipy.signal import boxcar, convolve
 
 # Import all the things which will be able to be seen
 
@@ -477,6 +476,8 @@ def smooth_array(array, width):
     smoothed: np.ndarray
         The smoothed array
     """
+    from scipy.signal import boxcar, convolve
+
     if width is None or width == 0:
         return array
 
