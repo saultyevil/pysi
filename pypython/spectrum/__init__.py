@@ -181,7 +181,7 @@ class Spectrum:
         spectral_axis: SpectrumSpectralAxis
             The spectral axis units of the spectrum
         """
-        if units in [SpectrumUnits.flm, SpectrumUnits.l_lm]:
+        if units in [SpectrumUnits.f_lm, SpectrumUnits.l_lm]:
             spectral_axis = SpectrumSpectralAxis.wavelength
         elif units in [SpectrumUnits.f_nu, SpectrumUnits.l_nu]:
             spectral_axis = SpectrumSpectralAxis.frequency
@@ -442,9 +442,9 @@ class Spectrum:
                 spectrum.append(line)
 
             if spec_type == "spec_tau":
-                self.spec[spec_type]["spectral_axis"] = SpectrumSpectralAxis.frequency
+                self.spectra[spec_type]["spectral_axis"] = SpectrumSpectralAxis.frequency
             else:
-                self.spec[spec_type]["spectral_axis"] = self._get_spectral_axis(self.spectra[spec_type]["units"])
+                self.spectra[spec_type]["spectral_axis"] = self._get_spectral_axis(self.spectra[spec_type]["units"])
 
             # Extract the header columns of the spectrum. This assumes the first
             # read line in the spectrum is the header.
