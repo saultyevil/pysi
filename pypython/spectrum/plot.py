@@ -80,25 +80,23 @@ def _ax_labels(ax, units, distance):
     return ax
 
 
-def _convert_labels_to_frequency_space(lines, units=None, spectrum=None):
+def _convert_labels_to_frequency_space(lines, spectral_axis=None, spectrum=None):
     """Convert the given list of lines/edges from Angstrom to Hz.
 
     Parameters
     ----------
     lines: List[str, float]
         The list of labels to convert from wavelength to frequency space.
-    freq: bool
-        The flag to indicate to convert to frequency space
     spectrum: pypython.Spectrum
         A spectrum object, used to find the units of the spectrum.
     """
-    if units is None and spectrum is None:
+    if spectrum is None and spectral_axis is None:
         return lines
 
-    if units is None:
-        units = spectrum.units
+    if spectrum:
+        spectral_axis = spectral_axis["spectral_axis"]
 
-    if units in [pypython.spectrum.SpectrumUnits.f_nu, pypython.spectrum.SpectrumUnits.l_nu]:
+    if spectral_axis == pypython.spectrum.SpectrumSpectralAxis.frequency:
         for i in range(len(lines)):
             lines[i][1] = c.VLIGHT / (lines[i][1] * c.ANGSTROM)
 
@@ -285,7 +283,7 @@ def add_line_ids(ax,
     return ax
 
 
-def common_lines(units=None, spectrum=None):
+def common_lines(spectral_axis=None, spectrum=None):
     """Return a list containing the names of line transitions and the
     wavelength of the transition in Angstroms. Instead of returning the
     wavelength, the frequency can be returned instead. It is also possible to
@@ -293,10 +291,10 @@ def common_lines(units=None, spectrum=None):
 
     Parameters
     ----------
-    units: bool [optional]
-        Label the transitions in frequency space
+    spectral_axis: pypython.Spectrum.SpectrumSpectralAxis
+        The units of the spectral axis
     spectrum: pypython.Spectrum
-        The spectrum object. Used to get the units.
+        The spectrum object. Used to get the spectral axis units.
 
     Returns
     -------
@@ -314,10 +312,10 @@ def common_lines(units=None, spectrum=None):
              [r"He \textsc{ii}", 4389], [r"He \textsc{ii}", 4686], [r"H$_{\beta}$", 4861], [r"Na \textsc{i}", 5891],
              ["", 5897], [r"H$_{\alpha}$", 6564], [r"He \textsc{i}", 7067]]
 
-    return _convert_labels_to_frequency_space(lines, units, spectrum)
+    return _convert_labels_to_frequency_space(lines, spectral_axis, spectrum)
 
 
-def photoionization_edges(units=None, spectrum=None):
+def photoionization_edges(spectral_axis=None, spectrum=None):
     """Return a list containing the names of line transitions and the
     wavelength of the transition in Angstroms. Instead of returning the
     wavelength, the frequency can be returned instead. It is also possible to
@@ -325,10 +323,10 @@ def photoionization_edges(units=None, spectrum=None):
 
     Parameters
     ----------
-    units: pypython.spectrum.SpectrumUnits [optional]
-        Label the transitions in frequency space
+    spectral_axis: pypython.Spectrum.SpectrumSpectralAxis
+        The units of the spectral axis
     spectrum: Spectrum [optional]
-        The spectrum object. Used to get the units.
+        The spectrum object. Used to get the spectral axis units.
 
     Returns
     -------
@@ -346,7 +344,7 @@ def photoionization_edges(units=None, spectrum=None):
         ["Paschen", 8204],
     ]
 
-    return _convert_labels_to_frequency_space(edges, units, spectrum)
+    return _convert_labels_to_frequency_space(edges, spectral_axis, spectrum)
 
 
 def set_axes_labels(ax, spectrum=None, units=None, distance=None, multiply_by_spatial_units=False):
@@ -772,7 +770,7 @@ def optical_depth(spectrum,
     ax.legend(loc="upper left")
 
     if label_edges:
-        ax = add_line_ids(ax, photoionization_edges(units=units), linestyle="none", offset=0)
+        ax = add_line_ids(ax, photoionization_edges(spectral_axis=units), linestyle="none", offset=0)
 
     spectrum.set(current)
     fig = pyplt.finish_figure(fig)

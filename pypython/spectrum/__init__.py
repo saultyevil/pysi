@@ -32,6 +32,7 @@ class SpectrumSpectralAxis(Enum):
     """
     frequency = "Hz"
     wavelength = "Angstrom"
+    none = "none"
 
 
 class SpectrumUnits(Enum):
@@ -44,7 +45,20 @@ class SpectrumUnits(Enum):
     l_lm = "erg/s/A"
     f_nu = "erg/s/cm^-2/Hz"
     f_lm = "erg/s/cm^-2/A"
-    unknown = "unknown"
+    none = "none"
+
+
+class SpectrumType(Enum):
+    """The possible types of spectra which can be read in.
+
+    This should cover all the types, and should be interchangable between the
+    linear and logarithmic versions of the spectra.
+    """
+    spec = "spec"
+    spec_tot = "spec_tot"
+    spec_wind = "spec_wind"
+    spec_tot_wind = "spec_tot_wind"
+    spec_tau = "spec_tau"
 
 
 # Spectrum class ---------------------------------------------------------------
@@ -58,6 +72,7 @@ class Spectrum:
     dict are the names of the columns in the spectrum file. The data is
     stored as numpy arrays.
 
+    TODO: Read in linear and logarithmic version of the spectra
     TODO: Create Enum for spectrum types
     TODO: Create Enum for "spatial type", i.e. for frequency or lambda monochromatic things
     """
@@ -150,6 +165,31 @@ class Spectrum:
 
         return name
 
+    @staticmethod
+    def _get_spectral_axis(units):
+        """Get the spectral axis units of a spectrum.
+
+        Determines the spectral axis, given the units of the spectrum.
+
+        Parameters
+        ----------
+        units: SpectrumUnits
+            The units of the spectrum.
+
+        Returns
+        -------
+        spectral_axis: SpectrumSpectralAxis
+            The spectral axis units of the spectrum
+        """
+        if units in [SpectrumUnits.flm, SpectrumUnits.l_lm]:
+            spectral_axis = SpectrumSpectralAxis.wavelength
+        elif units in [SpectrumUnits.f_nu, SpectrumUnits.l_nu]:
+            spectral_axis = SpectrumSpectralAxis.frequency
+        else:
+            spectral_axis = SpectrumSpectralAxis.none
+
+        return spectral_axis
+
     def _plot_observer_spectrum(self, label_lines=False):
         """Plot the spectrum components and observer spectra on a 1x2 panel
         plot. The left panel has the components, whilst the right panel has the
@@ -225,14 +265,14 @@ class Spectrum:
         else:
             key = self.current
 
-        units = self.spectra[key].units
+        spec_axis = self.spectra[key].spectral_axis
         distance = self.spectra[key].distance
         ax = pyplt.set_axes_scales(ax, scale)
-        ax = splt.set_axes_labels(ax, units=units, distance=distance)
+        ax = splt.set_axes_labels(ax, units=spec_axis, distance=distance)
 
         # How things are plotted depends on the units of the spectrum
 
-        if units == SpectrumUnits.f_lm or units == SpectrumUnits.l_lm:
+        if spec_axis == SpectrumSpectralAxis.wavelength:
             x_thing = "Lambda"
         else:
             x_thing = "Freq."
@@ -245,7 +285,7 @@ class Spectrum:
         ax.plot(x, y, label=label, zorder=0)
 
         if label_lines:
-            ax = plot.add_line_ids(ax, plot.common_lines(units), linestyle="none", fontsize=10)
+            ax = plot.add_line_ids(ax, plot.common_lines(spec_axis), linestyle="none", fontsize=10)
 
         if ax_update:
             return ax
@@ -371,7 +411,8 @@ class Spectrum:
             n_read += 1
 
             self.spectra[spec_type] = pypython._AttributeDict({
-                "units": SpectrumUnits.unknown,
+                "units": SpectrumUnits.none,
+                "spectral_axis": SpectrumSpectralAxis.none
             })
 
             with open(fp, "r") as f:
@@ -400,8 +441,10 @@ class Spectrum:
 
                 spectrum.append(line)
 
-            # if spec_type == "spec_tau":  # todo: this is a hack until "spatial type" enum implemented
-            #     self.spec[spec_type].units = SpectrumUnits.l_nu
+            if spec_type == "spec_tau":
+                self.spec[spec_type]["spectral_axis"] = SpectrumSpectralAxis.frequency
+            else:
+                self.spec[spec_type]["spectral_axis"] = self._get_spectral_axis(self.spectra[spec_type]["units"])
 
             # Extract the header columns of the spectrum. This assumes the first
             # read line in the spectrum is the header.

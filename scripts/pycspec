@@ -215,8 +215,8 @@ def plot(root,
 
         # Plot the spectrum generated from the delay dump file
 
-        x, y = pypython.plot.get_xy_subset(delay_dump_spectrum[:-1, index_from],
-                                           smooth_array(delay_dump_spectrum[:-1, i + 2], sm), xmin, xmax)
+        x, y = pypython.get_xy_subset(delay_dump_spectrum[:-1, index_from],
+                                      smooth_array(delay_dump_spectrum[:-1, i + 2], sm), xmin, xmax)
 
         ax.plot(x, y, alpha=0.75, label="Filtered Spectrum")
 
