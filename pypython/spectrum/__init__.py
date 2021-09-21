@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Utility functions for creating and analyzing spectra."""
+
+"""Utility functions for reading in and analyzing spectra.
+
+The main part of this is the Spectrum() class -- well, it's pretty much the
+only thing in here now after the re-structure.
+"""
+
 import copy
 import textwrap
 from enum import Enum
@@ -18,8 +24,12 @@ import pypython.spectrum.plot as splt
 # Units enumerators ------------------------------------------------------------
 
 
-class SpectrumThing(Enum):
+class SpectrumSpectralAxis(Enum):
+    """The possible spatial units for a spectrum.
 
+    Either wavelength or frequency, and these WILL ALWAYS be in units of
+    Angstroms and Hz, respectively.
+    """
     frequency = "Hz"
     wavelength = "Angstrom"
 
@@ -47,6 +57,9 @@ class Spectrum:
     where each column name is the spectrum name and the columns in that
     dict are the names of the columns in the spectrum file. The data is
     stored as numpy arrays.
+
+    TODO: Create Enum for spectrum types
+    TODO: Create Enum for "spatial type", i.e. for frequency or lambda monochromatic things
     """
     def __init__(self, root, fp=".", log_spec=True, smooth=None, distance=None, default=None, delim=None):
         """Create the Spectrum object.
@@ -98,7 +111,7 @@ class Spectrum:
         # Now we can read in the spectra and set the default/target spectrum
         # for the object. We can also re-scale to a different distance.
 
-        self.get_spectra(delim)
+        self.read_in_spectra(delim)
 
         if default:
             self.current = self._get_spec_key(default)
@@ -184,7 +197,7 @@ class Spectrum:
 
         return fig, ax
 
-    def _plot_thing(self, thing, spec_type, scale="loglog", label_lines=False, ax_update=None):
+    def _plot_thing(self, thing, spec_type, scale="loglog", xmin=None, xmax=None, label_lines=False, ax_update=None):
         """Plot a specific column in a spectrum file.
 
         Parameters
@@ -193,6 +206,10 @@ class Spectrum:
             The name of the thing to be plotted.
         scale: str
             The scale of the axes, i.e. loglog, logx, logy, linlin.
+        xmin: float
+            The lower boundary for the x axis.
+        xmax: float
+            The upper boundary for the x axis.
         label_lines: bool
             Plot line IDs.
         ax_update: plt.Axes
@@ -224,7 +241,8 @@ class Spectrum:
         if thing.isdigit():
             label += r"$^{\circ}$"
 
-        ax.plot(self.spectra[key][x_thing], self.spectra[key][thing], label=label, zorder=0)
+        x, y = pypython.get_xy_subset(self.spectra[key][x_thing], self.spectra[key][thing], xmin, xmax)
+        ax.plot(x, y, label=label, zorder=0)
 
         if label_lines:
             ax = plot.add_line_ids(ax, plot.common_lines(units), linestyle="none", fontsize=10)
@@ -288,7 +306,44 @@ class Spectrum:
             else:
                 self.spectra[spectrum].units = SpectrumUnits.f_lm
 
-    def get_spectra(self, delim=None):
+    def plot(self, names=None, spec_type=None, scale="loglog", xmin=None, xmax=None, label_lines=False):
+        """Plot the spectra or a single component in a single figure. By
+        default this creates a 1 x 2 of the components on the left and the
+        observer spectra on the right. Useful for when in an interactive
+        session.
+
+        Parameters
+        ----------
+        names: str
+            The name of the thing to plot.
+        spec_type: str
+            The spectrum the thing to plot belongs in.
+        scale: str
+            The scale of the axes, i.e. loglog, logx, logy or linlin.
+        xmin: float
+            The lower boundary for the x axis.
+        xmax: float
+            The upper boundary for the x axis.
+        label_lines: bool
+            Plot line IDs.
+        """
+        # If name is given, then plot that column of the spectrum. Otherwise
+        # assume we just want to plot all columns in the spec file
+
+        if names:
+            if type(names) is not list:
+                names = [names]
+            fig, ax = self._plot_thing(str(names[0]), spec_type, scale, xmin, xmax, label_lines)
+            if len(names) > 1:
+                for name in names[1:]:
+                    ax = self._plot_thing(str(name), spec_type, scale, xmin, xmax, label_lines, ax_update=ax)
+            ax.legend()
+        else:
+            fig, ax = self._plot_observer_spectrum(label_lines)
+
+        return fig, ax
+
+    def read_in_spectra(self, delim=None):
         """Read in a spectrum file given in self.filepath. The spectrum is
         stored as a dictionary in self.spectra where each key is the name of
         the columns.
@@ -345,6 +400,9 @@ class Spectrum:
 
                 spectrum.append(line)
 
+            # if spec_type == "spec_tau":  # todo: this is a hack until "spatial type" enum implemented
+            #     self.spec[spec_type].units = SpectrumUnits.l_nu
+
             # Extract the header columns of the spectrum. This assumes the first
             # read line in the spectrum is the header.
 
@@ -380,39 +438,6 @@ class Spectrum:
             raise IOError(f"Unable to open any spectrum files for {self.root} in {self.fp}")
 
         self.available = tuple(self.spectra.keys())
-
-    def plot(self, names=None, spec_type=None, scale="loglog", label_lines=False):
-        """Plot the spectra or a single component in a single figure. By
-        default this creates a 1 x 2 of the components on the left and the
-        observer spectra on the right. Useful for when in an interactive
-        session.
-
-        Parameters
-        ----------
-        names: str
-            The name of the thing to plot.
-        spec_type: str
-            The spectrum the thing to plot belongs in.
-        scale: str
-            The scale of the axes, i.e. loglog, logx, logy or linlin.
-        label_lines: bool
-            Plot line IDs.
-        """
-        # If name is given, then plot that column of the spectrum. Otherwise
-        # assume we just want to plot all columns in the spec file
-
-        if names:
-            if type(names) is not list:
-                names = [names]
-            fig, ax = self._plot_thing(str(names[0]), spec_type, scale, label_lines)
-            if len(names) > 1:
-                for name in names[1:]:
-                    ax = self._plot_thing(str(name), spec_type, scale, label_lines, ax_update=ax)
-            ax.legend()
-        else:
-            fig, ax = self._plot_observer_spectrum(label_lines)
-
-        return fig, ax
 
     def set(self, name):
         """Set a spectrum as the default.
