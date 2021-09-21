@@ -3,6 +3,8 @@
 """Create plots of the spectrum files from a Python simulation.
 
 This script will create,
+
+TODO: add option to plot specific thing, rather than everything i.e. -i 60 or -i Emitted
 """
 
 import argparse as ap
