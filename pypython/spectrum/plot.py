@@ -283,7 +283,7 @@ def add_line_ids(ax,
     return ax
 
 
-def common_lines(spectral_axis=None, spectrum=None):
+def common_lines(spectrum=None, spectral_axis=None):
     """Return a list containing the names of line transitions and the
     wavelength of the transition in Angstroms. Instead of returning the
     wavelength, the frequency can be returned instead. It is also possible to
@@ -315,7 +315,7 @@ def common_lines(spectral_axis=None, spectrum=None):
     return _convert_labels_to_frequency_space(lines, spectral_axis, spectrum)
 
 
-def photoionization_edges(spectral_axis=None, spectrum=None):
+def photoionization_edges(spectrum=None, spectral_axis=None):
     """Return a list containing the names of line transitions and the
     wavelength of the transition in Angstroms. Instead of returning the
     wavelength, the frequency can be returned instead. It is also possible to

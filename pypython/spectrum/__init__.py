@@ -285,7 +285,7 @@ class Spectrum:
         ax.plot(x, y, label=label, zorder=0)
 
         if label_lines:
-            ax = plot.add_line_ids(ax, plot.common_lines(spec_axis), linestyle="none", fontsize=10)
+            ax = plot.add_line_ids(ax, plot.common_lines(spectral_axis=spec_axis), linestyle="none", fontsize=10)
 
         if ax_update:
             return ax
