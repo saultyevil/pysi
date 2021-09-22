@@ -320,6 +320,8 @@ class Spectrum:
             else:
                 self.spectra[spectrum].units = SpectrumUnits.l_lm
 
+            self.spectra[spectrum].spectral_axis = self._get_spectral_axis(self.spectra[spectrum].units)
+
     def convert_luminosity_to_flux(self, distance):
         """Convert the spectrum from luminosity into flux units.
 
@@ -345,6 +347,8 @@ class Spectrum:
                 self.spectra[spectrum].units = SpectrumUnits.f_nu
             else:
                 self.spectra[spectrum].units = SpectrumUnits.f_lm
+
+            self.spectra[spectrum].spectral_axis = self._get_spectral_axis(self.spectra[spectrum].units)
 
     def plot(self, names=None, spec_type=None, scale="loglog", xmin=None, xmax=None, label_lines=False):
         """Plot the spectra or a single component in a single figure. By
@@ -387,6 +391,8 @@ class Spectrum:
         """Read in a spectrum file given in self.filepath. The spectrum is
         stored as a dictionary in self.spectra where each key is the name of
         the columns.
+
+        TODO: make identical "Wavelength" and "Frequency" entries in dictionary
 
         Parameters
         ----------
@@ -572,6 +578,8 @@ class Spectrum:
 
     # Built in stuff -----------------------------------------------------------
 
+    # TODO: use str.capitalize() to allow lower case input
+
     def __getattr__(self, key):
         return self.spectra[self.current][key]
 
@@ -584,11 +592,11 @@ class Spectrum:
     # def __setattr__(self, name, value):
     #     self.spectra[self.current][name] = value
 
-    def __setitem__(self, key, value):
-        if self._get_spec_key(key) in self.available:
-            self.spectra[self._get_spec_key(key)] = value
-        else:
-            self.spectra[self.current][key] = value
+    # def __setitem__(self, key, value):
+    #     if self._get_spec_key(key) in self.available:
+    #         self.spectra[self._get_spec_key(key)] = value
+    #     else:
+    #         self.spectra[self.current][key] = value
 
     def __str__(self):
         msg = f"Spectrum for the model {self.root}\n"

@@ -94,7 +94,7 @@ def _convert_labels_to_frequency_space(lines, spectral_axis=None, spectrum=None)
         return lines
 
     if spectrum:
-        spectral_axis = spectral_axis["spectral_axis"]
+        spectral_axis = spectrum["spectral_axis"]
 
     if spectral_axis == pypython.spectrum.SpectrumSpectralAxis.frequency:
         for i in range(len(lines)):
