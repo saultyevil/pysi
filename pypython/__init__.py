@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """pypython - making using Python a wee bit easier.
 
 pypython is a companion python package to handle and analyse the data which
@@ -19,8 +18,6 @@ from subprocess import run
 
 import numpy as np
 
-# Import all the things which will be able to be seen
-
 import pypython.constants as c
 import pypython.error as err
 import pypython.math
@@ -32,6 +29,7 @@ import pypython.spectrum
 import pypython.util
 import pypython.wind
 
+# Import all the things which will be able to be seen
 
 # Dictionary class -------------------------------------------------------------
 
@@ -559,6 +557,7 @@ __all__ = [
     "run_py_optical_depth",
     "run_py_wind",
     # sub-modules
+    "dump",
     "math",
     "observations",
     "physics",

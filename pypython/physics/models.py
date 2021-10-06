@@ -82,6 +82,7 @@ class SV93Wind:
     def find_r0(self, x):
         """Determine r0 for a point in the x, y plane."""
         from scipy.optimize import brentq
+
         # If the vector is in the x-y plane, then this is simple
         if x[2] == 0:
             return np.sqrt(x[0]**2 + x[1]**2)

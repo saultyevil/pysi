@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """Utility functions for reading in and analyzing spectra.
 
-The main part of this is the Spectrum() class -- well, it's pretty much the
-only thing in here now after the re-structure.
+The main part of this is the Spectrum() class -- well, it's pretty much
+the only thing in here now after the re-structure.
 """
 
 import copy
@@ -51,8 +50,8 @@ class SpectrumUnits(Enum):
 class SpectrumType(Enum):
     """The possible types of spectra which can be read in.
 
-    This should cover all the types, and should be interchangable between the
-    linear and logarithmic versions of the spectra.
+    This should cover all the types, and should be interchangable
+    between the linear and logarithmic versions of the spectra.
     """
     spec = "spec"
     spec_tot = "spec_tot"
@@ -567,8 +566,8 @@ class Spectrum:
 
             for thing_to_smooth in self.spectra[spectrum].columns:
                 try:
-                    self.spectra[spectrum][thing_to_smooth] = pypython.smooth_array(self.spectra[spectrum][thing_to_smooth],
-                                                                                    width)
+                    self.spectra[spectrum][thing_to_smooth] = pypython.smooth_array(
+                        self.spectra[spectrum][thing_to_smooth], width)
                 except KeyError:
                     pass  # some spectra do not have the inclination angles...
 
@@ -666,4 +665,3 @@ def integrate(spectrum, name, xmin, xmax, spec_type=None):
     sample_points, y = pypython.get_xy_subset(sample_points, spectrum[key][name], xmin, xmax)
 
     return simpson(y, sample_points)
-

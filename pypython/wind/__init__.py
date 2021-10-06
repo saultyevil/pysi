@@ -16,7 +16,6 @@ import pypython.physics
 import pypython.plot as pyplt
 import pypython.simulation.grid
 
-
 # Enumerators ------------------------------------------------------------------
 
 
@@ -194,7 +193,8 @@ class CellSpectra:
             try:
                 self.nx = int(pypython.simulation.grid.get_parameter_value(self.pf, "Wind.dim.in.x_or_r.direction"))
                 if len(self.header[1]) > LEN_WHEN_1D_MODEL:
-                    self.nz = int(pypython.simulation.grid.get_parameter_value(self.pf, "Wind.dim.in.z_or_theta.direction"))
+                    self.nz = int(
+                        pypython.simulation.grid.get_parameter_value(self.pf, "Wind.dim.in.z_or_theta.direction"))
             except (ValueError, IOError):
                 self.nx = self.cells[-1][0] + 1
                 self.nz = self.cells[-1][1] + 1
@@ -648,10 +648,20 @@ class ModelledCellSpectra:
 
 
 class Wind:
-    """A class to store 1D and 2D Python wind tables.
+    """A class to store 1D and 2D Python winds.
 
-    Contains methods to extract variables, as well as convert various
-    indices into other indices.
+    The purpose of this class is to store all of the important data associated
+    with a wind in Python, and to make that data easy to access and to plot.
+    Additional functions to manipulate the data into new units and into
+    different formats are also part of this class.
+
+    Examples:
+    ---------
+
+        wind = pypython.Wind("model")
+        wind["x"]  # Get the x-coordinates
+        wind.plot("rho")  # Open an interactive plot window of the density
+        wind.convert_cm_to_rg()  # Change the distance units
     """
     def __init__(self,
                  root,
@@ -954,7 +964,8 @@ class Wind:
 
         if not co_mass_in_msol:
             try:
-                co_mass_in_msol = float(pypython.simulation.grid.get_parameter_value(self.pf, "Central_object.mass(msol)"))
+                co_mass_in_msol = float(
+                    pypython.simulation.grid.get_parameter_value(self.pf, "Central_object.mass(msol)"))
             except Exception as e:
                 print(e)
                 raise ValueError("unable to find CO mass from parameter file, please supply the mass instead")
@@ -995,7 +1006,8 @@ class Wind:
 
         if not co_mass_in_msol:
             try:
-                co_mass_in_msol = float(pypython.simulation.grid.get_parameter_value(self.pf, "Central_object.mass(msol)"))
+                co_mass_in_msol = float(
+                    pypython.simulation.grid.get_parameter_value(self.pf, "Central_object.mass(msol)"))
             except Exception as e:
                 print(e)
                 raise ValueError("unable to find CO mass from parameter file, please supply the mass instead")
