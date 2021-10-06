@@ -337,7 +337,12 @@ def photoionization_edges(spectrum=None, spectral_axis=None):
     """
 
     edges = [
-        [r"He \textsc{ii}", 229],
+        [r"O \textsc{viii}", 14],
+        [r"O \textsc{vii}", 16],
+        [r"O \textsc{vi} / O \textsc{v}", 98],
+        [r"", 105],
+        [r"O \textsc{iv}", 160],
+        [r"He \textsc{ii}", 227],
         [r"He \textsc{i}", 504],
         ["Lyman", 912],
         ["Balmer", 3646],

@@ -174,13 +174,13 @@ def create_run_script(commands):
     file = "#!/bin/bash\n\ndeclare -a directories=(\n"
     for fp in paths:
         file += "\t\"{}\"\n".format(fp)
-    file += ")\n\ncfp=$(pfp)\nfor i in \"${directories[@]}\"\ndo\n\tcd $i\n\tpfp\n"
+    file += ")\n\ncwd=$(pwd)\nfor i in \"${directories[@]}\"\ndo\n\tcd $i\n\tpwd\n"
     if len(commands) > 1:
         for k in range(len(commands) - 1):
             file += "\t{}\n".format(commands[k + 1])
     else:
         file += "\t# commands\n"
-    file += "\tcd $cfp\ndone\n"
+    file += "\tcd $cwd\ndone\n"
 
     with open("commands.sh", "w") as f:
         f.write(file)

@@ -9,6 +9,7 @@ the functions, otherwise the regular version is much faster.
 
 from copy import deepcopy
 
+from sys import exit
 import numpy as np
 import pandas as pd
 import sqlalchemy
@@ -480,8 +481,8 @@ def wind_bin_interaction_weight(root, nres, cd=".", n_cores=1):
     """
 
     w = Wind(root, cd, masked=False)
-    x_points = np.array(w.x_axis_coords)
-    z_points = np.array(w.y_axis_coords)
+    x_points = np.array(w.x)
+    z_points = np.array(w.z)
 
     photons = read_delay_dump(root, cd, False)
     if photons.empty:
