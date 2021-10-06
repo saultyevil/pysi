@@ -339,6 +339,54 @@ def create_spectrum_process_breakdown(root,
     return {contribution_names[i]: created_spectra[i] for i in range(n_spec)}
 
 
+from matplotlib import pyplot as plt
+from matplotlib import animation as ani
+
+
+def create_movie_for_photon_transport(interactions, wind, wind_variable="rho", scale="loglog", figsize=(7, 6)):
+    """Create a movie of a photon moving through the wind"""
+
+    # First, create the figure and axes. Add the wind and set the axes units
+    # and scales
+
+    nframes = len(interactions)
+    fig, ax = plt.subplots(figsize=figsize)
+    ax = pypython.plot.set_axes_scales(ax, scale)
+
+    ax.pcolormesh(wind.x, wind.z, wind.get(wind_variable), alpha=1.0)
+    units = wind.distance_units
+    ax.set_xlabel(r"$\rho$" + f" [{units.value}]")
+    ax.set_ylabel(r"$z$" + f" [{units.value}]")
+
+    xpoints = wind["x"][wind["x"] > 0]
+    zpoints = wind["z"][wind["z"] > 0]
+    ax.set_xlim(xpoints.min(), xpoints.max())
+    ax.set_ylim(zpoints.min(), zpoints.max())
+
+    # photons = [interactions[interactions["Np"] == nphot] for nphot in np.unique(interactions["Np"])]
+
+    # Calculate the rho and z points for the photon, and set
+    # the axes limits
+
+    def animate(nframe):
+
+        start = 0
+        ncolor = 0
+        for n, row in interactions.iterrows():
+
+            rho = np.sqrt(interactions["LastX"][start:n]**2 + interactions["LastY"][start:n]**2)
+            z = interactions["LastZ"][start:n]
+            ax.plot(rho, z, color=f"C{ncolor}")
+
+            if interactions["Np"][n + 1] != row["Np"]:
+                start = n + 1
+                ncolor += 1
+
+    anim = ani.FuncAnimation(fig, animate, frames=nframes, interval=1/512)
+
+    return anim
+
+
 Base = declarative_base()
 
 
