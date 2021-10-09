@@ -67,7 +67,7 @@ def main():
 
     # Note that log_spec is really --linear in the command line arguments
 
-    spectrum = Spectrum(root, fp, log_spec=log_spec, smooth=smooth)
+    spectrum = Spectrum(root, fp, log=log_spec, smooth=smooth)
 
     # Observer spectra
 

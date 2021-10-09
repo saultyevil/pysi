@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Create a spectrum from a delay_dump file.
-
-It is possible to create spectra which certain physical processes
-removed. If the delay dump file is large, then use the SQL version of
-the functions, otherwise the regular version is much faster.
+"""Functions for working with delay dump files.
 """
 
 from copy import deepcopy
@@ -12,11 +8,8 @@ from sys import exit
 
 import numpy as np
 import pandas as pd
-import sqlalchemy
-from sqlalchemy import Column, Float, Integer
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from matplotlib import animation as ani
+from matplotlib import pyplot as plt
 
 import pypython
 import pypython.constants as c
@@ -24,20 +17,125 @@ import pypython.dump.spectrum
 import pypython.dump.wind
 
 BOUND_FREE_NRES = 20000
-UNFILTERED_SPECTRUM = -999
+UNFILTERED_SPECTRUM = -3
 
 
-def read_dump(root, cd=".", mode_dev=False):
+start = 0
+
+
+def photon_transport_movie(root, dump, fp=".", wind=None, wind_variable="rho", scale="loglog", figsize=(7, 6)):
+    """Create a movie of a photon moving through the wind.
+
+    Plots each photon path, one by one, to create an animation which should
+    represent the random walk photons take through the wind.
+
+    todo: make this work
+
+    Parameters
+    ----------
+    root: str
+        The root name of the simulation.
+    dump: pd.DataFrame or similar
+        The interactions of each photon, generated using modes.save_animation
+    fp: str [optional]
+        The file path containin the simulation.
+    wind: pypython.Wind [optional]
+        The Wind object of the wind to animated photon transport through.
+    wind_variable: str [optional]
+        The name of the wind variable to plot.
+    scale: str [optional]
+        The scales of the x and y axis, i.e. loglog, logx.
+    figsize: tuple (int)
+        The size of the figure in inches (width, height)
+
+    Returns
+    -------
+    anim:
+        The animation object.
+    """
+    if wind is None:
+        wind = pypython.Wind(root, fp)
+
+    if type(dump) is str:
+        dump = read_dump_pd(root, fp)
+    elif type(dump) != pd.DataFrame:
+        raise TypeError("interactions has to be str or pd.DataFrame")
+
+    nframes = len(dump)
+
+    # First, create the figure and axes. Add the wind and set the axes units
+    # and scales
+
+    fig, ax = plt.subplots(figsize=figsize)
+    ax = pypython.plot.set_axes_scales(ax, scale)
+
+    ax.pcolormesh(wind.x, wind.z, wind.get(wind_variable), alpha=1.0)
+    ax.set_xlabel(r"$\rho$" + f" [{wind.distance_units.value}]")
+    ax.set_ylabel(r"$z$" + f" [{wind.distance_units.value}]")
+
+    xpoints = wind["x"][wind["x"] > 0]
+    zpoints = wind["z"][wind["z"] > 0]
+    xmin, xmax = xpoints.min(), xpoints.max()
+    zmin, zmax = zpoints.min(), zpoints.max()
+
+    ax.set_xlim(xmin, xmax)
+    ax.set_ylim(zmin, zmax)
+
+    np_numbers = np.array(dump["Np"])
+    x_points = np.array(dump["LastX"])
+    y_points = np.array(dump["LastY"])
+    z_points = np.array(dump["LastZ"])
+
+    line, = ax.plot([], [], lw=3)
+    # start = 0
+
+    def animate(nframe):
+        """The actual animation function. Has to be here, because it relies on
+        ax being defined.
+
+        Parameters
+        ----------
+        nframe: int
+            The frame being rendered.
+        """
+        global start
+        if nframe == 0:
+            return
+
+        z = np.abs(z_points[start:nframe])
+        rho = np.sqrt(x_points[start:nframe] ** 2 + y_points[start:nframe] ** 2)
+
+        # if rho[-1] < xmin:
+        #     return ax,
+        # if z[-1] < zmin:
+        #     return ax,
+
+        if np_numbers[nframe] != np_numbers[nframe + 1]:
+            start = nframe
+            line.set_data([], [])
+
+        line.set_data(rho, z)
+        line.set_color(f"C{np_numbers[nframe]}")
+
+        return line,
+
+    anim = ani.FuncAnimation(fig,
+                             animate,
+                             frames=len(dump),
+                             interval=1 / len(dump))
+
+    return anim
+
+
+def read_dump_pd(root, fp="."):
     """Process the photons which have been dumped to the delay_dump file.
 
     Parameters
     ----------
     root: str
         The root name of the simulation.
-    cd: str
+    fp: str
         The directory containing the simulation.
-    mode_dev: bool [optional]
-        Use when using the standard format currently in the main repository.
 
     Returns
     -------
@@ -45,53 +143,33 @@ def read_dump(root, cd=".", mode_dev=False):
         An array containing the dumped photons with the quantities specified
         by the extract dict.
     """
+    names = {
+        "Np": np.int32,
+        "Freq.": np.float64,
+        "Lambda": np.float64,
+        "Weight": np.float64,
+        "LastX": np.float64,
+        "LastY": np.float64,
+        "LastZ": np.float64,
+        "Scat.": np.int32,
+        "RScat.": np.int32,
+        "Delay": np.float64,
+        "Spec.": np.int32,
+        "Orig.": np.int32,
+        "Res.": np.int32,
+        "LineRes.": np.int32
+    }
 
-    filename = "{}/{}.delay_dump".format(cd, root)
-
-    # There are cases where LineRes. is not defined within the delay dump file,
-    # i.e. in the regular dev version
-
-    if mode_dev:
-        names = {
-            "Freq.": np.float64,
-            "Lambda": np.float64,
-            "Weight": np.float64,
-            "LastX": np.float64,
-            "LastY": np.float64,
-            "LastZ": np.float64,
-            "Scat.": np.int32,
-            "RScat.": np.int32,
-            "Delay": np.float64,
-            "Spec.": np.int32,
-            "Orig.": np.int32,
-            "Res.": np.int32
-        }
-    else:
-        names = {
-            "Np": np.int32,
-            "Freq.": np.float64,
-            "Lambda": np.float64,
-            "Weight": np.float64,
-            "LastX": np.float64,
-            "LastY": np.float64,
-            "LastZ": np.float64,
-            "Scat.": np.int32,
-            "RScat.": np.int32,
-            "Delay": np.float64,
-            "Spec.": np.int32,
-            "Orig.": np.int32,
-            "Res.": np.int32,
-            "LineRes.": np.int32
-        }
-
-    output = pd.read_csv(filename, names=list(names.keys()), dtype=names, delim_whitespace=True, comment="#")
-
-    return output
+    return pd.read_csv(f"{fp}/{root}.delay_dump",
+                       names=list(names.keys()),
+                       dtype=names,
+                       delim_whitespace=True,
+                       comment="#")
 
 
 def create_spectrum(root,
-                    wd=".",
-                    extract_nres=(UNFILTERED_SPECTRUM, ),
+                    fp=".",
+                    extract=(UNFILTERED_SPECTRUM, ),
                     dumped_photons=None,
                     freq_bins=None,
                     freq_min=None,
@@ -100,8 +178,7 @@ def create_spectrum(root,
                     d_norm_pc=100,
                     spec_cycle_norm=1,
                     n_cores_norm=1,
-                    logbins=True,
-                    mode_dev=False,
+                    log_bins=True,
                     output_numpy=False):
     """Create a spectrum for each inclination angle using the photons which
     have been dumped to the root.delay_dump file.
@@ -113,9 +190,9 @@ def create_spectrum(root,
     ----------
     root: str
         The root name of the simulation.
-    wd: [optional] str
+    fp: [optional] str
         The directory containing the simulation.
-    extract_nres: [optional] int
+    extract: [optional] int
         The internal line number for a line to extract.
     dumped_photons: [optional] pd.DataFrame
         The delay dump photons in a Pandas DataFrame. If this is not provided,
@@ -134,11 +211,9 @@ def create_spectrum(root,
         A normalization constant for the spectrum, is > 1.
     n_cores_norm: [optional] int
         The number of cores which were used to generate the delay_dump file
-    logbins: [optional] bool
+    log_bins: [optional] bool
         If True, the frequency bins are spaced equally in log space. Otherwise
         the bins are in linear space.
-    mode_dev: bool [optional]
-        If True, then LineRes. and Np will NOT be included when being read in
     output_numpy: [optional] bool
         If True, the spectrum will be a numpy array instead of a pandas data
         frame
@@ -150,8 +225,8 @@ def create_spectrum(root,
         fluxes for each inclination angle in the other columns.
     """
 
-    if type(extract_nres) != tuple:
-        print("extract_nres is not a tuple but is of type {}".format(type(extract_nres)))
+    if type(extract) != tuple:
+        print("extract_nres is not a tuple but is of type {}".format(type(extract)))
         exit(pypython.error.EXIT_FAIL)
 
     # If the frequency bins have been provided, we need to do some checks to make
@@ -166,13 +241,9 @@ def create_spectrum(root,
         n_bins = len(freq_bins)
 
     if dumped_photons is None:
-        dumped_photons = read_dump(root, wd, mode_dev)
+        dumped_photons = read_dump_pd(root, fp)
 
-    if mode_dev:
-        line_res = deepcopy(dumped_photons["Res."].values.astype(int))
-    else:
-        line_res = dumped_photons["LineRes."].values.astype(int)
-
+    line_res = dumped_photons["LineRes."].values.astype(int)
     n_spec = int(np.max(dumped_photons["Spec."].values)) + 1
     dump_spectrum = np.zeros((n_bins, 1 + n_spec))
 
@@ -183,7 +254,7 @@ def create_spectrum(root,
             freq_min = np.min(dumped_photons["Freq."])
         if not freq_max:
             freq_max = np.max(dumped_photons["Freq."])
-        if logbins:
+        if log_bins:
             dump_spectrum[:, 0] = np.logspace(np.log10(freq_min), np.log10(freq_max), n_bins, endpoint=True)
         else:
             dump_spectrum[:, 0] = np.linspace(freq_min, freq_max, n_bins, endpoint=True)
@@ -194,30 +265,30 @@ def create_spectrum(root,
     freq_max = np.max(dump_spectrum[:, 0])
     freq_min = np.min(dump_spectrum[:, 0])
 
-    dump_spectrum = pypython.dump.spectrum.bin_photon_weights(dump_spectrum, freq_min, freq_max,
-                                                              dumped_photons["Freq."].values,
-                                                              dumped_photons["Weight"].values,
-                                                              dumped_photons["Spec."].values.astype(int) + 1,
-                                                              dumped_photons["Res."].values.astype(int), line_res,
-                                                              extract_nres, logbins)
+    dump_spectrum = pypython.dump.create_spectrum.bin_photon_weights(dump_spectrum, freq_min, freq_max,
+                                                                     dumped_photons["Freq."].values,
+                                                                     dumped_photons["Weight"].values,
+                                                                     dumped_photons["Spec."].values.astype(int) + 1,
+                                                                     dumped_photons["Res."].values.astype(int), line_res,
+                                                                     extract, log_bins)
 
     dump_spectrum[:, 1:] /= n_cores_norm
 
-    dump_spectrum = pypython.dump.spectrum.convert_weight_to_flux(dump_spectrum, spec_cycle_norm, d_norm_pc)
+    dump_spectrum = pypython.dump.create_spectrum.convert_weight_to_flux(dump_spectrum, spec_cycle_norm, d_norm_pc)
 
     # Remove the first and last bin, consistent with Python
 
     n_bins -= 2
     dump_spectrum = dump_spectrum[1:-1, :]
 
-    dump_spectrum, inclinations = pypython.dump.spectrum.write_delay_dump_spectrum_to_file(root,
-                                                                                           wd,
-                                                                                           dump_spectrum,
-                                                                                           extract_nres,
-                                                                                           n_spec,
-                                                                                           n_bins,
-                                                                                           d_norm_pc,
-                                                                                           return_inclinations=True)
+    dump_spectrum, inclinations = pypython.dump.create_spectrum.write_delay_dump_spectrum_to_file(root,
+                                                                                                  fp,
+                                                                                                  dump_spectrum,
+                                                                                                  extract,
+                                                                                                  n_spec,
+                                                                                                  n_bins,
+                                                                                                  d_norm_pc,
+                                                                                                  return_inclinations=True)
 
     if output_numpy:
         return dump_spectrum
@@ -228,14 +299,7 @@ def create_spectrum(root,
         return df
 
 
-def create_spectrum_process_breakdown(root,
-                                      wl_min,
-                                      wl_max,
-                                      n_cores_norm=1,
-                                      spec_cycle_norm=1,
-                                      wd=".",
-                                      nres=None,
-                                      mode_line_res=True):
+def create_spectrum_breakdown(root, wl_min, wl_max, n_cores_norm=1, spec_cycle_norm=1, fp=".", nres=None, mode_line_res=True):
     """Get the spectra for the different physical processes which contribute to
     a spectrum. If nres is provided, then only a specific interaction will be
     extracted, otherwise all resonance interactions will.
@@ -254,7 +318,7 @@ def create_spectrum_process_breakdown(root,
     spec_cycle_norm: float [optional]
         The spectral cycle normalization, this is equal to 1 if all spectral
         cycles were run.
-    wd: str [optional]
+    fp: str [optional]
         The directory containing the simulation.
     nres: int [optional]
         A specific interaction to extract, is the nres number from Python.
@@ -268,8 +332,8 @@ def create_spectrum_process_breakdown(root,
         are pd.DataFrames of that corresponding spectrum.
     """
 
-    df = read_dump(root, cd=wd)
-    s = pypython.Spectrum(root, wd)
+    dump = read_dump_pd(root, fp)
+    s = pypython.Spectrum(root, fp)
 
     # create dataframes for each physical process, what you can actually get
     # depends on mode_line_res, i.e. if LineRes. is included or not. Store these
@@ -284,38 +348,38 @@ def create_spectrum_process_breakdown(root,
     if nres:
         if type(nres) != int:
             nres = int(nres)
-        contributions.append(df[df["Res."] == nres])
+        contributions.append(dump[dump["Res."] == nres])
         contribution_names.append("Res." + str(nres))
         if mode_line_res:
-            contributions.append(df[df["LineRes."] == nres])
+            contributions.append(dump[dump["LineRes."] == nres])
             contribution_names.append("LineRes." + str(nres))
     else:
-        tmp = df[df["Res."] <= 20000]
+        tmp = dump[dump["Res."] <= 20000]
         contributions.append(tmp[tmp["Res."] >= 0])
         contribution_names.append("Res.")
         if mode_line_res:
-            tmp = df[df["LineRes."] <= 20000]
+            tmp = dump[dump["LineRes."] <= 20000]
             contributions.append(tmp[tmp["LineRes."] >= 0])
             contribution_names.append("LineRes.")
 
     # Extract the scattered spectrum, which is every continuum scatter
 
-    contributions.append(df[df["Res."] == -1])
+    contributions.append(dump[dump["Res."] == -1])
     contribution_names.append("Scattered")
 
     # Extract pure BF, FF and ES events, unless we're in Res. mode, which extracts
     # last scatters
 
     if mode_line_res:
-        contributions.append(df[df["LineRes."] == -1])
-        contributions.append(df[df["LineRes."] == -2])
-        contributions.append(df[df["LineRes."] > 20000])
+        contributions.append(dump[dump["LineRes."] == -1])
+        contributions.append(dump[dump["LineRes."] == -2])
+        contributions.append(dump[dump["LineRes."] > 20000])
         contribution_names.append("ES only")
         contribution_names.append("FF only")
         contribution_names.append("BF only")
     else:
-        contributions.append(df[df["Res."] == -2])
-        contributions.append(df[df["Res."] > 20000])
+        contributions.append(dump[dump["Res."] == -2])
+        contributions.append(dump[dump["Res."] > 20000])
         contribution_names.append("FF only")
         contribution_names.append("BF only")
 
@@ -325,7 +389,7 @@ def create_spectrum_process_breakdown(root,
     for contribution in contributions:
         created_spectra.append(
             create_spectrum(root,
-                            wd,
+                            fp,
                             dumped_photons=contribution,
                             freq_min=pypython.physics.angstrom_to_hz(wl_max),
                             freq_max=pypython.physics.angstrom_to_hz(wl_min),
@@ -339,177 +403,49 @@ def create_spectrum_process_breakdown(root,
     return {contribution_names[i]: created_spectra[i] for i in range(n_spec)}
 
 
-from matplotlib import pyplot as plt
-from matplotlib import animation as ani
+def create_wind_weight_contours(root, resonance, wind=None, fp=".", n_cores=1):
+    """Bin photon interactions into the cells in which they happen.
 
-
-def create_movie_for_photon_transport(interactions, wind, wind_variable="rho", scale="loglog", figsize=(7, 6)):
-    """Create a movie of a photon moving through the wind"""
-
-    # First, create the figure and axes. Add the wind and set the axes units
-    # and scales
-
-    nframes = len(interactions)
-    fig, ax = plt.subplots(figsize=figsize)
-    ax = pypython.plot.set_axes_scales(ax, scale)
-
-    ax.pcolormesh(wind.x, wind.z, wind.get(wind_variable), alpha=1.0)
-    units = wind.distance_units
-    ax.set_xlabel(r"$\rho$" + f" [{units.value}]")
-    ax.set_ylabel(r"$z$" + f" [{units.value}]")
-
-    xpoints = wind["x"][wind["x"] > 0]
-    zpoints = wind["z"][wind["z"] > 0]
-    ax.set_xlim(xpoints.min(), xpoints.max())
-    ax.set_ylim(zpoints.min(), zpoints.max())
-
-    # photons = [interactions[interactions["Np"] == nphot] for nphot in np.unique(interactions["Np"])]
-
-    # Calculate the rho and z points for the photon, and set
-    # the axes limits
-
-    def animate(nframe):
-
-        start = 0
-        ncolor = 0
-        for n, row in interactions.iterrows():
-
-            rho = np.sqrt(interactions["LastX"][start:n]**2 + interactions["LastY"][start:n]**2)
-            z = interactions["LastZ"][start:n]
-            ax.plot(rho, z, color=f"C{ncolor}")
-
-            if interactions["Np"][n + 1] != row["Np"]:
-                start = n + 1
-                ncolor += 1
-
-    anim = ani.FuncAnimation(fig, animate, frames=nframes, interval=1/512)
-
-    return anim
-
-
-Base = declarative_base()
-
-
-class Photon(Base):
-    """Photon object for SQL database."""
-    __tablename__ = "Photons"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    np = Column(Integer)
-    freq = Column(Float)
-    wavelength = Column(Float)
-    weight = Column(Float)
-    x = Column(Float)
-    y = Column(Float)
-    z = Column(Float)
-    scat = Column(Integer)
-    rscat = Column(Integer)
-    delay = Column(Integer)
-    spec = Column(Integer)
-    orig = Column(Integer)
-    res = Column(Integer)
-    lineres = Column(Integer)
-
-    def __repr__(self):
-        return str(self.id)
-
-
-def get_photon_db(root, cd=".", dd_dev=False, commitfreq=1000000):
-    """Create or open a database to store the delay_dump file in an easier to
-    query data structure.
+    Returns the weight and count the interaction happens, binned onto the 2D
+    coordinate grid of the wind.
 
     Parameters
     ----------
     root: str
-        The root name of the simulation.
-    cd: str [optional]
+        The root name of the model.
+    resonance: int
+        The resonance number of the photon to bin.
+    wind: pypython.Wind [optional]
+        The Wind object of the wind. If not provided, it will attempt to read
+        it in anyway.
+    fp: str [optional]
         The directory containing the simulation.
-    dd_dev: bool [optional]
-        Expect the delay_dump file to be in the format used in the main Python
-        repository.
-    commitfreq: int
-        The frequency to which commit the database and avoid out-of-memory
-        errors. If this number is too low, database creation will take a long
-        time.
+    n_cores: int [optional]
+        The number of cores to normalize the binning by.
 
     Returns
     -------
-    engine:
-        The SQLalchemy engine.
-    session:
-        The SQLalchemy session.
+    weight2d: np.ndarray
+        The resonance weight binned per cell.
+    count2d: np.ndarry
+        The resonance count binned per cell.
     """
+    if wind is None:
+        wind = pypython.Wind(root, fp, masked=False)
 
-    engine = sqlalchemy.create_engine("sqlite:///{}.db".format(root))
-    engine_session = sessionmaker(bind=engine)
-    session = engine_session()
+    dump = read_dump_pd(root, fp)
+    if dump.empty:
+        print("photon dataframe is empty")
+        exit(1)
 
-    if dd_dev:
-        column_names = [
-            "Freq", "Lambda", "Weight", "LastX", "LastY", "LastZ", "Scat", "RScat", "Delay", "Spec", "Orig", "Res"
-        ]
-    else:
-        column_names = [
-            "Np", "Freq", "Lambda", "Weight", "LastX", "LastY", "LastZ", "Scat", "RScat", "Delay", "Spec", "Orig",
-            "Res", "LineRes"
-        ]
-    n_columns = len(column_names)
+    weight2d, count2d = pypython.dump.wind.wind_bin_photon_weights(len(dump), resonance, dump["LastX"].values,
+                                                                   dump["LastY"].values, dump["LastZ"].values,
+                                                                   dump["Res."].values, dump["Weight"].values, wind.x,
+                                                                   wind.z, wind.nx, wind.nz)
 
-    try:
-        session.query(Photon.weight).first()
-    except SQLAlchemyError:
-        print("{}.db does not exist, so creating now".format(root))
-        with open(cd + "/" + root + ".delay_dump", "r") as infile:
-            nadd = 0
-            Base.metadata.create_all(engine)
-            for n, line in enumerate(infile):
-                if line.startswith("#"):
-                    continue
-                try:
-                    values = [float(i) for i in line.split()]
-                except ValueError:
-                    print("Line {} has values which cannot be converted into a number".format(n))
-                    continue
-                if len(values) != n_columns:
-                    print("Line {} has unknown format with {} columns:\n{}".format(n, len(values), line))
-                    continue
-                if dd_dev:
-                    session.add(
-                        Photon(np=int(n),
-                               freq=values[0],
-                               wavelength=values[1],
-                               weight=values[2],
-                               x=values[3],
-                               y=values[4],
-                               z=values[5],
-                               scat=int(values[6]),
-                               rscat=int(values[7]),
-                               delay=int(values[8]),
-                               spec=int(values[9]),
-                               orig=int(values[10]),
-                               res=int(values[11]),
-                               lineres=int(values[11])))
-                else:
-                    session.add(
-                        Photon(np=int(values[0]),
-                               freq=values[1],
-                               wavelength=values[2],
-                               weight=values[3],
-                               x=values[4],
-                               y=values[5],
-                               z=values[6],
-                               scat=int(values[7]),
-                               rscat=int(values[8]),
-                               delay=int(values[9]),
-                               spec=int(values[10]),
-                               orig=int(values[11]),
-                               res=int(values[12]),
-                               lineres=int(values[13])))
+    weight2d /= n_cores
 
-                nadd += 1
-                if nadd > commitfreq:
-                    session.commit()
-                    nadd = 0
+    np.savetxt(f"{fp}/{root}_wind_res_{resonance}_" + "weight.txt", weight2d)
+    np.savetxt(f"{fp}/{root}_wind_res_{resonance}_" + "count.txt", count2d)
 
-        session.commit()
-
-    return engine, session
+    return weight2d, count2d

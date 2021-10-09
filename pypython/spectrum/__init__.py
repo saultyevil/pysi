@@ -42,8 +42,8 @@ class SpectrumUnits(Enum):
     """
     l_nu = "erg/s/Hz"
     l_lm = "erg/s/A"
-    f_nu = "erg/s/cm^-2/Hz"
-    f_lm = "erg/s/cm^-2/A"
+    f_nu = "erg/s/cm^2/Hz"
+    f_lm = "erg/s/cm^2/A"
     none = "none"
 
 
@@ -75,7 +75,7 @@ class Spectrum:
     TODO: Create Enum for spectrum types
     TODO: Create Enum for "spatial type", i.e. for frequency or lambda monochromatic things
     """
-    def __init__(self, root, fp=".", log_spec=True, smooth=None, distance=None, default=None, delim=None):
+    def __init__(self, root, fp=".", log=True, smooth=None, distance=None, default=None, delim=None):
         """Create the Spectrum object.
 
         Construct the file path of the spectrum files given the
@@ -91,7 +91,7 @@ class Spectrum:
             The directory containing the model.
         default: str [optional]
             The default spectrum to make the available spectrum for indexing.
-        log_spec: bool [optional]
+        log: bool [optional]
             Read in the logarithmic version of the spectra.
         smooth: int [optional]
             The amount of smoothing to use.
@@ -108,7 +108,7 @@ class Spectrum:
             self.fp += "/"
         self.pf = self.fp + self.root + ".pf"
 
-        self.log_spec = log_spec
+        self.log_spec = log
         if default and self.log_spec:
             if not default.startswith("log_") and default != "spec_tau":
                 default = "log_" + default
