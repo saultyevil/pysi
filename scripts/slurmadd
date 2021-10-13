@@ -50,8 +50,8 @@ def add_files_to_slurm_queue(files):
     rc = []
 
     for filepath in files:
-        fp, cd = split_path_and_filename(filepath)
-        sh = pypython.run_command(["sbatch", str(file)], fp=fp)
+        file, fp = split_path_and_filename(filepath)
+        sh = pypython.util.run_command(["sbatch", str(file)], fp=fp)
         stdout, stderr = sh.stdout, sh.stderr
         if stderr:
             print(stderr.decode("utf-8"))
