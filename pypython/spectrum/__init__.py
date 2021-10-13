@@ -44,6 +44,7 @@ class SpectrumUnits(Enum):
     l_lm = "erg/s/A"
     f_nu = "erg/s/cm^2/Hz"
     f_lm = "erg/s/cm^2/A"
+    f_lm_old = "erg/s/cm^-2/A"
     none = "none"
 
 
@@ -436,6 +437,14 @@ class Spectrum:
                     line = line.split()
                 if "Units:" in line:
                     self.spectra[spec_type]["units"] = SpectrumUnits(line[4][1:-1])
+
+                    # convert old F_lm typo to new units
+
+                    if self.spectra[spec_type]["units"] == SpectrumUnits.f_lm_old:
+                        self.spectra[spec_type]["units"] = SpectrumUnits.f_lm
+
+                    # If a flux, get the distance
+
                     if self.spectra[spec_type]["units"] in [SpectrumUnits.f_lm, SpectrumUnits.f_nu]:
                         self.spectra[spec_type]["distance"] = float(line[6])
                     else:
