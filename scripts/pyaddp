@@ -28,7 +28,6 @@ def add_parameter(filepaths, parameter, value):
     value: str
         The updated parameter value.
     """
-
     for filepath in filepaths:
         grid.add_single_parameter(filepath, parameter, value)
 
@@ -47,11 +46,11 @@ def main():
     args = p.parse_args()
 
     if args.root is None:
-        root = ""
+        root = "*"
     else:
         root = args.root
 
-    add_parameter(find(f"*/{root}.pf"), args.parameter, args.value)
+    add_parameter(find(f"{root}.pf", fp="."), args.parameter, args.value)
 
     return
 
