@@ -220,7 +220,6 @@ def create_slurm_file(name, n_cores, n_hours, n_minutes, py_flags, py_run_flags,
         module load conda/py3-latest
         source activate pypython
         python /home/ejp1n17/PythonScripts/pyrun -n {n_cores} {py_run_flags} -f='{py_flags}'
-        echo "Done!" > completed.txt
         """)
 
     if fp[-1] != "/":

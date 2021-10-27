@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Functions for working with delay dump files.
-"""
+"""Functions for working with delay dump files."""
 
-from copy import deepcopy
 from sys import exit
 
 import numpy as np
@@ -18,7 +16,6 @@ import pypython.dump.wind
 
 BOUND_FREE_NRES = 20000
 UNFILTERED_SPECTRUM = -3
-
 
 start = 0
 
@@ -87,6 +84,7 @@ def photon_transport_movie(root, dump, fp=".", wind=None, wind_variable="rho", s
     z_points = np.array(dump["LastZ"])
 
     line, = ax.plot([], [], lw=3)
+
     # start = 0
 
     def animate(nframe):
@@ -103,7 +101,7 @@ def photon_transport_movie(root, dump, fp=".", wind=None, wind_variable="rho", s
             return
 
         z = np.abs(z_points[start:nframe])
-        rho = np.sqrt(x_points[start:nframe] ** 2 + y_points[start:nframe] ** 2)
+        rho = np.sqrt(x_points[start:nframe]**2 + y_points[start:nframe]**2)
 
         # if rho[-1] < xmin:
         #     return ax,
@@ -119,10 +117,7 @@ def photon_transport_movie(root, dump, fp=".", wind=None, wind_variable="rho", s
 
         return line,
 
-    anim = ani.FuncAnimation(fig,
-                             animate,
-                             frames=len(dump),
-                             interval=1 / len(dump))
+    anim = ani.FuncAnimation(fig, animate, frames=len(dump), interval=1 / len(dump))
 
     return anim
 
@@ -265,30 +260,30 @@ def create_spectrum(root,
     freq_max = np.max(dump_spectrum[:, 0])
     freq_min = np.min(dump_spectrum[:, 0])
 
-    dump_spectrum = pypython.dump.create_spectrum.bin_photon_weights(dump_spectrum, freq_min, freq_max,
-                                                                     dumped_photons["Freq."].values,
-                                                                     dumped_photons["Weight"].values,
-                                                                     dumped_photons["Spec."].values.astype(int) + 1,
-                                                                     dumped_photons["Res."].values.astype(int), line_res,
-                                                                     extract, log_bins)
+    dump_spectrum = pypython.dump.spectrum.bin_photon_weights(dump_spectrum, freq_min, freq_max,
+                                                              dumped_photons["Freq."].values,
+                                                              dumped_photons["Weight"].values,
+                                                              dumped_photons["Spec."].values.astype(int) + 1,
+                                                              dumped_photons["Res."].values.astype(int), line_res,
+                                                              extract, log_bins)
 
     dump_spectrum[:, 1:] /= n_cores_norm
 
-    dump_spectrum = pypython.dump.create_spectrum.convert_weight_to_flux(dump_spectrum, spec_cycle_norm, d_norm_pc)
+    dump_spectrum = pypython.dump.spectrum.convert_weight_to_flux(dump_spectrum, spec_cycle_norm, d_norm_pc)
 
     # Remove the first and last bin, consistent with Python
 
     n_bins -= 2
     dump_spectrum = dump_spectrum[1:-1, :]
 
-    dump_spectrum, inclinations = pypython.dump.create_spectrum.write_delay_dump_spectrum_to_file(root,
-                                                                                                  fp,
-                                                                                                  dump_spectrum,
-                                                                                                  extract,
-                                                                                                  n_spec,
-                                                                                                  n_bins,
-                                                                                                  d_norm_pc,
-                                                                                                  return_inclinations=True)
+    dump_spectrum, inclinations = pypython.dump.spectrum.write_delay_dump_spectrum_to_file(root,
+                                                                                           fp,
+                                                                                           dump_spectrum,
+                                                                                           extract,
+                                                                                           n_spec,
+                                                                                           n_bins,
+                                                                                           d_norm_pc,
+                                                                                           return_inclinations=True)
 
     if output_numpy:
         return dump_spectrum
@@ -299,7 +294,14 @@ def create_spectrum(root,
         return df
 
 
-def create_spectrum_breakdown(root, wl_min, wl_max, n_cores_norm=1, spec_cycle_norm=1, fp=".", nres=None, mode_line_res=True):
+def create_spectrum_breakdown(root,
+                              wl_min,
+                              wl_max,
+                              n_cores_norm=1,
+                              spec_cycle_norm=1,
+                              fp=".",
+                              nres=None,
+                              mode_line_res=True):
     """Get the spectra for the different physical processes which contribute to
     a spectrum. If nres is provided, then only a specific interaction will be
     extracted, otherwise all resonance interactions will.
@@ -403,7 +405,7 @@ def create_spectrum_breakdown(root, wl_min, wl_max, n_cores_norm=1, spec_cycle_n
     return {contribution_names[i]: created_spectra[i] for i in range(n_spec)}
 
 
-def create_wind_weight_contours(root, resonance, wind=None, fp=".", n_cores=1):
+def create_wind_weight_contours(root, resonance, wind=None, fp=".", n_cores_norm=1, spec=0):
     """Bin photon interactions into the cells in which they happen.
 
     Returns the weight and count the interaction happens, binned onto the 2D
@@ -420,8 +422,10 @@ def create_wind_weight_contours(root, resonance, wind=None, fp=".", n_cores=1):
         it in anyway.
     fp: str [optional]
         The directory containing the simulation.
-    n_cores: int [optional]
+    n_cores_norm: int [optional]
         The number of cores to normalize the binning by.
+    spec: int [optional]
+        The spectrum to extract photons from.
 
     Returns
     -------
@@ -438,14 +442,22 @@ def create_wind_weight_contours(root, resonance, wind=None, fp=".", n_cores=1):
         print("photon dataframe is empty")
         exit(1)
 
-    weight2d, count2d = pypython.dump.wind.wind_bin_photon_weights(len(dump), resonance, dump["LastX"].values,
-                                                                   dump["LastY"].values, dump["LastZ"].values,
-                                                                   dump["Res."].values, dump["Weight"].values, wind.x,
-                                                                   wind.z, wind.nx, wind.nz)
+    dump = dump[dump["LineRes."] == resonance]
+    dump = dump[dump["Spec."] == spec]
 
-    weight2d /= n_cores
+    if dump.empty:
+        print("photon dataframe is empty")
+        exit(1)
 
-    np.savetxt(f"{fp}/{root}_wind_res_{resonance}_" + "weight.txt", weight2d)
-    np.savetxt(f"{fp}/{root}_wind_res_{resonance}_" + "count.txt", count2d)
+    weight, count = pypython.dump.wind.wind_bin_photon_weights(
+        len(dump), resonance, dump["LastX"].values, dump["LastY"].values, dump["LastZ"].values, dump["LineRes."].values,
+        dump["Weight"].values, np.array(wind.x_axis_coords), np.array(wind.x_axis_coords), wind.nz, wind.nz
+    )
 
-    return weight2d, count2d
+    weight /= n_cores_norm
+    count /= n_cores_norm
+
+    np.savetxt(f"{fp}/{root}_wind_res_{resonance}_" + "weight.txt", weight)
+    np.savetxt(f"{fp}/{root}_wind_res_{resonance}_" + "count.txt", count)
+
+    return weight, count

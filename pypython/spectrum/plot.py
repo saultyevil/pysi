@@ -201,9 +201,9 @@ def _plot_subplot(ax, spectrum, things_to_plot, xmin, xmax, alpha, scale, use_fl
 
 def add_line_ids(ax,
                  lines,
-                 linestyle="dashed",
+                 linestyle="none",
                  ynorm=0.90,
-                 offset=25,
+                 offset=0,
                  rotation="vertical",
                  fontsize=15,
                  whitespace_scale=2):
@@ -309,7 +309,7 @@ def common_lines(spectrum=None, spectral_axis=None):
              [r"C \textsc{iv}", 1548], ["", 1550], [r"He \textsc{ii}", 1640], [r"N \textsc{iii]}", 1750],
              [r"Al \textsc{iii}", 1854], [r"C \textsc{iii]}", 1908], [r"Mg \textsc{ii}", 2798],
              [r"Ca \textsc{ii}", 3934], ["", 3969], [r"H$_{\delta}$", 4101], [r"H$_{\gamma}$", 4340],
-             [r"He \textsc{ii}", 4389], [r"He \textsc{ii}", 4686], [r"H$_{\beta}$", 4861], [r"Na \textsc{i}", 5891],
+             [r"He \textsc{ii}", 4389], [r"He \textsc{ii}", 4686], [r"H$_{\beta}$", 4861], [r"He \textsc{i}", 5877],
              ["", 5897], [r"H$_{\alpha}$", 6564], [r"He \textsc{i}", 7067]]
 
     return _convert_labels_to_frequency_space(lines, spectral_axis, spectrum)

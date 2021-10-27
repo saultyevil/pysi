@@ -5,11 +5,14 @@
 from shutil import copyfile
 
 
-def add_single_parameter(fp, name, new_value, backup=True):
+def add_single_parameter(fp, name, value, backup=True):
     """Add a parameter which doesn't already exist.
 
     The parameter will be appended to the end of the parameter file but will be
     cleaned up in the root.out.pf file once the model is run.
+
+    # todo: insert after or before a parameter
+    # todo: detect if a parameter is already there
 
     Parameters
     ----------
@@ -17,7 +20,7 @@ def add_single_parameter(fp, name, new_value, backup=True):
         The path to the parameter file
     name: str
         The name of the parameter to be added
-    new_value: str
+    value: str
         The value of the parameter
     backup: bool [optional]
         Create a back up of the original parameter file
@@ -29,13 +32,8 @@ def add_single_parameter(fp, name, new_value, backup=True):
     if backup:
         copyfile(fp, fp + ".bak")
 
-    with open(fp, "r") as f:
-        pf = f.readlines()
-
-    pf.append("{:40s} {}\n".format(name, new_value))
-
-    with open(fp, "w") as f:
-        f.writelines(pf)
+    with open(fp, "a") as f:
+        f.write(f"{name:40s} {value}\n")
 
     return
 
@@ -112,7 +110,7 @@ def get_parameter_value(fp, name):
     """
 
     if fp.find(".pf") == -1:
-        raise IOError(f"provided file path {fp} is not a .pf parameter file")
+        raise IOError(f"Provided file path {fp} is not to a parameter file")
 
     with open(fp, "r") as f:
         lines = f.readlines()
@@ -123,11 +121,11 @@ def get_parameter_value(fp, name):
         if line.find(name) != -1:
             split = line.split()
             if len(split) != 2:
-                raise IndexError(f"invalid syntax for {name} in parameter file {fp}")
+                raise IndexError(f"Invalid syntax for {name} in {fp}")
             return split[-1]
 
     if value is None:
-        raise ValueError(f"parameter {name} was not found in {fp}")
+        raise ValueError(f"Could not find the parameter {name} in {fp}")
 
     return value
 
@@ -153,7 +151,7 @@ def update_single_parameter(fp, name, new_value, backup=True, verbose=False):
     """
 
     if fp.find(".pf") == -1:
-        raise IOError(f"provided file path {fp} is not a .pf parameter file")
+        raise IOError(f"The provided file path {fp} is not to a parameter file")
 
     if backup:
         copyfile(fp, fp + ".bak")
@@ -173,10 +171,13 @@ def update_single_parameter(fp, name, new_value, backup=True, verbose=False):
 
     if old and new:
         if verbose:
-            print("changed parameter {} from {} to {}".format(name, old.replace("\n", ""), new.replace("\n", "")))
+            header = f"- {fp} "
+            while len(header) < 80:
+                header += "-"
+            print(header)
+            print(f"   {name}: {old.split()[-1]} -> {new_value}")
     else:
-        print("unable to update: could not find parameter {} in file {}".format(name, fp))
-        return
+        raise ValueError(f"Could not find the parameter {name} in {fp}")
 
     with open(fp, "w") as f:
         f.writelines(lines)

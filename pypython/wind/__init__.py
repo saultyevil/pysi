@@ -1096,7 +1096,7 @@ class Wind:
                 continue
 
         for col in to_mask_wind:
-            self.wind[col] = np.ma.masked_where(self.wind["inwind"] < 0, self.wind[col])
+            self.wind[col] = np.ma.masked_where(self.wind["inwind"] != 0, self.wind[col])
 
         # Create masked arrays for the wind ions, loop over each element read in
 
@@ -1108,7 +1108,7 @@ class Wind:
 
         if DEBUG_MASK_CELL_SPEC:
             for cell_spec_type in self.spectra:
-                self.wind[cell_spec_type].spectra = np.ma.masked_where(self.wind["inwind"] < 0,
+                self.wind[cell_spec_type].spectra = np.ma.masked_where(self.wind["inwind"] != 0,
                                                                        self.wind[cell_spec_type].spectra)
 
     def create_wind_tables(self):
