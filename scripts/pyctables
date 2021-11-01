@@ -19,8 +19,8 @@ p.add_argument("-l", "--loud", default=False, action="store_true", help="Suppres
 args = p.parse_args()
 
 # ion fractions
-pypython.create_wind_save_tables(args.root, args.fp, False, False, args.version, args.loud)
+pypython.create_wind_save_tables(args.root, args.filepath, False, False, args.version, args.loud)
 # ion densities
-pypython.create_wind_save_tables(args.root, args.fp, True, False, args.version, args.loud)
+pypython.create_wind_save_tables(args.root, args.filepath, True, False, args.version, args.loud)
 # cell spectra
-pypython.create_wind_save_tables(args.root, args.fp, False, True, args.version, args.loud)
+pypython.create_wind_save_tables(args.root, args.filepath, False, True, args.version, args.loud)
