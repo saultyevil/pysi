@@ -456,7 +456,7 @@ def multiple_models(output_name,
                     things_to_plot,
                     xmin=None,
                     xmax=None,
-                    multiply_by_spatial_units=False,
+                    multiply_by_spectral_units=False,
                     alpha=0.7,
                     scale="loglog",
                     label_lines=True,
@@ -491,7 +491,7 @@ def multiple_models(output_name,
         The lower x boundary of the plot
     xmax: float [optional]
         The upper x boundary for the plot
-    multiply_by_spatial_units: bool [optional]
+    multiply_by_spectral_units: bool [optional]
         Plot in flux units, instead of flux density.
     alpha: float [optional]
         The transparency of the plotted spectra.
@@ -572,7 +572,7 @@ def multiple_models(output_name,
             if np.count_nonzero(y) == 0:  # skip arrays which are all zeros
                 continue
 
-            if multiply_by_spatial_units:
+            if multiply_by_spectral_units:
                 if spectrum.units == pypython.spectrum.SpectrumUnits.f_lm:
                     y *= spectrum["Lambda"]
                 else:
@@ -588,7 +588,7 @@ def multiple_models(output_name,
             ax[n].plot(x, y, label=label, alpha=alpha)
 
         ax[n] = pyplt.set_axes_scales(ax[n], scale)
-        ax[n] = set_axes_labels(ax[n], spectra_to_plot[0], multiply_by_spatial_units=multiply_by_spatial_units)
+        ax[n] = set_axes_labels(ax[n], spectra_to_plot[0], multiply_by_spatial_units=multiply_by_spectral_units)
 
         if thing.isdigit():
             ax[n].set_title(f"{thing}" + r"$^{\circ}$")
@@ -775,7 +775,7 @@ def optical_depth(spectrum,
     ax.legend(loc="upper left")
 
     if label_edges:
-        ax = add_line_ids(ax, photoionization_edges(spectral_axis=units), linestyle="none", offset=0)
+        ax = add_line_ids(ax, photoionization_edges(spectrum), linestyle="none", offset=0)
 
     spectrum.set(current)
     fig = pyplt.finish_figure(fig)
