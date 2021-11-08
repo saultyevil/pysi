@@ -191,10 +191,10 @@ class CellSpectra:
 
         if self.nx == 0 or self.nz == 0:
             try:
-                self.nx = int(pypython.simulation.grid.get_parameter_value(self.pf, "Wind.dim.in.x_or_r.direction"))
+                self.nx = int(pypython.simulation.grid.get_parameter(self.pf, "Wind.dim.in.x_or_r.direction"))
                 if len(self.header[1]) > LEN_WHEN_1D_MODEL:
                     self.nz = int(
-                        pypython.simulation.grid.get_parameter_value(self.pf, "Wind.dim.in.z_or_theta.direction"))
+                        pypython.simulation.grid.get_parameter(self.pf, "Wind.dim.in.z_or_theta.direction"))
             except (ValueError, IOError):
                 self.nx = self.cells[-1][0] + 1
                 self.nz = self.cells[-1][1] + 1
@@ -965,7 +965,7 @@ class Wind:
         if not co_mass_in_msol:
             try:
                 co_mass_in_msol = float(
-                    pypython.simulation.grid.get_parameter_value(self.pf, "Central_object.mass(msol)"))
+                    pypython.simulation.grid.get_parameter(self.pf, "Central_object.mass(msol)"))
             except Exception as e:
                 print(e)
                 raise ValueError("unable to find CO mass from parameter file, please supply the mass instead")
@@ -1007,7 +1007,7 @@ class Wind:
         if not co_mass_in_msol:
             try:
                 co_mass_in_msol = float(
-                    pypython.simulation.grid.get_parameter_value(self.pf, "Central_object.mass(msol)"))
+                    pypython.simulation.grid.get_parameter(self.pf, "Central_object.mass(msol)"))
             except Exception as e:
                 print(e)
                 raise ValueError("unable to find CO mass from parameter file, please supply the mass instead")
