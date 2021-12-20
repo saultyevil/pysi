@@ -427,7 +427,11 @@ class ModelledCellSpectra:
                 # from this
 
                 if band_freq_max > band_freq_min:
-                    model_type = band["spec_mod_type"]
+                    try:
+                        model_type = band["spec_mod_type"]
+                    except KeyError:
+                        return  # TODO: need to do something smart when the file is broken
+
                     frequency = np.logspace(np.log10(band_freq_min), np.log10(band_freq_max), self.n_bins_per_band)
 
                     # There are two model types, a power law or an exponential
