@@ -5,6 +5,5 @@ SQLAlchemy==1.4.15
 matplotlib==3.3.4
 pandas==1.2.4
 dust_extinction==1.0
-scipy==1.6.2
+scipy==1.6.3
 astropy==4.2.1
-protobuf==3.17.3

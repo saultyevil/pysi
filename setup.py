@@ -40,8 +40,14 @@ setup(
       scripts=scripts,
       zip_safe=False,
       install_requires=[
-            "matplotlib", "scipy", "numpy", "pandas", "astropy", "numba",
-            "psutil", "sphinx", "karma_sphinx_theme", "sqlalchemy",
-            "dust_extinction", "protobuf"
+            "numba==0.53.1",
+            "numpy==1.20.2",
+            "psutil==5.8.0",
+            "SQLAlchemy==1.4.15",
+            "matplotlib==3.3.4",
+            "pandas==1.2.4",
+            "dust_extinction==1.0",
+            "scipy==1.6.3",
+            "astropy==4.2.1"
       ]
 )
