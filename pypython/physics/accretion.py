@@ -14,7 +14,7 @@ from pypython.physics.blackbody import planck_lambda, planck_nu
 from pypython.physics.blackhole import (gravitational_radius, innermost_stable_circular_orbit)
 
 
-def _calculate_disc_spectrum(m_co, mdot, radius, frequency_bins, modified_teff, freq_units):
+def _calculate_disc_spectrum(m_co, mdot, radius, frequency_bins, modified_teff, freq_units, colour_correction=1):
     """Calculate the accretion disc spectrum using jit.
 
     Parameters
@@ -31,6 +31,8 @@ def _calculate_disc_spectrum(m_co, mdot, radius, frequency_bins, modified_teff, 
         Whether to use a modified Eddington T_eff profile or not.
     freq_units: bool
         Whether to return in frequency or wavelength units.
+    correction: float
+        The colour correction factor.
 
     Returns
     -------
@@ -49,13 +51,14 @@ def _calculate_disc_spectrum(m_co, mdot, radius, frequency_bins, modified_teff, 
         if modified_teff:
             t_eff = modified_eddington_alpha_disc_effective_temperature(r, m_co, mdot)
         else:
-
             t_eff = alpha_disc_effective_temperature(r, radius[0], m_co, mdot)
 
         if freq_units:
-            f = planck_nu(t_eff, frequency_bins)
+            f = planck_nu(t_eff, frequency_bins, colour_correction)
         else:
             f = planck_lambda(t_eff, frequency_bins)
+
+
 
         lum += f * area_annulus * PI
 
@@ -98,6 +101,7 @@ def create_disc_spectrum(m_co,
                          r_out,
                          freq_min,
                          freq_max,
+                         colour_correction=1,
                          n_freq=5000,
                          n_rings=5000,
                          modified_teff=False,
@@ -121,6 +125,8 @@ def create_disc_spectrum(m_co,
         The low frequency boundary of the spectrum to create.
     freq_max: float
         The high frequency boundary of the spectrum to create.
+    factor: float
+        The colour correction factor.
     n_freq: int
         The number of frequency bins in the spectrum.
     n_rings: int
@@ -146,7 +152,7 @@ def create_disc_spectrum(m_co,
     xbins = np.linspace(freq_min, freq_max, n_freq)
     radius = np.logspace(np.log10(r_in), np.log10(r_out), n_rings)
 
-    s = {xlabel: xbins, "Lum.": _calculate_disc_spectrum(m_co, float(mdot), radius, xbins, modified_teff, freq_units)}
+    s = {xlabel: xbins, "Lum.": _calculate_disc_spectrum(m_co, float(mdot), radius, xbins, modified_teff, freq_units, colour_correction)}
 
     return s
 
