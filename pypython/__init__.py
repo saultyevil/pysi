@@ -34,7 +34,7 @@ import pypython.wind
 # Dictionary class -------------------------------------------------------------
 
 
-class _AttributeDict(dict):
+class AttributeDict(dict):
     """A modified dictionary class.
 
     This class allows users to use . (dot) notation to also access the
