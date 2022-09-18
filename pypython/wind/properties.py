@@ -47,15 +47,33 @@ class WindProperties:
         self.__original_parameters = None
         self.mask_value = mask_value
 
+        # Read in all the variables, spectra, etc.
+
         self.read_in_wind_variables()
         self.read_in_wind_ions()
         self.read_in_cell_spectra()
+        self.read_in_cell_models()
+
+        # Create masked arrays
 
         if mask_value or mask_value in WIND_CELL_TYPES:
             self.mask_arrays(mask_value)
 
-    def get_variables_for_table(self, table: str) -> Tuple[list, dict]:
-        """Get variables for a specific table type."""
+    def get_variables_for_table(self, table: str) -> Tuple[List[str], numpy.ndarray]:
+        """Get variables for a specific table type.
+
+        Parameters
+        ----------
+        table: str
+            The type of table to read in, e.g. master, heat, etc.
+
+        Returns
+        -------
+        table_header: List[str]
+            The table headers for each column.
+        table_parameters: numpy.ndarray
+            An array of the numerical values of the table.
+        """
 
         file_path = pathlib.Path(f"{self.directory}/{self.root}.{table}.txt")
 
@@ -116,7 +134,7 @@ class WindProperties:
 
         Parameters
         ----------
-        elements: List[str], optional
+        elements_to_read: List[str], optional
             A list of atomic element names, e.g. H, He, whose ions in the wind
             will attempted to be read in. The default value is to try to read in
             all elements up to Cobalt.
@@ -129,7 +147,7 @@ class WindProperties:
         # the elements passed to the function
 
         for ion_type in ["frac", "den"]:
-            for element in elements:
+            for element in elements_to_read:
                 table_header, table_parameters = self.get_variables_for_table(f"{element}.{ion_type}")
 
                 if not table_header:
@@ -148,7 +166,7 @@ class WindProperties:
         if n_read == 0:
             raise IOError("Have been unable to read in any wind ion tables")
 
-    def read_in_cell_spectra(self):
+    def read_in_cell_spectra(self) -> None:
         """Read in the cell spectra"""
 
         spec_table_files = pypython.find("*xspec.*.txt", self.directory)
@@ -248,14 +266,14 @@ class WindProperties:
         for item in to_mask:
             self.parameters[item] = numpy.ma.masked_where(mask_expression, self.parameters[item])
 
-    def unmask_arrays(self):
+    def unmask_arrays(self) -> None:
         """Unmask the arrays.
 
         Uses a copy of the original table variables to revert the masking.
         """
         self.parameters = copy.deepcopy(self.__original_parameters)
 
-    def smooth_spectra(self, amount: int):
+    def smooth_spectra(self, amount: int) -> None:
         """Smooth the cell spectra.
 
         Uses a boxcar filter to smooth the cell spectra.
@@ -269,14 +287,14 @@ class WindProperties:
             for j in range(self.nz):
                 self.parameters["spec"][i, j] = pypython.smooth_array(self.parameters["spec"][i, j], amount)
 
-    def unsmooth_spectra(self):
+    def unsmooth_spectra(self) -> None:
         """Unsmooth the arrays.
 
         Uses a copy of the original spectra to revert the smoothing.
         """
         self.parameters["spec"] = copy.deepcopy(self.__original_parameters["spec"])
 
-    def get_elem_number_from_ij(self, i: int, j: int):
+    def get_elem_number_from_ij(self, i: int, j: int) -> int:
         """Get the wind element number for a given i and j index.
 
         Used when indexing into a 1D array, such as in Python itself.
@@ -290,7 +308,7 @@ class WindProperties:
         """
         return int(self.nz * i + j)
 
-    def get_ij_from_elem_number(self, elem: int):
+    def get_ij_from_elem_number(self, elem: int) -> Tuple[int, int]:
         """Get the i and j index for a given wind element number.
 
         Used when converting a wind element number into two indices for use
@@ -308,7 +326,7 @@ class WindProperties:
 
     # Special methods ----------------------------------------------------------
 
-    def __getattr__(self, key: str):
+    def __getitem__(self, key: str) -> numpy.ndarray:
         # if no frac or den is no specified for an ion, default to fractional
         # populations
         if re.match("[A-Z]_i[0-9]+", key):  # matches ion specification, e.g. C_i04
@@ -317,21 +335,13 @@ class WindProperties:
 
         return self.parameters.get(key)
 
-    def __getitem__(self, key: str):
-        # if no frac or den is no specified for an ion, default to fractional
-        # populations
-        if re.match("[A-Z]_i[0-9]+", key):  # matches ion specification, e.g. C_i04
-            if re.match("[A-Z]_i[0-9]+$", key):  # but no type specification at the end, e.g. C_i04_frac
-                key += "_frac"
-
-        return self.parameters.get(key)
-
-    def __str__(self):
+    def __str__(self) -> str:
         return textwrap.dedent(
             f"""
             This is a Wind object, containing data for:
             Root:       {self.root}
             Directory:  {self.directory}
             Mask value: {self.mask_value}
+            Coord type: {self.coord_type}
             """
         )
