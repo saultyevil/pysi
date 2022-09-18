@@ -12,6 +12,7 @@ import textwrap
 from typing import Callable, List, Tuple, Union
 
 import numpy
+from astropy import constants as const
 
 import pypython
 from pypython.wind import elements
@@ -42,6 +43,7 @@ class WindProperties:
 
         self.n_x = int(0)
         self.n_z = int(0)
+        self.n_cells = int(0)
         self.coord_type = "unknown"
 
         self.parameters = {}
@@ -122,6 +124,7 @@ class WindProperties:
         self.n_x = int(numpy.max(self.parameters["i"]) + 1)
         if "z" in self.parameter_keys or "theta" in self.parameter_keys:
             self.n_z = int(numpy.max(self.parameters["j"]) + 1)
+        self.n_cells = int(self.n_x * self.n_z)
 
         if "r" in self.parameters and "theta" in self.parameters:
             self.coord_type = "polar"
@@ -189,13 +192,17 @@ class WindProperties:
 
             # Populate the parameters dict
 
-            if "freq" not in self.parameters:
-                self.parameters["freq"] = file_array[:, 0]
-            if "spec" not in self.parameters:
+            if "spec_freq" not in self.parameters:
                 if self.n_z > 0:
-                    self.parameters["spec"] = numpy.zeros((self.n_x, self.n_z, len(file_array[:, 0])))
+                    self.parameters["spec_freq"] = numpy.zeros((self.n_x, self.n_z, len(file_array[:, 0])))
                 else:
-                    self.parameters["spec"] = numpy.zeros((self.n_x, len(file_array[:, 0])))
+                    self.parameters["spec_freq"] = numpy.zeros((self.n_x, len(file_array[:, 0])))
+
+            if "spec_flux" not in self.parameters:
+                if self.n_z > 0:
+                    self.parameters["spec_flux"] = numpy.zeros((self.n_x, self.n_z, len(file_array[:, 0])))
+                else:
+                    self.parameters["spec_flux"] = numpy.zeros((self.n_x, len(file_array[:, 0])))
 
             # Go through each coord string and figure out the coords, and place
             # the spectrum into 1d/2d array
@@ -203,11 +210,95 @@ class WindProperties:
             for i, coord_string in enumerate(file_header):
                 coords = numpy.array(coord_string[1:].split("_"), dtype=numpy.int32)
                 if self.n_z > 0:
-                    self.parameters["spec"][coords[0], coords[1], :] = file_array[:, i + 1]
+                    self.parameters["spec_flux"][coords[0], coords[1], :] = file_array[:, i + 1]
+                    self.parameters["spec_freq"][coords[0], coords[1], :] = file_array[:, 0]
                 else:
-                    self.parameters["spec"][coords[0], :] = file_array[:, i + 1]
+                    self.parameters["spec_flux"][coords[0], :] = file_array[:, i + 1]
+                    self.parameters["spec_freq"][coords[0], :] = file_array[:, 0]
 
-    def mask_arrays(self, mask_value: Union[int, Callable[[int, int], bool]]):
+    def read_in_cell_models(self, n_freq_bins_per_band: int = 250) -> None:
+        """Read in the J_nu models for each cell.
+
+        Parameters
+        ----------
+        n_freq_bins: int
+            The number of frequency bins to use for the model.
+        """
+
+        table_header, models = self.get_variables_for_table("spec")
+        model_array = numpy.array(models, dtype=numpy.float64)
+        n_bands = int(numpy.max(model_array[:, table_header.index("nband")])) + 1
+
+        if "model_freq" not in self.parameters:
+            if self.n_z > 0:
+                self.parameters["model_freq"] = numpy.zeros((self.n_x, self.n_z, n_bands * n_freq_bins_per_band))
+            else:
+                self.parameters["model_freq"] = numpy.zeros((self.n_x, n_bands * n_freq_bins_per_band))
+
+        if "model_flux" not in self.parameters:
+            if self.n_z > 0:
+                self.parameters["model_flux"] = numpy.zeros((self.n_x, self.n_z, n_bands * n_freq_bins_per_band))
+            else:
+                self.parameters["model_flux"] = numpy.zeros((self.n_x, n_bands * n_freq_bins_per_band))
+
+        # The next block will loop over each cell and constuct a model for each
+        # frequency band, and put that (and the frequency bins) into an array
+        # for each cell.
+
+        for i in range(self.n_cells):
+
+            i_cell, j_cell = self.get_ij_from_elem_number(i)
+            cell_frequency = numpy.zeros(n_bands * n_freq_bins_per_band)
+            cell_flux = numpy.zeros_like(cell_frequency)
+
+            for j in range(n_bands):
+
+                # create a dict of the parameters for band j, the table is a
+                # flat list of the parameters for cell 1, 2, 3, ... for BAND 0,
+                # and then the next section is the parameters for cell 1, 2,
+                # 3... for BAND 1. So we have to do some funky indexing to get
+                # to the correct row element in model_array
+
+                parameters_for_band_j = {
+                    col: model_array[i + j * self.n_cells, k] for k, col in enumerate(table_header)
+                }
+
+                band_freq_min = parameters_for_band_j["fmin"]
+                band_freq_max = parameters_for_band_j["fmax"]
+
+                # check first that the band hasn't broken in python or if the
+                # band is empty as when empty fmin == fmax == 0
+
+                if band_freq_max > band_freq_min:
+                    band_frequency_bins = numpy.logspace(
+                        numpy.log10(band_freq_min), numpy.log10(band_freq_max), n_freq_bins_per_band
+                    )
+
+                    # model_type 1 == powerlaw model, otherwise 2 == exponential
+                    # this is the noclumentaure used in python :-)
+
+                    model_type = parameters_for_band_j["spec_mod_type"]
+
+                    if model_type == 1:
+                        band_flux = 10 ** (
+                            parameters_for_band_j["pl_log_w"]
+                            + numpy.log10(band_frequency_bins) * parameters_for_band_j["pl_alpha"]
+                        )
+                    else:
+                        band_flux = parameters_for_band_j["exp_w"] * numpy.exp(
+                            (-1 * const.h.cgs.value * band_frequency_bins)
+                            / (parameters_for_band_j["exp_temp"] * const.k_B.cgs.value)
+                        )
+
+                    # stuff into pre-allocated array with some slicing
+
+                    cell_frequency[j * n_freq_bins_per_band : (j + 1) * n_freq_bins_per_band] = band_frequency_bins
+                    cell_flux[j * n_freq_bins_per_band : (j + 1) * n_freq_bins_per_band] = band_flux
+
+            self.parameters["model_freq"][i_cell, j_cell] = cell_frequency
+            self.parameters["model_flux"][i_cell, j_cell] = cell_flux
+
+    def mask_arrays(self, mask_value: Union[int, Callable[[int, int], bool]]) -> None:
         """Create masked parameter arrays.
 
         It is possible to remask the parameter arrays by calling this function
@@ -255,8 +346,10 @@ class WindProperties:
             "i",
             "j",
             "inwind",
-            "freq",
-            "spec",
+            "spec_freq",
+            "spec_flux",
+            "model_freq",
+            "model_flux",
         ]
 
         to_mask = [item for item in self.parameter_keys if item not in items_to_not_mask]
@@ -274,27 +367,6 @@ class WindProperties:
         """
         self.parameters = copy.deepcopy(self.__original_parameters)
 
-    def smooth_spectra(self, amount: int) -> None:
-        """Smooth the cell spectra.
-
-        Uses a boxcar filter to smooth the cell spectra.
-
-        Parameters
-        ----------
-        amount: int
-            The pixel width for a boxcar filter.
-        """
-        for i in range(self.nx):
-            for j in range(self.nz):
-                self.parameters["spec"][i, j] = pypython.smooth_array(self.parameters["spec"][i, j], amount)
-
-    def unsmooth_spectra(self) -> None:
-        """Unsmooth the arrays.
-
-        Uses a copy of the original spectra to revert the smoothing.
-        """
-        self.parameters["spec"] = copy.deepcopy(self.__original_parameters["spec"])
-
     def get_elem_number_from_ij(self, i: int, j: int) -> int:
         """Get the wind element number for a given i and j index.
 
@@ -307,7 +379,7 @@ class WindProperties:
         j: int
             The j-th index of the cell.
         """
-        return int(self.nz * i + j)
+        return int(self.n_z * i + j)
 
     def get_ij_from_elem_number(self, elem: int) -> Tuple[int, int]:
         """Get the i and j index for a given wind element number.
@@ -320,8 +392,8 @@ class WindProperties:
         elem: int
             The element number.
         """
-        i = int(elem / self.nz)
-        j = int(elem - i * self.nz)
+        i = int(elem / self.n_z)
+        j = int(elem - i * self.n_z)
 
         return i, j
 
