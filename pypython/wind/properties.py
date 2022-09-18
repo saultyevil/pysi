@@ -45,6 +45,7 @@ class WindProperties:
         self.n_z = int(0)
         self.n_cells = int(0)
         self.coord_type = "unknown"
+        self.n_model_freq_bands = int(0)
 
         self.parameters = {}
         self.__original_parameters = None
@@ -227,29 +228,27 @@ class WindProperties:
 
         table_header, models = self.get_variables_for_table("spec")
         model_array = numpy.array(models, dtype=numpy.float64)
-        n_bands = int(numpy.max(model_array[:, table_header.index("nband")])) + 1
+        self.n_model_freq_bands = n_bands = int(numpy.max(model_array[:, table_header.index("nband")])) + 1
 
         if "model_freq" not in self.parameters:
             if self.n_z > 0:
-                self.parameters["model_freq"] = numpy.zeros((self.n_x, self.n_z, n_bands * n_freq_bins_per_band))
+                self.parameters["model_freq"] = numpy.zeros((self.n_x, self.n_z), dtype=list)
             else:
-                self.parameters["model_freq"] = numpy.zeros((self.n_x, n_bands * n_freq_bins_per_band))
+                self.parameters["model_freq"] = numpy.zeros((self.n_x, n_bands), dtype=list)
 
         if "model_flux" not in self.parameters:
             if self.n_z > 0:
-                self.parameters["model_flux"] = numpy.zeros((self.n_x, self.n_z, n_bands * n_freq_bins_per_band))
+                self.parameters["model_flux"] = numpy.zeros((self.n_x, self.n_z), dtype=list)
             else:
-                self.parameters["model_flux"] = numpy.zeros((self.n_x, n_bands * n_freq_bins_per_band))
+                self.parameters["model_flux"] = numpy.zeros(self.n_x, dtype=list)
 
         # The next block will loop over each cell and constuct a model for each
         # frequency band, and put that (and the frequency bins) into an array
         # for each cell.
 
         for i in range(self.n_cells):
-
-            i_cell, j_cell = self.get_ij_from_elem_number(i)
-            cell_frequency = numpy.zeros(n_bands * n_freq_bins_per_band)
-            cell_flux = numpy.zeros_like(cell_frequency)
+            cell_frequency = []
+            cell_flux = []
 
             for j in range(n_bands):
 
@@ -290,13 +289,13 @@ class WindProperties:
                             / (parameters_for_band_j["exp_temp"] * const.k_B.cgs.value)
                         )
 
-                    # stuff into pre-allocated array with some slicing
+                    cell_frequency.append(band_frequency_bins)
+                    cell_flux.append(band_flux)
 
-                    cell_frequency[j * n_freq_bins_per_band : (j + 1) * n_freq_bins_per_band] = band_frequency_bins
-                    cell_flux[j * n_freq_bins_per_band : (j + 1) * n_freq_bins_per_band] = band_flux
-
-            self.parameters["model_freq"][i_cell, j_cell] = cell_frequency
-            self.parameters["model_flux"][i_cell, j_cell] = cell_flux
+            if len(cell_flux) != 0:
+                i_cell, j_cell = self.get_ij_from_elem_number(i)
+                self.parameters["model_freq"][i_cell, j_cell] = numpy.hstack(cell_frequency)
+                self.parameters["model_flux"][i_cell, j_cell] = numpy.hstack(cell_flux)
 
     def mask_arrays(self, mask_value: Union[int, Callable[[int, int], bool]]) -> None:
         """Create masked parameter arrays.
