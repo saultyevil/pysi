@@ -6,8 +6,6 @@ as well as the most basic variables which describe the wind.
 """
 
 import copy
-from email import header
-from importlib.util import spec_from_file_location
 import pathlib
 import re
 import textwrap
@@ -16,7 +14,7 @@ from typing import Callable, List, Tuple, Union
 import numpy
 
 import pypython
-import pypython.wind_class.elements
+import pypython.wind.elements
 
 PARTIALLY_INWIND = int(1)
 INWIND = int(0)
@@ -44,10 +42,7 @@ class WindProperties:
         self.nx = int(0)
         self.nz = int(0)
         self.parameters = pypython.AttributeDict()
-        self.spectra = pypython.AttributeDict()
         self.__original_parameters = None
-        self.__original_spectra = None
-
         self.mask_value = mask_value
 
         self.read_in_wind_variables()
@@ -104,7 +99,7 @@ class WindProperties:
         if "z" in self.parameter_keys or "theta" in self.parameter_keys:
             self.nz = int(numpy.max(self.parameters["j"]) + 1)
 
-    def read_in_wind_ions(self, elements: List[str] = pypython.wind_class.elements.ELEMENTS) -> None:
+    def read_in_wind_ions(self, elements: List[str] = pypython.wind.elements.ELEMENTS) -> None:
         """Read in the different ions in the wind.
 
         Parameters
@@ -258,14 +253,16 @@ class WindProperties:
         amount: int
             The pixel width for a boxcar filter.
         """
-        pass
+        for i in range(self.nx):
+            for j in range(self.nz):
+                self.parameters["spec"][i, j] = pypython.smooth_array(self.parameters["spec"][i, j], amount)
 
     def unsmooth_spectra(self):
         """Unsmooth the arrays.
 
         Uses a copy of the original spectra to revert the smoothing.
         """
-        self.spectra = copy.deepcopy(self.__original_spectra)
+        self.parameters["spec"] = copy.deepcopy(self.__original_parameters["spec"])
 
     def get_elem_number_from_ij(self, i: int, j: int):
         """Get the wind element number for a given i and j index.

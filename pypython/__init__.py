@@ -27,7 +27,8 @@ import pypython.plot
 import pypython.simulation
 import pypython.spectrum
 import pypython.util
-import pypython.wind
+
+# import pypython.wind_old
 
 # Import all the things which will be able to be seen
 
@@ -40,6 +41,7 @@ class AttributeDict(dict):
     This class allows users to use . (dot) notation to also access the
     contents of a dictionary.
     """
+
     def __getattr__(self, key):
         try:
             return self[key]
@@ -171,8 +173,8 @@ def create_run_script(commands):
 
     file = "#!/bin/bash\n\ndeclare -a directories=(\n"
     for fp in paths:
-        file += "\t\"{}\"\n".format(fp)
-    file += ")\n\ncwd=$(pwd)\nfor i in \"${directories[@]}\"\ndo\n\tcd $i\n\tpwd\n"
+        file += '\t"{}"\n'.format(fp)
+    file += ')\n\ncwd=$(pwd)\nfor i in "${directories[@]}"\ndo\n\tcd $i\n\tpwd\n'
     if len(commands) > 1:
         for k in range(len(commands) - 1):
             file += "\t{}\n".format(commands[k + 1])
@@ -209,7 +211,8 @@ def create_slurm_file(name, n_cores, n_hours, n_minutes, py_flags, py_run_flags,
         The directory to write the file to
     """
 
-    slurm = textwrap.dedent(f"""\
+    slurm = textwrap.dedent(
+        f"""\
         #!/bin/bash
         #SBATCH --mail-user=ejp1n17@soton.ac.uk
         #SBATCH --mail-type=ALL
@@ -220,7 +223,8 @@ def create_slurm_file(name, n_cores, n_hours, n_minutes, py_flags, py_run_flags,
         module load conda/py3-latest
         source activate pypython
         python /home/ejp1n17/PythonScripts/pyrun -n {n_cores} {py_run_flags} -f='{py_flags}'
-        """)
+        """
+    )
 
     if fp[-1] != "/":
         fp += "/"
@@ -273,7 +277,8 @@ def create_wind_save_tables(root, fp=".", ion_density=False, cell_spec=False, ve
     cmd = pypython.util.run_command(command, fp, verbose)
     if cmd.returncode != 0:
         raise err.RunError(
-            f"windsave2table has failed to run, possibly due to an incompatible version\n{cmd.stdout.decode('utf-8')}")
+            f"windsave2table has failed to run, possibly due to an incompatible version\n{cmd.stdout.decode('utf-8')}"
+        )
 
     files_after = listdir(fp)
 
@@ -312,7 +317,7 @@ def find(pattern, fp="."):
         files = [this_file for this_file in files if "out.pf" not in this_file and "py_wind" not in this_file]
 
     try:
-        files.sort(key=lambda var: [int(x) if x.isdigit() else x for x in re.findall(r'[^0-9]|[0-9]+', var)])
+        files.sort(key=lambda var: [int(x) if x.isdigit() else x for x in re.findall(r"[^0-9]|[0-9]+", var)])
     except TypeError:
         files.sort()
 
@@ -373,7 +378,7 @@ def get_python_version():
     version = None
     for line in stdout:
         if line.startswith("Python Version"):
-            version = line[len("Python Version") + 1:]
+            version = line[len("Python Version") + 1 :]
 
     return version
 
@@ -401,8 +406,8 @@ def get_root_name(fp):
     dot = fp.rfind(".")
     slash = fp.rfind("/")
 
-    root = fp[slash + 1:dot]
-    fp = fp[:slash + 1]
+    root = fp[slash + 1 : dot]
+    fp = fp[: slash + 1]
 
     if fp == "":
         fp = "./"
@@ -478,7 +483,7 @@ def smooth_array(array, width):
     if width is None or width == 0:
         return array
 
-    array = np.reshape(array, (len(array), ))  # todo: why do I have to do this? safety probably
+    array = np.reshape(array, (len(array),))  # todo: why do I have to do this? safety probably
 
     return convolve(array, boxcar(width) / float(width), mode="same")
 
@@ -538,7 +543,7 @@ def run_py_wind(root, commands, fp="."):
 # Load in all the submodules ---------------------------------------------------
 
 Spectrum = pypython.spectrum.Spectrum
-Wind = pypython.wind.Wind
+# Wind = pypython.wind_old.Wind
 
 __all__ = [
     # functions in pypython
@@ -566,10 +571,10 @@ __all__ = [
     "util",
     "wind",
     # classes
-    "Wind",
+    # "Wind",
     "Spectrum",
     # other things
-    "constants"
+    "constants",
 ]
 
-pypython.plot.normalize_figure_style()
+# pypython.plot.normalize_figure_style()

@@ -1,7 +1,7 @@
 """Variable containing the list of elements.
 
-All elements past Coblat (Co) have been commented out, as the atomic data in
-Python has no data for elements past Cobalt.
+All elements past Coblat (Co) have been commented out, as the atomic
+data in Python has no data for elements past Cobalt.
 """
 
 ELEMENTS = (

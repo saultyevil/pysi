@@ -1,5 +1,5 @@
-# #!/usr/bin/env python
-# # -*- coding: utf-8 -*-
+# # #!/usr/bin/env python
+# # # -*- coding: utf-8 -*-
 
 # import numpy as np
 # from matplotlib import pyplot as plt
@@ -289,4 +289,4 @@
 
 # from pypython.constants import PI
 # from pypython.plot import finish_figure, set_axes_scales
-# from pypython.wind import WindCoordSystem, WindDistanceUnits
+# from pypython.wind_old import WindCoordSystem, WindDistanceUnits
