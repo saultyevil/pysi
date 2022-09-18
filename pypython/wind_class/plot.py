@@ -1,11 +1,16 @@
-import pypython.wind_class.grid
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import pypython.wind_class.properties
 
 
-class WindPlot(pypython.wind_class.grid.WindGrid):
-    def __init__(self, root, directory, **kwargs):
+class WindPlot(pypython.wind_class.properties.WindProperties):
+    """An extension to the WindGrid base class which adds various plotting
+    functionality.
+    """
+
+    def __init__(self, root: str, directory: str, **kwargs):
         super().__init__(root, directory, **kwargs)
 
-        self.plot_this = "do it"
-
     def plot(self):
-        print("You are making a plot", self.plot_this)
+        pass
