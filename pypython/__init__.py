@@ -25,10 +25,9 @@ import pypython.observations
 import pypython.physics
 import pypython.plot
 import pypython.simulation
+import pypython.wind
 import pypython.spectrum
 import pypython.util
-
-# import pypython.wind_old
 
 # Import all the things which will be able to be seen
 
@@ -543,7 +542,7 @@ def run_py_wind(root, commands, fp="."):
 # Load in all the submodules ---------------------------------------------------
 
 Spectrum = pypython.spectrum.Spectrum
-# Wind = pypython.wind_old.Wind
+Wind = pypython.wind.Wind
 
 __all__ = [
     # functions in pypython
@@ -571,7 +570,7 @@ __all__ = [
     "util",
     "wind",
     # classes
-    # "Wind",
+    "Wind",
     "Spectrum",
     # other things
     "constants",
