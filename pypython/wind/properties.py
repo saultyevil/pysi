@@ -14,7 +14,8 @@ from typing import Callable, List, Tuple, Union
 import numpy
 
 import pypython
-import pypython.wind.elements
+from pypython.wind import elements
+
 
 PARTIALLY_INWIND = int(1)
 INWIND = int(0)
