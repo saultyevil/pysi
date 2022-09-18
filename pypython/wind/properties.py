@@ -39,9 +39,11 @@ class WindProperties:
         self.root = str(root)
         self.directory = pathlib.Path(directory)
 
-        self.nx = int(0)
-        self.nz = int(0)
-        self.parameters = pypython.AttributeDict()
+        self.n_x = int(0)
+        self.n_z = int(0)
+        self.coord_type = "unknown"
+
+        self.parameters = {}
         self.__original_parameters = None
         self.mask_value = mask_value
 
@@ -95,11 +97,21 @@ class WindProperties:
 
         self.parameter_keys = self.parameters.keys()
 
-        self.nx = int(numpy.max(self.parameters["i"]) + 1)
-        if "z" in self.parameter_keys or "theta" in self.parameter_keys:
-            self.nz = int(numpy.max(self.parameters["j"]) + 1)
+        # Determine the number of cells in the x and z direction, and the
+        # coordinate type of the grid
 
-    def read_in_wind_ions(self, elements: List[str] = pypython.wind.elements.ELEMENTS) -> None:
+        self.n_x = int(numpy.max(self.parameters["i"]) + 1)
+        if "z" in self.parameter_keys or "theta" in self.parameter_keys:
+            self.n_z = int(numpy.max(self.parameters["j"]) + 1)
+
+        if "r" in self.parameters and "theta" in self.parameters:
+            self.coord_type = "polar"
+        elif "r" in self.parameters:
+            self.coord_type = "spherical"
+        else:
+            self.coord_type = "cylindrical"
+
+    def read_in_wind_ions(self, elements_to_read: List[str] = elements.ELEMENTS) -> None:
         """Read in the different ions in the wind.
 
         Parameters
@@ -161,17 +173,17 @@ class WindProperties:
             if "freq" not in self.parameters:
                 self.parameters["freq"] = file_array[:, 0]
             if "spec" not in self.parameters:
-                if self.nz > 0:
-                    self.parameters["spec"] = numpy.zeros((self.nx, self.nz, len(file_array[:, 0])))
+                if self.n_z > 0:
+                    self.parameters["spec"] = numpy.zeros((self.n_x, self.n_z, len(file_array[:, 0])))
                 else:
-                    self.parameters["spec"] = numpy.zeros((self.nx, len(file_array[:, 0])))
+                    self.parameters["spec"] = numpy.zeros((self.n_x, len(file_array[:, 0])))
 
             # Go through each coord string and figure out the coords, and place
             # the spectrum into 1d/2d array
 
             for i, coord_string in enumerate(file_header):
                 coords = numpy.array(coord_string[1:].split("_"), dtype=numpy.int32)
-                if self.nz > 0:
+                if self.n_z > 0:
                     self.parameters["spec"][coords[0], coords[1], :] = file_array[:, i + 1]
                 else:
                     self.parameters["spec"][coords[0], :] = file_array[:, i + 1]
