@@ -575,5 +575,3 @@ __all__ = [
     # other things
     "constants",
 ]
-
-# pypython.plot.normalize_figure_style()
