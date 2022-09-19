@@ -40,7 +40,15 @@ class WindPlot(properties.WindProperties):
 
         return fig, ax
 
-    def plot_cell_spectrum(self, i: int, j: int = 0, axes_scales: str = "loglog") -> Tuple[plt.Figure, plt.Axes]:
+    def plot_cell_spectrum(
+        self,
+        i: int,
+        j: int = 0,
+        axes_scales: str = "loglog",
+        fig: plt.Figure = None,
+        ax: plt.Axes = None,
+        figsize: Tuple[int, int] = (12, 6),
+    ) -> Tuple[plt.Figure, plt.Axes]:
         """Plot a spectrum for a wind cell.
 
         Creates (and returns) a figure
@@ -61,9 +69,12 @@ class WindPlot(properties.WindProperties):
         ax: plt.Axes
             The axes object for the plot.
         """
-        fig, ax = plt.subplots(1, 1)
+        if not fig and not ax:
+            fig, ax = plt.subplots(figsize=figsize)
+        elif not fig and ax or fig and not ax:
+            raise ValueError("fig and ax need to be supplied together")
 
-        if self.coord_type == "polar":
+        if self.coord_type == "spherical":
             spectrum = self.parameters["spec_flux"][i]
             freq = self.parameters["spec_freq"][i]
         else:
@@ -79,7 +90,15 @@ class WindPlot(properties.WindProperties):
 
         return fig, ax
 
-    def plot_cell_model(self, i: int, j: int = 0, axes_scales: str = "loglog") -> Tuple[plt.Figure, plt.Axes]:
+    def plot_cell_model(
+        self,
+        i: int,
+        j: int = 0,
+        axes_scales: str = "loglog",
+        fig: plt.Figure = None,
+        ax: plt.Axes = None,
+        figsize: Tuple[int, int] = (12, 6),
+    ) -> Tuple[plt.Figure, plt.Axes]:
         """Plot a spectrum for a wind cell.
 
         Creates (and returns) a figure
@@ -100,7 +119,24 @@ class WindPlot(properties.WindProperties):
         ax: plt.Axes
             The axes object for the plot.
         """
-        fig, ax = plt.subplots(1, 1)
+        if not fig and not ax:
+            fig, ax = plt.subplots(figsize=figsize)
+        elif not fig and ax or fig and not ax:
+            raise ValueError("fig and ax need to be supplied together")
+
+        if self.coord_type == "spherical":
+            spectrum = self.parameters["model_flux"][i]
+            freq = self.parameters["model_freq"][i]
+        else:
+            spectrum = self.parameters["model_flux"][i, j]
+            freq = self.parameters["model_freq"][i, j]
+
+        ax.plot(freq, freq * spectrum, label="Spectrum")
+        ax.set_xlabel(r"Rest-frame Frequency [$\nu$]")
+        ax.set_ylabel(r"$\nu ~ J_{\nu}$ [ergs s$^{-1}$ cm$^{-2}$]")
+
+        ax = plot.set_axes_scales(ax, axes_scales)
+        fig = plot.finish_figure(fig, f"Model ({i}, {j}) spectrum")
 
         return fig, ax
 
