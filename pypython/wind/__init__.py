@@ -50,7 +50,7 @@ class Wind(plot.WindPlot):
             self.root, self.directory, cell_spec=True
         )  # TODO: check if I need a seperate cell_spec call
 
-    def change_units(self, new_units: Union[str, enum.Units]) -> None:
+    def change_units(self, new_units: Union[enum.DistanceUnits, enum.VelocityUnits]) -> None:
         """Change the spatial or velocity units."""
         pass
 

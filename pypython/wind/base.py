@@ -27,7 +27,7 @@ class WindBase:
 
     # Special methods ----------------------------------------------------------
 
-    def __init__(self, root: str, directory: str = "", mask_value: Union[int, Callable[[int], bool]] = INWIND) -> None:
+    def __init__(self, root: str, directory: str, mask_value: Union[int, Callable[[int], bool]] = INWIND) -> None:
         """Initialize the class.
 
         Parameters
@@ -62,6 +62,8 @@ class WindBase:
 
         self.read_in_wind_variables()
         self.read_in_wind_ions()
+
+        # TODO: these crash if the file is missing, or not formatted correctly
         self.read_in_cell_spectra()
         self.read_in_cell_models()
 
@@ -372,7 +374,9 @@ class WindBase:
                     # the re.match here is to ignore any spatial parameters,
                     # e.g. x, z or i and j
                     if re.match("i[0-9]+", column) and column not in self.parameters:
-                        self.parameters[f"{element}_{column}_{ion_type}"] = table_parameters[:, i]
+                        self.parameters[f"{element}_{column}_{ion_type}"] = table_parameters[:, i].reshape(
+                            self.n_x, self.n_z
+                        )
 
                 n_read += 1
 
@@ -417,6 +421,11 @@ class WindBase:
             self.coord_type = enum.CoordSystem.SPHERICAL
         else:
             self.coord_type = enum.CoordSystem.CYLINDRICAL
+
+        # Reshape the parameters into (nx, nz) which are currently just flat
+        # arrays
+
+        self.parameters = {col: val.reshape(self.n_x, self.n_z) for col, val in self.parameters.items()}
 
     def unmask_arrays(self) -> None:
         """Unmask the arrays.

@@ -38,6 +38,7 @@ class WindPlot(base.WindBase):
         axes_scales: str = "logx",
         fig: plt.Figure = None,
         ax: plt.Axes = None,
+        figsize: Tuple[int, int] = (8, 6),
         a_idx: int = 0,
         a_jdx: int = 0,
         **kwargs,
@@ -56,7 +57,14 @@ class WindPlot(base.WindBase):
         ax: plt.Axes
             The axes object for the plot.
         """
-        fig, ax = plt.subplots(1, 1)
+        if not fig and not ax:
+            if self.coord_type == enum.CoordSystem.POLAR:
+                subplot_kw = {"projection": "polar"}
+            else:
+                subplot_kw = None
+            fig, ax = plt.subplots(figsize=figsize, squeeze=False, subplot_kw=subplot_kw)
+        elif not fig and ax or fig and not ax:
+            raise ValueError("fig and ax need to be supplied together")
 
         if self.coord_type == "spherical":
             fig, ax = self.__wind1d(thing, axes_scales, fig, ax, a_idx, a_jdx, **kwargs)
@@ -361,7 +369,7 @@ class WindPlot(base.WindBase):
         if self.coord_type == enum.CoordSystem.CYLINDRICAL:
             x_points, z_points = self.parameters["x"], self.parameters["z"]
         else:
-            x_points, z_points = self.parameters["theta"], self.parameters["r"]
+            x_points, z_points = numpy.deg2rad(self.parameters["theta"]), self.parameters["r"]
 
         if thing not in self.parameter_keys:
             raise ValueError(f"Unknown parameter {thing}: {thing} not in wind tables")
