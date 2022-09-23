@@ -103,6 +103,9 @@ class WindPlot(base.WindBase):
         ax: plt.Axes
             The axes object for the plot.
         """
+        if self.parameters["spec_flux"] is None:
+            raise ValueError("There are no cell spectra for this simulation.")
+
         if not fig and not ax:
             fig, ax = plt.subplots(figsize=figsize)
         elif not fig and ax or fig and not ax:
@@ -154,6 +157,9 @@ class WindPlot(base.WindBase):
         ax: plt.Axes
             The axes object for the plot.
         """
+        if self.parameters["model_flux"] is None:
+            raise ValueError("There are no cell models for this simulation.")
+
         if not fig and not ax:
             fig, ax = plt.subplots(figsize=figsize)
         elif not fig and ax or fig and not ax:

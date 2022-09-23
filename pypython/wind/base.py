@@ -62,8 +62,6 @@ class WindBase:
 
         self.read_in_wind_variables()
         self.read_in_wind_ions()
-
-        # TODO: these crash if the file is missing, or not formatted correctly
         self.read_in_cell_spectra()
         self.read_in_cell_models()
 
@@ -228,9 +226,13 @@ class WindBase:
         n_freq_bins: int
             The number of frequency bins to use for the model.
         """
-
         table_header, models = self.get_variables_for_table("spec")
         model_array = numpy.array(models, dtype=numpy.float64)
+
+        if not model_array:
+            self.parameters["model_freq"]= self.parameters["model_flux"] = None
+            return
+
         self.n_model_freq_bands = n_bands = int(numpy.max(model_array[:, table_header.index("nband")])) + 1
 
         if "model_freq" not in self.parameters:
@@ -305,6 +307,7 @@ class WindBase:
 
         spec_table_files = pypython.find("*xspec.*.txt", self.directory)
         if len(spec_table_files) == 0:
+            self.parameters["spec_freq"] = self.parameters["spec_flux"] = None
             return
 
         for file in spec_table_files:
