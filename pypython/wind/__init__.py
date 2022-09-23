@@ -3,13 +3,13 @@
 
 """Contains the user facing Wind class."""
 
-from typing import Union
 import copy
+from typing import Union
+
 import numpy
 
 import pypython
-from pypython.wind import plot
-from pypython.wind import enum
+from pypython.wind import enum, plot
 
 
 class Wind(plot.WindPlot):
@@ -18,13 +18,18 @@ class Wind(plot.WindPlot):
     This class includes...
     """
 
-    def __init__(self, root: str, directory: str, **kwargs) -> None:
-        """Initialize the class."""
+    def __init__(self, root: str, directory: str = ".", **kwargs) -> None:
+        """Initialize the class.
 
+        Parameters
+        ----------
+        root: str
+            The root name of the simulation.
+        directory: str
+            The directory containing the simulation. By default this is assumed
+            to be the current working directory.
+        """
         super().__init__(root, directory, **kwargs)
-
-        self.spatial_units = enum.Units.CENTIMETRES
-        self.velocity_units = enum.Units.CENTIMETRES_PER_SECOND
 
         # self.x_coords = numpy.zeros(self.n_x)
         # self.z_coords = numpy.zeroS(self.n_z)
@@ -39,10 +44,10 @@ class Wind(plot.WindPlot):
         density ion tables and create the xspec cell spectra files.
         """
 
-        pypython.create_wind_save_tables(self.root, self.fp, ion_density=True)
-        pypython.create_wind_save_tables(self.root, self.fp, ion_density=False)
+        pypython.create_wind_save_tables(self.root, self.directory, ion_density=True)
+        pypython.create_wind_save_tables(self.root, self.directory, ion_density=False)
         pypython.create_wind_save_tables(
-            self.root, self.fp, cell_spec=True
+            self.root, self.directory, cell_spec=True
         )  # TODO: check if I need a seperate cell_spec call
 
     def change_units(self, new_units: Union[str, enum.Units]) -> None:
@@ -70,7 +75,7 @@ class Wind(plot.WindPlot):
     #     self.x_coords = numpy.unique(self.x_coords)
     #     self.z_coords = numpy.unique(self.z_coords)
 
-    def smooth_spectra(self, amount: int) -> None:
+    def smooth_cell_spectra(self, amount: int) -> None:
         """Smooth the cell spectra.
 
         Uses a boxcar filter to smooth the cell spectra.
@@ -84,7 +89,7 @@ class Wind(plot.WindPlot):
             for j in range(self.n_z):
                 self.parameters["spec"][i, j] = pypython.smooth_array(self.parameters["spec"][i, j], amount)
 
-    def unsmooth_spectra(self) -> None:
+    def unsmooth_cell_spectra(self) -> None:
         """Unsmooth the arrays.
 
         Uses a copy of the original spectra to revert the smoothing.

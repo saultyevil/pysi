@@ -15,15 +15,14 @@ import numpy
 from astropy import constants as const
 
 import pypython
-from pypython.wind import elements
-
+from pypython.wind import elements, enum
 
 PARTIALLY_INWIND = int(1)
 INWIND = int(0)
 WIND_CELL_TYPES = [INWIND, PARTIALLY_INWIND]
 
 
-class WindProperties:
+class WindBase:
     """Base wind class for describing a wind object."""
 
     # Special methods ----------------------------------------------------------
@@ -46,12 +45,18 @@ class WindProperties:
         self.n_x = int(0)
         self.n_z = int(0)
         self.n_cells = int(0)
-        self.coord_type = "unknown"
+        self.coord_type = enum.CoordSystem.UNKNOWN
         self.n_model_freq_bands = int(0)
 
         self.parameters = {}
         self.__original_parameters = None
         self.mask_value = mask_value
+
+        # These units are the default in python. In a higher level class, you
+        # should be able to modify the units
+
+        self.spatial_units = enum.DistanceUnits.CENTIMETRES
+        self.velocity_units = enum.VelocityUnits.CENTIMETRES_PER_SECOND
 
         # Read in all the variables, spectra, etc.
 
@@ -407,11 +412,11 @@ class WindProperties:
         self.n_cells = int(self.n_x * self.n_z)
 
         if "r" in self.parameters and "theta" in self.parameters:
-            self.coord_type = "polar"
+            self.coord_type = enum.CoordSystem.POLAR
         elif "r" in self.parameters:
-            self.coord_type = "spherical"
+            self.coord_type = enum.CoordSystem.SPHERICAL
         else:
-            self.coord_type = "cylindrical"
+            self.coord_type = enum.CoordSystem.CYLINDRICAL
 
     def unmask_arrays(self) -> None:
         """Unmask the arrays.
