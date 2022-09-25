@@ -19,8 +19,9 @@ class CoordSystem(Enum):
 class VelocityUnits(Enum):
     """Possible velocity conversions for Wind objects."""
 
-    KILOMETRES_PER_SECOND = auto()
     CENTIMETRES_PER_SECOND = auto()
+    METRES_PER_SECOND = auto()
+    KILOMETRES_PER_SECOND = auto()
     SPEED_OF_LIGHT = auto()
 
 
@@ -30,4 +31,4 @@ class DistanceUnits(Enum):
     CENTIMETRES = auto()
     METRES = auto()
     KILOMETRES = auto()
-    GRAVITATIONAL_RADII = auto()
+    GRAVITATIONAL_RADIUS = auto()

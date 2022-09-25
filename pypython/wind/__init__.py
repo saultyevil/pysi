@@ -16,6 +16,8 @@ class Wind(plot.WindPlot):
     """Main wind class for pypython.
 
     This class includes...
+
+    # TODO: add method to project into polar velocity
     """
 
     def __init__(self, root: str, directory: str = ".", **kwargs) -> None:
@@ -44,8 +46,6 @@ class Wind(plot.WindPlot):
         create the standard wind tables, as well as the fractional and
         density ion tables and create the xspec cell spectra files.
         """
-
-        # TODO: check if I need a seperate cell_spec call
         pypython.create_wind_save_tables(self.root, self.directory, ion_density=True)
         pypython.create_wind_save_tables(self.root, self.directory, ion_density=False)
         pypython.create_wind_save_tables(self.root, self.directory, cell_spec=True)
@@ -89,20 +89,8 @@ class Wind(plot.WindPlot):
     # Private methods ----------------------------------------------------------
 
     def __calculate_grav_radius(self) -> float:
-        """Calculate the gravitational radius of the model.
-        """
+        """Calculate the gravitational radius of the model."""
         return 0
-
-    def __change_velocity_units(self, new_units: enum.VelocityUnits) -> None:
-        """Change the velocity units of the wind.
-
-        Parameters
-        ----------
-        new_units: enum.VelocityUnits
-            The new velocity units.
-        """
-        if self.velocity_units == new_units:
-            return
 
     def __change_distance_units(self, new_units: enum.DistanceUnits):
         """Change the distance units of the wind.
@@ -115,14 +103,14 @@ class Wind(plot.WindPlot):
         if self.distance_units == new_units:
             return
 
-        si_conv = {
+        distance_conv_lookup = {
             enum.DistanceUnits.CENTIMETRES: 0.01,
             enum.DistanceUnits.METRES: 1,
             enum.DistanceUnits.KILOMETRES: 1000,
-            enum.DistanceUnits.GRAVITATIONAL_RADII: 0,
+            enum.DistanceUnits.GRAVITATIONAL_RADIUS: 0,
         }
 
-        conversion_factor = si_conv[self.distance_units] / si_conv[new_units]
+        conversion_factor = distance_conv_lookup[self.distance_units] / distance_conv_lookup[new_units]
 
         for quant in ("x", "z", "x_cen", "z_cen", "r", "r_cen"):
             if quant not in self.parameter_keys:
@@ -131,3 +119,30 @@ class Wind(plot.WindPlot):
 
         self.grav_radius *= conversion_factor
         self.distance_units = new_units
+
+    def __change_velocity_units(self, new_units: enum.VelocityUnits) -> None:
+        """Change the velocity units of the wind.
+
+        Parameters
+        ----------
+        new_units: enum.VelocityUnits
+            The new velocity units.
+        """
+        if self.velocity_units == new_units:
+            return
+
+        velocity_conv_lookup = {
+            enum.VelocityUnits.CENTIMETRES_PER_SECOND: 0.01,
+            enum.VelocityUnits.METRES_PER_SECOND: 1,
+            enum.VelocityUnits.KILOMETRES_PER_SECOND: 1000,
+            enum.VelocityUnits.SPEED_OF_LIGHT: 2.99792e8,
+        }
+
+        conversion_factor = velocity_conv_lookup[self.velocity_units] / velocity_conv_lookup[new_units]
+
+        for quant in ("v_x", "v_y", "v_z", "v_r", "v_theta"):
+            if quant not in self.parameter_keys:
+                continue
+            self.parameters[quant] *= conversion_factor
+
+        self.velocity_units = new_units
