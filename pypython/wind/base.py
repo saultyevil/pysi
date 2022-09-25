@@ -9,6 +9,7 @@ import copy
 import pathlib
 import re
 import textwrap
+import warnings
 from typing import Callable, List, Tuple, Union
 
 import numpy
@@ -55,7 +56,7 @@ class WindBase:
         # These units are the default in python. In a higher level class, you
         # should be able to modify the units
 
-        self.spatial_units = enum.DistanceUnits.CENTIMETRES
+        self.distance_units = enum.DistanceUnits.CENTIMETRES
         self.velocity_units = enum.VelocityUnits.CENTIMETRES_PER_SECOND
 
         # Read in all the variables, spectra, etc.
@@ -229,20 +230,20 @@ class WindBase:
         table_header, models = self.get_variables_for_table("spec")
         model_array = numpy.array(models, dtype=numpy.float64)
 
-        if not model_array:
-            self.parameters["model_freq"]= self.parameters["model_flux"] = None
+        if model_array.size == 0:
+            self.parameters["model_freq"] = self.parameters["model_flux"] = None
             return
 
         self.n_model_freq_bands = n_bands = int(numpy.max(model_array[:, table_header.index("nband")])) + 1
 
         if "model_freq" not in self.parameters:
-            if self.n_z > 0:
+            if self.n_z > 1:
                 self.parameters["model_freq"] = numpy.zeros((self.n_x, self.n_z), dtype=list)
             else:
                 self.parameters["model_freq"] = numpy.zeros((self.n_x, n_bands), dtype=list)
 
         if "model_flux" not in self.parameters:
-            if self.n_z > 0:
+            if self.n_z > 1:
                 self.parameters["model_flux"] = numpy.zeros((self.n_x, self.n_z), dtype=list)
             else:
                 self.parameters["model_flux"] = numpy.zeros(self.n_x, dtype=list)
@@ -281,7 +282,13 @@ class WindBase:
                     # model_type 1 == powerlaw model, otherwise 2 == exponential
                     # this is the noclumentaure used in python :-)
 
-                    model_type = parameters_for_band_j["spec_mod_type"]
+                    try:
+                        model_type = parameters_for_band_j["spec_mod_type"]
+                    except KeyError:
+                        warnings.warn(
+                            "The header for the model file is improperly formatted and cannot find 'spec_mode_type'"
+                        )
+                        return
 
                     if model_type == 1:
                         band_flux = 10 ** (
@@ -326,13 +333,13 @@ class WindBase:
             # Populate the parameters dict
 
             if "spec_freq" not in self.parameters:
-                if self.n_z > 0:
+                if self.n_z > 1:
                     self.parameters["spec_freq"] = numpy.zeros((self.n_x, self.n_z, len(file_array[:, 0])))
                 else:
                     self.parameters["spec_freq"] = numpy.zeros((self.n_x, len(file_array[:, 0])))
 
             if "spec_flux" not in self.parameters:
-                if self.n_z > 0:
+                if self.n_z > 1:
                     self.parameters["spec_flux"] = numpy.zeros((self.n_x, self.n_z, len(file_array[:, 0])))
                 else:
                     self.parameters["spec_flux"] = numpy.zeros((self.n_x, len(file_array[:, 0])))
@@ -342,7 +349,7 @@ class WindBase:
 
             for i, coord_string in enumerate(file_header):
                 coords = numpy.array(coord_string[1:].split("_"), dtype=numpy.int32)
-                if self.n_z > 0:
+                if self.n_z > 1:
                     self.parameters["spec_flux"][coords[0], coords[1], :] = file_array[:, i + 1]
                     self.parameters["spec_freq"][coords[0], coords[1], :] = file_array[:, 0]
                 else:
@@ -416,6 +423,8 @@ class WindBase:
         self.n_x = int(numpy.max(self.parameters["i"]) + 1)
         if "z" in self.parameter_keys or "theta" in self.parameter_keys:
             self.n_z = int(numpy.max(self.parameters["j"]) + 1)
+        else:
+            self.n_z = 1
         self.n_cells = int(self.n_x * self.n_z)
 
         if "r" in self.parameters and "theta" in self.parameters:
