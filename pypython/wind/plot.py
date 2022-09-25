@@ -14,18 +14,20 @@ from pypython import plot
 from pypython.wind import base, enum
 
 
-DISTANCE_AXIS_LABEL_LOOKUP = {
-    enum.DistanceUnits.CENTIMETRES: "[cm]",
-    enum.DistanceUnits.METRES: "[m]",
-    enum.DistanceUnits.KILOMETRES: "[km]",
-    enum.DistanceUnits.GRAVITATIONAL_RADII: r"$ / R_{g}$",
-}
-
-
 class WindPlot(base.WindBase):
     """An extension to the WindGrid base class which adds various plotting
     functionality.
+
+    # TODO: add units for things like velocity, obvious shit
+    # TODO: add general look up unit table for common quantities
     """
+
+    DISTANCE_AXIS_LABEL_LOOKUP = {
+        enum.DistanceUnits.CENTIMETRES: "[cm]",
+        enum.DistanceUnits.METRES: "[m]",
+        enum.DistanceUnits.KILOMETRES: "[km]",
+        enum.DistanceUnits.GRAVITATIONAL_RADIUS: r"$ / R_{g}$",
+    }
 
     def __init__(self, root: str, directory: str, **kwargs):
         """Initialize the class.
@@ -254,8 +256,8 @@ class WindPlot(base.WindBase):
         a_jdx
         """
         if self.coord_type == enum.CoordSystem.CYLINDRICAL:
-            ax[a_idx, a_jdx].set_xlabel(f"$x$ {DISTANCE_AXIS_LABEL_LOOKUP[self.distance_units]}")
-            ax[a_idx, a_jdx].set_ylabel(f"$z$ {DISTANCE_AXIS_LABEL_LOOKUP[self.distance_units]}")
+            ax[a_idx, a_jdx].set_xlabel(f"$x$ {self.DISTANCE_AXIS_LABEL_LOOKUP[self.distance_units]}")
+            ax[a_idx, a_jdx].set_ylabel(f"$z$ {self.DISTANCE_AXIS_LABEL_LOOKUP[self.distance_units]}")
             ax[a_idx, a_jdx].set_xlim(numpy.min(x_points[x_points > 0]), numpy.max(x_points))
             ax[a_idx, a_jdx] = plot.set_axes_scales(ax[a_idx, a_jdx], scale)
         else:
@@ -264,7 +266,8 @@ class WindPlot(base.WindBase):
             ax[a_idx, a_jdx].set_thetamin(0)
             ax[a_idx, a_jdx].set_thetamax(90)
             ax[a_idx, a_jdx].set_rlabel_position(90)
-            ax[a_idx, a_jdx].set_ylabel(f"$\log_{10}(r)$ {DISTANCE_AXIS_LABEL_LOOKUP[self.distance_units]}")
+            # pylint: disable=anomalous-backslash-in-string
+            ax[a_idx, a_jdx].set_ylabel(f"$\log_{10}(r)$ {self.DISTANCE_AXIS_LABEL_LOOKUP[self.distance_units]}")
 
         ax[a_idx, a_jdx].set_ylim(numpy.min(z_points[z_points > 0]), numpy.max(z_points))
 
@@ -278,7 +281,7 @@ class WindPlot(base.WindBase):
         ax: plt.Axes = None,
         a_idx: int = 0,
         a_jdx: int = 0,
-        **kwargs,
+        **kwargs,  # pylint: disable=unused-argument
     ):
         """Plot a 1D wind.
 
@@ -310,7 +313,7 @@ class WindPlot(base.WindBase):
             raise ValueError(f"Unknown parameter {thing}: {thing} not in wind tables")
 
         ax[a_idx, a_jdx].plot(self.parameters["r"], self.parameters[thing])
-        ax[a_idx, a_jdx].set_xlabel(f"$R$ {DISTANCE_AXIS_LABEL_LOOKUP[self.distance_units]}")
+        ax[a_idx, a_jdx].set_xlabel(f"$R$ {self.DISTANCE_AXIS_LABEL_LOOKUP[self.distance_units]}")
         ax[a_idx, a_jdx].set_ylabel(f"{thing}")
         ax[a_idx, a_jdx] = plot.set_axes_scales(ax[a_idx, a_jdx], axes_scales)
         fig = plot.finish_figure(fig)
