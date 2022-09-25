@@ -14,6 +14,14 @@ from pypython import plot
 from pypython.wind import base, enum
 
 
+DISTANCE_AXIS_LABEL_LOOKUP = {
+    enum.DistanceUnits.CENTIMETRES: "[cm]",
+    enum.DistanceUnits.METRES: "[m]",
+    enum.DistanceUnits.KILOMETRES: "[km]",
+    enum.DistanceUnits.GRAVITATIONAL_RADII: r"$ / R_{g}$",
+}
+
+
 class WindPlot(base.WindBase):
     """An extension to the WindGrid base class which adds various plotting
     functionality.
@@ -66,7 +74,7 @@ class WindPlot(base.WindBase):
         elif not fig and ax or fig and not ax:
             raise ValueError("fig and ax need to be supplied together")
 
-        if self.coord_type == "spherical":
+        if self.coord_type == enum.CoordSystem.SPHERICAL:
             fig, ax = self.__wind1d(thing, axes_scales, fig, ax, a_idx, a_jdx, **kwargs)
         else:
             fig, ax = self.__wind2d(thing, axes_scales, fig, ax, a_idx, a_jdx, **kwargs)
@@ -165,7 +173,9 @@ class WindPlot(base.WindBase):
         elif not fig and ax or fig and not ax:
             raise ValueError("fig and ax need to be supplied together")
 
-        if self.coord_type == "spherical":
+        print(self.coord_type)
+
+        if self.coord_type == enum.CoordSystem.SPHERICAL:
             spectrum = self.parameters["model_flux"][idx]
             freq = self.parameters["model_freq"][idx]
         else:
@@ -244,12 +254,8 @@ class WindPlot(base.WindBase):
         a_jdx
         """
         if self.coord_type == enum.CoordSystem.CYLINDRICAL:
-            if self.spatial_units == enum.DistanceUnits.CENTIMETRES:
-                ax[a_idx, a_jdx].set_xlabel(r"$x$ [cm]")
-                ax[a_idx, a_jdx].set_ylabel(r"$z$ [cm]")
-            else:
-                ax[a_idx, a_jdx].set_xlabel(r"$x / R_{g}$")
-                ax[a_idx, a_jdx].set_ylabel(r"$z / R_{g}$")
+            ax[a_idx, a_jdx].set_xlabel(f"$x$ {DISTANCE_AXIS_LABEL_LOOKUP[self.distance_units]}")
+            ax[a_idx, a_jdx].set_ylabel(f"$z$ {DISTANCE_AXIS_LABEL_LOOKUP[self.distance_units]}")
             ax[a_idx, a_jdx].set_xlim(numpy.min(x_points[x_points > 0]), numpy.max(x_points))
             ax[a_idx, a_jdx] = plot.set_axes_scales(ax[a_idx, a_jdx], scale)
         else:
@@ -258,10 +264,8 @@ class WindPlot(base.WindBase):
             ax[a_idx, a_jdx].set_thetamin(0)
             ax[a_idx, a_jdx].set_thetamax(90)
             ax[a_idx, a_jdx].set_rlabel_position(90)
-            if self.spatial_units == enum.DistanceUnits.CENTIMETRES:
-                ax[a_idx, a_jdx].set_ylabel(r"$\log_{10}(r)$ [cm]")
-            else:
-                ax[a_idx, a_jdx].set_ylabel(r"$\log_{10}(r / R_{g})$")
+            ax[a_idx, a_jdx].set_ylabel(f"$\log_{10}(r)$ {DISTANCE_AXIS_LABEL_LOOKUP[self.distance_units]}")
+
         ax[a_idx, a_jdx].set_ylim(numpy.min(z_points[z_points > 0]), numpy.max(z_points))
 
         return ax
@@ -306,12 +310,8 @@ class WindPlot(base.WindBase):
             raise ValueError(f"Unknown parameter {thing}: {thing} not in wind tables")
 
         ax[a_idx, a_jdx].plot(self.parameters["r"], self.parameters[thing])
-
-        if self.spatial_units == enum.DistanceUnits.CENTIMETRES:
-            ax[a_idx, a_jdx].set_xlabel(r"$R$ [cm]")
-        else:
-            ax[a_idx, a_jdx].set_xlabel(r"$r / R_{g}$")
-
+        ax[a_idx, a_jdx].set_xlabel(f"$R$ {DISTANCE_AXIS_LABEL_LOOKUP[self.distance_units]}")
+        ax[a_idx, a_jdx].set_ylabel(f"{thing}")
         ax[a_idx, a_jdx] = plot.set_axes_scales(ax[a_idx, a_jdx], axes_scales)
         fig = plot.finish_figure(fig)
 

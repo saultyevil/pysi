@@ -27,7 +27,7 @@ class VelocityUnits(Enum):
 class DistanceUnits(Enum):
     """Possible distance conversions for Wind objects."""
 
-    CENTIMETRES = "cm"
-    METRES = "m"
-    KILOMETRES = "km"
-    GRAVITATIONAL_RADII = "rg"
+    CENTIMETRES = auto()
+    METRES = auto()
+    KILOMETRES = auto()
+    GRAVITATIONAL_RADII = auto()

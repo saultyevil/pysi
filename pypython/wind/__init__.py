@@ -31,8 +31,9 @@ class Wind(plot.WindPlot):
         """
         super().__init__(root, directory, **kwargs)
 
-        # self.x_coords = numpy.zeros(self.n_x)
-        # self.z_coords = numpy.zeroS(self.n_z)
+        self.grav_radius = self.__calculate_grav_radius()
+
+    # Public methods -----------------------------------------------------------
 
     def create_wind_tables(self):
         """Force the creation of wind save tables for the model.
@@ -44,36 +45,25 @@ class Wind(plot.WindPlot):
         density ion tables and create the xspec cell spectra files.
         """
 
+        # TODO: check if I need a seperate cell_spec call
         pypython.create_wind_save_tables(self.root, self.directory, ion_density=True)
         pypython.create_wind_save_tables(self.root, self.directory, ion_density=False)
-        pypython.create_wind_save_tables(
-            self.root, self.directory, cell_spec=True
-        )  # TODO: check if I need a seperate cell_spec call
+        pypython.create_wind_save_tables(self.root, self.directory, cell_spec=True)
 
     def change_units(self, new_units: Union[enum.DistanceUnits, enum.VelocityUnits]) -> None:
-        """Change the spatial or velocity units."""
-        pass
+        """Change the spatial or velocity units.
 
-    # def setup_gird_properties(self) -> None:
-    #     """Determine the properties of the wind grid."""
-
-    #     # Populate the x and z coord attributes, and remove duplicate entries
-    #     # so we should end up with a 1d array for both
-
-    #     if self.coord_type in ["polar", "spherical"]:
-    #         self.x_coords = self.parameters["r"]
-    #     else:
-    #         self.x_coords = self.parameters["x"]
-
-    #     if self.coord_type == "polar":
-    #         self.z_coords = self.parameters["theta"]
-    #     elif self.coord_type == "cylindrical":
-    #         self.z_coords = self.parameters["z"]
-    #     else:
-    #         self.z_coords = None
-
-    #     self.x_coords = numpy.unique(self.x_coords)
-    #     self.z_coords = numpy.unique(self.z_coords)
+        Parameters
+        ----------
+        new_units: Union[enum.DistanceUnits, enum.VelocityUnits]
+            The new units to transform into.
+        """
+        if isinstance(new_units, enum.DistanceUnits):
+            self.__change_distance_units(new_units)
+        elif isinstance(new_units, enum.VelocityUnits):
+            self.__change_velocity_units(new_units)
+        else:
+            raise ValueError(f"new_units not of type {type(enum.DistanceUnits)} or {type(enum.VelocityUnits)}")
 
     def smooth_cell_spectra(self, amount: int) -> None:
         """Smooth the cell spectra.
@@ -95,3 +85,49 @@ class Wind(plot.WindPlot):
         Uses a copy of the original spectra to revert the smoothing.
         """
         self.parameters["spec"] = copy.deepcopy(self.__original_parameters["spec"])
+
+    # Private methods ----------------------------------------------------------
+
+    def __calculate_grav_radius(self) -> float:
+        """Calculate the gravitational radius of the model.
+        """
+        return 0
+
+    def __change_velocity_units(self, new_units: enum.VelocityUnits) -> None:
+        """Change the velocity units of the wind.
+
+        Parameters
+        ----------
+        new_units: enum.VelocityUnits
+            The new velocity units.
+        """
+        if self.velocity_units == new_units:
+            return
+
+    def __change_distance_units(self, new_units: enum.DistanceUnits):
+        """Change the distance units of the wind.
+
+        Parameters
+        ----------
+        new_units: enum.DistanceUnits
+            The new distance units.
+        """
+        if self.distance_units == new_units:
+            return
+
+        si_conv = {
+            enum.DistanceUnits.CENTIMETRES: 0.01,
+            enum.DistanceUnits.METRES: 1,
+            enum.DistanceUnits.KILOMETRES: 1000,
+            enum.DistanceUnits.GRAVITATIONAL_RADII: 0,
+        }
+
+        conversion_factor = si_conv[self.distance_units] / si_conv[new_units]
+
+        for quant in ("x", "z", "x_cen", "z_cen", "r", "r_cen"):
+            if quant not in self.parameter_keys:
+                continue
+            self.parameters[quant] *= conversion_factor
+
+        self.grav_radius *= conversion_factor
+        self.distance_units = new_units
