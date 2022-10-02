@@ -3,10 +3,9 @@
 
 """Contains the user facing Wind class."""
 
+import textwrap
 import copy
 from typing import Union
-
-import numpy
 
 import pypython
 from pypython.wind import enum, plot
@@ -34,6 +33,16 @@ class Wind(plot.WindPlot):
         super().__init__(root, directory, **kwargs)
 
         self.grav_radius = self.__calculate_grav_radius()
+
+    def __str__(self) -> str:
+        return textwrap.dedent(
+            f"""
+            This is a Wind object, containing data for:
+            Root:       {self.root}
+            Directory:  {self.directory}
+            Coord type: {self.coord_type}
+            """
+        )
 
     # Public methods -----------------------------------------------------------
 

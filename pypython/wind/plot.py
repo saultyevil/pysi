@@ -11,10 +11,10 @@ import matplotlib.pyplot as plt
 import numpy
 
 from pypython import plot
-from pypython.wind import base, enum
+from pypython.wind import util, enum
 
 
-class WindPlot(base.WindBase):
+class WindPlot(util.WindUtil):
     """An extension to the WindGrid base class which adds various plotting
     functionality.
 
@@ -45,7 +45,7 @@ class WindPlot(base.WindBase):
     def plot_parameter(
         self,
         thing: str,
-        axes_scales: str = "logx",
+        axes_scales: str = "loglog",
         fig: plt.Figure = None,
         ax: plt.Axes = None,
         figsize: Tuple[int, int] = (8, 6),
@@ -82,6 +82,10 @@ class WindPlot(base.WindBase):
             fig, ax = self.__wind2d(thing, axes_scales, fig, ax, a_idx, a_jdx, **kwargs)
 
         return fig, ax
+
+    def plot_parameter_along_sightline(self):
+        """Plot a variable along an given inclination angle."""
+        pass
 
     # pylint: disable=too-many-arguments
     def plot_cell_spectrum(
@@ -266,8 +270,7 @@ class WindPlot(base.WindBase):
             ax[a_idx, a_jdx].set_thetamin(0)
             ax[a_idx, a_jdx].set_thetamax(90)
             ax[a_idx, a_jdx].set_rlabel_position(90)
-            # pylint: disable=anomalous-backslash-in-string
-            ax[a_idx, a_jdx].set_ylabel(f"$\log_{10}(r)$ {self.DISTANCE_AXIS_LABEL_LOOKUP[self.distance_units]}")
+            ax[a_idx, a_jdx].set_ylabel(r"$\log_{10}(r)$" + f" {self.DISTANCE_AXIS_LABEL_LOOKUP[self.distance_units]}")
 
         ax[a_idx, a_jdx].set_ylim(numpy.min(z_points[z_points > 0]), numpy.max(z_points))
 
@@ -378,14 +381,21 @@ class WindPlot(base.WindBase):
         if self.coord_type == enum.CoordSystem.CYLINDRICAL:
             x_points, z_points = self.parameters["x"], self.parameters["z"]
         else:
-            x_points, z_points = numpy.deg2rad(self.parameters["theta"]), self.parameters["r"]
+            x_points, z_points = numpy.deg2rad(self.parameters["theta"]), numpy.log10(self.parameters["r"])
 
         if thing not in self.parameter_keys:
             raise ValueError(f"Unknown parameter {thing}: {thing} not in wind tables")
         parameter_points = self.parameters[thing]
 
         im = ax[i, j].pcolormesh(
-            x_points, z_points, parameter_points, shading="auto", vmin=vmin, vmax=vmax, linewidth=0, rasterized=True
+            x_points,
+            z_points,
+            numpy.log10(parameter_points),
+            shading="auto",
+            vmin=vmin,
+            vmax=vmax,
+            linewidth=0,
+            rasterized=True,
         )
 
         fig.colorbar(im, ax=ax[i, j])
