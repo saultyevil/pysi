@@ -4,52 +4,31 @@
 """Enumerators for the wind classes."""
 
 
-from enum import Enum
+from enum import Enum, auto
 
 
-class Units(Enum):
-    """The possible unit types for spatial coordinates and velocity."""
-
-    CENTIMETRES = "cm"
-    METRES = "m"
-    GRAVITATIONAL = "rg"
-    CENTIMETRES_PER_SECOND = "cms"
-
-
-class WindCoordSystem(Enum):
+class CoordSystem(Enum):
     """Possible grid coordinate systems in Python."""
 
-    cylindrical = "rectilinear"
-    polar = "polar"
-    spherical = "spherical"
-    unknown = "unknown"
+    CYLINDRICAL = auto()
+    POLAR = auto()
+    SPHERICAL = auto()
+    UNKNOWN = auto()
 
 
-class WindVelocityUnits(Enum):
-    """Possible velocity conversions for Wind objects.
+class VelocityUnits(Enum):
+    """Possible velocity conversions for Wind objects."""
 
-    Default is cms.
-    """
-
-    kms = "kms"
-    cms = "cms"
-    light = "c"
+    CENTIMETRES_PER_SECOND = auto()
+    METRES_PER_SECOND = auto()
+    KILOMETRES_PER_SECOND = auto()
+    SPEED_OF_LIGHT = auto()
 
 
-class WindDistanceUnits(Enum):
-    """Possible distance conversions for Wind objects.
+class DistanceUnits(Enum):
+    """Possible distance conversions for Wind objects."""
 
-    Default is cm.
-    """
-
-    cm = "cm"
-    m = "m"
-    km = "km"
-    rg = "rg"
-
-
-class CellModelType(Enum):
-    """Possible model types for cell SED."""
-
-    powerlaw = 1
-    exponential = 2
+    CENTIMETRES = auto()
+    METRES = auto()
+    KILOMETRES = auto()
+    GRAVITATIONAL_RADIUS = auto()
