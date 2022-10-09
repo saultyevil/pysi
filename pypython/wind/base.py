@@ -9,7 +9,7 @@ import warnings
 from typing import List, Tuple
 
 import numpy
-from astropy import constants as const
+from astropy.constants import h, k_B  # pylint: disable=no-name-in-module
 
 import pypython
 from pypython.wind import elements, enum
@@ -394,8 +394,8 @@ class WindBase:
                 )
             else:
                 band_flux = parameters_for_band_j["exp_w"] * numpy.exp(
-                    (-1 * const.h.cgs.value * band_frequency_bins)
-                    / (parameters_for_band_j["exp_temp"] * const.k_B.cgs.value)
+                    (-1 * h.cgs.value * band_frequency_bins)
+                    / (parameters_for_band_j["exp_temp"] * k_B.cgs.value)
                 )
 
             cell_frequency.append(band_frequency_bins)
