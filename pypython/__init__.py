@@ -187,51 +187,6 @@ def create_run_script(commands):
     return file
 
 
-def create_slurm_file(name, n_cores, n_hours, n_minutes, py_flags, py_run_flags, fp="."):
-    """Create a slurm file in the directory fp with the name root.slurm.
-
-    All of the script flags are passed using the flags variable.
-
-    Parameters
-    ----------
-    name: str
-        The name of the slurm file
-    n_cores: int
-        The number of cores which to use
-    n_hours: int
-        The number of hours to allow
-    n_minutes: int
-        The number of minutes to allow
-    py_flags: str
-        The run-time flags of which to execute Python with
-    py_run_flags: str
-        The run-time flags to pass to pyrun.py
-    fp: str
-        The directory to write the file to
-    """
-
-    slurm = textwrap.dedent(
-        f"""\
-        #!/bin/bash
-        #SBATCH --mail-user=ejp1n17@soton.ac.uk
-        #SBATCH --mail-type=ALL
-        #SBATCH --ntasks={n_cores}
-        #SBATCH --time={n_hours}:{n_minutes}:00
-        #SBATCH --partition=batch
-        module load openmpi/3.0.0/gcc
-        module load conda/py3-latest
-        source activate pypython
-        python /home/ejp1n17/PythonScripts/pyrun -n {n_cores} {py_run_flags} -f='{py_flags}'
-        """
-    )
-
-    if fp[-1] != "/":
-        fp += "/"
-    file_name = fp + name + ".slurm"
-    with open(file_name, "w") as f:
-        f.write(f"{slurm}")
-
-
 def create_wind_save_tables(root, fp=".", ion_density=False, cell_spec=False, version=None, verbose=False):
     """Run windsave2table in a directory to create the standard data tables.
 

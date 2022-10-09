@@ -34,12 +34,7 @@ def renormalize_vector(a, scalar):
         print("Cannot renormalize a vector of magnitude 0")
         return EXIT_FAIL
 
-    x = scalar / np.sqrt(x)
-    a[0] *= x
-    a[1] *= x
-    a[2] *= x
-
-    return a
+    return a * (scalar / np.sqrt(x))
 
 
 def project_cartesian_to_cylindrical_coordinates(a, b):
