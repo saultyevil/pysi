@@ -8,7 +8,7 @@ is given in units of Angstroms.
 
 import numpy as np
 
-from pypython.constants import (ANGSTROM, BOLTZMANN, PI, STEFAN_BOLTZMANN, VLIGHT, WIEN_FREQUENCY, WIEN_WAVELENGTH, H)
+from pypython.constants import ANGSTROM, BOLTZMANN, PI, STEFAN_BOLTZMANN, VLIGHT, WIEN_FREQUENCY, WIEN_WAVELENGTH, H
 
 
 def planck_lambda(temperature, lamda):
@@ -57,7 +57,7 @@ def planck_nu(temperature, frequency, factor=1):
         frequency. Has units ergs s^-1 cm^-2 Hz^-1.
     """
 
-    x = H * frequency / (factor* BOLTZMANN * temperature)
+    x = H * frequency / (factor * BOLTZMANN * temperature)
     b_nu = (2 * H * frequency**3) / (factor**4 * VLIGHT**2 * (np.exp(x) - 1))
 
     return b_nu

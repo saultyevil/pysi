@@ -21,84 +21,48 @@ class ZeroPointUnits(Enum):
 
 FILTERS = {
     # Swift UVOT: Vega
-    "V": {
-        "Freq.": 3636.18,
-        "Lambda": 3.72e-9,
-        "EffLambda": 5410,
-        "system": "Vega",
-        "instrument": "Swift UVOT"
-    },
-    "B": {
-        "Freq.": 4059.85,
-        "Lambda": 6.44e-9,
-        "EffLambda": 4321,
-        "system": "Vega",
-        "instrument": "Swift UVOT"
-    },
-    "U": {
-        "Freq.": 1480.55,
-        "Lambda": 3.58e-9,
-        "EffLambda": 3442,
-        "system": "Vega",
-        "instrument": "Swift UVOT"
-    },
-    "W1": {
-        "Freq.": 981.360,
-        "Lambda": 4.08e-9,
-        "EffLambda": 2486,
-        "system": "Vega",
-        "instrument": "Swift UVOT"
-    },
-    "M2": {
-        "Freq.": 770.290,
-        "Lambda": 4.58e-9,
-        "EffLambda": 2221,
-        "system": "Vega",
-        "instrument": "Swift UVOT"
-    },
-    "W2": {
-        "Freq.": 759.990,
-        "Lambda": 5.24e-9,
-        "EffLambda": 1991,
-        "system": "Vega",
-        "instrument": "Swift UVOT"
-    },
+    "V": {"Freq.": 3636.18, "Lambda": 3.72e-9, "EffLambda": 5410, "system": "Vega", "instrument": "Swift UVOT"},
+    "B": {"Freq.": 4059.85, "Lambda": 6.44e-9, "EffLambda": 4321, "system": "Vega", "instrument": "Swift UVOT"},
+    "U": {"Freq.": 1480.55, "Lambda": 3.58e-9, "EffLambda": 3442, "system": "Vega", "instrument": "Swift UVOT"},
+    "W1": {"Freq.": 981.360, "Lambda": 4.08e-9, "EffLambda": 2486, "system": "Vega", "instrument": "Swift UVOT"},
+    "M2": {"Freq.": 770.290, "Lambda": 4.58e-9, "EffLambda": 2221, "system": "Vega", "instrument": "Swift UVOT"},
+    "W2": {"Freq.": 759.990, "Lambda": 5.24e-9, "EffLambda": 1991, "system": "Vega", "instrument": "Swift UVOT"},
     # Liverpool Telescope: AB
     "z": {
         "Freq.": None,
         "Lambda": 1.35201e-9,
         "EffLambda": 8972.92,
         "system": "AB",
-        "instrument": "Liverpool Telescope"
+        "instrument": "Liverpool Telescope",
     },
     "i": {
         "Freq.": None,
         "Lambda": 1.88946e-9,
         "EffLambda": 7590.22,
         "system": "AB",
-        "instrument": "Liverpool Telescope"
+        "instrument": "Liverpool Telescope",
     },
     "r": {
         "Freq.": None,
         "Lambda": 2.90493e-9,
         "EffLambda": 6121.47,
         "system": "AB",
-        "instrument": "Liverpool Telescope"
+        "instrument": "Liverpool Telescope",
     },
     "g": {
         "Freq.": None,
         "Lambda": 4.73581e-9,
         "EffLambda": 4794.31,
         "system": "AB",
-        "instrument": "Liverpool Telescope"
+        "instrument": "Liverpool Telescope",
     },
     "u": {
         "Freq.": None,
         "Lambda": 8.81680e-9,
         "EffLambda": 3513.73,
         "system": "AB",
-        "instrument": "Liverpool Telescope"
-    }
+        "instrument": "Liverpool Telescope",
+    },
 }
 
 filters = FILTERS
@@ -119,8 +83,8 @@ def error_in_flux(e_magnitude, flux):
     error: float
         The error in the flux conversion.
     """
-    error_upper = flux * (10**(0.4 * e_magnitude) - 1.0)
-    error_lower = flux * (1 - 10**(-0.4 * e_magnitude))
+    error_upper = flux * (10 ** (0.4 * e_magnitude) - 1.0)
+    error_lower = flux * (1 - 10 ** (-0.4 * e_magnitude))
     error = 0.5 * (error_lower + error_upper)
 
     return error
@@ -157,9 +121,9 @@ def magnitude_to_flux(magnitude, filter, error=None, host_magnitude=None, flux_t
     if FILTERS[filter][flux_type] is None:
         raise NotImplementedError("This filter does not have a flux zero point in Freq. units")
 
-    flux = FILTERS[filter][flux_type] * 10**(-magnitude / 2.5)
+    flux = FILTERS[filter][flux_type] * 10 ** (-magnitude / 2.5)
     if host_magnitude:
-        host_flux = FILTERS[filter][flux_type] * 10**(-host_magnitude / 2.5)
+        host_flux = FILTERS[filter][flux_type] * 10 ** (-host_magnitude / 2.5)
         flux -= host_flux
 
     if error:

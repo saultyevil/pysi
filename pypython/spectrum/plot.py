@@ -168,7 +168,7 @@ def _plot_subplot(ax, spectrum, things_to_plot, xmin, xmax, alpha, scale, use_fl
         The modified matplotlib Axes object.
     """
     if type(things_to_plot) is str:
-        things_to_plot = things_to_plot,
+        things_to_plot = (things_to_plot,)
 
     for thing in things_to_plot:
 
@@ -199,14 +199,9 @@ def _plot_subplot(ax, spectrum, things_to_plot, xmin, xmax, alpha, scale, use_fl
     return ax
 
 
-def add_line_ids(ax,
-                 lines,
-                 linestyle="none",
-                 ynorm=0.90,
-                 offset=0,
-                 rotation="vertical",
-                 fontsize=15,
-                 whitespace_scale=2):
+def add_line_ids(
+    ax, lines, linestyle="none", ynorm=0.90, offset=0, rotation="vertical", fontsize=15, whitespace_scale=2
+):
     """Add labels for line transitions or other regions of interest onto a
     matplotlib figure. Labels are placed at the top of the panel and dashed
     lines, with zorder = 0, are drawn from top to bottom.
@@ -269,14 +264,9 @@ def add_line_ids(ax,
         else:
             xnorm = (x - xlims[0]) / (xlims[1] - xlims[0])
 
-        ax.text(xnorm,
-                ynorm,
-                label,
-                ha="center",
-                va="center",
-                rotation=rotation,
-                fontsize=fontsize,
-                transform=ax.transAxes)
+        ax.text(
+            xnorm, ynorm, label, ha="center", va="center", rotation=rotation, fontsize=fontsize, transform=ax.transAxes
+        )
 
     ax.set_ylim(ylims[0], ylims[1] * whitespace_scale)
 
@@ -304,13 +294,33 @@ def common_lines(spectrum=None, spectral_axis=None):
         Angstroms.
     """
 
-    lines = [[r"N \textsc{iii} / O \textsc{iii}", 305], [r"P \textsc{v}", 1118], [r"Ly$\alpha$ / N \textsc{v}", 1216],
-             ["", 1242], [r"O \textsc{v} / Si \textsc{iv}", 1371], ["", 1400], [r"N \textsc{iv}", 1489],
-             [r"C \textsc{iv}", 1548], ["", 1550], [r"He \textsc{ii}", 1640], [r"N \textsc{iii]}", 1750],
-             [r"Al \textsc{iii}", 1854], [r"C \textsc{iii]}", 1908], [r"Mg \textsc{ii}", 2798],
-             [r"Ca \textsc{ii}", 3934], ["", 3969], [r"H$_{\delta}$", 4101], [r"H$_{\gamma}$", 4340],
-             [r"He \textsc{ii}", 4389], [r"He \textsc{ii}", 4686], [r"H$_{\beta}$", 4861], [r"He \textsc{i}", 5877],
-             ["", 5897], [r"H$_{\alpha}$", 6564], [r"He \textsc{i}", 7067]]
+    lines = [
+        [r"N \textsc{iii} / O \textsc{iii}", 305],
+        [r"P \textsc{v}", 1118],
+        [r"Ly$\alpha$ / N \textsc{v}", 1216],
+        ["", 1242],
+        [r"O \textsc{v} / Si \textsc{iv}", 1371],
+        ["", 1400],
+        [r"N \textsc{iv}", 1489],
+        [r"C \textsc{iv}", 1548],
+        ["", 1550],
+        [r"He \textsc{ii}", 1640],
+        [r"N \textsc{iii]}", 1750],
+        [r"Al \textsc{iii}", 1854],
+        [r"C \textsc{iii]}", 1908],
+        [r"Mg \textsc{ii}", 2798],
+        [r"Ca \textsc{ii}", 3934],
+        ["", 3969],
+        [r"H$_{\delta}$", 4101],
+        [r"H$_{\gamma}$", 4340],
+        [r"He \textsc{ii}", 4389],
+        [r"He \textsc{ii}", 4686],
+        [r"H$_{\beta}$", 4861],
+        [r"He \textsc{i}", 5877],
+        ["", 5897],
+        [r"H$_{\alpha}$", 6564],
+        [r"He \textsc{i}", 7067],
+    ]
 
     return _convert_labels_to_frequency_space(lines, spectral_axis, spectrum)
 
@@ -396,13 +406,9 @@ def set_axes_labels(ax, spectrum=None, units=None, distance=None, multiply_by_sp
 # Plotting functions -----------------------------------------------------------
 
 
-def components(spectrum,
-               xmin=None,
-               xmax=None,
-               scale="loglog",
-               alpha=0.65,
-               multiply_by_spatial_units=False,
-               display=False):
+def components(
+    spectrum, xmin=None, xmax=None, scale="loglog", alpha=0.65, multiply_by_spatial_units=False, display=False
+):
     """Plot the different components of the spectrum.
 
     The components are the columns labelled with words, rather than inclination
@@ -436,10 +442,12 @@ def components(spectrum,
     """
     fig, ax = plt.subplots(2, 1, figsize=(12, 10))
 
-    ax[0] = _plot_subplot(ax[0], spectrum, ["CenSrc", "Disk", "WCreated"], xmin, xmax, alpha, scale,
-                          multiply_by_spatial_units)
-    ax[1] = _plot_subplot(ax[1], spectrum, ["Created", "Emitted", "Wind", "HitSurf"], xmin, xmax, alpha, scale,
-                          multiply_by_spatial_units)
+    ax[0] = _plot_subplot(
+        ax[0], spectrum, ["CenSrc", "Disk", "WCreated"], xmin, xmax, alpha, scale, multiply_by_spatial_units
+    )
+    ax[1] = _plot_subplot(
+        ax[1], spectrum, ["Created", "Emitted", "Wind", "HitSurf"], xmin, xmax, alpha, scale, multiply_by_spatial_units
+    )
 
     fig = pyplt.finish_figure(fig)
     fig.savefig(f"{spectrum.fp}/{spectrum.root}_{spectrum.current}_components.png")
@@ -450,20 +458,22 @@ def components(spectrum,
     return fig, ax
 
 
-def multiple_models(output_name,
-                    spectra,
-                    spectrum_type,
-                    things_to_plot,
-                    xmin=None,
-                    xmax=None,
-                    multiply_by_spectral_units=False,
-                    alpha=0.7,
-                    scale="loglog",
-                    label_lines=True,
-                    log_spec=False,
-                    smooth=None,
-                    distance=None,
-                    display=False):
+def multiple_models(
+    output_name,
+    spectra,
+    spectrum_type,
+    things_to_plot,
+    xmin=None,
+    xmax=None,
+    multiply_by_spectral_units=False,
+    alpha=0.7,
+    scale="loglog",
+    label_lines=True,
+    log_spec=False,
+    smooth=None,
+    distance=None,
+    display=False,
+):
     """Plot multiple spectra, from multiple models, given in the list of
     spectra provided.
 
@@ -523,7 +533,7 @@ def multiple_models(output_name,
 
     for spectrum in spectra:
         if type(spectrum) is not pypython.Spectrum:
-            root, fp = pypython.get_root_name(spectrum)
+            root, fp = pypython.get_root_directory(spectrum)
             spectra_to_plot.append(pypython.Spectrum(root, fp, log_spec, smooth, distance, spectrum_type))
         else:
             spectra_to_plot.append(spectrum)
@@ -544,7 +554,7 @@ def multiple_models(output_name,
         for spectrum in spectra_to_plot:  # have to do it like this, as spectrum.inclinations is a tuple
             things_to_plot += spectrum.inclinations
         if len(things_to_plot) == 0:
-            raise ValueError("\"all\" does not seem to have worked, try specifying what to plot instead")
+            raise ValueError('"all" does not seem to have worked, try specifying what to plot instead')
         things_to_plot = tuple(sorted(list(dict.fromkeys(things_to_plot))))  # Gets sorted, unique values from tuple
     else:
         things_to_plot = things_to_plot.split(",")
@@ -608,14 +618,16 @@ def multiple_models(output_name,
     return fig, ax
 
 
-def observer(spectrum,
-             inclinations,
-             xmin=None,
-             xmax=None,
-             scale="logy",
-             multiply_by_spatial_units=False,
-             label_lines=True,
-             display=False):
+def observer(
+    spectrum,
+    inclinations,
+    xmin=None,
+    xmax=None,
+    scale="logy",
+    multiply_by_spatial_units=False,
+    label_lines=True,
+    display=False,
+):
     """Plot the request observer spectrum.
 
     If all is passed to inclinations, then all the observer angles will be
@@ -665,8 +677,10 @@ def observer(spectrum,
             wrong_input.append(inclination)
 
     if len(wrong_input) > 0:
-        print(f"The following inclinations provided are not in the spectrum inclinations and will be skipped:"
-              f" {', '.join(wrong_input)}")
+        print(
+            f"The following inclinations provided are not in the spectrum inclinations and will be skipped:"
+            f" {', '.join(wrong_input)}"
+        )
         for to_remove in wrong_input:
             inclinations.remove(to_remove)
 
@@ -688,14 +702,16 @@ def observer(spectrum,
     return fig, ax
 
 
-def optical_depth(spectrum,
-                  inclinations="all",
-                  xmin=None,
-                  xmax=None,
-                  scale="loglog",
-                  label_edges=True,
-                  frequency_space=True,
-                  display=False):
+def optical_depth(
+    spectrum,
+    inclinations="all",
+    xmin=None,
+    xmax=None,
+    scale="loglog",
+    label_edges=True,
+    frequency_space=True,
+    display=False,
+):
     """Plot the continuum optical depth spectrum.
 
     Create a plot of the continuum optical depth against either frequency or

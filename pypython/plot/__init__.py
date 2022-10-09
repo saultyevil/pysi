@@ -18,18 +18,20 @@ import pypython.error as err
 # Generic plotting function ----------------------------------------------------
 
 
-def plot(x,
-         y,
-         xmin=None,
-         xmax=None,
-         xlabel=None,
-         ylabel=None,
-         scale="logy",
-         fig=None,
-         ax=None,
-         label=None,
-         alpha=1.0,
-         display=False):
+def plot(
+    x,
+    y,
+    xmin=None,
+    xmax=None,
+    xlabel=None,
+    ylabel=None,
+    scale="logy",
+    fig=None,
+    ax=None,
+    label=None,
+    alpha=1.0,
+    display=False,
+):
     """Plot a set of x and y data.
 
     This function acts as a big wrapper around matplotlib, to plot and create
@@ -173,7 +175,7 @@ def normalize_figure_style():
         "ytick.major.size": 4,
         "ytick.minor.size": 3,
         "savefig.dpi": 300,
-        "pcolor.shading": "auto"
+        "pcolor.shading": "auto",
     }
 
     if find_executable("pdflatex"):

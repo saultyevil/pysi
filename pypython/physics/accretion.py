@@ -9,9 +9,9 @@ spectrum.
 
 import numpy as np
 
-from pypython.constants import (MPROT, MSOL, MSOL_PER_YEAR, PI, STEFAN_BOLTZMANN, THOMPSON, C, G)
+from pypython.constants import MPROT, MSOL, MSOL_PER_YEAR, PI, STEFAN_BOLTZMANN, THOMPSON, C, G
 from pypython.physics.blackbody import planck_lambda, planck_nu
-from pypython.physics.blackhole import (gravitational_radius, innermost_stable_circular_orbit)
+from pypython.physics.blackhole import gravitational_radius, innermost_stable_circular_orbit
 
 
 def _calculate_disc_spectrum(m_co, mdot, radius, frequency_bins, modified_teff, freq_units, colour_correction=1):
@@ -46,7 +46,7 @@ def _calculate_disc_spectrum(m_co, mdot, radius, frequency_bins, modified_teff, 
     for i in range(n_rings - 1):
         # Use midpoint of annulus as point on r grid
         r = (radius[i + 1] + radius[i]) * 0.5
-        area_annulus = PI * (radius[i + 1]**2 - radius[i]**2)
+        area_annulus = PI * (radius[i + 1] ** 2 - radius[i] ** 2)
 
         if modified_teff:
             t_eff = modified_eddington_alpha_disc_effective_temperature(r, m_co, mdot)
@@ -57,8 +57,6 @@ def _calculate_disc_spectrum(m_co, mdot, radius, frequency_bins, modified_teff, 
             f = planck_nu(t_eff, frequency_bins, colour_correction)
         else:
             f = planck_lambda(t_eff, frequency_bins)
-
-
 
         lum += f * area_annulus * PI
 
@@ -90,22 +88,24 @@ def alpha_disc_effective_temperature(r, r_co, m_co, mdot):
     mdot *= MSOL_PER_YEAR
 
     teff4 = (3 * G * m_co * mdot) / (8 * np.pi * r**3 * STEFAN_BOLTZMANN)
-    teff4 *= 1 - (r_co / r)**0.5
+    teff4 *= 1 - (r_co / r) ** 0.5
 
     return teff4**0.25
 
 
-def create_disc_spectrum(m_co,
-                         mdot,
-                         r_in,
-                         r_out,
-                         freq_min,
-                         freq_max,
-                         colour_correction=1,
-                         n_freq=5000,
-                         n_rings=5000,
-                         modified_teff=False,
-                         freq_units=True):
+def create_disc_spectrum(
+    m_co,
+    mdot,
+    r_in,
+    r_out,
+    freq_min,
+    freq_max,
+    colour_correction=1,
+    n_freq=5000,
+    n_rings=5000,
+    modified_teff=False,
+    freq_units=True,
+):
     """Create a crude accretion disc spectrum. This works by approximating an
     accretion disc as being a collection of annuli radiating at different
     temperatures and treats them as a blackbody. The emerging spectrum is then
@@ -152,7 +152,12 @@ def create_disc_spectrum(m_co,
     xbins = np.linspace(freq_min, freq_max, n_freq)
     radius = np.logspace(np.log10(r_in), np.log10(r_out), n_rings)
 
-    s = {xlabel: xbins, "Lum.": _calculate_disc_spectrum(m_co, float(mdot), radius, xbins, modified_teff, freq_units, colour_correction)}
+    s = {
+        xlabel: xbins,
+        "Lum.": _calculate_disc_spectrum(
+            m_co, float(mdot), radius, xbins, modified_teff, freq_units, colour_correction
+        ),
+    }
 
     return s
 
@@ -225,6 +230,6 @@ def modified_eddington_alpha_disc_effective_temperature(r, m_co, mdot):
 
     fnt = 1 - np.sqrt(r_isco / r)
     teff4 = (3 * G * m_co * mdot * fnt) / (8 * PI * r**3 * STEFAN_BOLTZMANN)
-    teff4 *= (0.5 + (0.25 + 6 * fnt * (mdot * C**2 / l_edd)**2 * (r / rg)**-2)**0.5)**-1
+    teff4 *= (0.5 + (0.25 + 6 * fnt * (mdot * C**2 / l_edd) ** 2 * (r / rg) ** -2) ** 0.5) ** -1
 
     return teff4**0.25

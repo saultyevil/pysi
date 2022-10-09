@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-The base class which contains variables containing the parameters of the wind,
-as well as the most basic variables which describe the wind.
-"""
+"""The base class which contains variables containing the parameters of the
+wind, as well as the most basic variables which describe the wind."""
 
 import pathlib
 import re
@@ -189,7 +187,7 @@ class WindBase:
                 self.parameters["model_flux"][i_cell, j_cell] = numpy.hstack(cell_flux)
 
     def read_in_cell_spectra(self) -> None:
-        """Read in the cell spectra"""
+        """Read in the cell spectra."""
 
         spec_table_files = pypython.find("*xspec.*.txt", self.directory)
         if len(spec_table_files) == 0:
@@ -275,7 +273,8 @@ class WindBase:
             raise IOError(f"Have been unable to read in any wind ion tables in {self.directory}")
 
     def read_in_wind_variables(self) -> None:
-        """Read in the different parameters which describe state of the wind."""
+        """Read in the different parameters which describe state of the
+        wind."""
 
         n_read = 0
 

@@ -50,29 +50,29 @@ def read_dump_pd(root, fp="."):
         "Spec.": np.int32,
         "Orig.": np.int32,
         "Res.": np.int32,
-        "LineRes.": np.int32
+        "LineRes.": np.int32,
     }
 
-    return pd.read_csv(f"{fp}/{root}.delay_dump",
-                       names=list(names.keys()),
-                       dtype=names,
-                       delim_whitespace=True,
-                       comment="#")
+    return pd.read_csv(
+        f"{fp}/{root}.delay_dump", names=list(names.keys()), dtype=names, delim_whitespace=True, comment="#"
+    )
 
 
-def create_spectrum(root,
-                    fp=".",
-                    extract=(UNFILTERED_SPECTRUM, ),
-                    dumped_photons=None,
-                    freq_bins=None,
-                    freq_min=None,
-                    freq_max=None,
-                    n_bins=10000,
-                    d_norm_pc=100,
-                    spec_cycle_norm=1,
-                    n_cores_norm=1,
-                    log_bins=True,
-                    output_numpy=False):
+def create_spectrum(
+    root,
+    fp=".",
+    extract=(UNFILTERED_SPECTRUM,),
+    dumped_photons=None,
+    freq_bins=None,
+    freq_min=None,
+    freq_max=None,
+    n_bins=10000,
+    d_norm_pc=100,
+    spec_cycle_norm=1,
+    n_cores_norm=1,
+    log_bins=True,
+    output_numpy=False,
+):
     """Create a spectrum for each inclination angle using the photons which
     have been dumped to the root.delay_dump file.
 
@@ -158,12 +158,18 @@ def create_spectrum(root,
     freq_max = np.max(dump_spectrum[:, 0])
     freq_min = np.min(dump_spectrum[:, 0])
 
-    dump_spectrum = pypython.dump.spectrum.bin_photon_weights(dump_spectrum, freq_min, freq_max,
-                                                              dumped_photons["Freq."].values,
-                                                              dumped_photons["Weight"].values,
-                                                              dumped_photons["Spec."].values.astype(int) + 1,
-                                                              dumped_photons["Res."].values.astype(int), line_res,
-                                                              extract, log_bins)
+    dump_spectrum = pypython.dump.spectrum.bin_photon_weights(
+        dump_spectrum,
+        freq_min,
+        freq_max,
+        dumped_photons["Freq."].values,
+        dumped_photons["Weight"].values,
+        dumped_photons["Spec."].values.astype(int) + 1,
+        dumped_photons["Res."].values.astype(int),
+        line_res,
+        extract,
+        log_bins,
+    )
 
     dump_spectrum[:, 1:] /= n_cores_norm
 
@@ -174,14 +180,9 @@ def create_spectrum(root,
     n_bins -= 2
     dump_spectrum = dump_spectrum[1:-1, :]
 
-    dump_spectrum, inclinations = pypython.dump.spectrum.write_delay_dump_spectrum_to_file(root,
-                                                                                           fp,
-                                                                                           dump_spectrum,
-                                                                                           extract,
-                                                                                           n_spec,
-                                                                                           n_bins,
-                                                                                           d_norm_pc,
-                                                                                           return_inclinations=True)
+    dump_spectrum, inclinations = pypython.dump.spectrum.write_delay_dump_spectrum_to_file(
+        root, fp, dump_spectrum, extract, n_spec, n_bins, d_norm_pc, return_inclinations=True
+    )
 
     if output_numpy:
         return dump_spectrum
@@ -192,14 +193,9 @@ def create_spectrum(root,
         return df
 
 
-def create_spectrum_breakdown(root,
-                              wl_min,
-                              wl_max,
-                              n_cores_norm=1,
-                              spec_cycle_norm=1,
-                              fp=".",
-                              nres=None,
-                              mode_line_res=True):
+def create_spectrum_breakdown(
+    root, wl_min, wl_max, n_cores_norm=1, spec_cycle_norm=1, fp=".", nres=None, mode_line_res=True
+):
     """Get the spectra for the different physical processes which contribute to
     a spectrum. If nres is provided, then only a specific interaction will be
     extracted, otherwise all resonance interactions will.
@@ -288,13 +284,16 @@ def create_spectrum_breakdown(root,
     created_spectra = [s]
     for contribution in contributions:
         created_spectra.append(
-            create_spectrum(root,
-                            fp,
-                            dumped_photons=contribution,
-                            freq_min=pypython.physics.angstrom_to_hz(wl_max),
-                            freq_max=pypython.physics.angstrom_to_hz(wl_min),
-                            n_cores_norm=n_cores_norm,
-                            spec_cycle_norm=spec_cycle_norm))
+            create_spectrum(
+                root,
+                fp,
+                dumped_photons=contribution,
+                freq_min=pypython.physics.angstrom_to_hz(wl_max),
+                freq_max=pypython.physics.angstrom_to_hz(wl_min),
+                n_cores_norm=n_cores_norm,
+                spec_cycle_norm=spec_cycle_norm,
+            )
+        )
     n_spec = len(created_spectra)
 
     # dict comprehension to use contribution_names as the keys and the spectra
@@ -348,8 +347,17 @@ def create_wind_weight_contours(root, resonance, wind=None, fp=".", n_cores_norm
         exit(1)
 
     weight, count = pypython.dump.wind.wind_bin_photon_weights(
-        len(dump), resonance, dump["LastX"].values, dump["LastY"].values, dump["LastZ"].values, dump["LineRes."].values,
-        dump["Weight"].values, np.array(wind.x_axis_coords), np.array(wind.x_axis_coords), wind.nz, wind.nz
+        len(dump),
+        resonance,
+        dump["LastX"].values,
+        dump["LastY"].values,
+        dump["LastZ"].values,
+        dump["LineRes."].values,
+        dump["Weight"].values,
+        np.array(wind.x_axis_coords),
+        np.array(wind.x_axis_coords),
+        wind.nz,
+        wind.nz,
     )
 
     weight /= n_cores_norm

@@ -183,7 +183,7 @@ def model_error_summary(root, wd=".", n_cores=-1, print_errors=False):
     """
     total_errors = {}
     diag_files = glob(f"{wd}/diag_{root}/{root}_*.diag")
-    diag_files.sort(key=lambda var: [int(x) if x.isdigit() else x for x in re.findall(r'[^0-9]|[0-9]+', var)])
+    diag_files.sort(key=lambda var: [int(x) if x.isdigit() else x for x in re.findall(r"[^0-9]|[0-9]+", var)])
 
     if n_cores > 0:
         n_diag_files = n_cores
@@ -227,7 +227,7 @@ def model_error_summary(root, wd=".", n_cores=-1, print_errors=False):
 
             error_end = -1
 
-            for kk, end_line in enumerate(lines[error_start + 3:]):
+            for kk, end_line in enumerate(lines[error_start + 3 :]):
                 end_line = end_line.split()
                 if len(end_line):
                     if end_line[0].isdigit() is False:

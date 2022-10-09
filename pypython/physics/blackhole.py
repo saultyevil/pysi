@@ -67,4 +67,4 @@ def tidal_disruption_radius(m_bh, m_star, r_star):
     r_star: float
         The radius of the disrupted star in solar radii.
     """
-    return r_star * (m_bh / m_star)**(1 / 3) * RSOL
+    return r_star * (m_bh / m_star) ** (1 / 3) * RSOL

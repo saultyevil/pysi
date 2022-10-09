@@ -29,6 +29,7 @@ class SpectrumSpectralAxis(Enum):
     Either wavelength or frequency, and these WILL ALWAYS be in units of
     Angstroms and Hz, respectively.
     """
+
     frequency = "Hz"
     wavelength = "Angstrom"
     none = "none"
@@ -40,6 +41,7 @@ class SpectrumUnits(Enum):
     Note the typo in the per wavelength units. This is due to a typo in
     Python.
     """
+
     l_nu = "erg/s/Hz"
     l_lm = "erg/s/A"
     f_nu = "erg/s/cm^2/Hz"
@@ -54,6 +56,7 @@ class SpectrumType(Enum):
     This should cover all the types, and should be interchangable
     between the linear and logarithmic versions of the spectra.
     """
+
     spec = "spec"
     spec_tot = "spec_tot"
     spec_wind = "spec_wind"
@@ -76,6 +79,7 @@ class Spectrum:
     TODO: Create Enum for spectrum types
     TODO: Create Enum for "spatial type", i.e. for frequency or lambda monochromatic things
     """
+
     def __init__(self, root, fp=".", log=True, smooth=None, distance=None, default=None, delim=None):
         """Create the Spectrum object.
 
@@ -209,7 +213,7 @@ class Spectrum:
         # Plot the components of the observer spectrum, i.e Emitted, Created,
         # Disc, etc.
 
-        for component in self.columns[:-self.n_inclinations]:
+        for component in self.columns[: -self.n_inclinations]:
             if component in ["Lambda", "Freq."]:
                 continue
             ax[0] = self._plot_thing(component, name, label_lines=label_lines, ax_update=ax[0])
@@ -313,7 +317,7 @@ class Spectrum:
                 continue
 
             for column in self.spectra[spectrum].columns:
-                self.spectra[spectrum][column] *= 4 * np.pi * (distance * c.PARSEC)**2
+                self.spectra[spectrum][column] *= 4 * np.pi * (distance * c.PARSEC) ** 2
 
             if units == SpectrumUnits.f_nu:
                 self.spectra[spectrum].units = SpectrumUnits.l_nu
@@ -341,7 +345,7 @@ class Spectrum:
                 continue
 
             for column in self.spectra[spectrum].columns:
-                self.spectra[spectrum][column] /= 4 * np.pi * (distance * c.PARSEC)**2
+                self.spectra[spectrum][column] /= 4 * np.pi * (distance * c.PARSEC) ** 2
 
             if units == SpectrumUnits.l_nu:
                 self.spectra[spectrum].units = SpectrumUnits.f_nu
@@ -416,10 +420,9 @@ class Spectrum:
 
             n_read += 1
 
-            self.spectra[spec_type] = pypython._AttributeDict({
-                "units": SpectrumUnits.none,
-                "spectral_axis": SpectrumSpectralAxis.none
-            })
+            self.spectra[spec_type] = pypython._AttributeDict(
+                {"units": SpectrumUnits.none, "spectral_axis": SpectrumSpectralAxis.none}
+            )
 
             with open(fp, "r") as f:
                 spectrum_file = f.readlines()
@@ -533,8 +536,9 @@ class Spectrum:
             for key in self.spectra[spectrum].columns:
                 if key in ["Lambda", "Freq."]:
                     continue
-                self.spectra[spectrum][key] *= \
-                    (self.spectra[spectrum].distance * c.PARSEC) ** 2 / (distance * c.PARSEC) ** 2
+                self.spectra[spectrum][key] *= (self.spectra[spectrum].distance * c.PARSEC) ** 2 / (
+                    distance * c.PARSEC
+                ) ** 2
             self.spectra[spectrum].distance = distance
 
     @staticmethod
@@ -576,7 +580,8 @@ class Spectrum:
             for thing_to_smooth in self.spectra[spectrum].columns:
                 try:
                     self.spectra[spectrum][thing_to_smooth] = pypython.smooth_array(
-                        self.spectra[spectrum][thing_to_smooth], width)
+                        self.spectra[spectrum][thing_to_smooth], width
+                    )
                 except KeyError:
                     pass  # some spectra do not have the inclination angles...
 

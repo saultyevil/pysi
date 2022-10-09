@@ -12,14 +12,9 @@ import pypython.constants as c
 import pypython.dump as dump
 
 
-def write_delay_dump_spectrum_to_file(root,
-                                      wd,
-                                      spectrum,
-                                      extract_nres,
-                                      n_spec,
-                                      n_bins,
-                                      d_norm_pc,
-                                      return_inclinations=False):
+def write_delay_dump_spectrum_to_file(
+    root, wd, spectrum, extract_nres, n_spec, n_bins, d_norm_pc, return_inclinations=False
+):
     """Write the generated delay dump spectrum to file.
 
     Parameters
@@ -101,7 +96,7 @@ def write_delay_dump_spectrum_to_file(root,
         f.write("Line luminosities -- units [erg / s]\n")
         for i in range(spectrum.shape[1] - 1):
             flux = np.sum(spectrum[:, i + 1])
-            lum = 4 * np.pi * (d_norm_pc * c.PARSEC)**2 * flux
+            lum = 4 * np.pi * (d_norm_pc * c.PARSEC) ** 2 * flux
             f.write("Spectrum {} : L = {} erg / s\n".format(header[i], lum))
         f.close()
 
@@ -136,7 +131,7 @@ def convert_weight_to_flux(spectrum, spec_cycle_norm, d_norm_pc):
 
     n_bins = spectrum.shape[0]
     n_spec = spectrum.shape[1] - 1
-    d_norm_cm = 4 * np.pi * (d_norm_pc * c.PARSEC)**2
+    d_norm_cm = 4 * np.pi * (d_norm_pc * c.PARSEC) ** 2
 
     for i in range(n_bins - 1):
         for j in range(n_spec):
@@ -150,8 +145,18 @@ def convert_weight_to_flux(spectrum, spec_cycle_norm, d_norm_pc):
 
 
 @jit(nopython=True)
-def bin_photon_weights(spectrum, freq_min, freq_max, photon_freqs, photon_weights, photon_spc_i, photon_nres,
-                       photon_line_nres, extract_nres, logbins):
+def bin_photon_weights(
+    spectrum,
+    freq_min,
+    freq_max,
+    photon_freqs,
+    photon_weights,
+    photon_spc_i,
+    photon_nres,
+    photon_line_nres,
+    extract_nres,
+    logbins,
+):
     """Bin the photons into frequency bins using jit to attempt to speed
     everything up.
 

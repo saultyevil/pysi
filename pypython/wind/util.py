@@ -1,19 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""
-Utility class for Wind.
-"""
+"""Utility class for Wind."""
 
 import copy
-from typing import Union, Callable
+from typing import Callable, Union
 
 import numpy
 
 from pypython.math import vector
-from pypython.wind import enum
-from pypython.wind import base
-
+from pypython.wind import base, enum
 
 PARTIALLY_INWIND = int(1)
 INWIND = int(0)
@@ -21,7 +17,7 @@ WIND_CELL_TYPES = [INWIND, PARTIALLY_INWIND]
 
 
 class WindUtil(base.WindBase):
-    """Utility functions for wind stuff"""
+    """Utility functions for wind stuff."""
 
     def __init__(self, root: str, directory: str, mask_value: Union[int, Callable[[int], bool]] = INWIND, **kwargs):
         """Initialize the class."""
@@ -119,7 +115,8 @@ class WindUtil(base.WindBase):
     def unmask_arrays(self) -> None:
         """Unmask the arrays.
 
-        Uses a copy of the original table variables to revert the masking.
+        Uses a copy of the original table variables to revert the
+        masking.
         """
         self.parameters = copy.deepcopy(self.__original_parameters)
 

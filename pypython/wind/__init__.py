@@ -3,8 +3,8 @@
 
 """Contains the user facing Wind class."""
 
-import textwrap
 import copy
+import textwrap
 from typing import Union
 
 import pypython

@@ -3,7 +3,6 @@
 
 from setuptools import setup
 
-
 scripts = [
     "scripts/pyaddp",
     "scripts/pyupdp",

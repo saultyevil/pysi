@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""
-Sub-class containing plotting functions.
-"""
+"""Sub-class containing plotting functions."""
 
 from typing import Tuple
 
@@ -11,15 +9,15 @@ import matplotlib.pyplot as plt
 import numpy
 
 from pypython import plot
-from pypython.wind import util, enum
+from pypython.wind import enum, util
 
 
 class WindPlot(util.WindUtil):
     """An extension to the WindGrid base class which adds various plotting
     functionality.
 
-    # TODO: add units for things like velocity, obvious shit
-    # TODO: add general look up unit table for common quantities
+    # TODO: add units for things like velocity, obvious shit # TODO: add
+    general look up unit table for common quantities
     """
 
     DISTANCE_AXIS_LABEL_LOOKUP = {
@@ -204,7 +202,7 @@ class WindPlot(util.WindUtil):
     # Private methods ----------------------------------------------------------
 
     def __add_inclination_sight_lines(self, angles, x_points, z_points, fig, ax, **kwargs):
-        """Add lines to show what various inclination observers
+        """Add lines to show what various inclination observers.
 
         Parameters
         ----------

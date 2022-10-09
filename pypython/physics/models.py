@@ -17,6 +17,7 @@ class SV93Wind:
     This will (or try to) generate a grid of velocities and densities,
     given the parameters.
     """
+
     def __init__(self, m_co, mdot, r_min, r_max, theta_min, theta_max, accel_length, accel_exp, v_inf, gamma, v0=6e5):
         """Create an SV wind.
 
@@ -59,7 +60,7 @@ class SV93Wind:
         """Determine the angle at which the wind emerges from at a special
         radius r from the disk surface."""
 
-        x = ((r0 - self.r_min) / (self.r_max - self.r_min))**self.gamma
+        x = ((r0 - self.r_min) / (self.r_max - self.r_min)) ** self.gamma
 
         if r0 <= self.r_min:
             theta = np.arctan(np.tan(self.theta_max * r0 / self.r_min))
@@ -74,7 +75,7 @@ class SV93Wind:
         """Note that r is a position along the disk."""
 
         theta = self.find_theta(r)
-        rho = np.sqrt(x[0]**2 + x[1]**2)
+        rho = np.sqrt(x[0] ** 2 + x[1] ** 2)
         rho_guess = r + np.tan(theta) * x[2]
 
         return rho_guess - rho  # We want to make this zero
@@ -85,12 +86,12 @@ class SV93Wind:
 
         # If the vector is in the x-y plane, then this is simple
         if x[2] == 0:
-            return np.sqrt(x[0]**2 + x[1]**2)
+            return np.sqrt(x[0] ** 2 + x[1] ** 2)
 
         # For when the vector is not solely in the x-y plane
         rho_min = self.r_min + x[2] * np.tan(self.theta_min)
         rho_max = self.r_max + x[2] * np.tan(self.theta_max)
-        rho = np.sqrt(x[0]**2 + x[1]**2)
+        rho = np.sqrt(x[0] ** 2 + x[1] ** 2)
 
         if rho <= rho_min:
             return self.r_min * rho / rho_min
@@ -112,7 +113,7 @@ class SV93Wind:
     def polodial_velocity(self, dist, r0):
         """Calculate the polodial velocity for a polodial distance l along a
         wind stream line with fixed."""
-        tmp = (dist / self.accel_length)**self.accel_exp
+        tmp = (dist / self.accel_length) ** self.accel_exp
         v_term = self.v_inf * self.escape_velocity(r0)
         vl = self.v0 + (v_term - self.v0) * (tmp / (tmp + 1))
 
@@ -123,8 +124,8 @@ class SV93Wind:
         r0 = self.find_r0(x)
         theta = self.find_theta(r0)
 
-        r = np.sqrt(x[0]**2 + x[1]**2)
-        pol_dist = np.sqrt((r - r0)**2 + x[2]**2)
+        r = np.sqrt(x[0] ** 2 + x[1] ** 2)
+        pol_dist = np.sqrt((r - r0) ** 2 + x[2] ** 2)
         vl = self.polodial_velocity(pol_dist, r0)
 
         v = np.zeros(3)

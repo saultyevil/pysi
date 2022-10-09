@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-from sys import argv
-from subprocess import run
 from pathlib import Path
+from subprocess import run
+from sys import argv
 
 
 def format_source(fp):
