@@ -99,6 +99,15 @@ class Wind(plot.WindPlot):
 
     def __calculate_grav_radius(self) -> float:
         """Calculate the gravitational radius of the model."""
+        # if not co_mass_in_msol:
+        #     try:
+        #         co_mass_in_msol = float(pypython.simulation.grid.get_parameter(self.pf, "Central_object.mass(msol)"))
+        #     except Exception as e:
+        #         print(e)
+        #         raise ValueError("unable to find CO mass from parameter file, please supply the mass instead")
+
+        # rg = pypython.physics.blackhole.gravitational_radius(co_mass_in_msol)
+
         return 0
 
     def __change_distance_units(self, new_units: enum.DistanceUnits):
