@@ -32,7 +32,7 @@ setup(
     description="A package to make using Python a wee bit easier.",
     url="https://github.com/saultyevil/pypython",
     author="Edward J. Parkinson",
-    author_email="e.parkinson@soton.ac.uk",
+    author_email="saultyevil@gmail.com",
     license="MIT",
     packages=[
         "pypython",
