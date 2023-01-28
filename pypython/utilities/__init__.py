@@ -20,7 +20,7 @@ from typing import List, Union
 
 import numpy
 from psutil import cpu_count
-from scipy.signal import convolve, boxcar
+from scipy.signal import boxcar, convolve
 
 from pypython import err
 
@@ -72,7 +72,7 @@ def count_cpu_cores(smt_allowed: bool = False) -> int:
     """Return the number of CPU cores which can be used when running a Python
     simulation. By default, this will only return the number of physical cores
     and will ignore logical threads, i.e. in Intel terms, it will not count the
-    hyperthreads.
+    hyperthread.
 
     Parameters
     ----------
@@ -160,8 +160,8 @@ def cleanup_data(filepath: Union[str, Path] = ".") -> int:
     n_del: int
         The number of symbolic links deleted
     """
-    links = [d for d in find("data", filepath) if islink(d)]
-    links += [d for d in find("xmod*", filepath) if islink(d)]
+    links = [d for d in find_files("data", filepath) if islink(d)]
+    links += [d for d in find_files("xmod*", filepath) if islink(d)]
     for directory in links:
         Path(directory).unlink()
 
@@ -184,7 +184,7 @@ def create_run_script(commands: Union[str, List[str]]) -> str:
     """
 
     paths_to_include = []
-    prameter_files = find("*.pf")
+    prameter_files = find_files("*.pf")
     for file_contents in prameter_files:
         _, path = get_root_directory(file_contents)
         paths_to_include.append(path)
@@ -274,7 +274,7 @@ def create_wind_save_tables(
     return cmd.returncode
 
 
-def find(pattern, file_path="."):
+def find_files(pattern, file_path="."):
     """Find files of the given pattern recursively.
 
     This is used to find a number files given a globale pattern, i.e. *.spec,
@@ -392,7 +392,7 @@ def get_root_directory(file_path):
     return root, file_path
 
 
-def get_xy_subset(x_in, y_in, x_min, x_max):
+def xy_subset(x_in, y_in, x_min, x_max):
     """Get a subset of values from two array given xmin and xmax.
 
     The array must be sorted in ascending or descending order.
@@ -463,8 +463,7 @@ def smooth_array(array, width):
 
 
 def run_py_optical_depth(root, photosphere=None, file_path=".", verbose=False):
-    """Run py optical depth
-    """
+    """Run py optical depth."""
 
     command = ["py_optical_depth"]
     if photosphere:

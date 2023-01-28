@@ -12,7 +12,10 @@ import numpy
 from astropy.constants import h, k_B  # pylint: disable=no-name-in-module
 
 import pypython
-from pypython.wind import elements, enum
+import pypython.utilities
+
+import pypython.wind.enum
+import pypython.wind.elements
 
 
 class WindBase:
@@ -38,7 +41,7 @@ class WindBase:
         self.n_x = int(0)
         self.n_z = int(0)
         self.n_cells = int(0)
-        self.coord_type = enum.CoordSystem.UNKNOWN
+        self.coord_type = pypython.wind.enum.CoordSystem.UNKNOWN
         self.n_model_freq_bands = int(0)
 
         self.parameters = {}
@@ -47,8 +50,8 @@ class WindBase:
         # These units are the default in python. In a higher level class, you
         # should be able to modify the units
 
-        self.distance_units = enum.DistanceUnits.CENTIMETRES
-        self.velocity_units = enum.VelocityUnits.CENTIMETRES_PER_SECOND
+        self.distance_units = pypython.wind.enum.DistanceUnits.CENTIMETRES
+        self.velocity_units = pypython.wind.enum.VelocityUnits.CENTIMETRES_PER_SECOND
 
         # Read in all the variables, spectra, etc.
 
@@ -65,6 +68,91 @@ class WindBase:
                 key += "_frac"
 
         return self.parameters.get(key)
+
+    # Private methods ----------------------------------------------------------
+
+    # pylint: disable=too-many-arguments
+    def __update_band_freq_flux(
+        self,
+        cell_index: int,
+        band_index: int,
+        model_array: numpy.ndarray,
+        table_header: List[str],
+        n_freq_bins_per_band: int,
+        cell_frequency: List[numpy.ndarray],
+        cell_flux: List[numpy.ndarray],
+    ):
+        """
+
+        Parameters
+        ----------
+        cell_index: int
+
+        band_index: int
+
+        model_array: numpy.ndarray
+
+        table_header: List[str]
+
+        n_freq_bins_per_band: int
+
+        cell_frequency: List[numpy.ndarray]
+
+        cell_flux: List[numpy.ndarry]
+
+        Returns
+        -------
+        cell_frequency: List[numpy.ndarray]
+
+        cell_flux: List[numpy.ndarry]
+
+        """
+
+        # create a dict of the parameters for band j, the table is a
+        # flat list of the parameters for cell 1, 2, 3, ... for BAND 0,
+        # and then the next section is the parameters for cell 1, 2,
+        # 3... for BAND 1. So we have to do some funky indexing to get
+        # to the correct row element in model_array
+
+        parameters_for_band_j = {
+            col: model_array[cell_index + band_index * self.n_cells, k] for k, col in enumerate(table_header)
+        }
+
+        band_freq_min = parameters_for_band_j["fmin"]
+        band_freq_max = parameters_for_band_j["fmax"]
+
+        # check first that the band hasn't broken in python or if the
+        # band is empty as when empty fmin == fmax == 0
+
+        if band_freq_max > band_freq_min:
+            band_frequency_bins = numpy.logspace(
+                numpy.log10(band_freq_min), numpy.log10(band_freq_max), n_freq_bins_per_band
+            )
+
+            # model_type 1 == powerlaw model, otherwise 2 == exponential
+            # this is the noclumentaure used in python :-)
+
+            try:
+                model_type = parameters_for_band_j["spec_mod_type"]
+            except KeyError:
+                return warnings.warn(
+                    "The header for the model file is improperly formatted and cannot find 'spec_mode_type'"
+                )
+
+            if model_type == 1:
+                band_flux = 10 ** (
+                    parameters_for_band_j["pl_log_w"]
+                    + numpy.log10(band_frequency_bins) * parameters_for_band_j["pl_alpha"]
+                )
+            else:
+                band_flux = parameters_for_band_j["exp_w"] * numpy.exp(
+                    (-1 * h.cgs.value * band_frequency_bins) / (parameters_for_band_j["exp_temp"] * k_B.cgs.value)
+                )
+
+            cell_frequency.append(band_frequency_bins)
+            cell_flux.append(band_flux)
+
+        return cell_frequency, cell_flux
 
     # Public methods -----------------------------------------------------------
 
@@ -189,7 +277,7 @@ class WindBase:
     def read_in_cell_spectra(self) -> None:
         """Read in the cell spectra."""
 
-        spec_table_files = pypython.find("*xspec.*.txt", self.directory)
+        spec_table_files = pypython.utilities.find("*xspec.*.txt", self.directory)
         if len(spec_table_files) == 0:
             self.parameters["spec_freq"] = self.parameters["spec_flux"] = None
             return
@@ -233,7 +321,7 @@ class WindBase:
                     self.parameters["spec_flux"][coords[0], :] = file_array[:, i + 1]
                     self.parameters["spec_freq"][coords[0], :] = file_array[:, 0]
 
-    def read_in_wind_ions(self, elements_to_read: List[str] = elements.ELEMENTS) -> None:
+    def read_in_wind_ions(self, elements_to_read: List[str] = pypython.wind.elements.ELEMENTS) -> None:
         """Read in the different ions in the wind.
 
         Parameters
@@ -306,99 +394,13 @@ class WindBase:
         self.n_cells = int(self.n_x * self.n_z)
 
         if "r" in self.parameters and "theta" in self.parameters:
-            self.coord_type = enum.CoordSystem.POLAR
+            self.coord_type = pypython.wind.enum.CoordSystem.POLAR
         elif "r" in self.parameters:
-            self.coord_type = enum.CoordSystem.SPHERICAL
+            self.coord_type = pypython.wind.enum.CoordSystem.SPHERICAL
         else:
-            self.coord_type = enum.CoordSystem.CYLINDRICAL
+            self.coord_type = pypython.wind.enum.CoordSystem.CYLINDRICAL
 
         # Reshape the parameters into (nx, nz) which are currently just flat
         # arrays
 
         self.parameters = {col: val.reshape(self.n_x, self.n_z) for col, val in self.parameters.items()}
-
-    # Private methods ----------------------------------------------------------
-
-    # pylint: disable=too-many-arguments
-    def __update_band_freq_flux(
-        self,
-        cell_index: int,
-        band_index: int,
-        model_array: numpy.ndarray,
-        table_header: List[str],
-        n_freq_bins_per_band: int,
-        cell_frequency: List[numpy.ndarray],
-        cell_flux: List[numpy.ndarray],
-    ):
-        """
-
-        Parameters
-        ----------
-        cell_index: int
-
-        band_index: int
-
-        model_array: numpy.ndarray
-
-        table_header: List[str]
-
-        n_freq_bins_per_band: int
-
-        cell_frequency: List[numpy.ndarray]
-
-        cell_flux: List[numpy.ndarry]
-
-        Returns
-        -------
-        cell_frequency: List[numpy.ndarray]
-
-        cell_flux: List[numpy.ndarry]
-
-        """
-
-        # create a dict of the parameters for band j, the table is a
-        # flat list of the parameters for cell 1, 2, 3, ... for BAND 0,
-        # and then the next section is the parameters for cell 1, 2,
-        # 3... for BAND 1. So we have to do some funky indexing to get
-        # to the correct row element in model_array
-
-        parameters_for_band_j = {
-            col: model_array[cell_index + band_index * self.n_cells, k] for k, col in enumerate(table_header)
-        }
-
-        band_freq_min = parameters_for_band_j["fmin"]
-        band_freq_max = parameters_for_band_j["fmax"]
-
-        # check first that the band hasn't broken in python or if the
-        # band is empty as when empty fmin == fmax == 0
-
-        if band_freq_max > band_freq_min:
-            band_frequency_bins = numpy.logspace(
-                numpy.log10(band_freq_min), numpy.log10(band_freq_max), n_freq_bins_per_band
-            )
-
-            # model_type 1 == powerlaw model, otherwise 2 == exponential
-            # this is the noclumentaure used in python :-)
-
-            try:
-                model_type = parameters_for_band_j["spec_mod_type"]
-            except KeyError:
-                return warnings.warn(
-                    "The header for the model file is improperly formatted and cannot find 'spec_mode_type'"
-                )
-
-            if model_type == 1:
-                band_flux = 10 ** (
-                    parameters_for_band_j["pl_log_w"]
-                    + numpy.log10(band_frequency_bins) * parameters_for_band_j["pl_alpha"]
-                )
-            else:
-                band_flux = parameters_for_band_j["exp_w"] * numpy.exp(
-                    (-1 * h.cgs.value * band_frequency_bins)
-                    / (parameters_for_band_j["exp_temp"] * k_B.cgs.value)
-                )
-
-            cell_frequency.append(band_frequency_bins)
-            cell_flux.append(band_flux)
-
-        return cell_frequency, cell_flux
