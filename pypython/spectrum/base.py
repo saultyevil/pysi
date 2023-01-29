@@ -169,62 +169,65 @@ class SpectrumBase:
         n_read = 0
         files_to_read = ["spec", "spec_tot", "spec_tot_wind", "spec_wind", "spec_tau"]
 
-        # TODO, we should iterate over both log and lin extension
-        extension = "log_"
-
-        for spec_type in files_to_read:
-            filepath = f"{self.directory}{self.root}.{extension}{spec_type}"
-            if not Path.exists(filepath):
-                continue
-
-            n_read += 1
-
-            # TODO, need a better implemention to get log/linear
-            self.spectra[extension.strip("_")][spec_type] = {
-                "units": enum.SpectrumUnits.NONE,
-                "spectral_axis": enum.SpectrumSpectralAxis.NONE,
-            }
-
-            with open(filepath, "r", encoding="utf-8") as file_in:
-                spectrum_file = file_in.readlines()
-
-            spectrum_lines = []
-            for line in spectrum_file:
-                line = line.strip().split()
-                # have to check before a comment, because the units line starts
-                # with a comment character
-                self.__check_line_for_units(line, spec_type, extension.strip("_"))
-                if len(line) == 0 or line[0] == "#":
+        for scaling in ["log_", ""]:
+            # try to read in each type of spectrum for log and lin scaling
+            for spec_type in files_to_read:
+                filepath = f"{self.directory}{self.root}.{scaling}{spec_type}"
+                if not Path.exists(filepath):
                     continue
-                spectrum_lines.append(line)
 
-            if spec_type == "spec_tau":  # this is only created with frequency as the x axis
-                self.spectra[spec_type]["spectral_axis"] = enum.SpectrumSpectralAxis.FREQUENCY
-            else:
-                self.spectra[spec_type]["spectral_axis"] = self._get_spectral_axis(self.spectra[spec_type]["units"])
+                # TODO, need a better implemention to get log/linear
+                scaling = scaling.strip("_")
+                if scaling == "":
+                    scaling = "lin"
 
-            # Extract the header columns of the spectrum. This assumes the first
-            # read line in the spectrum is the header.
-            spectrum_header = []
-            for i, column_name in enumerate(spectrum_lines[0]):
-                if column_name[0] == "A":
-                    j = column_name.find("P")
-                    column_name = column_name[1:j].lstrip("0")  # remove leading 0's for, i.e., 01 degrees
-                spectrum_header.append(column_name)
-            column_names = [column for column in spectrum_header if column not in ["Freq.", "Lambda"]]
+                n_read += 1
 
-            # spectrum[1:] is to cut out the header, which does not have a
-            # comment character at the start so gets read in
-            spectrum_columns = numpy.array(spectrum_lines[1:], dtype=numpy.float64)
-            for i, column_name in enumerate(spectrum_header):
-                self.spectra[extension][spec_type][column_name] = spectrum_columns[:, i]
+                self.spectra[scaling][spec_type] = {
+                    "units": enum.SpectrumUnits.NONE,
+                    "spectral_axis": enum.SpectrumSpectralAxis.NONE,
+                }
 
-            inclinations_in_spectrum = [
-                name for name in column_names if name.isdigit() and name not in inclinations_in_spectrum
-            ]
-            self.spectra[extension][spec_type]["columns"] = tuple(column_names)
-            self.spectra[extension][spec_type]["inclinations"] = tuple(inclinations_in_spectrum)
-            self.spectra[extension][spec_type]["num_inclinations"] = len(inclinations_in_spectrum)
+                with open(filepath, "r", encoding="utf-8") as file_in:
+                    spectrum_file = file_in.readlines()
+
+                spectrum_lines = []
+                for line in spectrum_file:
+                    line = line.strip().split()
+                    # have to check before a comment, because the units line starts
+                    # with a comment character
+                    self.__check_line_for_units(line, spec_type, scaling)
+                    if len(line) == 0 or line[0] == "#":
+                        continue
+                    spectrum_lines.append(line)
+
+                if spec_type == "spec_tau":  # this is only created with frequency as the x axis
+                    self.spectra[spec_type]["spectral_axis"] = enum.SpectrumSpectralAxis.FREQUENCY
+                else:
+                    self.spectra[spec_type]["spectral_axis"] = self._get_spectral_axis(self.spectra[spec_type]["units"])
+
+                # Extract the header columns of the spectrum. This assumes the first
+                # read line in the spectrum is the header.
+                spectrum_header = []
+                for i, column_name in enumerate(spectrum_lines[0]):
+                    if column_name[0] == "A":
+                        j = column_name.find("P")
+                        column_name = column_name[1:j].lstrip("0")  # remove leading 0's for, i.e., 01 degrees
+                    spectrum_header.append(column_name)
+                column_names = [column for column in spectrum_header if column not in ["Freq.", "Lambda"]]
+
+                # spectrum[1:] is to cut out the header, which does not have a
+                # comment character at the start so gets read in
+                spectrum_columns = numpy.array(spectrum_lines[1:], dtype=numpy.float64)
+                for i, column_name in enumerate(spectrum_header):
+                    self.spectra[scaling][spec_type][column_name] = spectrum_columns[:, i]
+
+                inclinations_in_spectrum = [
+                    name for name in column_names if name.isdigit() and name not in inclinations_in_spectrum
+                ]
+                self.spectra[scaling][spec_type]["columns"] = tuple(column_names)
+                self.spectra[scaling][spec_type]["inclinations"] = tuple(inclinations_in_spectrum)
+                self.spectra[scaling][spec_type]["num_inclinations"] = len(inclinations_in_spectrum)
 
         if n_read == 0:
             raise IOError(f"Unable to open any spectrum files for {self.root} in {self.directory}")
