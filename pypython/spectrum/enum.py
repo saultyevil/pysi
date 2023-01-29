@@ -3,45 +3,47 @@
 
 """Enumerators for spectra."""
 
-from enum import Enum, auto
+from enum import auto
+from aenum import MultiValueEnum
 
 
-class SpectrumSpectralAxis(Enum):
+# pylint: disable=too-few-public-methods
+class SpectrumSpectralAxis(MultiValueEnum):
     """The possible spatial units for a spectrum.
 
     Either wavelength or frequency, and these WILL ALWAYS be in units of
     Angstroms and Hz, respectively.
     """
 
-    FREQUENCY = auto()
-    WAVELENGTH = auto()
+    FREQUENCY = auto(), "Hz"
+    WAVELENGTH = auto(), "Angstrom"
     NONE = auto()
 
 
-class SpectrumUnits(Enum):
+class SpectrumUnits(MultiValueEnum):
     """Possible units for the spectra created in Python.
 
     Note the typo in the per wavelength units. This is due to a typo in
     Python.
     """
 
-    L_NU = auto()
-    L_LAM = auto()
-    F_NU = auto()
-    F_LAM = auto()
-    F_LAM_LEGACY = auto()
+    L_NU = auto(), "erg/s/Hz"
+    L_LAM = auto(), "erg/s/A"
+    F_NU = auto(), "erg/s/cm^-2/Hz"
+    F_LAM = auto(), "erg/s/cm^-2/A"
+    F_LAM_LEGACY = auto(), "erg/s/cm^2/A"  # TODO, need to check what this is
     NONE = auto()
 
 
-class SpectrumType(Enum):
+class SpectrumType(MultiValueEnum):
     """The possible types of spectra which can be read in.
 
     This should cover all the types, and should be interchangable
     between the linear and logarithmic versions of the spectra.
     """
 
-    SPEC = auto()
-    SPEC_TOT = auto()
-    SPEC_WIND = auto()
-    SPEC_TOT_WIND = auto()
-    SPEC_TAU = auto()
+    SPEC = auto(), "spec"
+    SPEC_TOT = auto(), "spec_tot"
+    SPEC_WIND = auto(), "spec_wind"
+    SPEC_TOT_WIND = auto(), "spec_tot_wind"
+    SPEC_TAU = auto(), "spec_tau"

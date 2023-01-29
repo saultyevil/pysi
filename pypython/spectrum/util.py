@@ -66,14 +66,14 @@ class SpectrumUtil(base.SpectrumBase):
         """
         spec_key = spec_type if spec_type else self.current
 
-        if self.spectrum[spec_key].units in [enum.SpectrumUnits.L_LAM, enum.SpectrumUnits.F_LAM]:
-            x_points = self.spectrum[spec_key]["Lambda"]
+        if self.spectra[self.scaling][spec_key].units in [enum.SpectrumUnits.L_LAM, enum.SpectrumUnits.F_LAM]:
+            x_points = self.spectra[self.scaling][spec_key]["Lambda"]
         else:
-            x_points = self.spectrum[spec_key]["Freq."]
+            x_points = self.spectra[self.scaling][spec_key]["Freq."]
             tmp = xmin  # temp variable whilst we convert to frequency space, since the order swaps
             xmin = physics.angstrom_to_hz(xmax)
             xmax = physics.angstrom_to_hz(tmp)
 
-        x_points, y_points = utilities.xy_subset(x_points, self.spectrum[spec_key][name], xmin, xmax)
+        x_points, y_points = utilities.xy_subset(x_points, self.spectra[self.scaling][spec_key][name], xmin, xmax)
 
         return simpson(y_points, x_points)
