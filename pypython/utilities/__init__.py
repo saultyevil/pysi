@@ -22,7 +22,7 @@ import numpy
 from psutil import cpu_count
 from scipy.signal import boxcar, convolve
 
-from pypython import err
+from pypython import error
 
 # Private functions ------------------------------------------------------------
 
@@ -253,7 +253,7 @@ def create_wind_save_tables(
 
     cmd = run_shell_command(command, file_path, verbose)
     if cmd.returncode != 0:
-        raise err.RunError(
+        raise error.RunError(
             f"windsave2table has failed to run, possibly due to an incompatible version\n{cmd.stdout.decode('utf-8')}"
         )
 

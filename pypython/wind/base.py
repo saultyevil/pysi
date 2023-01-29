@@ -277,7 +277,7 @@ class WindBase:
     def read_in_cell_spectra(self) -> None:
         """Read in the cell spectra."""
 
-        spec_table_files = pypython.utilities.find("*xspec.*.txt", self.directory)
+        spec_table_files = pypython.utilities.find_files("*xspec.*.txt", self.directory)
         if len(spec_table_files) == 0:
             self.parameters["spec_freq"] = self.parameters["spec_flux"] = None
             return

@@ -55,9 +55,9 @@ class Wind(plot.WindPlot):
         create the standard wind tables, as well as the fractional and
         density ion tables and create the xspec cell spectra files.
         """
-        pypython.create_wind_save_tables(self.root, self.directory, ion_density=True)
-        pypython.create_wind_save_tables(self.root, self.directory, ion_density=False)
-        pypython.create_wind_save_tables(self.root, self.directory, cell_spec=True)
+        pypython.utilities.create_wind_save_tables(self.root, self.directory, ion_density=True)
+        pypython.utilities.create_wind_save_tables(self.root, self.directory, ion_density=False)
+        pypython.utilities.create_wind_save_tables(self.root, self.directory, cell_spec=True)
 
     def change_units(self, new_units: Union[enum.DistanceUnits, enum.VelocityUnits]) -> None:
         """Change the spatial or velocity units.
@@ -86,7 +86,7 @@ class Wind(plot.WindPlot):
         """
         for i in range(self.n_x):
             for j in range(self.n_z):
-                self.parameters["spec"][i, j] = pypython.smooth_array(self.parameters["spec"][i, j], amount)
+                self.parameters["spec"][i, j] = pypython.utilities.smooth_array(self.parameters["spec"][i, j], amount)
 
     def unsmooth_cell_spectra(self) -> None:
         """Unsmooth the arrays.
@@ -99,16 +99,17 @@ class Wind(plot.WindPlot):
 
     def __calculate_grav_radius(self) -> float:
         """Calculate the gravitational radius of the model."""
+        raise NotImplementedError("Method is not implemented yet.")
+
         # if not co_mass_in_msol:
         #     try:
         #         co_mass_in_msol = float(pypython.simulation.grid.get_parameter(self.pf, "Central_object.mass(msol)"))
-        #     except Exception as e:
-        #         print(e)
-        #         raise ValueError("unable to find CO mass from parameter file, please supply the mass instead")
+        #     except Exception as ex
+        #         raise ValueError("unable to find CO mass from parameter file, please supply the mass instead") from ex
 
         # rg = pypython.physics.blackhole.gravitational_radius(co_mass_in_msol)
 
-        return 0
+        # return 0
 
     def __change_distance_units(self, new_units: enum.DistanceUnits):
         """Change the distance units of the wind.

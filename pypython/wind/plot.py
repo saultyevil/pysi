@@ -16,8 +16,8 @@ class WindPlot(util.WindUtil):
     """An extension to the WindGrid base class which adds various plotting
     functionality.
 
-    # TODO: add units for things like velocity, obvious shit # TODO: add
-    general look up unit table for common quantities
+    TODO: add units for things like velocity, obvious shit
+    TODO: add general look up unit table for common quantities
     """
 
     DISTANCE_AXIS_LABEL_LOOKUP = {
@@ -83,7 +83,7 @@ class WindPlot(util.WindUtil):
 
     def plot_parameter_along_sightline(self):
         """Plot a variable along an given inclination angle."""
-        pass
+        raise NotImplementedError("Method is not implemented yet.")
 
     # pylint: disable=too-many-arguments
     def plot_cell_spectrum(

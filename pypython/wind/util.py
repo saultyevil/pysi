@@ -49,7 +49,7 @@ class WindUtil(base.WindBase):
 
     def get_variable_along_sight_line(self, theta: float):
         """Get a variable along a given sightline."""
-        pass
+        raise NotImplementedError("Method is not implemented yet.")
 
     def mask_arrays(self, mask_value: Union[int, Callable[[int, int], bool]]) -> None:
         """Create masked parameter arrays.
@@ -176,37 +176,4 @@ class WindUtil(base.WindBase):
         self.parameters["v_r"] = v_r
 
         # Have to do this again to include polodial velocities in the tuple
-
         self.parameter_keys = tuple(self.parameters.keys())
-
-    # def __rename_j_to_j_bar(self, table, header):
-    #     """Rename j, the mean intensity, to j_bar.
-
-    #     In old versions of windsave2table, the mean intensity of the field
-    #     was named j which created a conflict for 2D models which have a j
-    #     cell index.
-
-    #     Parameters
-    #     ----------
-    #     table: str
-    #         The name of the table
-    #     header: list[str]
-    #         Rename the header for j to j_bar.
-    #     """
-    #     count = header.count("j")
-    #     if count < 1:
-    #         return header
-    #     if count > 2:
-    #         raise ValueError(f"unexpected format: too many j's ({count}) in header for {table} table")
-
-    #     if "z" in header:
-    #         if count == 1:  # This avoids new windsave2table where J -> j_bar
-    #             return header
-    #         idx = header.index("j") + 1
-    #         idx += header[idx:].index("j")
-    #         header[idx] = "j_bar"
-    #     else:
-    #         idx = header.index("j")
-    #         header[idx] = "j_bar"
-
-    #     return header
