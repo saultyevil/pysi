@@ -7,12 +7,13 @@ to finish the plot. Included in pypython are functions to plot the
 spectrum files and the wind save tables.
 """
 
-import numpy as np
-from matplotlib import pyplot as plt
 from distutils.spawn import find_executable
 
-from pypython import get_xy_subset
-from pypython.error import InvalidParameter
+import numpy as np
+from matplotlib import pyplot as plt
+
+import pypython
+import pypython.error as err
 
 # Generic plotting function ----------------------------------------------------
 
@@ -29,26 +30,58 @@ def plot(x,
          label=None,
          alpha=1.0,
          display=False):
-    """Wrapper function around plotting a simple line graph.
+    """Plot a set of x and y data.
+
+    This function acts as a big wrapper around matplotlib, to plot and create
+    a nice set of figures. By providing a Figure and Axes object, one can
+    add additional data to an already existing plot.
 
     Parameters
     ----------
+    x: array-like
+        The x data to plot.
+    y: array-like
+        The y data to ploy.
+    xmin: float
+        The lower boundary of the x axis.
+    xmax: flaot
+        The upper boundary of the x axis.
+    xlabel: str
+        The label for the x axis.
+    ylabel: str
+        The label for the y axis.
+    scale: str
+        The scalings for the axes, i.e. logx, loglog, linlin.
+    fig: plt.Figure
+        A figure object to update.
+    ax: plt.Axes
+        An axes object to update.
+    label: str
+        The label to give the data being plotted.
+    alpha: float
+        The transparency of the line for the data being plotted.
+    display: bool
+        If True, the figure will be displayed.
 
     Returns
     -------
+    fig: plt.Figure
+        The figure object.
+    ax: plt.Axes
+        The axes object.
     """
 
     # It doesn't make sense to provide only fig and not ax, or ax and not fig
     # so at this point we will throw an error message and return
 
     if fig and not ax:
-        raise InvalidParameter("fig has been provided, but ax has not. Both are required.")
+        raise err.InvalidParameter("fig has been provided, but ax has not. Both are required.")
     elif not fig and ax:
-        raise InvalidParameter("fig has not been provided, but ax has. Both are required.")
+        raise err.InvalidParameter("fig has not been provided, but ax has. Both are required.")
     elif not fig and not ax:
         fig, ax = plt.subplots(1, 1, figsize=(12, 5))
 
-    x, y = get_xy_subset(x, y, xmin, xmax)
+    x, y = pypython.get_xy_subset(x, y, xmin, xmax)
     ax.plot(x, y, label=label, alpha=alpha)
 
     if xlabel:

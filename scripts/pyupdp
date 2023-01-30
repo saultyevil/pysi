@@ -31,4 +31,4 @@ if len(to_update) == 0:
     sys.exit(0)
 
 for fp in to_update:
-    grid.update_single_parameter(fp, args.parameter, args.value, verbose=True)
+    grid.update_parameter(fp, args.parameter, args.value, verbose=True)

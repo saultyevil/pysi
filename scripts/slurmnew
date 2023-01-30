@@ -49,7 +49,6 @@ def main():
     """Main function of the script."""
 
     name, n_cores, n_hours, n_minutes, root, py_flags, pyrun_flags = parse_arguments()
-    py_flags += " -t {} ".format(int(n_hours * 3600 + n_minutes * 60))
     create_slurm_file(name, n_cores, n_hours, n_minutes, py_flags, pyrun_flags)
 
 

@@ -4,7 +4,7 @@
 """Create wind save tables for a model.
 
 This script will overwrite any previously created wind save table.
-Verbose printing is on by default, but can be suppressed.
+Verbose printing is off by default, but can be turned on using --loud.
 """
 
 import argparse as ap
@@ -15,12 +15,10 @@ p = ap.ArgumentParser(description=__doc__)
 p.add_argument("root", help="The root name of the simulation")
 p.add_argument("-fp", "--filepath", default=".", help="The directory containing the simulation")
 p.add_argument("-v", "--version", default=None, help="The version of windsave2table to use")
-p.add_argument("-l", "--loud", default=False, action="store_true", help="Suppress the output from the script")
+p.add_argument("--loud", default=False, action="store_true", help="Enable verbose output")
 args = p.parse_args()
 
-# ion fractions
-pypython.create_wind_save_tables(args.root, args.fp, False, False, args.version, args.loud)
+# ion fractions and cell spectra
+pypython.create_wind_save_tables(args.root, args.filepath, False, True, args.version, args.loud)
 # ion densities
-pypython.create_wind_save_tables(args.root, args.fp, True, False, args.version, args.loud)
-# cell spectra
-pypython.create_wind_save_tables(args.root, args.fp, False, True, args.version, args.loud)
+pypython.create_wind_save_tables(args.root, args.filepath, True, False, args.version, args.loud)

@@ -7,7 +7,6 @@ Models used in the PYTHON collaboration, including:
 """
 
 import numpy as np
-from scipy.optimize import brentq
 
 from pypython.constants import MSOL, MSOL_PER_YEAR, G
 
@@ -82,6 +81,7 @@ class SV93Wind:
 
     def find_r0(self, x):
         """Determine r0 for a point in the x, y plane."""
+        from scipy.optimize import brentq
 
         # If the vector is in the x-y plane, then this is simple
         if x[2] == 0:

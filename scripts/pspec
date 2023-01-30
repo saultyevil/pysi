@@ -3,6 +3,8 @@
 """Create plots of the spectrum files from a Python simulation.
 
 This script will create,
+
+TODO: add option to plot specific thing, rather than everything i.e. -i 60 or -i Emitted
 """
 
 import argparse as ap
@@ -65,7 +67,7 @@ def main():
 
     # Note that log_spec is really --linear in the command line arguments
 
-    spectrum = Spectrum(root, fp, log_spec=log_spec, smooth=smooth)
+    spectrum = Spectrum(root, fp, log=log_spec, smooth=smooth)
 
     # Observer spectra
 

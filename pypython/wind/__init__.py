@@ -10,12 +10,11 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 import pypython
-from pypython import (_AttributeDict, _cleanup_root, create_wind_save_tables, find, get_array_index)
-from pypython.constants import BOLTZMANN, CMS_TO_KMS, PI, PLANCK, VLIGHT
-from pypython.math import vector
-from pypython.physics.blackhole import gravitational_radius
-from pypython.plot import set_axes_scales
-from pypython.simulation.grid import get_parameter_value
+import pypython.constants as c
+import pypython.math.vector
+import pypython.physics
+import pypython.plot as pyplt
+import pypython.simulation.grid
 
 # Enumerators ------------------------------------------------------------------
 
@@ -94,7 +93,7 @@ class CellSpectra:
         delim: str [optional]
             The delimiter used in the wind table files.
         """
-        root, fp = _cleanup_root(root, fp)
+        root, fp = pypython._cleanup_root(root, fp)
 
         self.root = root
         self.fp = path.expanduser(fp)
@@ -121,7 +120,7 @@ class CellSpectra:
         try:
             self.get_cell_spectra(delim)
         except IOError:
-            create_wind_save_tables(root, fp, cell_spec=True)
+            pypython.create_wind_save_tables(root, fp, cell_spec=True)
             self.get_cell_spectra(delim)
 
     # Methods ------------------------------------------------------------------
@@ -136,9 +135,9 @@ class CellSpectra:
         density ion tables and create the xspec cell spectra files.
         """
 
-        create_wind_save_tables(self.root, self.fp, ion_density=True)
-        create_wind_save_tables(self.root, self.fp, ion_density=False)
-        create_wind_save_tables(self.root, self.fp, cell_spec=True)
+        pypython.create_wind_save_tables(self.root, self.fp, ion_density=True)
+        pypython.create_wind_save_tables(self.root, self.fp, ion_density=False)
+        pypython.create_wind_save_tables(self.root, self.fp, cell_spec=True)
 
     def get_cell_spectra(self, delim=None):
         """Read in the cell spectra.
@@ -153,7 +152,7 @@ class CellSpectra:
         # Loop over each file. Each time self.header is updated, but we store
         # the rest into an array which gets hstacked to make a single array
 
-        for fp in find("*xspec.*.txt", self.fp):
+        for fp in pypython.find("*xspec.*.txt", self.fp):
 
             with open(fp, "r") as f:
                 spectrum_file = f.readlines()
@@ -192,9 +191,10 @@ class CellSpectra:
 
         if self.nx == 0 or self.nz == 0:
             try:
-                self.nx = int(get_parameter_value(self.pf, "Wind.dim.in.x_or_r.direction"))
+                self.nx = int(pypython.simulation.grid.get_parameter(self.pf, "Wind.dim.in.x_or_r.direction"))
                 if len(self.header[1]) > LEN_WHEN_1D_MODEL:
-                    self.nz = int(get_parameter_value(self.pf, "Wind.dim.in.z_or_theta.direction"))
+                    self.nz = int(
+                        pypython.simulation.grid.get_parameter(self.pf, "Wind.dim.in.z_or_theta.direction"))
             except (ValueError, IOError):
                 self.nx = self.cells[-1][0] + 1
                 self.nz = self.cells[-1][1] + 1
@@ -276,7 +276,7 @@ class CellSpectra:
             ax.set_ylabel(r"$J_{\nu}$ [ergs s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
 
         ax.set_xlabel("Rest-frame Frequency")
-        ax = set_axes_scales(ax, scale)
+        ax = pyplt.set_axes_scales(ax, scale)
         fig.suptitle(f"Spectrum in cell ({i}, {j})")
 
         return fig, ax
@@ -364,7 +364,7 @@ class ModelledCellSpectra:
         delim: str [optional]
             The delimiter used in the wind table files.
         """
-        root, fp = _cleanup_root(root, fp)
+        root, fp = pypython._cleanup_root(root, fp)
 
         self.root = root
         self.fp = path.expanduser(fp)
@@ -427,7 +427,11 @@ class ModelledCellSpectra:
                 # from this
 
                 if band_freq_max > band_freq_min:
-                    model_type = band["spec_mod_type"]
+                    try:
+                        model_type = band["spec_mod_type"]
+                    except KeyError:
+                        return  # TODO: need to do something smart when the file is broken
+
                     frequency = np.logspace(np.log10(band_freq_min), np.log10(band_freq_max), self.n_bins_per_band)
 
                     # There are two model types, a power law or an exponential
@@ -436,7 +440,7 @@ class ModelledCellSpectra:
                     if model_type == CellModelType.powerlaw.value:
                         f_nu = 10**(band["pl_log_w"] + np.log10(frequency) * band["pl_alpha"])
                     elif model_type == CellModelType.exponential.value:
-                        f_nu = band["exp_w"] * np.exp((-1 * PLANCK * frequency) / (band["exp_temp"] * BOLTZMANN))
+                        f_nu = band["exp_w"] * np.exp((-1 * c.PLANCK * frequency) / (band["exp_temp"] * c.BOLTZMANN))
                     else:
                         f_nu = np.zeros_like(frequency)
 
@@ -464,9 +468,9 @@ class ModelledCellSpectra:
         density ion tables and create the xspec cell spectra files.
         """
 
-        create_wind_save_tables(self.root, self.fp, ion_density=True)
-        create_wind_save_tables(self.root, self.fp, ion_density=False)
-        create_wind_save_tables(self.root, self.fp, cell_spec=True)
+        pypython.create_wind_save_tables(self.root, self.fp, ion_density=True)
+        pypython.create_wind_save_tables(self.root, self.fp, ion_density=False)
+        pypython.create_wind_save_tables(self.root, self.fp, cell_spec=True)
 
     def get_elem_number_from_ij(self, i, j):
         """Get the wind element number for a given i and j index.
@@ -606,7 +610,7 @@ class ModelledCellSpectra:
             ax.set_ylabel(r"$J_{\nu}$ [ergs s$^{-1}$ cm$^{-2}$ Hz$^{-1}$]")
 
         ax.set_xlabel("Rest-frame Frequency")
-        ax = set_axes_scales(ax, scale)
+        ax = pyplt.set_axes_scales(ax, scale)
         fig.suptitle(f"Model in cell ({i}, {j})")
 
         return fig, ax
@@ -648,10 +652,20 @@ class ModelledCellSpectra:
 
 
 class Wind:
-    """A class to store 1D and 2D Python wind tables.
+    """A class to store 1D and 2D Python winds.
 
-    Contains methods to extract variables, as well as convert various
-    indices into other indices.
+    The purpose of this class is to store all of the important data associated
+    with a wind in Python, and to make that data easy to access and to plot.
+    Additional functions to manipulate the data into new units and into
+    different formats are also part of this class.
+
+    Examples:
+    ---------
+
+        wind = pypython.Wind("model")
+        wind["x"]  # Get the x-coordinates
+        wind.plot("rho")  # Open an interactive plot window of the density
+        wind.convert_cm_to_rg()  # Change the distance units
     """
     def __init__(self,
                  root,
@@ -693,7 +707,7 @@ class Wind:
         delim: str [optional]
             The delimiter used in the wind table files.
         """
-        root, fp = _cleanup_root(root, fp)
+        root, fp = pypython._cleanup_root(root, fp)
 
         self.root = root
         self.fp = path.expanduser(fp)
@@ -716,7 +730,7 @@ class Wind:
         self.parameters = ()
         self.elements = ()
         self.spectra = ()
-        self.wind = _AttributeDict({})
+        self.wind = pypython._AttributeDict({})
         self.coord_system = WindCoordSystem.unknown
         self.gravitational_radius = -1
         self.gv = None
@@ -888,11 +902,11 @@ class Wind:
         self.velocity_units = WindVelocityUnits(units.lower())
 
         if self.velocity_units == WindVelocityUnits.kms:
-            self.velocity_conversion_factor = CMS_TO_KMS
+            self.velocity_conversion_factor = c.CMS_TO_KMS
         elif self.velocity_units == WindVelocityUnits.cms:
             self.velocity_conversion_factor = 1
         else:
-            self.velocity_conversion_factor = 1 / VLIGHT
+            self.velocity_conversion_factor = 1 / c.VLIGHT
 
     def _setup_coords(self):
         """Set up the various coordinate variables."""
@@ -954,12 +968,13 @@ class Wind:
 
         if not co_mass_in_msol:
             try:
-                co_mass_in_msol = float(get_parameter_value(self.pf, "Central_object.mass(msol)"))
+                co_mass_in_msol = float(
+                    pypython.simulation.grid.get_parameter(self.pf, "Central_object.mass(msol)"))
             except Exception as e:
                 print(e)
                 raise ValueError("unable to find CO mass from parameter file, please supply the mass instead")
 
-        rg = gravitational_radius(co_mass_in_msol)
+        rg = pypython.physics.blackhole.gravitational_radius(co_mass_in_msol)
 
         if self.coord_system in [WindCoordSystem.spherical, WindCoordSystem.polar]:
             self.wind["r"] /= rg
@@ -995,12 +1010,13 @@ class Wind:
 
         if not co_mass_in_msol:
             try:
-                co_mass_in_msol = float(get_parameter_value(self.pf, "Central_object.mass(msol)"))
+                co_mass_in_msol = float(
+                    pypython.simulation.grid.get_parameter(self.pf, "Central_object.mass(msol)"))
             except Exception as e:
                 print(e)
                 raise ValueError("unable to find CO mass from parameter file, please supply the mass instead")
 
-        rg = gravitational_radius(co_mass_in_msol)
+        rg = pypython.physics.blackhole.gravitational_radius(co_mass_in_msol)
 
         if self.coord_system == WindCoordSystem.spherical or self.coord_system == WindCoordSystem.polar:
             self.wind["r"] *= rg
@@ -1065,7 +1081,7 @@ class Wind:
         masked out cells so there will be no background colour to a
         color plot.
 
-        TODO: re-enable partially in-wind cells, once the SV extrapolation 
+        TODO: re-enable partially in-wind cells, once the SV extrapolation
         problem has been fixed -- i.e. change self.wind["inwind"] != 0 to
         self.wind["inwind"] < 0.
         """
@@ -1084,7 +1100,7 @@ class Wind:
                 continue
 
         for col in to_mask_wind:
-            self.wind[col] = np.ma.masked_where(self.wind["inwind"] < 0, self.wind[col])
+            self.wind[col] = np.ma.masked_where(self.wind["inwind"] != 0, self.wind[col])
 
         # Create masked arrays for the wind ions, loop over each element read in
 
@@ -1096,7 +1112,7 @@ class Wind:
 
         if DEBUG_MASK_CELL_SPEC:
             for cell_spec_type in self.spectra:
-                self.wind[cell_spec_type].spectra = np.ma.masked_where(self.wind["inwind"] < 0,
+                self.wind[cell_spec_type].spectra = np.ma.masked_where(self.wind["inwind"] != 0,
                                                                        self.wind[cell_spec_type].spectra)
 
     def create_wind_tables(self):
@@ -1109,9 +1125,9 @@ class Wind:
         density ion tables and create the xspec cell spectra files.
         """
 
-        create_wind_save_tables(self.root, self.fp, ion_density=True, version=self.version)
-        create_wind_save_tables(self.root, self.fp, ion_density=False, version=self.version)
-        create_wind_save_tables(self.root, self.fp, cell_spec=True, version=self.version)
+        pypython.create_wind_save_tables(self.root, self.fp, ion_density=True, version=self.version)
+        pypython.create_wind_save_tables(self.root, self.fp, ion_density=False, version=self.version)
+        pypython.create_wind_save_tables(self.root, self.fp, cell_spec=True, version=self.version)
 
     def get(self, parameter):
         """Get a parameter array. This is just another way to access the
@@ -1164,7 +1180,7 @@ class Wind:
             self.spectra += ["cell_spec"]
         except (OSError, ValueError):
             self.wind["cell_spec"] = None
- 
+
         self.spectra = tuple(self.spectra)
 
     def get_elem_number_from_ij(self, i, j):
@@ -1212,7 +1228,7 @@ class Wind:
         if self.coord_system == WindCoordSystem.polar:
             return np.ones_like(self.x_axis_coords) * theta
         else:
-            return np.array(self.x_axis_coords, dtype=np.float64) * np.tan(PI / 2 - np.deg2rad(theta))
+            return np.array(self.x_axis_coords, dtype=np.float64) * np.tan(c.PI / 2 - np.deg2rad(theta))
 
     def get_variable_along_sight_line(self, theta, parameter):
         """Extract a variable along a given sight line.
@@ -1232,7 +1248,7 @@ class Wind:
         w_array = self.get(parameter)
 
         for x_index, z in enumerate(z_coords):
-            z_index = get_array_index(self.y_axis_coords, z)
+            z_index = pypython.get_array_index(self.y_axis_coords, z)
             values[x_index] = w_array[x_index, z_index]
 
         values = np.nan_to_num(values)
@@ -1268,7 +1284,7 @@ class Wind:
 
         for element in elements_to_get:
             element = element.capitalize()
-            self.wind[element] = _AttributeDict({})
+            self.wind[element] = pypython._AttributeDict({})
 
             # Loop over the different ion "types", i.e. frac or den.
             # ion_type_index_name is used to give the name for the keys in the
@@ -1317,7 +1333,7 @@ class Wind:
                 # Now we can populate the dictionary with the different columns
                 # of the file
 
-                self.wind[element][ion_type_index_name] = _AttributeDict({})
+                self.wind[element][ion_type_index_name] = pypython._AttributeDict({})
                 for index, col in enumerate(columns):
                     self.wind[element][ion_type_index_name][col] = wind_lines[:, index].reshape(self.nx, self.nz)
 
@@ -1501,7 +1517,7 @@ class Wind:
         ax.legend()
         ax.set_xlabel(f"R [{self.distance_units.value}]")
         ax.set_ylabel(parameter)
-        ax = set_axes_scales(ax, scale)
+        ax = pyplt.set_axes_scales(ax, scale)
         fig = plot.finish_figure(fig)
 
         return fig, ax
@@ -1553,7 +1569,7 @@ class Wind:
                 else:
                     cart_velocity_vector = np.array(
                         [self.wind["v_x"][i, j], self.wind["v_y"][i, j], self.wind["v_z"][i, j]])
-                    cyl_velocity_vector = vector.project_cartesian_to_cylindrical_coordinates(
+                    cyl_velocity_vector = pypython.math.vector.project_cartesian_to_cylindrical_coordinates(
                         cart_point, cart_velocity_vector)
                     if type(cyl_velocity_vector) is int:
                         continue
@@ -1568,7 +1584,6 @@ class Wind:
         # Have to do this again to include polodial velocities in the tuple
 
         self.parameters = tuple(self.wind.keys())
-
 
     @staticmethod
     def show(block=True):

@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 import pypython.spectrum.plot
 from pypython import Spectrum, smooth_array
 from pypython import physics
-from pypython.spectrum import create
+from pypython.dump import create_spectrum
 
 
 def setup_script():
@@ -47,7 +47,7 @@ def setup_script():
                           "--extract_line",
                           nargs="+",
                           type=int,
-                          default=(create.UNFILTERED_SPECTRUM, ),
+                          default=(pypython.dump.UNFILTERED_SPECTRUM,),
                           help="The line number to only extract.")
     create_p.add_argument("-n",
                           "--nbins",
@@ -76,7 +76,7 @@ def setup_script():
                         "--extract_line",
                         nargs="+",
                         type=int,
-                        default=(create.UNFILTERED_SPECTRUM, ),
+                        default=(pypython.dump.UNFILTERED_SPECTRUM,),
                         help="The line number to only extract.")
     plot_p.add_argument("-xl", "--xmin", type=float, default=None, help="The lower x-axis boundary to display.")
     plot_p.add_argument("-xu", "--xmax", type=float, default=None, help="The upper x-axis boundary to display.")
@@ -195,7 +195,7 @@ def plot(root,
     """
 
     try:
-        extract_spec = Spectrum(root, fp, log_spec=logbins, smooth=sm, distance=d_norm_pc)
+        extract_spec = Spectrum(root, fp, log=logbins, smooth=sm, distance=d_norm_pc)
         inclinations = extract_spec.inclinations
     except IOError:
         extract_spec = None
@@ -215,8 +215,8 @@ def plot(root,
 
         # Plot the spectrum generated from the delay dump file
 
-        x, y = pypython.plot.get_xy_subset(delay_dump_spectrum[:-1, index_from],
-                                           smooth_array(delay_dump_spectrum[:-1, i + 2], sm), xmin, xmax)
+        x, y = pypython.get_xy_subset(delay_dump_spectrum[:-1, index_from],
+                                      smooth_array(delay_dump_spectrum[:-1, i + 2], sm), xmin, xmax)
 
         ax.plot(x, y, alpha=0.75, label="Filtered Spectrum")
 
@@ -235,7 +235,7 @@ def plot(root,
         # Complicated if statement for naming depending on what contributed to
         # the spectrum
 
-        if extract_line[0] != create.UNFILTERED_SPECTRUM:
+        if extract_line[0] != pypython.dump.UNFILTERED_SPECTRUM:
             name = "{}/{}_line".format(fp, root)
             for line in extract_line:
                 name += "_{}".format(line)
@@ -303,17 +303,17 @@ def main(setup=None):
         xmax = physics.angstrom_to_hz(w_xmin)
 
     if mode == "create":
-        create.create_spectrum(root,
-                               wd,
-                               extract_nres,
-                               freq_min=xmin,
-                               freq_max=xmax,
-                               n_bins=n_bins,
-                               d_norm_pc=d_norm_pc,
-                               spec_cycle_norm=spec_cycle_norm,
-                               n_cores_norm=n_cores_norm)
+        pypython.dump.create_spectrum(root,
+                                      wd,
+                                      extract_nres,
+                                      freq_min=xmin,
+                                      freq_max=xmax,
+                                      n_bins=n_bins,
+                                      d_norm_pc=d_norm_pc,
+                                      spec_cycle_norm=spec_cycle_norm,
+                                      n_cores_norm=n_cores_norm)
     else:
-        if extract_nres[0] != create.UNFILTERED_SPECTRUM:
+        if extract_nres[0] != pypython.dump.UNFILTERED_SPECTRUM:
             name = "{}/{}_line".format(wd, root)
             for line in extract_nres:
                 name += "_{}".format(line)
