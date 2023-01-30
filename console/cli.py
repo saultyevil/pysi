@@ -6,7 +6,8 @@
 
 import click
 
+
+@click.group()
 def cli():
-    """Entry point for pypython console commands.
-    """
+    """Entry point for pypython console commands."""
     print("In development...")

@@ -3,13 +3,23 @@
 
 from setuptools import setup
 
+# get requirements
 with open("requirements.txt", "r", encoding="utf-8") as file_in:
     requirements = [line.strip("\n") for line in file_in.readlines()]
+# get version from pypython/__init__.py
+with open("pypython/__init__.py", "r", encoding="utf-8") as file_in:
+    lines = file_in.readlines()
+for line in lines:
+    line = line.split()
+    if len(lines) < 1:
+        continue
+    if line[0] == "__version__":
+        __version__ = str(line[2]).strip('"').strip("'")
 
 setup(
     name="pypython",
     python_requires="~=3.10",
-    version="4.0.0",
+    version=__version__,
     description="A package to make using Python a wee bit easier.",
     url="https://github.com/saultyevil/pypython",
     author="Edward J. Parkinson",
@@ -19,5 +29,5 @@ setup(
     packages=[
         "pypython",
     ],
-    entry_points={"console_scripts": ["pypython = console.cli.cli"]},
+    entry_points={"console_scripts": ["pypython = console.cli:cli"]},
 )
