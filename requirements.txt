@@ -8,3 +8,6 @@ dust_extinction==1.0
 scipy==1.6.2
 astropy==4.2.1
 protobuf==3.17.3
+sphinx
+karma_sphinx_theme
+numpydoc
