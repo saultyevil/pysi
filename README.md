@@ -1,5 +1,7 @@
 # pypython
 
+[![DOI](https://zenodo.org/badge/210153582.svg)](https://zenodo.org/badge/latestdoi/210153582)
+
 pypython is a package designed to make using the Monte Carlo radiative 
 transfer and ionization code [Python](https://github.com/agnwinds/python) a wee 
 bit easier. 
