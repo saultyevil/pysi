@@ -8,8 +8,8 @@ radius. It also includes functions for converting quantities into other
 quantities.
 """
 
-from pypython.constants import ANGSTROM, C
-from pypython.physics import accretion, blackbody, blackhole, models
+from astropy.constants import c  # pylint: disable=no-name-in-module
+from pypython.physics.constants import ANGSTROM
 
 
 def angstrom_to_hz(wavelength):
@@ -25,7 +25,7 @@ def angstrom_to_hz(wavelength):
     The frequency in Hertz.
     """
 
-    return C / (wavelength * ANGSTROM)
+    return c.cgs / (wavelength * ANGSTROM)
 
 
 def hz_to_angstrom(frequency):
@@ -41,4 +41,4 @@ def hz_to_angstrom(frequency):
     The wavelength in Angstroms.
     """
 
-    return C / frequency / ANGSTROM
+    return c.cgs / frequency / ANGSTROM

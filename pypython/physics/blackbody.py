@@ -5,10 +5,17 @@
 In wavelength space, the blackbody function assumes that the wavelength
 is given in units of Angstroms.
 """
+from math import pi
 
 import numpy as np
 
-from pypython.constants import ANGSTROM, BOLTZMANN, PI, STEFAN_BOLTZMANN, VLIGHT, WIEN_FREQUENCY, WIEN_WAVELENGTH, H
+from astropy.constants import sigma_sb, k_B, c, h  # pylint: disable=no-name-in-module
+
+from pypython.physics.constants import (
+    ANGSTROM,
+    WIEN_FREQUENCY,
+    WIEN_WAVELENGTH,
+)
 
 
 def planck_lambda(temperature, lamda):
@@ -30,8 +37,8 @@ def planck_lambda(temperature, lamda):
     """
 
     lcm = lamda * ANGSTROM
-    x = H * VLIGHT / lcm / BOLTZMANN / temperature
-    y = 2 * H * VLIGHT**2 / lcm**5
+    x = h.cgs * c.cgs / lcm / k_B.cgs / temperature
+    y = 2 * h.cgs * c.cgs**2 / lcm**5
     b_lamda = y / (np.exp(x) - 1)
 
     return b_lamda
@@ -57,8 +64,8 @@ def planck_nu(temperature, frequency, factor=1):
         frequency. Has units ergs s^-1 cm^-2 Hz^-1.
     """
 
-    x = H * frequency / (factor * BOLTZMANN * temperature)
-    b_nu = (2 * H * frequency**3) / (factor**4 * VLIGHT**2 * (np.exp(x) - 1))
+    x = h.cgs * frequency / (factor * k_B.cgs * temperature)
+    b_nu = (2 * h.cgs * frequency**3) / (factor**4 * c.cgs**2 * (np.exp(x) - 1))
 
     return b_nu
 
@@ -79,7 +86,7 @@ def stefan_boltzmann(radius, temperature):
     lum: float
         The luminosity of the sphere.
     """
-    return 4 * PI * radius**2 * STEFAN_BOLTZMANN * temperature**4
+    return 4 * pi * radius**2 * sigma_sb.cgs * temperature**4
 
 
 def wien_law(temperature, freq_space=False):

@@ -7,9 +7,14 @@ and accretion rate and also a function to create a crude accretion disc
 spectrum.
 """
 
+from math import pi
+
 import numpy as np
 
-from pypython.constants import MPROT, MSOL, MSOL_PER_YEAR, PI, STEFAN_BOLTZMANN, THOMPSON, C, G
+from astropy.constants import m_p, M_sun, sigma_sb, sigma, c, G  # pylint: disable=no-name-in-module
+from pypython.physics.constants import MSOL_PER_YEAR
+
+
 from pypython.physics.blackbody import planck_lambda, planck_nu
 from pypython.physics.blackhole import gravitational_radius, innermost_stable_circular_orbit
 
@@ -46,7 +51,7 @@ def _calculate_disc_spectrum(m_co, mdot, radius, frequency_bins, modified_teff, 
     for i in range(n_rings - 1):
         # Use midpoint of annulus as point on r grid
         r = (radius[i + 1] + radius[i]) * 0.5
-        area_annulus = PI * (radius[i + 1] ** 2 - radius[i] ** 2)
+        area_annulus = pi * (radius[i + 1] ** 2 - radius[i] ** 2)
 
         if modified_teff:
             t_eff = modified_eddington_alpha_disc_effective_temperature(r, m_co, mdot)
@@ -58,7 +63,7 @@ def _calculate_disc_spectrum(m_co, mdot, radius, frequency_bins, modified_teff, 
         else:
             f = planck_lambda(t_eff, frequency_bins)
 
-        lum += f * area_annulus * PI
+        lum += f * area_annulus * pi
 
     return lum
 
@@ -84,10 +89,10 @@ def alpha_disc_effective_temperature(r, r_co, m_co, mdot):
         The effective temperature at the provided radius or radii.
     """
 
-    m_co *= MSOL
-    mdot *= MSOL_PER_YEAR
+    m_co *= M_sun.cgs
+    mdot *= M_sun.cgs_PER_YEAR
 
-    teff4 = (3 * G * m_co * mdot) / (8 * np.pi * r**3 * STEFAN_BOLTZMANN)
+    teff4 = (3 * G.cgs * m_co * mdot) / (8 * np.pi * r**3 * sigma_sb.cgs)
     teff4 *= 1 - (r_co / r) ** 0.5
 
     return teff4**0.25
@@ -179,9 +184,9 @@ def eddington_accretion_limit(mbh, efficiency):
     The Eddington accretion rate in units of grams / second.
     """
 
-    mbh *= MSOL
+    mbh *= M_sun.cgs
 
-    return (4 * PI * G * mbh * MPROT) / (efficiency * C * THOMPSON)
+    return (4 * pi * G.cgs * mbh * m_p.cgs) / (efficiency * c.cgs * sigma.cgs)
 
 
 def eddington_luminosity_limit(mbh):
@@ -197,9 +202,9 @@ def eddington_luminosity_limit(mbh):
     The Eddington luminosity for the black hole in units of ergs / second.
     """
 
-    mbh *= MSOL
+    mbh *= M_sun.cgs
 
-    return (4 * PI * G * mbh * C * MPROT) / THOMPSON
+    return (4 * pi * G.cgs * mbh * c.cgs * m_p.cgs) / sigma.cgs
 
 
 def modified_eddington_alpha_disc_effective_temperature(r, m_co, mdot):
@@ -225,11 +230,11 @@ def modified_eddington_alpha_disc_effective_temperature(r, m_co, mdot):
     rg = gravitational_radius(m_co)
     l_edd = eddington_luminosity_limit(m_co)
 
-    m_co *= MSOL
+    m_co *= M_sun.cgs
     mdot *= MSOL_PER_YEAR
 
     fnt = 1 - np.sqrt(r_isco / r)
-    teff4 = (3 * G * m_co * mdot * fnt) / (8 * PI * r**3 * STEFAN_BOLTZMANN)
-    teff4 *= (0.5 + (0.25 + 6 * fnt * (mdot * C**2 / l_edd) ** 2 * (r / rg) ** -2) ** 0.5) ** -1
+    teff4 = (3 * G.cgs * m_co * mdot * fnt) / (8 * pi * r**3 * sigma_sb.cgs)
+    teff4 *= (0.5 + (0.25 + 6 * fnt * (mdot * c.cgs**2 / l_edd) ** 2 * (r / rg) ** -2) ** 0.5) ** -1
 
     return teff4**0.25

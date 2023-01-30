@@ -1,24 +1,36 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Standard models.
+"""Schlossman and Vitello CV wind model.
 
-Models used in the PYTHON collaboration, including:
-    - Schlossman and Vitello 1993 wind model
+TODO, add reference to paper
 """
 
 import numpy as np
+from astropy.constants import G, M_sun  # pylint: disable=no-name-in-module
+from pypython.physics.constants import MSOL_PER_YEAR
 
-from pypython.constants import MSOL, MSOL_PER_YEAR, G
 
-
-class SV93Wind:
+class SchlossmanVitelloWind:
     """Create a Schlossman & Vitello (1993) wind.
 
     This will (or try to) generate a grid of velocities and densities,
     given the parameters.
     """
 
-    def __init__(self, m_co, mdot, r_min, r_max, theta_min, theta_max, accel_length, accel_exp, v_inf, gamma, v0=6e5):
+    def __init__(
+        self,
+        m_co: float,
+        mdot: float,
+        r_min: float,
+        r_max: float,
+        theta_min: float,
+        theta_max: float,
+        accel_length: float,
+        accel_exp: float,
+        v_inf: float,
+        gamma: float,
+        v0: float = 6e5,
+    ):
         """Create an SV wind.
 
         Parameters
@@ -44,9 +56,9 @@ class SV93Wind:
             The terminal velocity, in units of escape velocity.
         """
 
-        self.v0 = v0
+        self.v_0 = v0
         self.gamma = gamma
-        self.m_co = m_co * MSOL
+        self.m_co = m_co * M_sun.cgs
         self.mdot = mdot * MSOL_PER_YEAR
         self.r_min = r_min
         self.r_max = r_max
@@ -82,7 +94,6 @@ class SV93Wind:
 
     def find_r0(self, x):
         """Determine r0 for a point in the x, y plane."""
-        from scipy.optimize import brentq
 
         # If the vector is in the x-y plane, then this is simple
         if x[2] == 0:
@@ -98,6 +109,8 @@ class SV93Wind:
         elif rho >= rho_max:
             return self.r_max * rho - rho_max
         else:
+            from scipy.optimize import brentq  # pylint: disable=import-outside-toplevel
+
             return brentq(
                 self.r0_guess_func,
                 self.r_min,
@@ -108,30 +121,30 @@ class SV93Wind:
     def escape_velocity(self, r0):
         """Calculate the escape velocity at a point r0."""
 
-        return np.sqrt(2 * G * self.m_co / r0)
+        return np.sqrt(2 * G.cgs * self.m_co / r0)
 
     def polodial_velocity(self, dist, r0):
         """Calculate the polodial velocity for a polodial distance l along a
         wind stream line with fixed."""
         tmp = (dist / self.accel_length) ** self.accel_exp
         v_term = self.v_inf * self.escape_velocity(r0)
-        vl = self.v0 + (v_term - self.v0) * (tmp / (tmp + 1))
+        v_l = self.v_0 + (v_term - self.v_0) * (tmp / (tmp + 1))
 
-        return vl
+        return v_l
 
     def velocity_vector(self, x):
         """Determine the 3d velocity vector in cartesian coordinates."""
-        r0 = self.find_r0(x)
-        theta = self.find_theta(r0)
+        r_0 = self.find_r0(x)
+        theta = self.find_theta(r_0)
 
         r = np.sqrt(x[0] ** 2 + x[1] ** 2)
-        pol_dist = np.sqrt((r - r0) ** 2 + x[2] ** 2)
-        vl = self.polodial_velocity(pol_dist, r0)
+        pol_dist = np.sqrt((r - r_0) ** 2 + x[2] ** 2)
+        vl = self.polodial_velocity(pol_dist, r_0)
 
         v = np.zeros(3)
         v[0] = vl * np.sin(theta)
         if r > 0:
-            v[1] = np.sqrt(G * self.m_co * r0) / r
+            v[1] = np.sqrt(G.cgs * self.m_co * r_0) / r
         else:
             v[1] = 0
         v[2] = np.abs(vl * np.cos(theta))

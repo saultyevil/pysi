@@ -11,13 +11,13 @@ from typing import Union
 
 from pypython.spectrum import plot
 
-# Units enumerators ------------------------------------------------------------
+# /home/saultyevil/onedrive/Postgraduate/PySims/tde_optical/grid/3e6/Mdot_acc/0_15
 
 
 class Spectrum(plot.SpectrumPlot):
     """Main spectrum class."""
 
-    def __init__(self, root: str, directory: Union[str, Path], **kwargs) -> None:
+    def __init__(self, root: str, directory: Union[str, Path] = ".", **kwargs) -> None:
         """Initialize the class."""
         super().__init__(root, directory, **kwargs)
 

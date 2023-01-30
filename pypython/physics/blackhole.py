@@ -6,7 +6,7 @@ All functions require the mass to be in units of solar masses and
 accretion rates in solar masses per year.
 """
 
-from pypython.constants import GRAV, MSOL, RSOL, VLIGHT
+from astropy.constants import G, M_sun, R_sun, c  # pylint: disable=no-name-in-module
 
 
 def innermost_stable_circular_orbit(m_bh):
@@ -37,7 +37,7 @@ def gravitational_radius(m_bh):
     -------
     The gravitational radius in cm.
     """
-    return GRAV * m_bh * MSOL / VLIGHT**2
+    return G.cgs * m_bh * M_sun.cgs / c.cgs**2
 
 
 def schwarzschild_radius(m_bh):
@@ -67,4 +67,4 @@ def tidal_disruption_radius(m_bh, m_star, r_star):
     r_star: float
         The radius of the disrupted star in solar radii.
     """
-    return r_star * (m_bh / m_star) ** (1 / 3) * RSOL
+    return r_star * (m_bh / m_star) ** (1 / 3) * R_sun.cgs
