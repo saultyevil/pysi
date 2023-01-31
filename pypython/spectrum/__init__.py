@@ -19,6 +19,9 @@ class Spectrum(plot.SpectrumPlot):
         """Initialize the class."""
         super().__init__(root, directory, **kwargs)
 
+    def __str__(self) -> str:
+        return f"Spectrum(root={self.root!r} directory={str(self.directory)!r})"
+
 
 # Spectrum class ---------------------------------------------------------------
 
@@ -105,25 +108,6 @@ class Spectrum(plot.SpectrumPlot):
 #             self.smooth(smooth)
 
 #     # Private methods ----------------------------------------------------------
-
-#     def _get_spec_key(self, name):
-#         """Get the key depending on if the log or linear version of a spectrum
-#         was read in.
-
-#         Parameters
-#         ----------
-#         name: str
-#             The name of the spectrum to get the key for.
-
-#         Returns
-#         -------
-#         name: str
-#             The key for the spectrum requested.
-#         """
-#         if self.log_spec and not name.startswith("log_") and name != "spec_tau":
-#             name = "log_" + name
-
-#         return name
 
 #     @staticmethod
 #     def _get_spectral_axis(units):
@@ -347,132 +331,6 @@ class Spectrum(plot.SpectrumPlot):
 
 #         return fig, ax
 
-#     def read_in_spectra(self, delim=None):
-#         """Read in a spectrum file given in self.filepath. The spectrum is
-#         stored as a dictionary in self.spectra where each key is the name of
-#         the columns.
-
-#         TODO: make identical "Wavelength" and "Frequency" entries in dictionary
-
-#         Parameters
-#         ----------
-#         delim: str [optional]
-#             A custom delimiter, useful for reading in files which have sometimes
-#             between delimited with commas instead of spaces.
-#         """
-#         n_read = 0
-#         files_to_read = ["spec", "spec_tot", "spec_tot_wind", "spec_wind", "spec_tau"]
-
-#         # Read in each spec file type, and store each spectrum as a key in
-#         # self.avail_spec, etc.
-
-#         for spec_type in files_to_read:
-#             fp = self.fp + self.root + "."
-#             if self.log_spec and spec_type != "spec_tau":
-#                 spec_type = "log_" + spec_type
-#             fp += spec_type
-#             if not path.exists(fp):
-#                 continue
-
-#             n_read += 1
-
-#             self.spectra[spec_type] = pypython._AttributeDict(
-#                 {"units": SpectrumUnits.none, "spectral_axis": SpectrumSpectralAxis.none}
-#             )
-
-#             with open(fp, "r") as f:
-#                 spectrum_file = f.readlines()
-
-#             # Read in the spectrum file. Ignore empty lines and lines which have
-#             # been commented out by #
-
-#             spectrum = []
-
-#             for line in spectrum_file:
-#                 line = line.strip()
-#                 if delim:
-#                     line = line.split(delim)
-#                 else:
-#                     line = line.split()
-#                 if "Units:" in line:
-#                     self.spectra[spec_type]["units"] = SpectrumUnits(line[4][1:-1])
-
-#                     # convert old F_lm typo to new units
-
-#                     if self.spectra[spec_type]["units"] == SpectrumUnits.f_lm_old:
-#                         self.spectra[spec_type]["units"] = SpectrumUnits.f_lm
-
-#                     # If a flux, get the distance
-
-#                     if self.spectra[spec_type]["units"] in [SpectrumUnits.f_lm, SpectrumUnits.f_nu]:
-#                         self.spectra[spec_type]["distance"] = float(line[6])
-#                     else:
-#                         self.spectra[spec_type]["distance"] = 0
-
-#                 if len(line) == 0 or line[0] == "#":
-#                     continue
-
-#                 spectrum.append(line)
-
-#             if spec_type == "spec_tau":
-#                 self.spectra[spec_type]["spectral_axis"] = SpectrumSpectralAxis.frequency
-#             else:
-#                 self.spectra[spec_type]["spectral_axis"] = self._get_spectral_axis(self.spectra[spec_type]["units"])
-
-#             # Extract the header columns of the spectrum. This assumes the first
-#             # read line in the spectrum is the header.
-
-#             header = []  # wish this was short enough to do in a list comprehension
-
-#             for i, column_name in enumerate(spectrum[0]):
-#                 if column_name[0] == "A":
-#                     j = column_name.find("P")
-#                     column_name = column_name[1:j].lstrip("0")  # remove leading 0's for, i.e., 01 degrees
-#                 header.append(column_name)
-
-#             columns = [column for column in header if column not in ["Freq.", "Lambda"]]
-#             spectrum = np.array(spectrum[1:], dtype=np.float64)
-
-#             # Add the spectrum to self.avail_spectrum[spec_type]. The keys of
-#             # the dictionary are the column names in the spectrum, i.e. what
-#             # is in the header
-
-#             for i, column_name in enumerate(header):
-#                 self.spectra[spec_type][column_name] = spectrum[:, i]
-
-#             inclinations = []  # this could almost be a list comprehension...
-
-#             for col in header:
-#                 if col.isdigit() and col not in inclinations:
-#                     inclinations.append(col)
-
-#             self.spectra[spec_type]["columns"] = tuple(columns)
-#             self.spectra[spec_type]["inclinations"] = tuple(inclinations)
-#             self.spectra[spec_type]["n_inclinations"] = len(inclinations)
-
-#         if n_read == 0:
-#             raise IOError(f"Unable to open any spectrum files for {self.root} in {self.fp}")
-
-#         self.available = tuple(self.spectra.keys())
-
-#     def set(self, name):
-#         """Set a spectrum as the default.
-
-#         Sets a different spectrum to be the currently available spectrum for
-#         indexing.
-
-#         Parameters
-#         ----------
-#         name: str
-#             The name of the spectrum, i.e. log_spec or spec_tot, etc. The
-#             available spectrum types are stored in self.available.
-#         """
-#         name = self._get_spec_key(name)
-#         if name not in self.available:
-#             raise IndexError(f"spectrum {name} is not available: available are {self.available}")
-
-#         self.current = name
-
 #     def set_distance(self, distance):
 #         """Rescale the flux to the given distance.
 
@@ -544,41 +402,3 @@ class Spectrum(plot.SpectrumPlot):
 #     def restore_original_spectra(self):
 #         """Restore the spectrum to its original unsmoothed form."""
 #         self.spectra = copy.deepcopy(self._original_spectra)
-
-#     # Built in stuff -----------------------------------------------------------
-
-#     # TODO: use str.capitalize() to allow lower case input
-
-#     def __getattr__(self, key):
-#         return self.spectra[self.current][key]
-
-#     def __getitem__(self, key):
-#         if self._get_spec_key(key) in self.available:
-#             return self.spectra[self._get_spec_key(key)]
-#         else:
-#             return self.spectra[self.current][key]
-
-#     # def __setattr__(self, name, value):
-#     #     self.spectra[self.current][name] = value
-
-#     # def __setitem__(self, key, value):
-#     #     if self._get_spec_key(key) in self.available:
-#     #         self.spectra[self._get_spec_key(key)] = value
-#     #     else:
-#     #         self.spectra[self.current][key] = value
-
-#     def __str__(self):
-#         msg = f"Spectrum for the model {self.root}\n"
-#         msg += f"\nDirectory {self.fp}"
-#         msg += f"\nAvailable spectra {self.available}"
-#         msg += f"\nCurrent spectrum {self.current}"
-#         if "spec" in self.available or "log_spec" in self.available:
-#             if self.log_spec:
-#                 key = "log_spec"
-#             else:
-#                 key = "spec"
-#             msg += f"\nSpectrum inclinations: {self.spectra[key].inclinations}"
-#         if "tau_spec" in self.available:
-#             msg += f"\nOptical depth inclinations {self.spectra.tau_spec.inclinations}"
-
-#         return textwrap.dedent(msg)

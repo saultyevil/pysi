@@ -29,7 +29,7 @@ class SpectrumBase:
         ----------
         root: str
             The root name of the model.
-        directory: Union[str, patlib.Path]
+        directory: Union[str, pathlib.Path]
             The directory containing the model.
         default_scaling: str
             The default bin scaling to use, either "log" or "lin".
