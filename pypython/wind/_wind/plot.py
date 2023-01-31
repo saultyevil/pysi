@@ -5,18 +5,18 @@
 
 from typing import Tuple
 
-import matplotlib.pyplot as plt
 import numpy
+import matplotlib.pyplot as plt
 
 from pypython import plot
-from pypython.wind import enum, util
+from pypython.wind import enum
+from pypython.wind._wind import util
 
 
 class WindPlot(util.WindUtil):
     """An extension to the WindGrid base class which adds various plotting
     functionality.
 
-    TODO: add units for things like velocity, obvious shit
     TODO: add general look up unit table for common quantities
     """
 

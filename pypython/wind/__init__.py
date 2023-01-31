@@ -8,16 +8,12 @@ import textwrap
 from typing import Union
 
 import pypython
-from pypython.wind import enum, plot
+from pypython.wind import enum
+from pypython.wind._wind import plot
 
 
 class Wind(plot.WindPlot):
-    """Main wind class for pypython.
-
-    This class includes...
-
-    # TODO: add method to project into polar velocity
-    """
+    """Main wind class for PyPython."""
 
     def __init__(self, root: str, directory: str = ".", **kwargs) -> None:
         """Initialize the class.
@@ -31,18 +27,10 @@ class Wind(plot.WindPlot):
             to be the current working directory.
         """
         super().__init__(root, directory, **kwargs)
-
-        self.grav_radius = self.__calculate_grav_radius()
+        # self.grav_radius = self.__calculate_grav_radius()
 
     def __str__(self) -> str:
-        return textwrap.dedent(
-            f"""
-            This is a Wind object, containing data for:
-            Root:       {self.root}
-            Directory:  {self.directory}
-            Coord type: {self.coord_type}
-            """
-        )
+        return f"Wind(root={self.root!r} directory={str(self.directory)!r})"
 
     # Public methods -----------------------------------------------------------
 

@@ -1,25 +1,34 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Utility class for Wind."""
+"""Utility class for Wind.
+
+Contains functions and variables which could be part of the WindBase class but
+are a bit more abstracted.
+"""
 
 import copy
 from typing import Callable, Union
 
 import numpy
 
-from pypython.math import vector
-from pypython.wind import base, enum
+from pypython.wind import enum
+from pypython.wind._wind import base
+from pypython.utilities.math import vector
 
-PARTIALLY_INWIND = int(1)
-INWIND = int(0)
-WIND_CELL_TYPES = [INWIND, PARTIALLY_INWIND]
+WIND_CELL_TYPES = [enum.WindCellPosition.INWIND.value, enum.WindCellPosition.PARTIALLY_INWIND.value]
 
 
 class WindUtil(base.WindBase):
     """Utility functions for wind stuff."""
 
-    def __init__(self, root: str, directory: str, mask_value: Union[int, Callable[[int], bool]] = INWIND, **kwargs):
+    def __init__(
+        self,
+        root: str,
+        directory: str,
+        mask_value: Union[int, Callable[[int], bool]] = enum.WindCellPosition.INWIND.value,
+        **kwargs
+    ):
         """Initialize the class."""
         super().__init__(root, directory, **kwargs)
 
@@ -38,12 +47,71 @@ class WindUtil(base.WindBase):
         if self.coord_type == enum.CoordSystem.CYLINDRICAL:
             self.__project_cartesian_velocity_to_cylindrical()
 
-        self.__original_parameters = None
-
         # Create masked arrays
+
+        self.__original_parameters = None
 
         if mask_value or mask_value in WIND_CELL_TYPES:
             self.mask_arrays(mask_value)
+
+    # Private methods ----------------------------------------------------------
+
+    def __get_sight_line_coordinates(self, theta: float):
+        """Get the vertical z coordinates for a given set of x coordinates and
+        inclination angle.
+
+        For a wind with a polar coordinate system, this returns an array of
+        the given theta the size of the x axis.
+
+        Parameters
+        ----------
+        theta: float
+            The angle of the sight line to extract from, in degrees.
+        """
+        if self.coord_type == enum.CoordSystem.POLAR:
+            return numpy.ones_like(self.x_coords) * theta
+
+        return numpy.array(self.x_coords, dtype=numpy.float64) * numpy.tan(numpy.pi * 0.5 - numpy.deg2rad(theta))
+
+    def __project_cartesian_velocity_to_cylindrical(self):
+        """Project cartesian velocities into cylindrical velocities.
+
+        This makes the variables v_r, v_rot and v_l available in
+        variables dictionary. Only works for cylindrical coordinates
+        systems, which outputs the velocities in cartesian coordinates.
+        """
+        v_l = numpy.zeros_like(self.parameters["v_x"])
+        v_rot = numpy.zeros_like(v_l)
+        v_r = numpy.zeros_like(v_l)
+        n_x, n_z = v_l.shape
+
+        for i in range(n_x):
+            for j in range(n_z):
+                cart_point = numpy.array([self.parameters["x"][i, j], 0, self.parameters["z"][i, j]])
+                if self.parameters["inwind"][i, j] < 0:
+                    v_l[i, j] = 0.0
+                    v_rot[i, j] = 0.0
+                    v_r[i, j] = 0.0
+                else:
+                    cart_velocity_vector = numpy.array(
+                        [self.parameters["v_x"][i, j], self.parameters["v_y"][i, j], self.parameters["v_z"][i, j]]
+                    )
+                    try:
+                        cyl_velocity_vector = vector.project_cartesian_vec_to_cylindrical_vec(
+                            cart_point, cart_velocity_vector
+                        )
+                    except ValueError:
+                        continue
+                    v_l[i, j] = numpy.sqrt(cyl_velocity_vector[0] ** 2 + cyl_velocity_vector[2] ** 2)
+                    v_rot[i, j] = cyl_velocity_vector[1]
+                    v_r[i, j] = cyl_velocity_vector[0]
+
+        self.parameters["v_l"] = v_l
+        self.parameters["v_rot"] = v_rot
+        self.parameters["v_r"] = v_r
+
+        # Have to do this again to include polodial velocities in the tuple
+        self.parameter_keys = tuple(self.parameters.keys())
 
     # Public methods -----------------------------------------------------------
 
@@ -119,61 +187,3 @@ class WindUtil(base.WindBase):
         masking.
         """
         self.parameters = copy.deepcopy(self.__original_parameters)
-
-    # Private methods ----------------------------------------------------------
-
-    def __get_sight_line_coordinates(self, theta: float):
-        """Get the vertical z coordinates for a given set of x coordinates and
-        inclination angle.
-
-        For a wind with a polar coordinate system, this returns an array of
-        the given theta the size of the x axis.
-
-        Parameters
-        ----------
-        theta: float
-            The angle of the sight line to extract from, in degrees.
-        """
-        if self.coord_type == enum.CoordSystem.POLAR:
-            return numpy.ones_like(self.x_coords) * theta
-
-        return numpy.array(self.x_coords, dtype=numpy.float64) * numpy.tan(numpy.pi * 0.5 - numpy.deg2rad(theta))
-
-    def __project_cartesian_velocity_to_cylindrical(self):
-        """Project cartesian velocities into cylindrical velocities.
-
-        This makes the variables v_r, v_rot and v_l available in
-        variables dictionary. Only works for cylindrical coordinates
-        systems, which outputs the velocities in cartesian coordinates.
-        """
-        v_l = numpy.zeros_like(self.parameters["v_x"])
-        v_rot = numpy.zeros_like(v_l)
-        v_r = numpy.zeros_like(v_l)
-        n_x, n_z = v_l.shape
-
-        for i in range(n_x):
-            for j in range(n_z):
-                cart_point = numpy.array([self.parameters["x"][i, j], 0, self.parameters["z"][i, j]])
-                if self.parameters["inwind"][i, j] < 0:
-                    v_l[i, j] = 0.0
-                    v_rot[i, j] = 0.0
-                    v_r[i, j] = 0.0
-                else:
-                    cart_velocity_vector = numpy.array(
-                        [self.parameters["v_x"][i, j], self.parameters["v_y"][i, j], self.parameters["v_z"][i, j]]
-                    )
-                    cyl_velocity_vector = vector.project_cartesian_to_cylindrical_coordinates(
-                        cart_point, cart_velocity_vector
-                    )
-                    if isinstance(cyl_velocity_vector, int):
-                        continue
-                    v_l[i, j] = numpy.sqrt(cyl_velocity_vector[0] ** 2 + cyl_velocity_vector[2] ** 2)
-                    v_rot[i, j] = cyl_velocity_vector[1]
-                    v_r[i, j] = cyl_velocity_vector[0]
-
-        self.parameters["v_l"] = v_l
-        self.parameters["v_rot"] = v_rot
-        self.parameters["v_r"] = v_r
-
-        # Have to do this again to include polodial velocities in the tuple
-        self.parameter_keys = tuple(self.parameters.keys())

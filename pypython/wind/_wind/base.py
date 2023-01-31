@@ -14,8 +14,8 @@ from astropy.constants import h, k_B  # pylint: disable=no-name-in-module
 import pypython
 import pypython.utilities
 
-import pypython.wind.enum
-import pypython.wind.elements
+from pypython.wind import enum
+from pypython.wind import elements
 
 
 class WindBase:
@@ -41,7 +41,7 @@ class WindBase:
         self.n_x = int(0)
         self.n_z = int(0)
         self.n_cells = int(0)
-        self.coord_type = pypython.wind.enum.CoordSystem.UNKNOWN
+        self.coord_type = enum.CoordSystem.UNKNOWN
         self.n_model_freq_bands = int(0)
 
         self.parameters = {}
@@ -50,8 +50,8 @@ class WindBase:
         # These units are the default in python. In a higher level class, you
         # should be able to modify the units
 
-        self.distance_units = pypython.wind.enum.DistanceUnits.CENTIMETRES
-        self.velocity_units = pypython.wind.enum.VelocityUnits.CENTIMETRES_PER_SECOND
+        self.distance_units = enum.DistanceUnits.CENTIMETRES
+        self.velocity_units = enum.VelocityUnits.CENTIMETRES_PER_SECOND
 
         # Read in all the variables, spectra, etc.
 
@@ -82,32 +82,31 @@ class WindBase:
         cell_frequency: List[numpy.ndarray],
         cell_flux: List[numpy.ndarray],
     ):
-        """
+        """Update the J_nu model for a frequency band.
 
         Parameters
         ----------
         cell_index: int
-
+            The index of the cell the model is for.
         band_index: int
-
+            The index of the frequency band to model.
         model_array: numpy.ndarray
-
+            An array of values from windsave2table.
         table_header: List[str]
-
+            The header of the winds2table table.
         n_freq_bins_per_band: int
-
+            The number of frequency bins in each frequency band model.
         cell_frequency: List[numpy.ndarray]
-
+            A list to store the frequency bins for the cell.
         cell_flux: List[numpy.ndarry]
-
+            A list to store the fluxes for the cell.
         Returns
         -------
         cell_frequency: List[numpy.ndarray]
-
+            The updated list with frequency bins for the cell.
         cell_flux: List[numpy.ndarry]
-
+            The update list of flux for the cell.
         """
-
         # create a dict of the parameters for band j, the table is a
         # flat list of the parameters for cell 1, 2, 3, ... for BAND 0,
         # and then the next section is the parameters for cell 1, 2,
@@ -321,7 +320,7 @@ class WindBase:
                     self.parameters["spec_flux"][coords[0], :] = file_array[:, i + 1]
                     self.parameters["spec_freq"][coords[0], :] = file_array[:, 0]
 
-    def read_in_wind_ions(self, elements_to_read: List[str] = pypython.wind.elements.ELEMENTS) -> None:
+    def read_in_wind_ions(self, elements_to_read: List[str] = elements.ELEMENTS) -> None:
         """Read in the different ions in the wind.
 
         Parameters
@@ -394,11 +393,11 @@ class WindBase:
         self.n_cells = int(self.n_x * self.n_z)
 
         if "r" in self.parameters and "theta" in self.parameters:
-            self.coord_type = pypython.wind.enum.CoordSystem.POLAR
+            self.coord_type = enum.CoordSystem.POLAR
         elif "r" in self.parameters:
-            self.coord_type = pypython.wind.enum.CoordSystem.SPHERICAL
+            self.coord_type = enum.CoordSystem.SPHERICAL
         else:
-            self.coord_type = pypython.wind.enum.CoordSystem.CYLINDRICAL
+            self.coord_type = enum.CoordSystem.CYLINDRICAL
 
         # Reshape the parameters into (nx, nz) which are currently just flat
         # arrays

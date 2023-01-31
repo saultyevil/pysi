@@ -32,3 +32,10 @@ class DistanceUnits(Enum):
     METRES = auto()
     KILOMETRES = auto()
     GRAVITATIONAL_RADIUS = auto()
+
+
+class WindCellPosition(Enum):
+    """Wind cells can either be fully "inwind" or partially inwind."""
+
+    INWIND = 0
+    PARTIALLY_INWIND = 1
