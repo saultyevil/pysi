@@ -14,8 +14,14 @@ from pypython.spectrum import enum
 class SpectrumBase:
     """The base class."""
 
+    # pylint: disable=too-many-arguments
     def __init__(
-        self, root: str, directory: Union[str, Path] = Path("."), default_spectrum: str = None, boxcar_width: int = 5
+        self,
+        root: str,
+        directory: Union[str, Path] = Path("."),
+        default_scaling: str = "log",
+        default_spectrum: str = None,
+        boxcar_width: int = 5,
     ) -> None:
         """Initialize the class.
 
@@ -24,7 +30,9 @@ class SpectrumBase:
         root: str
             The root name of the model.
         directory: Union[str, patlib.Path]
-            The directory contaning the model.
+            The directory containing the model.
+        default_scaling: str
+            The default bin scaling to use, either "log" or "lin".
         default_spectrum: str
             The spectrum to use as the current. Used as the default choice when
             indexing the class.
@@ -34,20 +42,36 @@ class SpectrumBase:
         self.root = root
         self.directory = Path(directory)
 
-        self.spectra = {"log": {}, "linear": {}}
+        self.spectra = {"log": {}, "lin": {}}
+        self.read_in_spectra()
+
+        if default_scaling:
+            self.scaling = default_scaling
+        else:
+            self.scaling = "log"
 
         if default_spectrum:
             self.current = default_spectrum
         else:
-            self.current = None
+            self.current = list(self.spectra[self.scaling].keys())[0]
 
-        self.scaling = "log"
-
-        self.set_spectrum(self.current)
         self.set_scaling(self.scaling)
+        self.set_spectrum(self.current)
 
         if boxcar_width:
             self.smooth_all_spectra(boxcar_width)
+
+    def __getitem__(self, key):
+        # this should catch "log" or "lin", so then you can do something like
+        # Spectrum["log"]["spec"]
+        if key in self.spectra:
+            return self.spectra[key]
+        # this should catch keys like "spec" or "spec_tot"
+        if key in self.spectra[self.scaling]:
+            return self.spectra[self.scaling][key]
+        # if you just ask for "Freq." or "WCreated", etc, then this should catch
+        # that
+        return self.spectra[self.scaling][self.current][key]
 
     # Private methods ----------------------------------------------------------
 
@@ -130,9 +154,8 @@ class SpectrumBase:
         spec_key: str
             The name of the spectrum to set default.
         """
-        if spec_key not in self.spectra:
+        if spec_key not in self.spectra[self.scaling]:
             raise KeyError(f"{spec_key} not available in spectrum. Choose: {','.join(list(self.spectra.keys()))}")
-
         self.current = spec_key
 
     def smooth_all_spectra(self, boxcar_width: int) -> None:
@@ -155,31 +178,48 @@ class SpectrumBase:
             The width of the boxcar filter.
         """
 
-    def read_in_spectra(self) -> None:
+    def read_in_spectra(self, files_to_read=("spec", "spec_tot", "spec_tot_wind", "spec_wind", "spec_tau")) -> None:
         """Read in all of the spectrum from the simulation.
 
-        This function will read in both the linear and logarithmic spectra for
-        the following types of spectra,
+        This function (by default) will read in both the linear and logarithmic
+        spectra for the following types of spectra,
             1. spec;
             2. spec_tot;
             3. spec_tot_wind;
             4. spec_wind, and;
             5. spec_tau.
+        The files which are read in is controlled by the "files_to_read"
+        argument. If a file cannot be read in, then this is skipped without
+        raising an exception.
+
+        TODO, refactor to lower the number of branches
+
+        Parameters
+        ----------
+        files_to_read: iterable
+            An iterable containing the file extensions of the spectrum files
+            to be read in. By default this includes spec, spec_tot,
+            spec_tot_wind, spec_wind and spec_tau.
+
+        Raises
+        ------
+        IOError
+            Raised when no spectrum files could be found/read in.
         """
         n_read = 0
-        files_to_read = ["spec", "spec_tot", "spec_tot_wind", "spec_wind", "spec_tau"]
 
-        for scaling in ["log_", ""]:
+        for scaling in ["log", "lin"]:
             # try to read in each type of spectrum for log and lin scaling
             for spec_type in files_to_read:
-                filepath = f"{self.directory}{self.root}.{scaling}{spec_type}"
-                if not Path.exists(filepath):
-                    continue
+                # TODO, need a better implementation to get log/linear
+                if scaling == "log":
+                    extension = "log_"
+                else:
+                    extension = ""
 
-                # TODO, need a better implemention to get log/linear
-                scaling = scaling.strip("_")
-                if scaling == "":
-                    scaling = "lin"
+                path = Path(f"{self.directory}/{self.root}.{extension}{spec_type}")
+                if not path.exists():
+                    continue
 
                 n_read += 1
 
@@ -188,7 +228,7 @@ class SpectrumBase:
                     "spectral_axis": enum.SpectrumSpectralAxis.NONE,
                 }
 
-                with open(filepath, "r", encoding="utf-8") as file_in:
+                with open(path, "r", encoding="utf-8") as file_in:
                     spectrum_file = file_in.readlines()
 
                 spectrum_lines = []
@@ -202,9 +242,11 @@ class SpectrumBase:
                     spectrum_lines.append(line)
 
                 if spec_type == "spec_tau":  # this is only created with frequency as the x axis
-                    self.spectra[spec_type]["spectral_axis"] = enum.SpectrumSpectralAxis.FREQUENCY
+                    self.spectra[scaling][spec_type]["spectral_axis"] = enum.SpectrumSpectralAxis.FREQUENCY
                 else:
-                    self.spectra[spec_type]["spectral_axis"] = self._get_spectral_axis(self.spectra[spec_type]["units"])
+                    self.spectra[scaling][spec_type]["spectral_axis"] = self._get_spectral_axis(
+                        self.spectra[scaling][spec_type]["units"]
+                    )
 
                 # Extract the header columns of the spectrum. This assumes the first
                 # read line in the spectrum is the header.
@@ -222,9 +264,10 @@ class SpectrumBase:
                 for i, column_name in enumerate(spectrum_header):
                     self.spectra[scaling][spec_type][column_name] = spectrum_columns[:, i]
 
-                inclinations_in_spectrum = [
-                    name for name in column_names if name.isdigit() and name not in inclinations_in_spectrum
-                ]
+                inclinations_in_spectrum = []
+                for name in column_names:
+                    if name.isdigit() and name not in inclinations_in_spectrum:
+                        inclinations_in_spectrum.append(name)
                 self.spectra[scaling][spec_type]["columns"] = tuple(column_names)
                 self.spectra[scaling][spec_type]["inclinations"] = tuple(inclinations_in_spectrum)
                 self.spectra[scaling][spec_type]["num_inclinations"] = len(inclinations_in_spectrum)

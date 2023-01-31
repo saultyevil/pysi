@@ -6,7 +6,7 @@
 from pathlib import Path
 from typing import Union
 
-from pypython.spectrum import util
+from pypython.spectrum._spectrum import util
 
 
 class SpectrumPlot(util.SpectrumUtil):

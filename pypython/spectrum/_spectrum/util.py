@@ -5,8 +5,10 @@
 
 from scipy.integrate import simpson
 
-from pypython import physics, utilities
-from pypython.spectrum import base, enum
+from pypython import physics
+from pypython import utilities
+from pypython.spectrum import enum
+from pypython.spectrum._spectrum import base
 
 
 class SpectrumUtil(base.SpectrumBase):

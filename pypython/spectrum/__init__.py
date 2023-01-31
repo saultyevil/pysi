@@ -9,9 +9,7 @@ the only thing in here now after the re-structure.
 from pathlib import Path
 from typing import Union
 
-from pypython.spectrum import plot
-
-# /home/saultyevil/onedrive/Postgraduate/PySims/tde_optical/grid/3e6/Mdot_acc/0_15
+from pypython.spectrum._spectrum import plot
 
 
 class Spectrum(plot.SpectrumPlot):
