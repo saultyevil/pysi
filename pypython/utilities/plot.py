@@ -12,8 +12,8 @@ from distutils.spawn import find_executable
 import numpy as np
 from matplotlib import pyplot as plt
 
-import pypython
-import pypython.utilities.error as err
+import pypython.error as err
+from pypython.utilities import array
 
 # Generic plotting function ----------------------------------------------------
 
@@ -83,7 +83,7 @@ def plot(
     elif not fig and not ax:
         fig, ax = plt.subplots(1, 1, figsize=(12, 5))
 
-    x, y = pypython.get_xy_subset(x, y, xmin, xmax)
+    x, y = array.get_subset_in_second_array(x, y, xmin, xmax)
     ax.plot(x, y, label=label, alpha=alpha)
 
     if xlabel:

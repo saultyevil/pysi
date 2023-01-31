@@ -22,50 +22,7 @@ import numpy
 from psutil import cpu_count
 from scipy.signal import boxcar, convolve
 
-from pypython.utilities import error
-
-# Private functions ------------------------------------------------------------
-
-
-def __check_ascending(x_in: Union[list, numpy.ndarray]) -> bool:
-    """Check if an array is sorted in ascending order.
-
-    Parameters
-    ----------
-    x_in: numpy.ndarray, list
-        The array to check.
-
-    Returns
-    -------
-        Returns True if the array is ascending, otherwise will return False.
-    """
-    return numpy.all(numpy.diff(x_in) >= -1)
-
-
-# Public functions -------------------------------------------------------------
-
-
-def check_sorted_array_ascending(x_in: Union[list, numpy.ndarray]) -> True:
-    """Check if an array is sorted in ascending or descending order.
-
-    If the array is not sorted, a ValueError is raised.
-
-    Parameters
-    ----------
-    x: numpy.ndarray, list
-        The array to check.
-
-    Returns
-    -------
-        Returns True if the array is in ascending order, otherwise will return
-        False if in descending order.
-    """
-    if not __check_ascending(x_in):
-        if __check_ascending(x_in.copy()[::-2]):
-            return False
-        raise ValueError("the array provided is not sorted at all")
-
-    return True
+from pypython import error
 
 
 def count_cpu_cores(smt_allowed: bool = False) -> int:
@@ -301,38 +258,6 @@ def find_files(pattern, file_path="."):
     return files
 
 
-def array_index(x_in, target):
-    """Return the index for a given value in an array.
-
-    If an array with duplicate values is passed, the first instance of that
-    value will be returned. The array must also be sorted, in either ascending
-    or descending order.
-
-    Parameters
-    ----------
-    x: numpy.ndarray
-        The array of values.
-    target: float
-        The value, or closest value, to find the index of.
-
-    Returns
-    -------
-    The index for the target value in the array x.
-    """
-    if check_sorted_array_ascending(x_in):
-        if target < numpy.min(x_in):
-            return 0
-        if target > numpy.max(x_in):
-            return -1
-    else:
-        if target < numpy.min(x_in):
-            return -1
-        if target > numpy.max(x_in):
-            return 0
-
-    return numpy.abs(x_in - target).argmin()
-
-
 def get_python_version():
     """Check the version of Python available in $PATH.
 
@@ -390,76 +315,6 @@ def get_root_directory(file_path):
         file_path = "./"
 
     return root, file_path
-
-
-def xy_subset(x_in, y_in, x_min, x_max):
-    """Get a subset of values from two array given xmin and xmax.
-
-    The array must be sorted in ascending or descending order.
-
-    Parameters
-    ----------
-    x: numpy.ndarray
-        The first array to get the subset from, set by xmin and xmax.
-    y: numpy.ndarray
-        The second array to get the subset from.
-    xmin: float
-        The minimum x value
-    xmax: float
-        The maximum x value
-
-    Returns
-    -------
-    x, y: numpy.ndarray
-        The subset arrays.
-    """
-    assert len(x_in) == len(y_in)
-
-    # The array has to be indexed differently depending on if it is ascending
-    # or descending
-
-    if check_sorted_array_ascending(x_in):
-        if x_min:
-            idx = array_index(x_in, x_min)
-            x_in = x_in[idx:]
-            y_in = y_in[idx:]
-        if x_max:
-            idx = array_index(x_in, x_max)
-            x_in = x_in[:idx]
-            y_in = y_in[:idx]
-    else:
-        if x_min:
-            idx = array_index(x_in, x_min)
-            x_in = x_in[:idx]
-            y_in = y_in[:idx]
-        if x_max:
-            idx = array_index(x_in, x_max)
-            x_in = x_in[idx:]
-            y_in = y_in[idx:]
-
-    return x_in, y_in
-
-
-def smooth_array(array, width):
-    """Smooth a 1D array of data using a boxcar filter.
-
-    Parameters
-    ----------
-    array: numpy.array[float]
-        The array to be smoothed.
-    width: int
-        The size of the boxcar filter.
-
-    Returns
-    -------
-    smoothed: numpy.ndarray
-        The smoothed array
-    """
-    if not width:
-        return array
-
-    array = numpy.reshape(array, (len(array),))
-    return convolve(array, boxcar(width) / float(width), mode="same")
 
 
 def run_py_optical_depth(root, photosphere=None, file_path=".", verbose=False):

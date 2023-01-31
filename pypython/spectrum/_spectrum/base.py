@@ -8,6 +8,7 @@ from typing import Union
 
 import numpy
 
+from pypython.utilities import array
 from pypython.spectrum import enum
 
 
@@ -21,7 +22,7 @@ class SpectrumBase:
         directory: Union[str, Path] = Path("."),
         default_scaling: str = "log",
         default_spectrum: str = None,
-        boxcar_width: int = 5,
+        smooth_width: int = 0,
     ) -> None:
         """Initialize the class.
 
@@ -58,8 +59,8 @@ class SpectrumBase:
         self.set_scaling(self.scaling)
         self.set_spectrum(self.current)
 
-        if boxcar_width:
-            self.smooth_all_spectra(boxcar_width)
+        if smooth_width:
+            self.smooth_all_spectra(smooth_width)
 
     def __getitem__(self, key):
         # this should catch "log" or "lin", so then you can do something like
@@ -161,22 +162,22 @@ class SpectrumBase:
     def smooth_all_spectra(self, boxcar_width: int) -> None:
         """Smooth all the spectra, using a boxcar filter.
 
+        The loop over all of the spectra is quite complex... for example if you
+        want the log spectrum for an observer at 10 degrees, you need to index
+        in the following way: self.spectra["log"]["spec"]["10"]. This
+        unforunately means we need a triple nested loop.
+
         Parameters
         ----------
         boxcar_width: int
             The width of the boxcar filter.
         """
-
-    def smooth_spectrum(self, spec_key: str, boxcar_width: int) -> None:
-        """Smooth a spectrum, using a boxcar filter.
-
-        Parameters
-        ----------
-        spec_key: str
-            The name of the spectrum to smooth.
-        boxcar_width: int
-            The width of the boxcar filter.
-        """
+        for scaling, spec_types in self.spectra.items():
+            for spec_type, spec in spec_types.items():
+                for thing, values in spec.items():
+                    if isinstance(values, numpy.ndarray) and thing not in ["Freq.", "Lambda"]:
+                        # pylint: disable=unnecessary-dict-index-lookup
+                        self.spectra[scaling][spec_type][thing] = array.smooth_array(values, boxcar_width)
 
     def read_in_spectra(self, files_to_read=("spec", "spec_tot", "spec_tot_wind", "spec_wind", "spec_tau")) -> None:
         """Read in all of the spectrum from the simulation.
