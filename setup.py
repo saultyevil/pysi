@@ -17,7 +17,7 @@ for line in lines:
         __version__ = str(line[2]).strip('"').strip("'")
 # setup function
 setup(
-    name="pypython",
+    name="PyPython",
     python_requires="~=3.10",
     version=__version__,
     description="A package to make using Python a wee bit easier.",
