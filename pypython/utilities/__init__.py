@@ -22,7 +22,7 @@ import numpy
 from psutil import cpu_count
 from scipy.signal import boxcar, convolve
 
-from pypython import error
+from pypython.utilities import error
 
 # Private functions ------------------------------------------------------------
 

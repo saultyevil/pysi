@@ -14,10 +14,10 @@ from glob import glob
 import numpy as np
 from matplotlib import pyplot as plt
 
-import pypython.simulation.grid
+import pypython.model.grid
 
 
-def check_model_convergence(root, fp=".", return_per_cycle=False, return_converging=False):
+def model_convergence(root, fp=".", return_per_cycle=False, return_converging=False):
     """Check the convergence of a Python simulation by parsing the.
 
     !!Check_convergence line in the Python diag file.
@@ -157,7 +157,7 @@ def model_convergence_components(root, wd="."):
     return n_tr, n_te, n_te_max, n_hc
 
 
-def model_error_summary(root, wd=".", n_cores=-1, print_errors=False):
+def model_errors(root, directory=".", n_cores=-1, print_errors=False):
     """Return a dictionary containing each error found in the error summary for
     each processor for a Python simulation.
     todo: create a mode where a dict is returned for each MPI process
@@ -182,7 +182,7 @@ def model_error_summary(root, wd=".", n_cores=-1, print_errors=False):
         error occurred.
     """
     total_errors = {}
-    diag_files = glob(f"{wd}/diag_{root}/{root}_*.diag")
+    diag_files = glob(f"{directory}/diag_{root}/{root}_*.diag")
     diag_files.sort(key=lambda var: [int(x) if x.isdigit() else x for x in re.findall(r"[^0-9]|[0-9]+", var)])
 
     if n_cores > 0:
@@ -191,7 +191,7 @@ def model_error_summary(root, wd=".", n_cores=-1, print_errors=False):
         n_diag_files = len(diag_files)
 
     if n_diag_files == 0:
-        print(f"No .diag files were found in {wd}/diag_{root} so cannot find any errors")
+        print(f"No .diag files were found in {directory}/diag_{root} so cannot find any errors")
         return total_errors
 
     broken_diag_files = []
@@ -268,13 +268,13 @@ def model_error_summary(root, wd=".", n_cores=-1, print_errors=False):
             broken_diag_files.append(diag)
 
     if len(broken_diag_files) == len(diag_files):
-        print(f"Unable to find any error summaries for {root + wd}")
+        print(f"Unable to find any error summaries for {root + directory}")
         return total_errors
 
     if print_errors:
         n_reported = len(diag_files) - len(broken_diag_files)
         print(
-            f"Total errors reported from {n_reported} of {len(diag_files)} processes for {wd + root}, which {exit_msg}:"
+            f"Total errors reported from {n_reported} of {len(diag_files)} processes for {directory + root}, which {exit_msg}:"
         )
         for key in total_errors.keys():
             n_error = int(total_errors[key])
@@ -289,8 +289,8 @@ def plot_model_convergence(root, fp=".", display=False):
     """Plot the convergence of a model."""
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
 
-    convergence = check_model_convergence(root, fp, return_per_cycle=True)
-    converging = check_model_convergence(root, fp, return_per_cycle=True, return_converging=True)
+    convergence = model_convergence(root, fp, return_per_cycle=True)
+    converging = model_convergence(root, fp, return_per_cycle=True, return_converging=True)
     tr, te, te_max, hc = model_convergence_components(root, fp)
 
     cycles = np.arange(1, len(convergence) + 1, 1)

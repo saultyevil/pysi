@@ -8,9 +8,6 @@ interact with them.
 """
 
 from os import getenv
-from sys import exit
-
-from pypython.error import EXIT_FAIL
 
 
 def remove_bound_bound_transitions_ion(atomic_number, ionization_state):

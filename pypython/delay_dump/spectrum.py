@@ -9,7 +9,7 @@ from numba import jit
 
 import pypython
 import pypython.constants as c
-import pypython.dump as dump
+import pypython.delay_dump as delay_dump
 
 
 def write_delay_dump_spectrum_to_file(
@@ -44,7 +44,7 @@ def write_delay_dump_spectrum_to_file(
         An array of the inclination angles of the spectrum.
     """
 
-    if extract_nres[0] != dump.UNFILTERED_SPECTRUM:
+    if extract_nres[0] != delay_dump.UNFILTERED_SPECTRUM:
         fname = "{}/{}_line".format(wd, root)
         for line in extract_nres:
             fname += "_{}".format(line)
@@ -87,7 +87,7 @@ def write_delay_dump_spectrum_to_file(
     # and write these out to file too
     # TODO: update to allow multiple lines to be written out at once
 
-    if extract_nres[0] != dump.UNFILTERED_SPECTRUM and len(extract_nres) == 1:
+    if extract_nres[0] != delay_dump.UNFILTERED_SPECTRUM and len(extract_nres) == 1:
         output_fname = "{}/{}_line".format(wd, root)
         for line in extract_nres:
             output_fname += "_{}".format(line)
@@ -221,7 +221,7 @@ def bin_photon_weights(
         # that if nres < 0 or nres > NLINES, then it was a continuum scattering
         # event
 
-        if extract_nres[0] != dump.UNFILTERED_SPECTRUM:
+        if extract_nres[0] != delay_dump.UNFILTERED_SPECTRUM:
             # Loop over each nres which we want to extract
             for i in range(n_extract):
                 # If it's last interaction is the nres we want, then extract

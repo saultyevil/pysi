@@ -13,7 +13,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 import pypython
-import pypython.error as err
+import pypython.utilities.error as err
 
 # Generic plotting function ----------------------------------------------------
 

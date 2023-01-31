@@ -147,8 +147,8 @@ def get_parameter(fp, name):
     if fp.find(".pf") == -1:
         raise IOError(f"Provided file path {fp} is not to a parameter file")
 
-    with open(fp, "r") as f:
-        lines = f.readlines()
+    with open(fp, "r", encoding="utf-8") as file_in:
+        lines = file_in.readlines()
 
     value = None
 
@@ -194,13 +194,13 @@ def update_parameter(fp, name, new_value, backup=True, verbose=False):
     old = ""
     new = ""
 
-    with open(fp, "r") as f:
-        lines = f.readlines()
+    with open(fp, "r", encoding="utf-8") as file_in:
+        lines = file_in.readlines()
 
     for i, line in enumerate(lines):
         if line.find(name) != -1:
             old = line
-            new = "{:40s}{}\n".format(name, " ", new_value)
+            new = f"{name:40s} {new_value}\n"
             lines[i] = new
             break
 
@@ -214,7 +214,7 @@ def update_parameter(fp, name, new_value, backup=True, verbose=False):
     else:
         raise ValueError(f"Could not find the parameter {name} in {fp}")
 
-    with open(fp, "w") as f:
-        f.writelines(lines)
+    with open(fp, "w", encoding="utf-8") as file_out:
+        file_out.writelines(lines)
 
     return
