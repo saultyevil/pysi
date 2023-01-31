@@ -1,5 +1,7 @@
 # PyPython
 
+[![DOI](https://zenodo.org/badge/210153582.svg)](https://zenodo.org/badge/latestdoi/210153582)
+
 PyPython is a package and command line tool designed to make using the Monte
 Carlo radiative transfer and ionization code
 [Python](https://github.com/agnwinds/python) a wee bit easier to use.
