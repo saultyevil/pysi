@@ -28,5 +28,5 @@ setup(
     license="MIT",
     install_requires=requirements,
     packages=find_packages(),
-    entry_points={"console_scripts": ["pypython = console.cli:cli"]},
+    entry_points={"console_scripts": ["pypython = pypython.console.cli:cli"]},
 )
