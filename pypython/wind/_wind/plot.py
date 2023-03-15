@@ -310,10 +310,13 @@ class WindPlot(util.WindUtil):
         """
         if fig is None or ax is None:
             fig, ax = plt.subplots(figsize=(8, 6), squeeze=False)
-        if thing not in self.parameter_keys:
-            raise ValueError(f"Unknown parameter {thing}: {thing} not in wind tables")
 
-        ax[a_idx, a_jdx].plot(self.parameters["r"], self.parameters[thing])
+        try:
+            parameter_points = self[thing]
+        except KeyError as exc:
+            raise Exception(f"Unknown parameter {thing}: {thing} not in wind tables") from exc
+
+        ax[a_idx, a_jdx].plot(self.parameters["r"], parameter_points)
         ax[a_idx, a_jdx].set_xlabel(f"$R$ {self.DISTANCE_AXIS_LABEL_LOOKUP[self.distance_units]}")
         ax[a_idx, a_jdx].set_ylabel(f"{thing}")
         ax[a_idx, a_jdx] = plot.set_axes_scales(ax[a_idx, a_jdx], axes_scales)
@@ -381,9 +384,10 @@ class WindPlot(util.WindUtil):
         else:
             x_points, z_points = numpy.deg2rad(self.parameters["theta"]), numpy.log10(self.parameters["r"])
 
-        if thing not in self.parameter_keys:
-            raise ValueError(f"Unknown parameter {thing}: {thing} not in wind tables")
-        parameter_points = self.parameters[thing]
+        try:
+            parameter_points = self[thing]
+        except KeyError as exc:
+            raise Exception(f"Unknown parameter {thing}: {thing} not in wind tables") from exc
 
         im = ax[i, j].pcolormesh(
             x_points,
