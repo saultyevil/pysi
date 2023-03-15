@@ -6,7 +6,7 @@
 
 import click
 
-from .wind import wind
+from .wind import wind_entry
 from .spectrum import spectrum
 
 
@@ -15,5 +15,5 @@ def plot():
     """Commands for plotting synthetic spectra or wind properties"""
 
 
-plot.add_command(wind)
+plot.add_command(wind_entry)
 plot.add_command(spectrum)
