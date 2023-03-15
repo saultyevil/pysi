@@ -8,7 +8,7 @@ from typing import Tuple
 import numpy
 import matplotlib.pyplot as plt
 
-from pypython import plot
+from pypython.utilities import plot
 from pypython.wind import enum
 from pypython.wind._wind import util
 

@@ -124,7 +124,7 @@ class Wind(plot.WindPlot):
                 continue
             self.parameters[quant] *= conversion_factor
 
-        self.grav_radius *= conversion_factor
+        # self.grav_radius *= conversion_factor
         self.distance_units = new_units
 
     def __change_velocity_units(self, new_units: enum.VelocityUnits) -> None:

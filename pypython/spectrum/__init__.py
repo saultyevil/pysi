@@ -33,10 +33,6 @@ class Spectrum(plot.SpectrumPlot):
 #     where each column name is the spectrum name and the columns in that
 #     dict are the names of the columns in the spectrum file. The data is
 #     stored as numpy arrays.
-
-#     TODO: Read in linear and logarithmic version of the spectra
-#     TODO: Create Enum for spectrum types
-#     TODO: Create Enum for "spatial type", i.e. for frequency or lambda monochromatic things
 #     """
 
 #     def __init__(self, root, fp=".", log=True, smooth=None, distance=None, default=None, delim=None):
