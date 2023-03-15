@@ -74,7 +74,9 @@ class Wind(plot.WindPlot):
         """
         for i in range(self.n_x):
             for j in range(self.n_z):
-                self.parameters["spec"][i, j] = pypython.utilities.smooth_array(self.parameters["spec"][i, j], amount)
+                self.parameters["spec"][i, j] = pypython.utilities.array.smooth_array(
+                    self.parameters["spec"][i, j], amount
+                )
 
     def unsmooth_cell_spectra(self) -> None:
         """Unsmooth the arrays.
