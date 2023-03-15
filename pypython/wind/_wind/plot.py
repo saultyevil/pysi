@@ -311,10 +311,9 @@ class WindPlot(util.WindUtil):
         if fig is None or ax is None:
             fig, ax = plt.subplots(figsize=(8, 6), squeeze=False)
 
-        try:
-            parameter_points = self[thing]
-        except KeyError as exc:
-            raise Exception(f"Unknown parameter {thing}: {thing} not in wind tables") from exc
+        parameter_points = self[thing]
+        if parameter_points is None:
+            raise KeyError(f"Unknown parameter {thing}: {thing} not in wind tables")
 
         ax[a_idx, a_jdx].plot(self.parameters["r"], parameter_points)
         ax[a_idx, a_jdx].set_xlabel(f"$R$ {self.DISTANCE_AXIS_LABEL_LOOKUP[self.distance_units]}")
@@ -384,10 +383,9 @@ class WindPlot(util.WindUtil):
         else:
             x_points, z_points = numpy.deg2rad(self.parameters["theta"]), numpy.log10(self.parameters["r"])
 
-        try:
-            parameter_points = self[thing]
-        except KeyError as exc:
-            raise Exception(f"Unknown parameter {thing}: {thing} not in wind tables") from exc
+        parameter_points = self[thing]
+        if parameter_points is None:
+            raise KeyError(f"Unknown parameter {thing}: {thing} not in wind tables")
 
         im = ax[i, j].pcolormesh(
             x_points,
