@@ -6,6 +6,7 @@
 
 import click
 
+
 @click.group()
 def spectrum():
     """Plot synthetic spectra."""

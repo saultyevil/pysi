@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from setuptools import setup
+from setuptools import find_packages
 
 # get requirements from file
 with open("requirements.txt", "r", encoding="utf-8") as file_in:
@@ -26,8 +27,6 @@ setup(
     author_email="saultyevil@gmail.com",
     license="MIT",
     install_requires=requirements,
-    packages=[
-        "pypython",
-    ],
+    packages=find_packages(),
     entry_points={"console_scripts": ["pypython = console.cli:cli"]},
 )
