@@ -7,7 +7,7 @@
 import click
 
 from .wind import wind_entry
-from .spectrum import spectrum
+from .spectrum import spectrum_entry
 
 
 @click.group(name="plot")
@@ -16,4 +16,4 @@ def plot():
 
 
 plot.add_command(wind_entry)
-plot.add_command(spectrum)
+plot.add_command(spectrum_entry)

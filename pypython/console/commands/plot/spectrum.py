@@ -4,14 +4,32 @@
 """The entry point for the plotting synthetic spectra.
 """
 
+from typing import Optional
+
 import click
 
+from pypython.spectrum import Spectrum
 
-@click.group()
-def spectrum():
+
+@click.group(name="spectrum")
+def spectrum_entry():
     """Plot synthetic spectra."""
 
 
-@spectrum.command()
-def observer():
+@spectrum_entry.command()
+@click.argument("root")
+@click.option("--angle", default=None, help="The angle to plot.")
+def observer(root: str, angle: Optional[str]) -> None:
     """Plot the observer spectrum."""
+    model_spectra = Spectrum(root)
+    extracted_spectra = model_spectra["spec"]
+    angles_available = sorted(extracted_spectra["inclinations"], key=int, reverse=True) if not angle else (angle,)
+
+    for _angle in angles_available:
+        try:
+            model_spectra.plot_extracted_spectrum(_angle)
+        except KeyError:
+            click.echo(f"Error: {_angle} not in {root} spectra")
+            return
+
+    model_spectra.show_figures()

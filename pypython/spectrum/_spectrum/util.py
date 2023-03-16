@@ -76,6 +76,8 @@ class SpectrumUtil(base.SpectrumBase):
             xmin = physics.angstrom_to_hz(xmax)
             xmax = physics.angstrom_to_hz(tmp)
 
-        x_points, y_points = utilities.xy_subset(x_points, self.spectra[self.scaling][spec_key][name], xmin, xmax)
+        x_points, y_points = utilities.array.get_subset_in_second_array(
+            x_points, self.spectra[self.scaling][spec_key][name], xmin, xmax
+        )
 
         return simpson(y_points, x_points)
