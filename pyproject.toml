@@ -12,3 +12,6 @@ max-locals = 20
 [tool.pylint.format]
 max-line-length = 120
 good-names = ["ax", "im", "i", "j", "k"]
+
+[tool.ruff]
+line-length = 120
