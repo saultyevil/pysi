@@ -110,7 +110,7 @@ def get_subset_in_second_array(
     x, y: numpy.ndarray
         The subset arrays.
     """
-    if len(x_in) == len(y_in):
+    if len(x_in) != len(y_in):
         raise ValueError("Input arrays are different length")
 
     if check_sorted_array_is_ascending(x_in):
