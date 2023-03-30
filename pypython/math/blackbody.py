@@ -11,7 +11,7 @@ import numpy as np
 
 from astropy.constants import sigma_sb, k_B, c, h  # pylint: disable=no-name-in-module
 
-from pypython.physics.constants import (
+from pypython.math.constants import (
     ANGSTROM,
     WIEN_FREQUENCY,
     WIEN_WAVELENGTH,

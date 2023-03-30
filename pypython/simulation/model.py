@@ -14,7 +14,7 @@ from glob import glob
 import numpy as np
 from matplotlib import pyplot as plt
 
-import pypython.model.grid
+import pypython.simulation.grid
 
 
 def model_convergence(root, fp=".", return_per_cycle=False, return_converging=False):

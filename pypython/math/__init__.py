@@ -9,7 +9,7 @@ quantities.
 """
 
 from astropy.constants import c  # pylint: disable=no-name-in-module
-from pypython.physics.constants import ANGSTROM
+from pypython.math.constants import ANGSTROM
 
 
 def angstrom_to_hz(wavelength):

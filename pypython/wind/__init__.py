@@ -7,9 +7,9 @@ import copy
 import textwrap
 from typing import Union
 
-import pypython
+import pypython.utility
 from pypython.wind import enum
-from pypython.wind._wind import plot
+from pypython.wind.model import plot
 
 
 class Wind(plot.WindPlot):
@@ -43,9 +43,9 @@ class Wind(plot.WindPlot):
         create the standard wind tables, as well as the fractional and
         density ion tables and create the xspec cell spectra files.
         """
-        pypython.utilities.create_wind_save_tables(self.root, self.directory, ion_density=True)
-        pypython.utilities.create_wind_save_tables(self.root, self.directory, ion_density=False)
-        pypython.utilities.create_wind_save_tables(self.root, self.directory, cell_spec=True)
+        pypython.utility.create_wind_save_tables(self.root, self.directory, ion_density=True)
+        pypython.utility.create_wind_save_tables(self.root, self.directory, ion_density=False)
+        pypython.utility.create_wind_save_tables(self.root, self.directory, cell_spec=True)
 
     def change_units(self, new_units: Union[enum.DistanceUnits, enum.VelocityUnits]) -> None:
         """Change the spatial or velocity units.
@@ -74,7 +74,7 @@ class Wind(plot.WindPlot):
         """
         for i in range(self.n_x):
             for j in range(self.n_z):
-                self.parameters["spec"][i, j] = pypython.utilities.array.smooth_array(
+                self.parameters["spec"][i, j] = pypython.utility.array.smooth_array(
                     self.parameters["spec"][i, j], amount
                 )
 

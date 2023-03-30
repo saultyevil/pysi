@@ -8,9 +8,9 @@ from typing import Tuple
 import numpy
 import matplotlib.pyplot as plt
 
-from pypython.utilities import plot
+from pypython.utility import plot
 from pypython.wind import enum
-from pypython.wind._wind import util
+from pypython.wind.model import util
 
 
 class WindPlot(util.WindUtil):

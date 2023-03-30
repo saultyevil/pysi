@@ -12,11 +12,11 @@ from math import pi
 import numpy as np
 
 from astropy.constants import m_p, M_sun, sigma_sb, sigma, c, G  # pylint: disable=no-name-in-module
-from pypython.physics.constants import MSOL_PER_YEAR
+from pypython.math.constants import MSOL_PER_YEAR
 
 
-from pypython.physics.blackbody import planck_lambda, planck_nu
-from pypython.physics.blackhole import gravitational_radius, innermost_stable_circular_orbit
+from pypython.math.blackbody import planck_lambda, planck_nu
+from pypython.math.blackhole import gravitational_radius, innermost_stable_circular_orbit
 
 
 def _calculate_disc_spectrum(m_co, mdot, radius, frequency_bins, modified_teff, freq_units, colour_correction=1):

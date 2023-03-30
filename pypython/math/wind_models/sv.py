@@ -7,7 +7,7 @@ TODO, add reference to paper
 
 import numpy as np
 from astropy.constants import G, M_sun  # pylint: disable=no-name-in-module
-from pypython.physics.constants import MSOL_PER_YEAR
+from pypython.math.constants import MSOL_PER_YEAR
 
 
 class SchlossmanVitelloWind:

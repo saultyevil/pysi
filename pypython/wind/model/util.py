@@ -13,8 +13,8 @@ from typing import Callable, Union
 import numpy
 
 from pypython.wind import enum
-from pypython.wind._wind import base
-from pypython.utilities.math import vector
+from pypython.math import vector
+from pypython.wind.model import base
 
 WIND_CELL_TYPES = [enum.WindCellPosition.INWIND.value, enum.WindCellPosition.PARTIALLY_INWIND.value]
 
@@ -27,7 +27,7 @@ class WindUtil(base.WindBase):
         root: str,
         directory: str,
         mask_value: Union[int, Callable[[int], bool]] = enum.WindCellPosition.INWIND.value,
-        **kwargs
+        **kwargs,
     ):
         """Initialize the class."""
         super().__init__(root, directory, **kwargs)

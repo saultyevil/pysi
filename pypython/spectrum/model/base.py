@@ -3,12 +3,13 @@
 
 """Base class for reading in a spectrum."""
 
+import copy
 from pathlib import Path
 from typing import Union
 
 import numpy
 
-from pypython.utilities import array
+from pypython.utility import array
 from pypython.spectrum import enum
 
 
@@ -58,6 +59,8 @@ class SpectrumBase:
 
         self.set_scaling(self.scaling)
         self.set_spectrum(self.current)
+
+        self.__original_spectra = None
 
         if smooth_width:
             self.smooth_all_spectra(smooth_width)
@@ -172,12 +175,22 @@ class SpectrumBase:
         boxcar_width: int
             The width of the boxcar filter.
         """
+        if not self.__original_spectra:
+            self.__original_spectra = copy.deepcopy(self.spectra)
+
         for scaling, spec_types in self.spectra.items():
             for spec_type, spec in spec_types.items():
                 for thing, values in spec.items():
                     if isinstance(values, numpy.ndarray) and thing not in ["Freq.", "Lambda"]:
                         # pylint: disable=unnecessary-dict-index-lookup
                         self.spectra[scaling][spec_type][thing] = array.smooth_array(values, boxcar_width)
+
+    def unsmooth_all_spectra(self) -> None:
+        """Reset the spectra to the original unsmoothed versions."""
+        if not self.__original_spectra:
+            return
+
+        self.spectra = copy.deepcopy(self.__original_spectra)
 
     def read_in_spectra(self, files_to_read=("spec", "spec_tot", "spec_tot_wind", "spec_wind", "spec_tau")) -> None:
         """Read in all of the spectrum from the simulation.
