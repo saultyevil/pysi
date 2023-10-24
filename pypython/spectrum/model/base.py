@@ -377,12 +377,7 @@ class SpectrumBase:
             A list containing the names of the spectra which have been
             read in.
         """
-        add_scale = lambda name, scale: f"{scale}_{name}"
-        available_list = tuple(
-            [add_scale(key) for key in self.spectra["log"].keys()]
-            + [add_scale(key) for key in self.spectra["lin"].keys()]
-        )
-
+        available_list = tuple([f"log_{key}" for key in self.spectra["columns"]] + list(self.spectra["columns"]))
         print(
             "The following spectra are available:\n",
             ", ".join(available_list),
