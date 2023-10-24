@@ -6,7 +6,12 @@
 
 import click
 
-
 @click.group()
 def model():
     """Commands for evaluating and running models"""
+
+
+@model.command()
+def convergence():
+    """Assess the convergence of a model(s).
+    """

@@ -20,6 +20,9 @@ description = ""
 authors = ["Edward J. Parkinson <saultyevil@gmail.com>"]
 readme = "README.md"
 
+[tool.poetry.scripts]
+pypython = "pypython.console.cli:cli"
+
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
 scipy = ">=1.10.0,<1.11.0"
