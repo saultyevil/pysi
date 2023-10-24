@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Union, List
 
 import numpy
+from astropy import constants
 
 from pypython.utility import array
 from pypython.spectrum import enum
@@ -79,7 +80,7 @@ class SpectrumBase:
 
     # Private methods ----------------------------------------------------------
 
-    def __check_line_for_units(self, line: str, spec_type: str, extension: str) -> None:
+    def __check_line_for_units(self, line: List[str], spec_type: str, extension: str) -> None:
         """_summary_
 
         Parameters
@@ -107,7 +108,10 @@ class SpectrumBase:
 
             # If a flux, get the distance from the same line
             if self.spectra[extension][spec_type]["units"] in [enum.SpectrumUnits.F_LAM, enum.SpectrumUnits.F_NU]:
-                self.spectra[extension][spec_type]["distance"] = float(line[6])
+                try:
+                    self.spectra[extension][spec_type]["distance"] = float(line[6])  # parsecs
+                except ValueError:
+                    self.spectra[extension][spec_type]["distance"] = 0
             else:
                 self.spectra[extension][spec_type]["distance"] = 0
 
@@ -136,11 +140,10 @@ class SpectrumBase:
 
         contents = []
         for line in spectrum_file:
-            line = line.strip()
+            line = line.strip().split()
             # have to check before a comment, because the units line starts
             # with a comment character
             self.__check_line_for_units(line, spec_type, scale)
-            line = line.split()
             if len(line) == 0 or line[0] == "#":
                 continue
             contents.append(line)
@@ -172,7 +175,7 @@ class SpectrumBase:
             "spectral_axis": enum.SpectrumSpectralAxis.NONE,
         }
 
-        spectrum_lines = self.__get_file_contents(file)
+        spectrum_lines = self.__get_file_contents(file, spec_type, scale)
 
         if spec_type == "spec_tau":  # this is only created with frequency as the x-axis
             self.spectra[scale][spec_type]["spectral_axis"] = enum.SpectrumSpectralAxis.FREQUENCY
@@ -181,9 +184,9 @@ class SpectrumBase:
                 self.spectra[scale][spec_type]["units"]
             )
 
-        self.__populate_column_names(spec_type, scale, spectrum_lines)
+        self.__populate_columns(spec_type, scale, spectrum_lines)
 
-    def __populate_column_names(self, spec_type: str, scale: str, spectrum_lines: List[List[str]]):
+    def __populate_columns(self, spec_type: str, scale: str, spectrum_lines: List[List[str]]):
         """Get the headers for a spectrum.
 
         This function will retrieve the column headers in the spectrum file,
@@ -251,6 +254,95 @@ class SpectrumBase:
 
     # Public methods -----------------------------------------------------------
 
+    def apply_to_spectra(self, fn: callable) -> None:
+        for scale in self.spectra:
+            for spec_type, spectrum in self.spectra[scale].items():
+                fn(spec_type, spectrum)
+
+    def convert_flux_to_luminosity(self) -> None:
+        """Switch to luminosity units instead of flux.
+
+        When called, this method will iterate over all spectra in the class. The
+        distance of the original spectra will not be modified.
+        """
+
+        def convert(spec_type, spectrum):
+            if spec_type == "spec_tau":
+                return
+            if spectrum["units"] not in [
+                enum.SpectrumUnits.F_LAM,
+                enum.SpectrumUnits.F_LAM_LEGACY,
+                enum.SpectrumUnits.F_NU,
+            ]:
+                return
+            for column in spectrum["columns"]:
+                spectrum[column] *= 4 * numpy.pi * (spectrum["distance"] * constants.pc.cgs.value) ** 2
+                if spectrum["units"] in [enum.SpectrumUnits.F_LAM, enum.SpectrumUnits.F_LAM_LEGACY]:
+                    spectrum["units"] = enum.SpectrumUnits.L_LAM
+                else:
+                    spectrum["units"] = enum.SpectrumUnits.L_NU
+
+        self.apply_to_spectra(convert)
+
+    def convert_luminosity_to_flux(self, distance: float | int = None) -> None:
+        """Switch to flux units instead of luminosity.
+
+        When called, this method will iterate over all spectra in the class. The
+        distance of the spectra is set either through a variable or the method
+        will attempt to use a value set previously.
+        """
+
+        def convert(spec_type, spectrum):
+            if spec_type == "spec_tau":
+                return
+            if spectrum["units"] not in [
+                enum.SpectrumUnits.L_LAM,
+                enum.SpectrumUnits.L_NU,
+            ]:
+                return
+            for column in spectrum["columns"]:
+                if distance:
+                    my_distance = distance
+                    spectrum["distance"] = distance
+                else:
+                    my_distance = spectrum["distance"]
+                spectrum[column] /= 4 * numpy.pi * (my_distance * constants.pc.cgs.value) ** 2
+                if spectrum["units"] in [enum.SpectrumUnits.L_LAM, enum.SpectrumUnits.L_LAM]:
+                    spectrum["units"] = enum.SpectrumUnits.F_LAM
+                else:
+                    spectrum["units"] = enum.SpectrumUnits.F_NU
+
+        self.apply_to_spectra(convert)
+
+    def set_distance(self, distance: float | int) -> None:
+        """Set the distance of the spectrum.
+
+        The distance will be scaled in parsecs from Earth. This function will
+        not change the distance for any spectra which are in luminosity units.
+
+        Parameters
+        ----------
+        distance : float
+            The distance in parsecs.
+        """
+
+        if not isinstance(distance, (float, int)):
+            raise ValueError(f"{distance} is not a valid type for distance")
+
+        def convert(spec_type, spectrum):
+            if spec_type in ["spec_tau"]:
+                return
+            if spectrum["units"] in [
+                enum.SpectrumUnits.L_NU,
+                enum.SpectrumUnits.L_LAM,
+            ]:
+                return
+            for key in spectrum["columns"]:
+                spectrum[key] *= spectrum["distance"] ** 2 / distance**2
+            spectrum["distance"] = distance
+
+        self.apply_to_spectra(convert)
+
     def set_scale(self, scaling: str) -> None:
         """Set the scaling of the spectrum.
 
@@ -275,6 +367,28 @@ class SpectrumBase:
         if spec_key not in self.spectra[self.scaling]:
             raise KeyError(f"{spec_key} not available in spectrum. Choose: {','.join(list(self.spectra.keys()))}")
         self.current = spec_key
+
+    def show_available(self) -> List[str]:
+        """Prints and return a list of the available spectra.
+
+        Returns
+        -------
+        List[str]
+            A list containing the names of the spectra which have been
+            read in.
+        """
+        add_scale = lambda name, scale: f"{scale}_{name}"
+        available_list = tuple(
+            [add_scale(key) for key in self.spectra["log"].keys()]
+            + [add_scale(key) for key in self.spectra["lin"].keys()]
+        )
+
+        print(
+            "The following spectra are available:\n",
+            ", ".join(available_list),
+        )
+
+        return available_list
 
     def smooth_all_spectra(self, boxcar_width: int) -> None:
         """Smooth all the spectra, using a boxcar filter.
