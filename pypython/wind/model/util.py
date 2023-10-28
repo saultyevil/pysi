@@ -170,7 +170,7 @@ class WindUtil(base.WindBase):
             "model_flux",
         ]
 
-        to_mask = [item for item in self.parameter_keys if item not in items_to_not_mask]
+        to_mask = [item for item in self.things_read_in if item not in items_to_not_mask]
 
         # Finally go through each parameter in to_mask to create a masked array
         # for each item

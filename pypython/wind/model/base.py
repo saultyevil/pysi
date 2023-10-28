@@ -131,12 +131,13 @@ class WindBase:
             # model_type 1 == powerlaw model, otherwise 2 == exponential
             # this is the noclumentaure used in python :-)
 
-            try:
-                model_type = parameters_for_band_j["spec_mod_type"]
-            except KeyError:
-                return warnings.warn(
-                    "The header for the model file is improperly formatted and cannot find 'spec_mode_type'"
+            model_type = parameters_for_band_j.get("spec_mod_type", parameters_for_band_j.get("spec_mod_", None))
+
+            if model_type is None:
+                warnings.warn(
+                    "The header for the model file is improperly formatted and cannot find 'spec_mode_type'",
                 )
+                return [], []
 
             if model_type == 1:
                 band_flux = 10 ** (

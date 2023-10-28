@@ -390,7 +390,7 @@ class WindPlot(util.WindUtil):
         im = ax[i, j].pcolormesh(
             x_points,
             z_points,
-            numpy.log10(parameter_points),
+            numpy.log10(parameter_points) if kwargs.get("log_parameter", None) else parameter_points,
             shading="auto",
             vmin=vmin,
             vmax=vmax,
