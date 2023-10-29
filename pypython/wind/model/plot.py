@@ -201,7 +201,15 @@ class WindPlot(util.WindUtil):
 
     # Private methods ----------------------------------------------------------
 
-    def __add_inclination_sight_lines(self, angles, x_points, z_points, fig, ax, **kwargs):
+    def __add_inclination_sight_lines(
+        self,
+        angles: numpy.array | list,
+        x_points: numpy.array | list,
+        z_points: numpy.array | list,
+        fig: plt.Figure,
+        ax: plt.Axes,
+        **kwargs,
+    ):
         """Add lines to show what various inclination observers.
 
         Parameters
@@ -240,7 +248,15 @@ class WindPlot(util.WindUtil):
 
         return fig, ax
 
-    def __set_wind2d_axes_labels_limits(self, ax, scale, x_points, z_points, a_idx, a_jdx):
+    def __set_wind2d_axes_labels_limits(
+        self,
+        ax: plt.Axes,
+        scale: str,
+        x_points: numpy.array | list,
+        z_points: numpy.array | list,
+        a_idx: int,
+        a_jdx: int,
+    ):
         """Set the axes labels and limits for a 2D wind.
 
         Parameters
@@ -376,6 +392,7 @@ class WindPlot(util.WindUtil):
 
         vmin = kwargs.get("vmin", None)
         vmax = kwargs.get("vmax", None)
+        log_p = kwargs.get("log_p", True)
         inclinations_to_plot = kwargs.get("inclinations_to_plot", None)
 
         if self.coord_type == enum.CoordSystem.CYLINDRICAL:
@@ -386,11 +403,16 @@ class WindPlot(util.WindUtil):
         parameter_points = self[thing]
         if parameter_points is None:
             raise KeyError(f"Unknown parameter {thing}: {thing} not in wind tables")
+        if log_p:
+            parameter_points = numpy.log10(parameter_points)
+            ax[i, j].set_title(r"$\log_{10}(" + f"{thing})$")
+        else:
+            ax[i, j].set_title(f"{thing}")
 
         im = ax[i, j].pcolormesh(
             x_points,
             z_points,
-            numpy.log10(parameter_points) if kwargs.get("log_parameter", None) else parameter_points,
+            parameter_points,
             shading="auto",
             vmin=vmin,
             vmax=vmax,
