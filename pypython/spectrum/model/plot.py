@@ -165,7 +165,6 @@ def __plot_spec(
         things_to_plot = (things_to_plot,)
 
     for thing in things_to_plot:
-
         y_data = spectrum[thing]
 
         # If plotting in frequency space, of if the units then the flux needs
@@ -204,9 +203,9 @@ def __plot_spec(
 class SpectrumPlot(SpectrumBase):
     """Class for plotting spectra."""
 
-    # def __init__(self, root: str, directory: Union[str, Path], **kwargs):
-    #     """Initialize the class."""
-    #     super().__init__(root, directory, **kwargs)
+    def __init__(self, root: str, directory, **kwargs):
+        """Initialize the class."""
+        super().__init__(root, directory, **kwargs)
 
     def plot_extracted_spectrum(self, thing, fig=None, ax=None, _axes_scales="loglog"):
         """Plot a spectrum, from the spectral cycles."""
