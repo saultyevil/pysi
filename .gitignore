@@ -1,6 +1,3 @@
-.vscode
-.idea
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -142,3 +139,7 @@ cython_debug/
 
 # IDE
 .idea
+.vscode
+
+# Project files
+scratch
