@@ -80,7 +80,7 @@ class SpectrumBase:
 
     # Private methods ----------------------------------------------------------
 
-    def __check_line_for_units(self, line: List[str], spec_type: str, extension: str) -> None:
+    def _set_units_and_distance_for_spectrum(self, line: List[str], spec_type: str, scale: str) -> None:
         """_summary_
 
         Parameters
@@ -100,22 +100,22 @@ class SpectrumBase:
             _description_
         """
         if "Units:" in line:
-            self.spectra[extension][spec_type]["units"] = enum.SpectrumUnits(line[4][1:-1])
+            self.spectra[scale][spec_type]["units"] = enum.SpectrumUnits(line[4][1:-1])
 
             # convert old F_lm typo to new units
-            if self.spectra[extension][spec_type]["units"] == enum.SpectrumUnits.F_LAM_LEGACY:
-                self.spectra[extension][spec_type]["units"] = enum.SpectrumUnits.F_LAM
+            if self.spectra[scale][spec_type]["units"] == enum.SpectrumUnits.F_LAM_LEGACY:
+                self.spectra[scale][spec_type]["units"] = enum.SpectrumUnits.F_LAM
 
             # If a flux, get the distance from the same line
-            if self.spectra[extension][spec_type]["units"] in [enum.SpectrumUnits.F_LAM, enum.SpectrumUnits.F_NU]:
+            if self.spectra[scale][spec_type]["units"] in [enum.SpectrumUnits.F_LAM, enum.SpectrumUnits.F_NU]:
                 try:
-                    self.spectra[extension][spec_type]["distance"] = float(line[6])  # parsecs
+                    self.spectra[scale][spec_type]["distance"] = float(line[6])  # parsecs
                 except ValueError:
-                    self.spectra[extension][spec_type]["distance"] = 0
+                    self.spectra[scale][spec_type]["distance"] = 0
             else:
-                self.spectra[extension][spec_type]["distance"] = 0
+                self.spectra[scale][spec_type]["distance"] = 0
 
-    def __get_file_contents(self, file: Path, spec_type: str, scale: str) -> List[List[str]]:
+    def _get_spectrum_file_contents(self, file: Path, spec_type: str, scale: str) -> List[List[str]]:
         """Returns the contents of a file as a list of words.
 
         In addition to reading in the contents of the file, this method will
@@ -143,14 +143,14 @@ class SpectrumBase:
             line = line.strip().split()
             # have to check before a comment, because the units line starts
             # with a comment character
-            self.__check_line_for_units(line, spec_type, scale)
+            self._set_units_and_distance_for_spectrum(line, spec_type, scale)
             if len(line) == 0 or line[0] == "#":
                 continue
             contents.append(line)
 
         return contents
 
-    def __get_spectrum(self, spec_type: str, scale: str) -> None:
+    def _get_this_spectrum(self, spec_type: str, scale: str) -> None:
         """Read in a spectrum of `scale_spec_type`.
 
         Parameters
@@ -160,7 +160,7 @@ class SpectrumBase:
         scale: str
             The scale of the spectrum, either log or linear
         """
-        if scale == "log":
+        if scale == "log" and spec_type != "spec_tau":
             extension = "log_"
         else:
             extension = ""
@@ -173,20 +173,22 @@ class SpectrumBase:
         self.spectra[scale][spec_type] = {
             "units": enum.SpectrumUnits.NONE,
             "spectral_axis": enum.SpectrumSpectralAxis.NONE,
+            "distance": 0,
         }
 
-        spectrum_lines = self.__get_file_contents(file, spec_type, scale)
+        spectrum_lines = self._get_spectrum_file_contents(file, spec_type, scale)
 
         if spec_type == "spec_tau":  # this is only created with frequency as the x-axis
             self.spectra[scale][spec_type]["spectral_axis"] = enum.SpectrumSpectralAxis.FREQUENCY
+            self.spectra[scale][spec_type]["units"] = enum.SpectrumUnits.TAU_NU
         else:
             self.spectra[scale][spec_type]["spectral_axis"] = self.__get_spectral_axis(
                 self.spectra[scale][spec_type]["units"]
             )
 
-        self.__populate_columns(spec_type, scale, spectrum_lines)
+        self._populate_spectrum_columns(spec_type, scale, spectrum_lines)
 
-    def __populate_columns(self, spec_type: str, scale: str, spectrum_lines: List[List[str]]):
+    def _populate_spectrum_columns(self, spec_type: str, scale: str, spectrum_lines: List[List[str]]):
         """Get the headers for a spectrum.
 
         This function will retrieve the column headers in the spectrum file,
@@ -267,8 +269,6 @@ class SpectrumBase:
         """
 
         def convert(spec_type, spectrum):
-            if spec_type == "spec_tau":
-                return
             if spectrum["units"] not in [
                 enum.SpectrumUnits.F_LAM,
                 enum.SpectrumUnits.F_LAM_LEGACY,
@@ -293,8 +293,6 @@ class SpectrumBase:
         """
 
         def convert(spec_type, spectrum):
-            if spec_type == "spec_tau":
-                return
             if spectrum["units"] not in [
                 enum.SpectrumUnits.L_LAM,
                 enum.SpectrumUnits.L_NU,
@@ -333,6 +331,7 @@ class SpectrumBase:
             if spec_type in ["spec_tau"]:
                 return
             if spectrum["units"] in [
+                enum.SpectrumUnits.TAU_NU,
                 enum.SpectrumUnits.L_NU,
                 enum.SpectrumUnits.L_LAM,
             ]:
@@ -447,7 +446,7 @@ class SpectrumBase:
             # try to read in each type of spectrum for log and lin scaling
             for spec_type in files_to_read:
                 try:
-                    self.__get_spectrum(spec_type, scale)
+                    self._get_this_spectrum(spec_type, scale)
                     n_read += 1
                 except IOError:
                     continue

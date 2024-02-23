@@ -4,7 +4,7 @@
 """Class extension for plotting spectra."""
 
 from __future__ import annotations
-from typing import Iterable
+from typing import Iterable, Tuple
 
 from matplotlib import pyplot
 
@@ -14,7 +14,7 @@ from pypython.utility import array
 from pypython.spectrum.model.base import SpectrumBase
 
 
-def __ax_labels_spatial_units(ax, units, distance):
+def _add_flux_ax_labels(ax, units, distance):
     """Add spectrum labels for flux, or luminosity multiplied by the spatial
     unit.
 
@@ -46,7 +46,7 @@ def __ax_labels_spatial_units(ax, units, distance):
     return ax
 
 
-def __ax_labels(ax, units, distance):
+def _add_flux_density_ax_labels(ax, units, distance):
     """Add spectrum labels for a flux density, or luminosity.
 
     Parameters
@@ -77,7 +77,7 @@ def __ax_labels(ax, units, distance):
     return ax
 
 
-def __set_spectrum_axes_labels(ax, spectrum=None, units=None, distance=None, multiply_by_spatial_units=False):
+def _set_axes_labels(ax, spectrum=None, units=None, distance=None, multiply_by_spatial_units=False):
     """Set the units of a given matplotlib axes.
     todo: should have an else if the units are unknown, not for f_nu
 
@@ -111,14 +111,14 @@ def __set_spectrum_axes_labels(ax, spectrum=None, units=None, distance=None, mul
         distance = spectrum.distance
 
     if multiply_by_spatial_units:
-        ax = __ax_labels_spatial_units(ax, units, distance)
+        ax = _add_flux_ax_labels(ax, units, distance)
     else:
-        ax = __ax_labels(ax, units, distance)
+        ax = _add_flux_density_ax_labels(ax, units, distance)
 
     return ax
 
 
-def __plot_spec(
+def _create_plot(
     ax: pyplot.Axes,
     spectrum: pypython.spectrum.Spectrum,
     things_to_plot: Iterable[str] | str,
@@ -187,7 +187,8 @@ def __plot_spec(
 
     ax.legend(loc="lower left")
     ax = plot.set_axes_scales(ax, scale)
-    ax = __set_spectrum_axes_labels(
+
+    ax = _set_axes_labels(
         ax,
         units=spectrum[spectrum.current]["units"],
         distance=spectrum[spectrum.current]["distance"],
@@ -197,9 +198,6 @@ def __plot_spec(
     return ax
 
 
-# Class
-
-
 class SpectrumPlot(SpectrumBase):
     """Class for plotting spectra."""
 
@@ -207,27 +205,140 @@ class SpectrumPlot(SpectrumBase):
         """Initialize the class."""
         super().__init__(root, directory, **kwargs)
 
-    def plot_extracted_spectrum(self, thing, fig=None, ax=None, _axes_scales="loglog"):
-        """Plot a spectrum, from the spectral cycles."""
+    def plot(
+        self, label: str, fig: pyplot.Figure = None, ax: pyplot.Axes = None, ax_scale: str = "loglog"
+    ) -> Tuple[pyplot.Figure, pyplot.Axes]:
+        """Plot a labelled spectrum for the current spectrum file.
 
+        Parameters
+        ----------
+        label : str
+            The label given to the spectrum to plot.
+        fig : pyplot.Figure
+            A pyplot.Figure to update with the spectrum
+        ax : pyplot.Axes
+            A pyplot.Axes to add the spectrum to
+        ax_scale: str
+            The scaling choice for the axes: lin, logy, logx, loglog
+
+        Returns
+        -------
+        fig : pyplot.Figure
+            An updated figure
+        ax : pyplot.Axes
+            An updated axes
+
+        Notes
+        -----
+        If fig and ax are not provided, they will be created.
+        """
         if not fig and not ax:
             fig, ax = pyplot.subplots(1, 1, figsize=(12, 5))
         elif not fig and ax or fig and not ax:
             raise ValueError("fig and ax need to be supplied together")
 
-        ax = __plot_spec(ax, self, thing, None, None, 1.0, "loglog", False)
+        ax = _create_plot(ax, self, label, None, None, 1.0, ax_scale, False)
 
         # if label_lines:
         #     ax = add_line_ids(ax, common_lines(spectrum=spectrum), "none")
 
-        fig = plot.finish_figure(fig, "spectrum")
+        fig = plot.finish_figure(fig, label)
 
         return fig, ax
 
-    def plot_diagnostic_spectrum(self, thing):
-        """Plot a diagnostic spectrum, from the ionization cycle."""
+    def plot_diagnostic_spectra(self) -> Tuple[pyplot.Figure, pyplot.Axes]:
+        """Plot the diagnostic spec_tot files.
+
+        Returns
+        -------
+        fig : pyplot.Figure
+            An updated figure
+        ax : pyplot.Axes
+            An updated axes
+
+        Notes
+        -----
+        If fig and ax are not provided, they will be created.
+        """
+        fig, ax = pyplot.subplots(2, 1, figsize=(12, 9), sharex=True)
+        current = self.current
+        try:
+            self.set_spectrum("spec_tot")  # temporarily change the spectrum target
+        except KeyError:
+            print("Unable to open `spec_tot` spectrum")
+            return fig, ax
+
+        ax[0] = _create_plot(
+            ax[0],
+            self,
+            ("CenSrc", "Disk", "WCreated"),
+            None,
+            None,
+            0.75,
+            "loglog",
+            False,
+        )
+        ax[1] = _create_plot(
+            ax[1],
+            self,
+            ("Created", "Emitted", "Wind", "HitSurf"),
+            None,
+            None,
+            0.75,
+            "loglog",
+            False,
+        )
+
+        ax[0].set_xlabel(None)
+        fig = plot.finish_figure(fig, "Diagnostic spectra", hspace=0)
+        self.set_spectrum(current)
+
+        return fig, ax
+
+    def plot_optical_depth(self) -> Tuple[pyplot.Figure, pyplot.Axes]:
+        """Plot the optical depth.
+
+        Returns
+        -------
+        fig : pyplot.Figure
+            An updated figure
+        ax : pyplot.Axes
+            An updated axes
+
+        Notes
+        -----
+        If fig and ax are not provided, they will be created.
+        """
+        fig, ax = pyplot.subplots(1, 1, figsize=(12, 5))
+        current = self.current
+        try:
+            self.set_spectrum("spec_tau")  # temporarily change the spectrum target
+        except KeyError:
+            print("Unable to open `spec_tau` spectrum")
+            return fig, ax
+
+        ax = _create_plot(
+            ax,
+            self,
+            self["inclinations"],
+            None,
+            None,
+            0.75,
+            "loglog",
+            False,
+        )
+
+        fig = plot.finish_figure(fig, "Continuum Optical Depth")
+        self.current = current
+
+        return fig, ax
 
     @staticmethod
     def show_figures() -> None:
-        """Show plotted figures."""
+        """Show plotted figures.
+
+        Notes
+        ------
+        This is a wrapper around pyplot.show().
+        """
         pyplot.show()

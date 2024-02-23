@@ -27,6 +27,7 @@ class SpectrumUnits(MultiValueEnum):
     Python.
     """
 
+    TAU_NU = auto(), "\tau_{\nu}"
     L_NU = auto(), "erg/s/Hz"
     L_LAM = auto(), "erg/s/A"
     F_NU = auto(), "erg/s/cm^-2/Hz"

@@ -27,7 +27,7 @@ def observer(root: str, angle: Optional[str]) -> None:
 
     for _angle in angles_available:
         try:
-            model_spectra.plot_extracted_spectrum(_angle)
+            model_spectra.plot(_angle)
         except KeyError:
             click.echo(f"Error: {_angle} not in {root} spectra")
             return
