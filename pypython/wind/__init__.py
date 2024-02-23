@@ -4,12 +4,28 @@
 """Contains the user facing Wind class."""
 
 import copy
-import textwrap
 from typing import Union
 
 import pypython.utility
 from pypython.wind import enum
 from pypython.wind.model import plot
+
+
+def create_wind_tables(root: str, directory: str, version: str = None):
+    """Force the creation of wind save tables for the model.
+
+    Parameters
+    ----------
+    root : str
+        The root name of the model
+    directory : str
+        The directory containing the model
+    version : str
+        The version number of Python the model was run with
+    """
+    pypython.utility.create_wind_save_tables(root, directory, ion_density=True, version=version)
+    pypython.utility.create_wind_save_tables(root, directory, ion_density=False, version=version)
+    pypython.utility.create_wind_save_tables(root, directory, cell_spec=True, version=version)
 
 
 class Wind(plot.WindPlot):
@@ -43,9 +59,7 @@ class Wind(plot.WindPlot):
         create the standard wind tables, as well as the fractional and
         density ion tables and create the xspec cell spectra files.
         """
-        pypython.utility.create_wind_save_tables(self.root, self.directory, ion_density=True)
-        pypython.utility.create_wind_save_tables(self.root, self.directory, ion_density=False)
-        pypython.utility.create_wind_save_tables(self.root, self.directory, cell_spec=True)
+        create_wind_tables(self.root, self.directory, self.version)
 
     def change_units(self, new_units: Union[enum.DistanceUnits, enum.VelocityUnits]) -> None:
         """Change the spatial or velocity units.

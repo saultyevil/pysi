@@ -191,6 +191,8 @@ def create_wind_save_tables(
     name = "windsave2table"
     if version:
         name += version
+        with open(f"{file_path}/.py-version", "w") as file_out:
+            file_out.write(f"{version}\n")
 
     in_path = which(name)
     if not in_path:

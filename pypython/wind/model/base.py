@@ -23,7 +23,7 @@ class WindBase:
 
     # Special methods ----------------------------------------------------------
 
-    def __init__(self, root: str, directory: str) -> None:
+    def __init__(self, root: str, directory: str, **kwargs) -> None:
         """Initialize the class.
 
         Parameters
@@ -32,11 +32,11 @@ class WindBase:
             The root name of the simulation.
         directory: str
             The directory file path containing the simulation.
-        mask_value: int, Callable[int, int]
-            The value of inwind to create a masked array with.
         """
         self.root = str(root)
         self.directory = pathlib.Path(directory)
+        self.version = kwargs.get("version", None)
+        self._check_version()
 
         self.n_x = int(0)
         self.n_z = int(0)
@@ -70,6 +70,18 @@ class WindBase:
         return self.parameters.get(key)
 
     # Private methods ----------------------------------------------------------
+
+    def _check_version(self):
+        """Get the Python version from file if not already set.
+
+        If the .py-version file cannot be fine, the version is set to UNKNOWN.
+        """
+        if not self.version:
+            try:
+                with open(f"{self.directory}/.py-version", "r") as file_in:
+                    self.version = file_in.read()
+            except IOError:
+                self.version = "UNKNOWN"
 
     # pylint: disable=too-many-arguments
     def __update_band_freq_flux(
