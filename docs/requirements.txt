@@ -9,5 +9,5 @@ matplotlib==3.3.4
 pandas==1.2.4
 dust_extinction==1.0
 scipy==1.10.0
-astropy==4.2.1
+astropy==5.3.3
 protobuf==3.18.3
