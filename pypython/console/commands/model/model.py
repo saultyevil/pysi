@@ -7,7 +7,7 @@
 from pathlib import Path
 
 import click
-import pypython.simulation.model
+import pypython.sim.model
 
 
 @click.group()
@@ -17,9 +17,8 @@ def model():
 
 @model.command()
 def convergence():
-    """Assess the convergence of a model(s).
-    """
+    """Assess the convergence of a model(s)."""
     models = sorted(Path(".").rglob("*.pf"))
     for model in models:
-        model_convergence = pypython.simulation.model.model_convergence(model.stem, model.parent)
+        model_convergence = pypython.sim.model.model_convergence(model.stem, model.parent)
         print(convergence)

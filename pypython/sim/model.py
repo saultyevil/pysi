@@ -14,7 +14,7 @@ from glob import glob
 import numpy as np
 from matplotlib import pyplot as plt
 
-import pypython.simulation.grid
+import pypython.sim.grid
 
 
 def model_convergence(root, fp=".", return_per_cycle=False, return_converging=False):
@@ -211,7 +211,6 @@ def model_errors(root, directory=".", n_cores=-1, print_errors=False):
         error_start = -1
 
         for k, start_line in enumerate(lines):
-
             # Find start of error summary
 
             if start_line.find("Error summary:") != -1:
