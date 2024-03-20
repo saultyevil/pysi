@@ -4,17 +4,17 @@
 """Class extension for plotting spectra."""
 
 from __future__ import annotations
+
 from typing import Iterable, Tuple
 
 from matplotlib import pyplot
 
 import pypython.spec.enum
-from pypython.util import plot
-from pypython.util import array
 from pypython.spec.model.base import SpectrumBase
+from pypython.util import array, plot
 
 
-def _add_flux_ax_labels(ax, units, distance):
+def _add_flux_ax_labels(ax: pyplot.Axes, units: pypython.spec.enum.SpectrumUnits, distance: float | int):
     """Add spectrum labels for flux, or luminosity multiplied by the spatial
     unit.
 
@@ -46,7 +46,7 @@ def _add_flux_ax_labels(ax, units, distance):
     return ax
 
 
-def _add_flux_density_ax_labels(ax, units, distance):
+def _add_flux_density_ax_labels(ax: pyplot.Axes, units: pypython.spec.enum.SpectrumUnits, distance: float | int):
     """Add spectrum labels for a flux density, or luminosity.
 
     Parameters
@@ -77,7 +77,12 @@ def _add_flux_density_ax_labels(ax, units, distance):
     return ax
 
 
-def _set_axes_labels(ax, spectrum=None, units=None, distance=None, multiply_by_spatial_units=False):
+def _set_axes_labels(
+    ax: pyplot.Axes,
+    units: pypython.spec.enum.SpectrumUnits,
+    distance: float | int,
+    use_flux: bool = False,
+) -> pyplot.Axes:
     """Set the units of a given matplotlib axes.
     todo: should have an else if the units are unknown, not for f_nu
 
@@ -85,8 +90,6 @@ def _set_axes_labels(ax, spectrum=None, units=None, distance=None, multiply_by_s
     ----------
     ax: plt.Axes
         The axes object to update.
-    spectrum: pypython.Spectrum
-        The spectrum being plotted. Used to determine the axes labels.
     units: pypython.spectrum.SpectrumUnits
         The units of the spectrum
     distance: float
@@ -100,17 +103,7 @@ def _set_axes_labels(ax, spectrum=None, units=None, distance=None, multiply_by_s
     ax: plt.Axes
         The updated axes object.
     """
-    if spectrum is None and units is None and distance is None:
-        raise ValueError("either the spectrum or the units and distance needs to be provided")
-
-    if units and distance is None or distance and units is None:
-        raise ValueError("the units and distance have to be provided together")
-
-    if units is None and distance is None:
-        units = spectrum.units
-        distance = spectrum.distance
-
-    if multiply_by_spatial_units:
+    if use_flux:
         ax = _add_flux_ax_labels(ax, units, distance)
     else:
         ax = _add_flux_density_ax_labels(ax, units, distance)
@@ -192,7 +185,7 @@ def _create_plot(
         ax,
         units=spectrum[spectrum.current]["units"],
         distance=spectrum[spectrum.current]["distance"],
-        multiply_by_spatial_units=use_flux,
+        use_flux=use_flux,
     )
 
     return ax

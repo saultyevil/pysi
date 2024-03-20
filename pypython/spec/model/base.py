@@ -3,15 +3,17 @@
 
 """Base class for reading in a spectrum."""
 
+from __future__ import annotations
+
 import copy
 from pathlib import Path
-from typing import Union, List
+from typing import List, Union
 
 import numpy
 from astropy import constants
 
-from pypython.util import array
 from pypython.spec import enum
+from pypython.util import array
 
 
 class SpectrumBase:
@@ -257,6 +259,13 @@ class SpectrumBase:
     # Public methods -----------------------------------------------------------
 
     def apply_to_spectra(self, fn: callable) -> None:
+        """Apply the callable fn to all spectar
+
+        Parameters
+        ----------
+        fn : callable
+            The callable function to apply.
+        """
         for scale in self.spectra:
             for spec_type, spectrum in self.spectra[scale].items():
                 fn(spec_type, spectrum)
@@ -268,7 +277,7 @@ class SpectrumBase:
         distance of the original spectra will not be modified.
         """
 
-        def convert(spec_type, spectrum):
+        def convert(_, spectrum):
             if spectrum["units"] not in [
                 enum.SpectrumUnits.F_LAM,
                 enum.SpectrumUnits.F_LAM_LEGACY,

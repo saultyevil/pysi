@@ -18,9 +18,7 @@ from shutil import which
 from subprocess import run
 from typing import List, Union
 
-import numpy
 from psutil import cpu_count
-from scipy.signal import boxcar, convolve
 
 from pypython import error
 

@@ -7,21 +7,3 @@ comes out of a Python simulation.
 """
 
 __version__ = "4.0.0"
-
-
-# __all__ = [
-#     # sub-modules
-#     "dump",
-#     "math",
-#     "observations",
-#     "physics",
-#     "plot",
-#     "simulation",
-#     "spectrum",
-#     "util",
-#     "wind",
-#     # classes
-#     "Wind",
-#     "Spectrum",
-#     # other things
-# ]
