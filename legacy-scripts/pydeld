@@ -8,4 +8,3 @@ p = argparse.ArgumentParser(description="Remove 'data' symbolic links recursivel
 p.add_argument("-fp", default=".", help="The directory to search from")
 args = p.parse_args()
 print(f"{cleanup_data(args.fp)} symbolic links were removed")
-

@@ -28,23 +28,32 @@ def setup_script():
     p.add_argument("-i", "--inclination", default="all", help="The inclination angles")
     p.add_argument("-xl", "--xmin", type=float, default=None, help="The lower x-axis boundary to display.")
     p.add_argument("-xu", "--xmax", type=float, default=None, help="The upper x-axis boundary to display.")
-    p.add_argument("-s",
-                   "--scales",
-                   default="loglog",
-                   choices=["logx", "logy", "loglog", "linlin"],
-                   help="The axes scaling to use: logx, logy, loglog, linlin.")
-    p.add_argument("-l",
-                   "--common_lines",
-                   action="store_true",
-                   default=False,
-                   help="Plot labels for important absorption edges.")
+    p.add_argument(
+        "-s",
+        "--scales",
+        default="loglog",
+        choices=["logx", "logy", "loglog", "linlin"],
+        help="The axes scaling to use: logx, logy, loglog, linlin.",
+    )
+    p.add_argument(
+        "-l", "--common_lines", action="store_true", default=False, help="Plot labels for important absorption edges."
+    )
     p.add_argument("-sm", "--smooth_amount", type=int, default=5, help="The size of the boxcar smoothing filter.")
     p.add_argument("--display", action="store_true", default=False, help="Display the plot before exiting the script.")
 
     args = p.parse_args()
 
-    return (args.name, args.working_directory, args.inclination, args.xmin, args.xmax, args.common_lines, args.scales,
-            args.smooth_amount, args.display)
+    return (
+        args.name,
+        args.working_directory,
+        args.inclination,
+        args.xmin,
+        args.xmax,
+        args.common_lines,
+        args.scales,
+        args.smooth_amount,
+        args.display,
+    )
 
 
 def main():
@@ -56,16 +65,18 @@ def main():
     if len(spectra_fp) == 0:
         raise ValueError("Unable to find any spectrum files")
 
-    fig, ax = multiple_models(output_name,
-                              spectra_fp,
-                              "spec",
-                              inclination,
-                              xmin=xmin,
-                              xmax=xmax,
-                              scale=axes_scales,
-                              smooth=smooth,
-                              label_lines=label_lines,
-                              display=display)
+    fig, ax = multiple_models(
+        output_name,
+        spectra_fp,
+        "spec",
+        inclination,
+        xmin=xmin,
+        xmax=xmax,
+        scale=axes_scales,
+        smooth=smooth,
+        label_lines=label_lines,
+        display=display,
+    )
 
     return fig, ax
 

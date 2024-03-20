@@ -102,8 +102,11 @@ def get_convergence(root, fp="./"):
     tr, te, te_max, hc = pypython.simulation.model_convergence_components(root, fp)
 
     for i in range(n_cycles):
-        print("Cycle {:2d} / {:2d}: {:5.2f}% of cells converged and {:5.2f}% of cells are still converging".format(
-            i + 1, n_cycles, convergence[i] * 100, converging[i] * 100))
+        print(
+            "Cycle {:2d} / {:2d}: {:5.2f}% of cells converged and {:5.2f}% of cells are still converging".format(
+                i + 1, n_cycles, convergence[i] * 100, converging[i] * 100
+            )
+        )
     print("")
 
     try:

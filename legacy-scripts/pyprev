@@ -44,8 +44,7 @@ def setup():
 
 
 def main():
-    """Main function of the script.
-    """
+    """Main function of the script."""
 
     root, mode, fp = setup()
 
@@ -66,4 +65,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

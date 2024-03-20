@@ -25,4 +25,3 @@ else:
         model_error_summary(root, fp, print_errors=True)
 
     print("-" * 80)
-

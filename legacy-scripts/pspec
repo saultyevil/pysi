@@ -30,16 +30,16 @@ def setup_script():
     p.add_argument("-fp", "--filepath", default=".", help="The directory containing the simulation.")
     p.add_argument("-xl", "--xmin", type=float, default=None, help="The lower x-axis boundary to display.")
     p.add_argument("-xu", "--xmax", type=float, default=None, help="The upper x-axis boundary to display.")
-    p.add_argument("-s",
-                   "--scales",
-                   default="loglog",
-                   choices=["logx", "logy", "loglog", "linlin"],
-                   help="The axes scaling to use: logx, logy, loglog, linlin.")
-    p.add_argument("-l",
-                   "--label_lines",
-                   action="store_true",
-                   default=False,
-                   help="Plot labels for important absorption edges.")
+    p.add_argument(
+        "-s",
+        "--scales",
+        default="loglog",
+        choices=["logx", "logy", "loglog", "linlin"],
+        help="The axes scaling to use: logx, logy, loglog, linlin.",
+    )
+    p.add_argument(
+        "-l", "--label_lines", action="store_true", default=False, help="Plot labels for important absorption edges."
+    )
     p.add_argument("-f", "--flux", action="store_true", default=False, help="Create the figure in frequency space.")
     p.add_argument("-sm", "--smooth_amount", type=int, default=5, help="The size of the boxcar smoothing filter.")
     p.add_argument("--display", action="store_true", default=False, help="Display the plot before exiting the script.")
@@ -47,8 +47,18 @@ def setup_script():
 
     args = p.parse_args()
 
-    return (args.root, args.filepath, args.xmin, args.xmax, args.flux, args.label_lines, args.scales, args.linear,
-            args.smooth_amount, args.display)
+    return (
+        args.root,
+        args.filepath,
+        args.xmin,
+        args.xmax,
+        args.flux,
+        args.label_lines,
+        args.scales,
+        args.linear,
+        args.smooth_amount,
+        args.display,
+    )
 
 
 def main():
