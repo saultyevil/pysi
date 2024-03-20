@@ -8,10 +8,10 @@ from typing import Iterable, Tuple
 
 from matplotlib import pyplot
 
-import pypython.spectrum.enum
+import pypython.spec.enum
 from pypython.util import plot
 from pypython.util import array
-from pypython.spectrum.model.base import SpectrumBase
+from pypython.spec.model.base import SpectrumBase
 
 
 def _add_flux_ax_labels(ax, units, distance):
@@ -30,13 +30,13 @@ def _add_flux_ax_labels(ax, units, distance):
     ax: plt.Axes
         The updated Axes object with axes labels.
     """
-    if units == pypython.spectrum.enum.SpectrumUnits.L_NU:
+    if units == pypython.spec.enum.SpectrumUnits.L_NU:
         ax.set_xlabel(r"Rest-frame frequency [Hz]")
         ax.set_ylabel(r"$\nu L_{\nu}$ [erg s$^{-1}$]")
-    elif units == pypython.spectrum.enum.SpectrumUnits.L_LAM:
+    elif units == pypython.spec.enum.SpectrumUnits.L_LAM:
         ax.set_xlabel(r"Rest-frame wavelength [\AA]")
         ax.set_ylabel(r"$\lambda L_{\lambda}$ [erg s$^{-1}$]")
-    elif units == pypython.spectrum.enum.SpectrumUnits.F_LAM:
+    elif units == pypython.spec.enum.SpectrumUnits.F_LAM:
         ax.set_xlabel(r"Rest-frame wavelength [\AA]")
         ax.set_ylabel(r"$\lambda F_{\lambda}$ at " + f"{distance:g} pc " + r"[erg s$^{-1}$]")
     else:
@@ -61,13 +61,13 @@ def _add_flux_density_ax_labels(ax, units, distance):
     ax: plt.Axes
         The updated Axes object with axes labels.
     """
-    if units == pypython.spectrum.enum.SpectrumUnits.L_NU:
+    if units == pypython.spec.enum.SpectrumUnits.L_NU:
         ax.set_xlabel(r"Rest-frame frequency [Hz]")
         ax.set_ylabel(r"$L_{\nu}$ [erg s$^{-1}$ Hz$^{-1}$]")
-    elif units == pypython.spectrum.enum.SpectrumUnits.L_LAM:
+    elif units == pypython.spec.enum.SpectrumUnits.L_LAM:
         ax.set_xlabel(r"Rest-frame wavelength [\AA]")
         ax.set_ylabel(r"$L_{\lambda}$ [erg s$^{-1}$ \AA$^{-1}$]")
-    elif units == pypython.spectrum.enum.SpectrumUnits.F_LAM:
+    elif units == pypython.spec.enum.SpectrumUnits.F_LAM:
         ax.set_xlabel(r"Rest-frame wavelength [\AA]")
         ax.set_ylabel(r"$F_{\lambda}$ at " + f"{distance:g} pc " + r"[erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")
     else:
@@ -120,7 +120,7 @@ def _set_axes_labels(ax, spectrum=None, units=None, distance=None, multiply_by_s
 
 def _create_plot(
     ax: pyplot.Axes,
-    spectrum: pypython.spectrum.Spectrum,
+    spectrum: pypython.spec.Spectrum,
     things_to_plot: Iterable[str] | str,
     xmin: float,
     xmax: float,
@@ -171,12 +171,12 @@ def _create_plot(
         # to be converted in nu F nu
 
         if use_flux:
-            if spectrum[spectrum.current]["spectral_axis"] == pypython.spectrum.enum.SpectrumSpectralAxis.WAVELENGTH:
+            if spectrum[spectrum.current]["spectral_axis"] == pypython.spec.enum.SpectrumSpectralAxis.WAVELENGTH:
                 y_data *= spectrum["Lambda"]
             else:
                 y_data *= spectrum["Freq."]
 
-        if spectrum[spectrum.current]["spectral_axis"] == pypython.spectrum.enum.SpectrumSpectralAxis.WAVELENGTH:
+        if spectrum[spectrum.current]["spectral_axis"] == pypython.spec.enum.SpectrumSpectralAxis.WAVELENGTH:
             x_data = spectrum["Lambda"]
         else:
             x_data = spectrum["Freq."]

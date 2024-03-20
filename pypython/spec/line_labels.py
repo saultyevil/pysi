@@ -9,7 +9,7 @@ import numpy
 from astropy.constants import c
 
 from pypython.math.constants import ANGSTROM
-from pypython.spectrum.enum import SpectrumSpectralAxis
+from pypython.spec.enum import SpectrumSpectralAxis
 
 
 def _convert_labels_to_frequency_space(lines, spectral_axis=None, spectrum=None):

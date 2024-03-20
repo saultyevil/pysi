@@ -11,7 +11,7 @@ import numpy
 from astropy import constants
 
 from pypython.util import array
-from pypython.spectrum import enum
+from pypython.spec import enum
 
 
 class SpectrumBase:

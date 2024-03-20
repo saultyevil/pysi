@@ -8,7 +8,7 @@ from typing import Optional
 
 import click
 
-from pypython.spectrum import Spectrum
+from pypython.spec import Spectrum
 
 
 @click.group(name="spectrum")

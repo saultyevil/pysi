@@ -12,8 +12,8 @@ from scipy.integrate import simpson
 
 from pypython import math
 from pypython import util
-from pypython.spectrum import enum
-from pypython.spectrum.model.plot import SpectrumPlot
+from pypython.spec import enum
+from pypython.spec.model.plot import SpectrumPlot
 
 
 class Spectrum(SpectrumPlot):
