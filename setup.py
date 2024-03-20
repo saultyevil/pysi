@@ -2,64 +2,31 @@
 # -*- coding: utf-8 -*-
 
 from setuptools import setup
+from setuptools import find_packages
 
-
-scripts = [
-    "scripts/pyaddp",
-    "scripts/pyupdp",
-    "scripts/pyconv",
-    "scripts/pyerr",
-    "scripts/pyprev",
-    "scripts/pyscript",
-    "scripts/pycspec",
-    "scripts/pyctables",
-    "scripts/pmspec",
-    "scripts/poptd",
-    "scripts/prepro",
-    "scripts/pspec",
-    "scripts/pwind",
-    "scripts/pydeld",
-    "scripts/pyrun",
-    "scripts/slurmadd",
-    "scripts/slurmclear",
-    "scripts/slurmnew",
-]
-
-
+# get requirements from file
+with open("requirements.txt", "r", encoding="utf-8") as file_in:
+    requirements = [line.strip("\n") for line in file_in.readlines()]
+# get version from pypython/__init__.py
+with open("pypython/__init__.py", "r", encoding="utf-8") as file_in:
+    lines = file_in.readlines()
+for line in lines:
+    line = line.split()
+    if len(line) < 1:
+        continue
+    if line[0] == "__version__":
+        __version__ = str(line[2]).strip('"').strip("'")
+# setup function
 setup(
-    name="pypython",
-    python_requires=">=3.7",
-    version="3.6.5",
+    name="PyPython",
+    python_requires="~=3.10",
+    version=__version__,
     description="A package to make using Python a wee bit easier.",
     url="https://github.com/saultyevil/pypython",
     author="Edward J. Parkinson",
-    author_email="e.j.parkinson@soton.ac.uk",
+    author_email="saultyevil@gmail.com",
     license="MIT",
-    packages=[
-        "pypython",
-        "pypython/math",
-        "pypython/observations",
-        "pypython/physics",
-        "pypython/plot",
-        "pypython/simulation",
-        "pypython/spectrum",
-        "pypython/util",
-        "pypython/wind",
-    ],
-    scripts=scripts,
-    zip_safe=False,
-    install_requires=[
-        "matplotlib",
-        "scipy",
-        "numpy",
-        "pandas",
-        "astropy",
-        "numba",
-        "psutil",
-        "sphinx",
-        "karma_sphinx_theme",
-        "sqlalchemy",
-        "dust_extinction",
-        "protobuf",
-    ],
+    install_requires=requirements,
+    packages=find_packages(),
+    entry_points={"console_scripts": ["pypython = pypython.console.cli:cli"]},
 )

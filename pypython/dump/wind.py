@@ -7,8 +7,9 @@ from numba import njit
 
 
 @njit
-def wind_bin_photon_weights(n_photons, nres, photon_x, photon_y, photon_z, photon_nres, photon_weight, x_points,
-                            z_points, nx, nz):
+def wind_bin_photon_weights(
+    n_photons, nres, photon_x, photon_y, photon_z, photon_nres, photon_weight, x_points, z_points, nx, nz
+):
     """Bin photon weights by extract location."""
 
     hist2d_weight = np.zeros((nx, nz))
@@ -26,7 +27,7 @@ def wind_bin_photon_weights(n_photons, nres, photon_x, photon_y, photon_z, photo
 
         # get array index for rho point
 
-        rho = np.sqrt(photon_x[i]**2 + photon_y[i]**2)
+        rho = np.sqrt(photon_x[i] ** 2 + photon_y[i] ** 2)
 
         if rho < xmin:
             ix = 0

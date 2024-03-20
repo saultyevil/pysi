@@ -1,54 +1,59 @@
-# pypython
+# PyPython
 
-pypython is a package designed to make using the Monte Carlo radiative 
-transfer and ionization code [Python](https://github.com/agnwinds/python) a wee 
-bit easier. 
+[![DOI](https://zenodo.org/badge/210153582.svg)](https://zenodo.org/badge/latestdoi/210153582)
 
-The main purpose of the package is to provide tools to easily plot and analyse
-the output from a Python simulation. However, a number of tools also exist to
-set up and run a grid of models, as well aid the analysis in determining the
-quality of a converged model.
+PyPython is a package and command line tool designed to make using the Monte
+Carlo radiative transfer and ionization code
+[Python](https://github.com/agnwinds/python) a wee bit easier to use.
 
-## Requirements
+The main purpose of PyPython is to provide tools which allow you to easily
+plot and analyse the output from a Python simulation for both the synthetic
+spectra and the properties of the wind. PyPython also includes a number of
+commands for setting up and running a grid of models, as well as tools to help
+determine the quality, convergence and trustworthiness of a model.
 
-A minimum Python version of 3.7 is required (i.e., something from June 2018 onwards).
-There are also minimum versions required for packages used in pypython, which
-are located in `requirements.txt` and can be installed using `pip install -r requirements.txt`.
+## Installation and requirements
 
-## Installation
+The minimum version of Python is probably something like Python 3.10, but the
+package may work on versions as early as 3.7. All of the dependencies for the
+package can be installed either through the `requirements.txt` file or if you
+use Anaconda through the `environment.yml` file.
 
-pypython is easiest used and installed by using pip to add it to your Python path.
-For example, it can be  installed as follows,
-
-```bash
-$ pip install .
-```
-
-You may need to use --user if installing on a shared machine where you do not
-have administrator privileges, or do not want to install it for all users. If
-you are a development user, install the package in "editable" mode using,
+To install the package,
 
 ```bash
-$ pip install -e .
+$ python -m venv /path/to/new/env
+$ pip install -r requirements.txt
+$ source /path/to/new/env/bin/activate && pip install -e .
 ```
+
+```
+$ conda env create -f environment.yml
+$ conda activate pypython
+```
+
+In both cases above, the package will be installed in "editable" mode for
+development purposes.
 
 ## Documentation
 
-The barely completely documentation can be built using Sphinx and is located
-in the `docs` directory. To build the HTML version of the documentation,
-run the following command in the `docs` directory
+Documentation is hosted on
+[ReadTheDocs](https://pypython.readthedocs.io/en/stable/) and stored in the
+`docs` directory. The documentation is built using Sphinx and is still in
+development.
+
+To build the documentation locally, use the following command,
 
 ```bash
-$ make html
+$ sphinx-build -a -j auto -b html docs/source/ docs/build/html
 ```
 
-HTML files will be created in `docs/build/html` and the root 
-file will be named `index.html`.
+This will create a directory `docs/build/html` and you can view the
+documentation by opening `docs/build/html/index.html` in your web browser.
 
 ## Usage
 
-Helpful scripts are in the `scripts` which are used to plot output from Python,
-or to setup and run Python models and determine the quality of their convergence.
-
-The most useful scripts are the various `py_plot_*` and `py_check_*` scripts 
-and `py_run.py`.
+The main interface for PyPython will be the `pypython` command. This is
+documented on [ReadTheDocs](https://pypython.readthedocs.io/en/stable/). Another
+valid use-case would be to import pypython (the actual Python package) into
+your own scripts.
