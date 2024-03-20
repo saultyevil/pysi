@@ -11,7 +11,7 @@ from typing import Union
 from scipy.integrate import simpson
 
 from pypython import math
-from pypython import utility
+from pypython import util
 from pypython.spectrum import enum
 from pypython.spectrum.model.plot import SpectrumPlot
 
@@ -84,7 +84,7 @@ class Spectrum(SpectrumPlot):
             xmin = math.angstrom_to_hz(xmax)
             xmax = math.angstrom_to_hz(tmp)
 
-        x_points, y_points = utility.array.get_subset_in_second_array(
+        x_points, y_points = util.array.get_subset_in_second_array(
             x_points, self.spectra[self.scaling][spec_key][name], xmin, xmax
         )
 

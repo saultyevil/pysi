@@ -6,7 +6,7 @@
 import copy
 from typing import Union
 
-import pypython.utility
+import pypython.util
 from pypython.wind import enum
 from pypython.wind.model import plot
 
@@ -23,9 +23,9 @@ def create_wind_tables(root: str, directory: str, version: str = None):
     version : str
         The version number of Python the model was run with
     """
-    pypython.utility.create_wind_save_tables(root, directory, ion_density=True, version=version)
-    pypython.utility.create_wind_save_tables(root, directory, ion_density=False, version=version)
-    pypython.utility.create_wind_save_tables(root, directory, cell_spec=True, version=version)
+    pypython.util.create_wind_save_tables(root, directory, ion_density=True, version=version)
+    pypython.util.create_wind_save_tables(root, directory, ion_density=False, version=version)
+    pypython.util.create_wind_save_tables(root, directory, cell_spec=True, version=version)
 
 
 class Wind(plot.WindPlot):
@@ -88,9 +88,7 @@ class Wind(plot.WindPlot):
         """
         for i in range(self.n_x):
             for j in range(self.n_z):
-                self.parameters["spec"][i, j] = pypython.utility.array.smooth_array(
-                    self.parameters["spec"][i, j], amount
-                )
+                self.parameters["spec"][i, j] = pypython.util.array.smooth_array(self.parameters["spec"][i, j], amount)
 
     def unsmooth_cell_spectra(self) -> None:
         """Unsmooth the arrays.

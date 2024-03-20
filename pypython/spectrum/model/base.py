@@ -10,7 +10,7 @@ from typing import Union, List
 import numpy
 from astropy import constants
 
-from pypython.utility import array
+from pypython.util import array
 from pypython.spectrum import enum
 
 

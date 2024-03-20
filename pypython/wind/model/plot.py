@@ -10,7 +10,7 @@ from typing import Tuple
 import numpy
 import matplotlib.pyplot as plt
 
-from pypython.utility import plot
+from pypython.util import plot
 from pypython.wind import enum
 from pypython.wind.model import util
 

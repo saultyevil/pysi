@@ -9,8 +9,8 @@ from typing import Iterable, Tuple
 from matplotlib import pyplot
 
 import pypython.spectrum.enum
-from pypython.utility import plot
-from pypython.utility import array
+from pypython.util import plot
+from pypython.util import array
 from pypython.spectrum.model.base import SpectrumBase
 
 
