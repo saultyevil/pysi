@@ -24,7 +24,7 @@ class SpectrumBase:
         self,
         root: str,
         directory: Union[str, Path] = Path("."),
-        default_scale: str = "log",
+        default_scale: str = "log",  # todo: use pydantic or something to verify input
         default_spectrum: str = None,
         smooth_width: int = 0,
     ) -> None:
@@ -169,8 +169,6 @@ class SpectrumBase:
         extension += spec_type
 
         file = Path(f"{self.directory}/{self.root}.{extension}")
-        if not file.exists():
-            return
 
         self.spectra[scale][spec_type] = {
             "units": enum.SpectrumUnits.NONE,
@@ -406,8 +404,8 @@ class SpectrumBase:
         boxcar_width: int
             The width of the boxcar filter.
         """
-        if not self.__original_spectra:
-            self.__original_spectra = copy.deepcopy(self.spectra)
+        # if not self.__original_spectra:
+        #     self.__original_spectra = copy.deepcopy(self.spectra)
 
         for scaling, spec_types in self.spectra.items():
             for spec_type, spec in spec_types.items():

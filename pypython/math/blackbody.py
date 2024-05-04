@@ -8,14 +8,11 @@ is given in units of Angstroms.
 from math import pi
 
 import numpy as np
+from astropy import units
+from astropy.constants import c, h, k_B, sigma_sb  # pylint: disable=no-name-in-module
 
-from astropy.constants import sigma_sb, k_B, c, h  # pylint: disable=no-name-in-module
 
-from pypython.math.constants import (
-    ANGSTROM,
-    WIEN_FREQUENCY,
-    WIEN_WAVELENGTH,
-)
+from pypython.math.constants import ANGSTROM, WIEN_FREQUENCY, WIEN_WAVELENGTH
 
 
 def planck_lambda(temperature, lamda):
@@ -36,7 +33,8 @@ def planck_lambda(temperature, lamda):
         wavelength. Has units ergs s^-1 cm^-2 A^-1.
     """
 
-    lcm = lamda * ANGSTROM
+    temperature *= units.K
+    lcm = lamda * ANGSTROM * units.cm
     x = h.cgs * c.cgs / lcm / k_B.cgs / temperature
     y = 2 * h.cgs * c.cgs**2 / lcm**5
     b_lamda = y / (np.exp(x) - 1)
