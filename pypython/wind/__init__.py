@@ -406,6 +406,7 @@ class ModelledCellSpectra:
         bins for the whole model is self.n_bins_per_band * self.nbands (which
         saw photons).
         """
+        np.seterr(over="ignore")  # temporarily disable overflow warnings
         self.spectra = np.array([None for _ in range(self.n_cells)]).reshape(self.nx, self.nz)
 
         # We need to loop over each cell and construct the flux for each
@@ -427,10 +428,17 @@ class ModelledCellSpectra:
                 # from this
 
                 if band_freq_max > band_freq_min:
-                    try:
+                    if "spec_mod_" not in band and "spec_mod_type" not in band:
+                        return
+
+                    if "spec_mod_" in band:
+                        model_type = band["spec_mod_"]
+                    elif "spec_mod_type" in band:
                         model_type = band["spec_mod_type"]
-                    except KeyError:
-                        return  # TODO: need to do something smart when the file is broken
+                    else:
+                        raise ValueError(
+                            f"Error: could not find spec_mod_ or spec_mod_type in column of {self.root}.spec.txt"
+                        )
 
                     frequency = np.logspace(np.log10(band_freq_min), np.log10(band_freq_max), self.n_bins_per_band)
 
@@ -457,6 +465,8 @@ class ModelledCellSpectra:
                 cell_flux = np.hstack(cell_flux)
                 self.spectra[i, j] = {"Freq.": cell_frequency, "Flux": cell_flux}
                 self.cells.append((i, j))
+
+        np.seterr(over="warn")
 
     def create_wind_tables(self):
         """Force the creation of wind save tables for the model.
