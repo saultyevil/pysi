@@ -18,7 +18,6 @@ dust-extinction = ">=1.1,<2.0"
 matplotlib = ">=3.6.3,<3.7.0"
 numba = ">=0.56.4,<0.57.0"
 numpy = ">=1.23.5,<1.24.0"
-pre-commit = ">=3.0.2,<3.1.0"
 psutil = ">=5.9.4,<5.10.0"
 sqlalchemy = ">=2.0.0,<2.1.0"
 tqdm = ">=4.64.1,<4.65.0"
@@ -29,6 +28,7 @@ ruff = "^0.6.8"
 sphinx = "^8.0.2"
 numpydoc = "^1.8.0"
 furo = "^2024.8.6"
+pre-commit = "^3.8.0"
 
 [tool.ruff]
 exclude = [
