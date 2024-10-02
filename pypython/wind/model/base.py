@@ -12,10 +12,8 @@ import numpy
 from astropy.constants import h, k_B  # pylint: disable=no-name-in-module
 
 import pypython
-import pypython.util
-
-from pypython.wind import enum
-from pypython.wind import elements
+import pypython.utility
+from pypython.wind import elements, enum
 
 
 class WindBase:
@@ -36,7 +34,7 @@ class WindBase:
         self.root = str(root)
         self.directory = pathlib.Path(directory)
         self.version = kwargs.get("version", None)
-        self._check_version()
+        self.check_version()
 
         self.n_x = int(0)
         self.n_z = int(0)
@@ -55,36 +53,36 @@ class WindBase:
 
         # Read in all the variables, spectra, etc.
 
-        self.read_in_wind_variables()
+        self.read_in_wind_parameters()
         self.read_in_wind_ions()
-        self.read_in_cell_spectra()
-        self.read_in_cell_models()
+        self.read_in_wind_cell_spectra()
+        self.read_in_wind_jnu_models()
 
     def __getitem__(self, key: str) -> numpy.ndarray:
         # if no frac or den is no specified for an ion, default to fractional
         # populations
         if re.match("[A-Z]_i[0-9]+", key):  # matches ion specification, e.g. C_i04
             if re.match("[A-Z]_i[0-9]+$", key):  # but no type specification at the end, e.g. C_i04_frac
-                key += "_frac"
+                key += "_frac"  # default to frac if not specified
 
         return self.parameters.get(key)
 
-    # Private methods ----------------------------------------------------------
-
-    def _check_version(self):
+    def check_version(self):
         """Get the Python version from file if not already set.
 
         If the .py-version file cannot be fine, the version is set to UNKNOWN.
         """
         if not self.version:
             try:
-                with open(f"{self.directory}/.py-version", "r") as file_in:
+                with open(f"{self.directory}/.sirocco-version", "r") as file_in:
                     self.version = file_in.read()
             except IOError:
                 self.version = "UNKNOWN"
 
+        print(f"Version: {self.version}")
+
     # pylint: disable=too-many-arguments
-    def __update_band_freq_flux(
+    def create_banded_jnu_models(
         self,
         cell_index: int,
         band_index: int,
@@ -137,7 +135,9 @@ class WindBase:
 
         if band_freq_max > band_freq_min:
             band_frequency_bins = numpy.logspace(
-                numpy.log10(band_freq_min), numpy.log10(band_freq_max), n_freq_bins_per_band
+                numpy.log10(band_freq_min),
+                numpy.log10(band_freq_max),
+                n_freq_bins_per_band,
             )
 
             # model_type 1 == powerlaw model, otherwise 2 == exponential
@@ -165,8 +165,6 @@ class WindBase:
             cell_flux.append(band_flux)
 
         return cell_frequency, cell_flux
-
-    # Public methods -----------------------------------------------------------
 
     def get_elem_number_from_ij(self, i: int, j: int) -> int:
         """Get the wind element number for a given i and j index.
@@ -198,7 +196,7 @@ class WindBase:
 
         return i, j
 
-    def get_variables_for_table(self, table: str) -> Tuple[List[str], numpy.ndarray]:
+    def read_in_wind_table(self, table: str) -> Tuple[List[str], numpy.ndarray]:
         """Get variables for a specific table type.
 
         Parameters
@@ -232,7 +230,7 @@ class WindBase:
 
         return table_header, table_parameters
 
-    def read_in_cell_models(self, n_freq_bins_per_band: int = 250) -> None:
+    def read_in_wind_jnu_models(self, n_freq_bins_per_band: int = 250) -> None:
         """Read in the J_nu models for each cell.
 
         Parameters
@@ -240,7 +238,7 @@ class WindBase:
         n_freq_bins: int
             The number of frequency bins to use for the model.
         """
-        table_header, models = self.get_variables_for_table("spec")
+        table_header, models = self.read_in_wind_table("spec")
         if not table_header:
             self.parameters["model_freq"] = self.parameters["model_flux"] = None
             return
@@ -274,8 +272,14 @@ class WindBase:
             cell_flux = []
 
             for band_index in range(n_bands):
-                cell_frequency, cell_flux = self.__update_band_freq_flux(
-                    cell_index, band_index, model_array, table_header, n_freq_bins_per_band, cell_frequency, cell_flux
+                cell_frequency, cell_flux = self.create_banded_jnu_models(
+                    cell_index,
+                    band_index,
+                    model_array,
+                    table_header,
+                    n_freq_bins_per_band,
+                    cell_frequency,
+                    cell_flux,
                 )
 
             # If the lists are populated, then join them together as
@@ -286,10 +290,10 @@ class WindBase:
                 self.parameters["model_freq"][i_cell, j_cell] = numpy.hstack(cell_frequency)
                 self.parameters["model_flux"][i_cell, j_cell] = numpy.hstack(cell_flux)
 
-    def read_in_cell_spectra(self) -> None:
+    def read_in_wind_cell_spectra(self) -> None:
         """Read in the cell spectra."""
 
-        spec_table_files = pypython.util.find_files("*xspec.*.txt", self.directory)
+        spec_table_files = pypython.utility.find_files("*xspec.*.txt", self.directory)
         if len(spec_table_files) == 0:
             self.parameters["spec_freq"] = self.parameters["spec_flux"] = None
             return
@@ -352,7 +356,7 @@ class WindBase:
 
         for ion_type in ["frac", "den"]:
             for element in elements_to_read:
-                table_header, table_parameters = self.get_variables_for_table(f"{element}.{ion_type}")
+                table_header, table_parameters = self.read_in_wind_table(f"{element}.{ion_type}")
 
                 if not table_header:
                     continue
@@ -372,14 +376,14 @@ class WindBase:
         if n_read == 0:
             raise IOError(f"Have been unable to read in any wind ion tables in {self.directory}")
 
-    def read_in_wind_variables(self) -> None:
+    def read_in_wind_parameters(self) -> None:
         """Read in the different parameters which describe state of the
         wind."""
 
         n_read = 0
 
         for table in ["master", "heat", "gradient", "converge"]:
-            table_header, table_parameters = self.get_variables_for_table(table)
+            table_header, table_parameters = self.read_in_wind_table(table)
 
             if not table_header:
                 continue
