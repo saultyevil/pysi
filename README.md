@@ -19,7 +19,7 @@ bit of work (possibly down to 3.7). You can install PyPython either by modifying
 your $PYTHONPATH variable, or by using Pip.
 
 ```bash
-pip install .
+shell$ pip install .
 ```
 
 ## Usage
