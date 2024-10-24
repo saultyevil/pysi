@@ -9,8 +9,8 @@ will only operate on pf files which have the same root name.
 
 import argparse as ap
 
-from pypython import find
-from pypython.simulation import grid
+from pysi import find
+from pysi.simulation import grid
 
 
 def main():

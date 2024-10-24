@@ -11,7 +11,7 @@ import argparse as ap
 
 from matplotlib import pyplot as plt
 
-from pypython.spectrum import Spectrum, plot
+from pysi.spectrum import Spectrum, plot
 
 
 def setup_script():

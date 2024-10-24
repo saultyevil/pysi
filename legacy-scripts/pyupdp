@@ -11,8 +11,8 @@ will only operate  on pf files which have the same root name.
 import argparse as ap
 import sys
 
-from pypython import find
-from pypython.simulation import grid
+from pysi import find
+from pysi.simulation import grid
 
 p = ap.ArgumentParser(description=__doc__)
 p.add_argument("parameter", help="Name of the parameter to add.")

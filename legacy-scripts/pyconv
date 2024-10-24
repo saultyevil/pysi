@@ -9,7 +9,7 @@ from typing import List
 import numpy as np
 from matplotlib import pyplot as plt
 
-import pypython
+import pysi
 
 COL_WIDTH = 80
 
@@ -84,7 +84,7 @@ def get_convergence(root, fp="./"):
     """
 
     try:
-        convergence = pypython.simulation.check_model_convergence(root, fp, return_per_cycle=True)
+        convergence = pysi.simulation.check_model_convergence(root, fp, return_per_cycle=True)
     except IOError:
         print("Unable to find convergence information for this model as it has not been run\n")
         return
@@ -98,8 +98,8 @@ def get_convergence(root, fp="./"):
         print("Unable to find convergence information for this model\n")
         return
 
-    converging = pypython.simulation.check_model_convergence(root, fp, return_per_cycle=True, return_converging=True)
-    tr, te, te_max, hc = pypython.simulation.model_convergence_components(root, fp)
+    converging = pysi.simulation.check_model_convergence(root, fp, return_per_cycle=True, return_converging=True)
+    tr, te, te_max, hc = pysi.simulation.model_convergence_components(root, fp)
 
     for i in range(n_cycles):
         print(
@@ -122,13 +122,13 @@ def get_convergence(root, fp="./"):
 def main():
     """Main function of the script."""
 
-    parameter_files = pypython.find("*.pf")
+    parameter_files = pysi.find("*.pf")
 
     if len(parameter_files) == 0:
         raise IOError("No Python simulations were found in this directory.")
     else:
         for pf in parameter_files:
-            root, cd = pypython.get_root_name(pf)
+            root, cd = pysi.get_root_name(pf)
             if cd.find("continuum") != -1:
                 continue
             print("-" * COL_WIDTH)

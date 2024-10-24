@@ -8,8 +8,8 @@ processes for a bunch of simulations.
 """
 
 import sys
-from pypython import find, get_root_name
-from pypython.simulation import model_error_summary
+from pysi import find, get_root_name
+from pysi.simulation import model_error_summary
 
 parameter_files = find("*.pf")
 

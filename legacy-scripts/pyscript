@@ -7,6 +7,6 @@ calling directory for the simulations.
 """
 
 from sys import argv
-import pypython
+import pysi
 
-print(pypython.create_run_script(argv[1:]))
+print(pysi.create_run_script(argv[1:]))

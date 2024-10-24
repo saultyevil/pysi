@@ -6,8 +6,8 @@ import argparse as ap
 
 from matplotlib import pyplot as plt
 
-import pypython
-from pypython.spectrum.plot import optical_depth
+import pysi
+from pysi.spectrum.plot import optical_depth
 
 
 def setup_script():
@@ -70,9 +70,7 @@ def main():
 
     root, fp, xmin, xmax, absorption_edges, axes_scales, display = setup_script()
 
-    fig, ax = optical_depth(
-        pypython.Spectrum(root, fp), "all", xmin, xmax, axes_scales, absorption_edges, True, display
-    )
+    fig, ax = optical_depth(pysi.Spectrum(root, fp), "all", xmin, xmax, axes_scales, absorption_edges, True, display)
 
     return fig, ax
 

@@ -1,12 +1,12 @@
 [tool.poetry]
-name = "pypython"
+name = "pysi"
 version = "4.0.0"
-description = "PyPython is a package and command line tool designed to make using the Monte Carlo radiative transfer and ionization code Python a wee bit easier to use."
+description = "PySi is a package and command line tool designed to make using the Monte Carlo radiative transfer and ionization code SIROCCO a wee bit easier to use."
 authors = ["Edward J. Parkinson <saultyevil@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.scripts]
-pypython = "pypython.console.cli:cli"
+pypython = "pysi.console.cli:cli"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"

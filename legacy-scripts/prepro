@@ -9,8 +9,8 @@ function of frequency.
 
 import argparse as ap
 
-from pypython import Spectrum
-from pypython.spectrum.plot import reprocessing
+from pysi import Spectrum
+from pysi.spectrum.plot import reprocessing
 
 
 def setup_script():

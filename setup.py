@@ -7,8 +7,8 @@ from setuptools import find_packages
 # get requirements from file
 with open("requirements.txt", "r", encoding="utf-8") as file_in:
     requirements = [line.strip("\n") for line in file_in.readlines()]
-# get version from pypython/__init__.py
-with open("pypython/__init__.py", "r", encoding="utf-8") as file_in:
+# get version from pysi/__init__.py
+with open("pysi/__init__.py", "r", encoding="utf-8") as file_in:
     lines = file_in.readlines()
 for line in lines:
     line = line.split()
@@ -18,15 +18,15 @@ for line in lines:
         __version__ = str(line[2]).strip('"').strip("'")
 # setup function
 setup(
-    name="PyPython",
+    name="PySi",
     python_requires="~=3.10",
     version=__version__,
-    description="A package to make using Python a wee bit easier.",
-    url="https://github.com/saultyevil/pypython",
+    description="A package to make using Sirocco a wee bit easier.",
+    url="https://github.com/saultyevil/pysi",
     author="Edward J. Parkinson",
     author_email="saultyevil@gmail.com",
     license="MIT",
     install_requires=requirements,
     packages=find_packages(),
-    entry_points={"console_scripts": ["pypython = pypython.console.cli:cli"]},
+    entry_points={"console_scripts": ["pysi = pysi.console.cli:cli"]},
 )

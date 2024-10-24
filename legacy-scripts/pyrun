@@ -18,11 +18,11 @@ from shutil import copyfile
 from subprocess import PIPE, Popen
 from sys import exit
 
-import pypython
-from pypython import simulation, util
-from pypython.error import EXIT_SUCCESS
-from pypython.simulation import grid
-from pypython.util import close_logfile, init_logfile, log, logsilent
+import pysi
+from pysi import simulation, util
+from pysi.error import EXIT_SUCCESS
+from pysi.simulation import grid
+from pysi.util import close_logfile, init_logfile, log, logsilent
 
 CONVERGED = r"""
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
@@ -451,7 +451,7 @@ def run_all_models(parameter_files, use_mpi, n_cores):
     n_models = len(parameter_files)
 
     for i, fp in enumerate(parameter_files):
-        root, fp = pypython.get_root_name(fp)
+        root, fp = pysi.get_root_name(fp)
         msg = textwrap.dedent(
             f"""\
             ------------------------
@@ -520,7 +520,7 @@ def main():
     # Find models to run by searching recursively from the calling directory
     # for .pf files
 
-    parameter_files = pypython.find("*.pf")
+    parameter_files = pysi.find("*.pf")
     n_models = len(parameter_files)
 
     if not n_models:

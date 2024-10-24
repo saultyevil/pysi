@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.abspath("../.."))
 
 # -- Project information -----------------------------------------------------
 
-project = "pypython - a module to make using Python a wee bit easier"
+project = "PySi- a module to make using SIROCCO a wee bit easier"
 copyright = "2020, Edward J. Parkinson"
 author = "Edward J. Parkinson"
 
@@ -109,7 +109,7 @@ html_static_path = ["_static"]
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "pypythondoc"
+htmlhelp_basename = "pysidoc"
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -129,7 +129,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, "pypython.tex", "pypython Documentation", "Edward J. Parkinson", "manual"),
+    (master_doc, "pysi.tex", "PySi Documentation", "Edward J. Parkinson", "manual"),
 ]
 
 
@@ -137,7 +137,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "pypython", "pypython Documentation", [author], 1)]
+man_pages = [(master_doc, "PySi", "PySi Documentation", [author], 1)]
 
 
 # -- Options for Texinfo output ----------------------------------------------
@@ -148,10 +148,10 @@ man_pages = [(master_doc, "pypython", "pypython Documentation", [author], 1)]
 texinfo_documents = [
     (
         master_doc,
-        "pypython",
-        "pypython Documentation",
+        "PySi",
+        "PySi Documentation",
         author,
-        "pypython",
+        "PySi",
         "One line description of project.",
         "Miscellaneous",
     ),

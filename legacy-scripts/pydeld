@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-from pypython import cleanup_data
+from pysi import cleanup_data
 
 p = argparse.ArgumentParser(description="Remove 'data' symbolic links recursively.")
 p.add_argument("-fp", default=".", help="The directory to search from")

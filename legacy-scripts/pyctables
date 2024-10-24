@@ -9,7 +9,7 @@ Verbose printing is off by default, but can be turned on using --loud.
 
 import argparse as ap
 
-import pypython
+import pysi
 
 p = ap.ArgumentParser(description=__doc__)
 p.add_argument("root", help="The root name of the simulation")
@@ -19,6 +19,6 @@ p.add_argument("--loud", default=False, action="store_true", help="Enable verbos
 args = p.parse_args()
 
 # ion fractions and cell spectra
-pypython.create_wind_save_tables(args.root, args.filepath, False, True, args.version, args.loud)
+pysi.create_wind_save_tables(args.root, args.filepath, False, True, args.version, args.loud)
 # ion densities
-pypython.create_wind_save_tables(args.root, args.filepath, True, False, args.version, args.loud)
+pysi.create_wind_save_tables(args.root, args.filepath, True, False, args.version, args.loud)
