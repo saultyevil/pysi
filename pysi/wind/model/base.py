@@ -12,6 +12,7 @@ import numpy
 from astropy.constants import h, k_B  # pylint: disable=no-name-in-module
 
 import pysi
+import pysi.util.shell
 import pysi.utility
 from pysi.wind import elements, enum
 
@@ -79,7 +80,7 @@ class WindBase:
             except IOError:
                 self.version = "UNKNOWN"
 
-        print(f"Version: {self.version}")
+        # print(f"Version: {self.version}")
 
     # pylint: disable=too-many-arguments
     def create_banded_jnu_models(
@@ -293,7 +294,7 @@ class WindBase:
     def read_in_wind_cell_spectra(self) -> None:
         """Read in the cell spectra."""
 
-        spec_table_files = pysi.utility.find_files("*xspec.*.txt", self.directory)
+        spec_table_files = pysi.util.shell.find_file_with_pattern("*xspec.*.txt", self.directory)
         if len(spec_table_files) == 0:
             self.parameters["spec_freq"] = self.parameters["spec_flux"] = None
             return

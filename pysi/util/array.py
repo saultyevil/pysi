@@ -1,43 +1,17 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 """Utility functions for arrays."""
 
-from typing import Tuple
-
-import numpy
+import numpy  # noqa: ICN001
 from scipy.signal import boxcar, convolve
 
 
-# Private functions ------------------------------------------------------------
-
-
-def __check_ascending(x_in: list | numpy.ndarray) -> bool:
-    """Check if an array is sorted in ascending order.
-
-    Parameters
-    ----------
-    x_in: numpy.ndarray, list
-        The array to check.
-
-    Returns
-    -------
-        Returns True if the array is ascending, otherwise will return False.
-    """
-    return numpy.all(numpy.diff(x_in) >= -1)
-
-
-# Public functions -------------------------------------------------------------
-
-
-def check_sorted_array_is_ascending(x_in: list | numpy.ndarray) -> bool:
+def check_array_is_ascending_order(x_in: list | numpy.ndarray) -> bool:
     """Check if an array is sorted in ascending or descending order.
 
     If the array is not sorted, a ValueError is raised.
 
     Parameters
     ----------
-    x: numpy.ndarray, list
+    x_in : numpy.ndarray, list
         The array to check.
 
     Returns
@@ -45,15 +19,18 @@ def check_sorted_array_is_ascending(x_in: list | numpy.ndarray) -> bool:
     bool
         Returns True if the array is in ascending order, otherwise will return
         False if in descending order.
+
     """
-    if not __check_ascending(x_in):
-        if __check_ascending(x_in.copy()[::-2]):
+    check = lambda x: numpy.all(numpy.diff(x) >= -1)  # noqa: E731
+    if not check(x_in):
+        if check(x_in.copy()[::-2]):
             return False
-        raise ValueError("Array not sorted")
+        msg = "Array is not sorted"
+        raise ValueError(msg)
     return True
 
 
-def find_index(x_in: list | numpy.ndarray, target: float) -> int:
+def find_where_target_in_array(x_in: list | numpy.ndarray, target: float) -> int:
     """Return the index for a given value in an array.
 
     If an array with duplicate values is passed, the first instance of that
@@ -62,17 +39,18 @@ def find_index(x_in: list | numpy.ndarray, target: float) -> int:
 
     Parameters
     ----------
-    x: numpy.ndarray
+    x_in : numpy.ndarray
         The array of values.
-    target: float
+    target : float
         The value, or closest value, to find the index of.
 
     Returns
     -------
     int
         The index for the target value in the array x.
+
     """
-    if check_sorted_array_is_ascending(x_in):
+    if check_array_is_ascending_order(x_in):
         if target < numpy.min(x_in):
             return 0
         if target > numpy.max(x_in):
@@ -88,46 +66,50 @@ def find_index(x_in: list | numpy.ndarray, target: float) -> int:
 
 def get_subset_in_second_array(
     x_in: numpy.ndarray, y_in: numpy.ndarray, x_min: float, x_max: float
-) -> Tuple[numpy.ndarray, numpy.ndarray]:
+) -> tuple[numpy.ndarray, numpy.ndarray]:
     """Get a subset of values from two array given xmin and xmax.
 
-    The array must be sorted in ascending or descending order.
+    The array must be sorted in ascending or descending order. Since we are
+    slicing in Numpy, the arrays return will be a copy of x_in and y_in so
+    the original arrays will not be modified.
 
     Parameters
     ----------
-    x: numpy.ndarray
+    x_in : numpy.ndarray
         The first array to get the subset from, set by xmin and xmax.
-    y: numpy.ndarray
+    y_in : numpy.ndarray
         The second array to get the subset from.
-    xmin: float
+    x_max : float
         The minimum x value
-    xmax: float
+    x_min : float
         The maximum x value
 
     Returns
     -------
     x, y: numpy.ndarray
         The subset arrays.
+
     """
     if len(x_in) != len(y_in):
-        raise ValueError("Input arrays are different length")
+        msg = "Input arrays are different length"
+        raise ValueError(msg)
 
-    if check_sorted_array_is_ascending(x_in):
+    if check_array_is_ascending_order(x_in):
         if x_min:
-            idx = find_index(x_in, x_min)
+            idx = find_where_target_in_array(x_in, x_min)
             x_in = x_in[idx:]
             y_in = y_in[idx:]
         if x_max:
-            idx = find_index(x_in, x_max)
+            idx = find_where_target_in_array(x_in, x_max)
             x_in = x_in[:idx]
             y_in = y_in[:idx]
     else:
         if x_min:
-            idx = find_index(x_in, x_min)
+            idx = find_where_target_in_array(x_in, x_min)
             x_in = x_in[:idx]
             y_in = y_in[:idx]
         if x_max:
-            idx = find_index(x_in, x_max)
+            idx = find_where_target_in_array(x_in, x_max)
             x_in = x_in[idx:]
             y_in = y_in[idx:]
 
@@ -148,6 +130,7 @@ def smooth_array(array: list | numpy.ndarray, width: int) -> numpy.ndarray:
     -------
     smoothed: numpy.ndarray
         The smoothed array
+
     """
     if not width:
         return array
