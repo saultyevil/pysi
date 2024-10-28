@@ -12,7 +12,7 @@ import numpy
 from astropy.constants import h, k_B  # pylint: disable=no-name-in-module
 
 import pysi
-import pysi.utility
+import pysi.util
 from pysi.wind import elements, enum
 
 
@@ -58,6 +58,38 @@ class WindBase:
         self.read_in_wind_cell_spectra()
         self.read_in_wind_jnu_models()
 
+        self.descriptions = {
+            "x": "left-hand lower cell corner x-coordinate, cm", 
+            "z": "left-hand lower cell corner z-coordinate, cm", 
+            "xcen": "cell centre x-coordinate, cm", 
+            "zcen": "cell centre z-coordinate, cm", 
+            "i": "cell index (column)", 
+            "j": "cell index (row)", 
+            "inwind": "is the cell in wind (0), partially in wind (1) or out of wind (<0)", 
+            "converge": "how many convergence criteria is the cell failing?", 
+            "v_x": "x-velocity, cm/s", 
+            "v_y": "y-velocity, cm/s", 
+            "v_z": "z-velocity, cm/s",  
+            "vol": "volume in cm^3", 
+            "rho": "density in g/cm^3", 
+            "ne": "electron density in cm^-3", 
+            "t_e": "electron temperature in K", 
+            "t_r": "radiation temperature in K",  
+            "h1": "H1 ion fraction", 
+            "he2": "He2 ion fraction", 
+            "c4": "C4 ion fraction",  
+            "n5": "N5 ion fraction", 
+            "o6": "O6 ion fraction", 
+            "dmo_dt_x": "momentum rate, x-direction", 
+            "dmo_dt_y": "momentum rate, y-direction", 
+            "dmo_dt_z": "momentum rate, z-direction", 
+            "ip": "U ionization parameter", 
+            "xi": "xi ionization parameter", 
+            "ntot": "total photons passing through cell", 
+            "nrad": "total wind photons produced in cell", 
+            "nioniz": "total ionizing photons passing through cell"
+        }
+
     def __getitem__(self, key: str) -> numpy.ndarray:
         # if no frac or den is no specified for an ion, default to fractional
         # populations
@@ -80,6 +112,24 @@ class WindBase:
                 self.version = "UNKNOWN"
 
         print(f"Version: {self.version}")
+
+    def get_windsave_descriptions(self, key = None) -> None:
+        """_summary_
+
+        Parameters
+        ----------
+            key (_type_, optional): The specific parameter name for which to retrieve
+                print the description. If None, prints descriptions for all parameters. Defaults to None.
+            descr (_type_, optional): Dictionary of parameter descriptions. Defaults to util.description_dict.
+        """
+        if key == None:
+            for name in self.descriptions.keys():
+                print ("{:10s} --  {}".format(name, self.descriptions[name]))
+        else:
+            try: 
+                print ("{:10s} --  {}".format(key, self.descriptions[key]))
+            except KeyError:
+                print ("no description for parameter {}".format(key))
 
     # pylint: disable=too-many-arguments
     def create_banded_jnu_models(
@@ -293,7 +343,7 @@ class WindBase:
     def read_in_wind_cell_spectra(self) -> None:
         """Read in the cell spectra."""
 
-        spec_table_files = pysi.utility.find_files("*xspec.*.txt", self.directory)
+        spec_table_files = pysi.util.find_files("*xspec.*.txt", self.directory)
         if len(spec_table_files) == 0:
             self.parameters["spec_freq"] = self.parameters["spec_flux"] = None
             return

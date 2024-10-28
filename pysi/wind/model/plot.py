@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from pysi.util import plot
 from pysi.wind import enum
 from pysi.wind.model import util
-
+from collections.abc import Sequence
 
 class WindPlot(util.WindUtil):
     """An extension to the WindGrid base class which adds various plotting
@@ -75,6 +75,7 @@ class WindPlot(util.WindUtil):
             fig, ax = plt.subplots(figsize=figsize, squeeze=False, subplot_kw=subplot_kw)
         elif not fig and ax or fig and not ax:
             raise ValueError("fig and ax need to be supplied together")
+        
 
         if self.coord_type == enum.CoordSystem.SPHERICAL:
             fig, ax = self.__wind1d(thing, axes_scales, fig, ax, a_idx, a_jdx, **kwargs)
@@ -82,6 +83,73 @@ class WindPlot(util.WindUtil):
             fig, ax = self.__wind2d(thing, axes_scales, fig, ax, a_idx, a_jdx, **kwargs)
 
         return fig, ax
+    
+    def multiplot(
+        self,
+        things: Tuple,
+        axes_scales: str = "loglog",
+        figsize: Tuple[int, int] = (8, 6),
+        nrows: int = 1,
+        ncols: int = 1,
+        **kwargs,
+    ) -> Tuple[plt.Figure, plt.Axes]:
+        """Generate multiple plots for specified wind parameters.
+
+        This method creates subplots to visualize the specified wind parameters
+        using either 1D or 2D representation based on the coordinate system.
+
+        Parameters
+        ----------
+        things : Tuple
+            A tuple containing the names of the wind parameters to plot.
+        axes_scales : str, optional
+            The scale type for the axes. Default is "loglog", which indicates both axes are logarithmic.
+        figsize : Tuple[int, int], optional
+            Size of the figure in inches, given as (width, height). Default is (8, 6).
+        nrows : int, optional
+            The number of rows of subplots. Default is 1.
+        ncols : int, optional
+            The number of columns of subplots. Default is 1.
+        **kwargs : keyword arguments
+            Additional keyword arguments to be passed to the plotting functions.
+
+        Returns
+        -------
+        fig : plt.Figure
+            The created Figure object containing the axes.
+        ax : plt.Axes
+            The array of Axes objects for the subplots.
+
+        Raises
+        ------
+        AssertionError
+            If the number of specified parameters does not match the number of subplots.
+
+        Notes
+        -----
+        This method adapts the subplot configuration based on the specified coordinate system,
+        which can be either POLAR or SPHERICAL. The plotting logic is delegated to the
+        `__wind1d` and `__wind2d` methods based on the coordinate type.
+        """
+        if self.coord_type == enum.CoordSystem.POLAR:
+            subplot_kw = {"projection": "polar"}
+        else:
+            subplot_kw = None
+
+        fig, ax = plt.subplots(nrows = nrows, ncols = ncols, 
+                               figsize=figsize, squeeze=False, subplot_kw=subplot_kw)
+        
+        assert (len(ax.flatten()) == len(things)), "number of things to plot must match number of subplots"
+        for n, thing in enumerate(things):
+            i, j = numpy.unravel_index(n, ax.shape)
+
+            if self.coord_type == enum.CoordSystem.SPHERICAL:
+                fig, ax = self.__wind1d(things, axes_scales, fig, ax, i, j, **kwargs)
+            else:
+                fig, ax = self.__wind2d(thing, axes_scales, fig, ax, i, j, **kwargs)
+
+        return fig, ax
+
 
     def plot_parameter_along_sightline(self):
         """Plot a variable along an given inclination angle."""
@@ -431,3 +499,5 @@ class WindPlot(util.WindUtil):
         fig = plot.finish_figure(fig)
 
         return fig, ax
+    
+    
