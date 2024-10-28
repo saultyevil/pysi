@@ -473,11 +473,18 @@ class WindPlot(util.WindUtil):
         parameter_points = self[thing]
         if parameter_points is None:
             raise KeyError(f"Unknown parameter {thing}: {thing} not in wind tables")
+        
+        # make ion fractions and densities formatted more nicely 
+        if "frac" in thing or "den" in thing:
+            title = thing.replace("_","-")
+        else:
+            title = thing   
+
         if log_p:
             parameter_points = numpy.log10(parameter_points)
-            ax[i, j].set_title(r"$\log_{10}(" + f"{thing})$")
+            ax[i, j].set_title(r"$\log_{10}(" + f"{title})$")
         else:
-            ax[i, j].set_title(f"{thing}")
+            ax[i, j].set_title(f"{title}")
 
         im = ax[i, j].pcolormesh(
             x_points,

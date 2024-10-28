@@ -15,7 +15,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 import pysi.sim.grid
-
+from pysi.util import plot
 
 def model_convergence(root, fp=".", return_per_cycle=False, return_converging=False):
     """Check the convergence of a Python simulation by parsing the.
@@ -44,7 +44,7 @@ def model_convergence(root, fp=".", return_per_cycle=False, return_converging=Fa
     convergence = [-1]
     converging = [-1]
 
-    with open(f"{fp}/diag_{root}/{root}_0.diag", "r") as f:
+    with open(f"{fp}/diag_{root}/{root}_00.diag", "r") as f:
         diag = f.readlines()
 
     prev = ""
@@ -87,7 +87,7 @@ def model_convergence(root, fp=".", return_per_cycle=False, return_converging=Fa
     return convergence
 
 
-def model_convergence_components(root, wd="."):
+def model_convergence_components(root, fp="."):
     """Returns a break down in terms of the number of cells which have passed
     the convergence checks on radiation temperature, electron temperature and
     heating and cooling balance.
@@ -96,7 +96,7 @@ def model_convergence_components(root, wd="."):
     ----------
     root: str
         The root name of the Python simulation
-    wd: str [optional]
+    fp: str [optional]
         The working directory of the Python simulation
 
     Returns
@@ -121,7 +121,7 @@ def model_convergence_components(root, wd="."):
     n_te_max = []
     file_found = False
 
-    diag_path = "{}/diag_{}/{}_0.diag".format(wd, root, root)
+    diag_path = "{}/diag_{}/{}_00.diag".format(fp, root, root)
     try:
         with open(diag_path, "r") as f:
             diag = f.readlines()
@@ -130,7 +130,7 @@ def model_convergence_components(root, wd="."):
         pass
 
     if not file_found:
-        print("unable to find {}_0.diag file".format(root))
+        print("unable to find {}_00.diag file".format(root))
         return n_tr, n_te, n_hc, n_te_max
 
     for i in range(len(diag)):
@@ -166,7 +166,7 @@ def model_errors(root, directory=".", n_cores=-1, print_errors=False):
     ----------
     root: str
         The root name of the Python simulation
-    wd: str [optional]
+    fp: str [optional]
         The working directory of the Python simulation
     n_cores: int [optional]
         If this is provided, then only the first n_cores processes will be
@@ -267,7 +267,7 @@ def model_errors(root, directory=".", n_cores=-1, print_errors=False):
             broken_diag_files.append(diag)
 
     if len(broken_diag_files) == len(diag_files):
-        print(f"Unable to find any error summaries for {root + directory}")
+        print(f"Unable to find any error summaries for {directory}/{root}")
         return total_errors
 
     if print_errors:
@@ -293,13 +293,13 @@ def plot_model_convergence(root, fp=".", display=False):
     tr, te, te_max, hc = model_convergence_components(root, fp)
 
     cycles = np.arange(1, len(convergence) + 1, 1)
-    ax.set_ylim(0, 1)
+    ax.set_ylim(0, 1.05)
 
     # As the bare minimum, we need the convergence per cycle but if the other
     # convergence stats are passed as well, plot those too
 
     ax.plot(cycles, convergence, label="Convergence")
-    ax.plot(cycles, converging, label="Converging")
+    #ax.plot(cycles, converging, label="Converging")
     ax.plot(cycles, tr, "--", label="Radiation temperature", alpha=0.65)
     ax.plot(cycles, te, "--", label="Electron temperature", alpha=0.65)
     ax.plot(cycles, hc, "--", label="Heating and cooling", alpha=0.65)
@@ -312,7 +312,7 @@ def plot_model_convergence(root, fp=".", display=False):
     ax.legend()
     ax.set_xlabel("Cycle")
     ax.set_ylabel("Fraction of cells passed")
-    fig = pysi.plot.finish_figure(fig, f"Final convergence = {float(convergence[-1]) * 100:4.2f}%")
+    fig = plot.finish_figure(fig, f"Final convergence = {float(convergence[-1]) * 100:4.2f}%")
 
     if display:
         plt.show()

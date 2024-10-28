@@ -58,6 +58,10 @@ class WindBase:
         self.read_in_wind_cell_spectra()
         self.read_in_wind_jnu_models()
 
+        # get a list of all the heating and cooling processes 
+        self.heating = [f for f in self.things_read_in if "heat_" in f]
+        self.cooling = [f for f in self.things_read_in if "cool_" in f]
+
         self.descriptions = {
             "x": "left-hand lower cell corner x-coordinate, cm", 
             "z": "left-hand lower cell corner z-coordinate, cm", 
@@ -400,6 +404,8 @@ class WindBase:
 
         n_read = 0
 
+        self.ions_read_in = [] # we will store all ions read in 
+
         # We need to loop over "frac" and "den" because ions are printed in
         # fractional populations or absolute density. The second loop is over
         # the elements passed to the function
@@ -419,7 +425,12 @@ class WindBase:
                             self.n_x, self.n_z
                         )
 
+                        ion_name = f"{element}_{column}_{ion_type}"
+                        if ion_name not in self.ions_read_in:
+                            self.ions_read_in.append(ion_name)
+
                 n_read += 1
+
 
         self.things_read_in = self.parameters.keys()
 
