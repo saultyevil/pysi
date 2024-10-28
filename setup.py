@@ -19,7 +19,7 @@ for line in lines:
 # setup function
 setup(
     name="PySi",
-    python_requires="~=3.10",
+    python_requires="~=3.11",
     version=__version__,
     description="A package to make using Sirocco a wee bit easier.",
     url="https://github.com/saultyevil/pysi",
