@@ -11,8 +11,8 @@ from matplotlib import pyplot as plt
 
 import pysi
 import pysi.constants as c
-import pysi.dump.spectrum
-import pysi.dump.wind
+import pysi.delay_dump.spectrum
+import pysi.delay_dump.wind
 
 BOUND_FREE_NRES = 20000
 UNFILTERED_SPECTRUM = -3
@@ -158,7 +158,7 @@ def create_spectrum(
     freq_max = np.max(dump_spectrum[:, 0])
     freq_min = np.min(dump_spectrum[:, 0])
 
-    dump_spectrum = pysi.dump.spectrum.bin_photon_weights(
+    dump_spectrum = pysi.delay_dump.spectrum.bin_photon_weights(
         dump_spectrum,
         freq_min,
         freq_max,
@@ -173,14 +173,14 @@ def create_spectrum(
 
     dump_spectrum[:, 1:] /= n_cores_norm
 
-    dump_spectrum = pysi.dump.spectrum.convert_weight_to_flux(dump_spectrum, spec_cycle_norm, d_norm_pc)
+    dump_spectrum = pysi.delay_dump.spectrum.convert_weight_to_flux(dump_spectrum, spec_cycle_norm, d_norm_pc)
 
     # Remove the first and last bin, consistent with Python
 
     n_bins -= 2
     dump_spectrum = dump_spectrum[1:-1, :]
 
-    dump_spectrum, inclinations = pysi.dump.spectrum.write_delay_dump_spectrum_to_file(
+    dump_spectrum, inclinations = pysi.delay_dump.spectrum.write_delay_dump_spectrum_to_file(
         root, fp, dump_spectrum, extract, n_spec, n_bins, d_norm_pc, return_inclinations=True
     )
 
@@ -346,7 +346,7 @@ def create_wind_weight_contours(root, resonance, wind=None, fp=".", n_cores_norm
         print("photon dataframe is empty")
         exit(1)
 
-    weight, count = pysi.dump.wind.wind_bin_photon_weights(
+    weight, count = pysi.delay_dump.wind.wind_bin_photon_weights(
         len(dump),
         resonance,
         dump["LastX"].values,
