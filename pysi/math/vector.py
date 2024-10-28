@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """Basic vector functions used in Python and PyPython.
 
@@ -23,6 +22,7 @@ def renorm_vec(in_vec: numpy.ndarray, renorm_length: float, epsilon: float = 1e-
     -------
     a: numpy.ndarray
         The renormalised 3-vector quantity.
+
     """
     x_vec = numpy.dot(in_vec, in_vec)
     if x_vec < epsilon:
@@ -47,8 +47,8 @@ def project_cartesian_vec_to_cylindrical_vec(pos_vec: numpy.ndarray, vec: numpy.
     result_vec: numpy.ndarray
         The input vector b which is now projected into cylindrical
         coordinates.
-    """
 
+    """
     result_vec = numpy.zeros(3)
     n_rho = numpy.zeros(3)
     n_z = numpy.zeros(3)

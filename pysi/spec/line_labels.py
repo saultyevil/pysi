@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """Module containing functions to add labels for common atomic transitions.
 TODO: add type hinting to function signatures
@@ -21,6 +20,7 @@ def _convert_labels_to_frequency_space(lines, spectral_axis=None, spectrum=None)
         The list of labels to convert from wavelength to frequency space.
     spectrum: pysi.Spectrum
         A spectrum object, used to find the units of the spectrum.
+
     """
     if spectrum is None and spectral_axis is None:
         return lines
@@ -70,6 +70,7 @@ def add_line_ids(
     -------
     ax: plt.Axes
         The updated axes object.
+
     """
     nlines = len(lines)
     xlims = ax.get_xlim()
@@ -89,7 +90,7 @@ def add_line_ids(
         elif linestyle == "thick":
             ax.axvline(x, linestyle="-", linewidth=2, color="k", zorder=1)
         elif linestyle == "top":
-            raise NotImplementedError()
+            raise NotImplementedError
 
         x = x - offset
 
@@ -128,8 +129,8 @@ def common_lines(spectrum=None, spectral_axis=None):
         A list of lists where each element of the list is the name of the
         transition/edge and the rest wavelength of that transition in
         Angstroms.
-    """
 
+    """
     lines = [
         [r"N \textsc{iii} / O \textsc{iii}", 305],
         [r"P \textsc{v}", 1118],
@@ -180,8 +181,8 @@ def photoionization_edges(spectrum=None, spectral_axis=None):
         A list of lists where each element of the list is the name of the
         transition/edge and the rest wavelength of that transition in
         Angstroms.
-    """
 
+    """
     edges = [
         [r"O \textsc{viii}", 14],
         [r"O \textsc{vii}", 16],

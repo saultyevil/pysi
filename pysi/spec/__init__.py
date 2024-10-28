@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Utility functions for reading in and analyzing spectra.
 
 The main part of this is the Spectrum() class -- well, it's pretty much
@@ -8,10 +7,10 @@ the only thing in here now after the re-structure.
 
 from pathlib import Path
 from typing import Union
+
 from scipy.integrate import simpson
 
-from pysi import math
-from pysi import util
+from pysi import math, util
 from pysi.spec import enum
 from pysi.spec.model.plot import SpectrumPlot
 
@@ -19,7 +18,7 @@ from pysi.spec.model.plot import SpectrumPlot
 class Spectrum(SpectrumPlot):
     """Main spectrum class."""
 
-    def __init__(self, root: str, directory: Union[str, Path] = ".", **kwargs) -> None:
+    def __init__(self, root: str, directory: str | Path = ".", **kwargs) -> None:
         """Initialize the class."""
         super().__init__(root, directory, **kwargs)
 
@@ -40,6 +39,7 @@ class Spectrum(SpectrumPlot):
         Returns
         -------
         The integral of the entire spectrum
+
         """
         x_min = None
         x_max = None
@@ -73,6 +73,7 @@ class Spectrum(SpectrumPlot):
         Returns
         -------
         The integral between of the spectrum between xmin and xmax.
+
         """
         spec_key = spec_type if spec_type else self.current
 

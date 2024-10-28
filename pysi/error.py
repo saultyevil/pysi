@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Error codes and custom exceptions for pysi.
 
 These are pretty basic, and don't do much.
@@ -15,7 +14,8 @@ class CoordError(Exception):
 
 class DimensionError(Exception):
     """Exception for when arrays with incorrect dimensions have been
-    supplied."""
+    supplied.
+    """
 
 
 class InvalidFileContents(Exception):

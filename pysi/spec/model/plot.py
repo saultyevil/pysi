@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """Class extension for plotting spectra."""
 
 from __future__ import annotations
 
-from typing import Iterable, Tuple
+from collections.abc import Iterable
 
 from matplotlib import pyplot
 
@@ -29,6 +28,7 @@ def _add_flux_ax_labels(ax: pyplot.Axes, units: pysi.spec.enum.SpectrumUnits, di
     -------
     ax: plt.Axes
         The updated Axes object with axes labels.
+
     """
     if units == pysi.spec.enum.SpectrumUnits.L_NU:
         ax.set_xlabel(r"Rest-frame frequency [Hz]")
@@ -60,6 +60,7 @@ def _add_flux_density_ax_labels(ax: pyplot.Axes, units: pysi.spec.enum.SpectrumU
     -------
     ax: plt.Axes
         The updated Axes object with axes labels.
+
     """
     if units == pysi.spec.enum.SpectrumUnits.L_NU:
         ax.set_xlabel(r"Rest-frame frequency [Hz]")
@@ -102,6 +103,7 @@ def _set_axes_labels(
     -------
     ax: plt.Axes
         The updated axes object.
+
     """
     if use_flux:
         ax = _add_flux_ax_labels(ax, units, distance)
@@ -153,6 +155,7 @@ def _create_plot(
     -------
     ax: pyplot.Axes
         The modified matplotlib Axes object.
+
     """
     if isinstance(things_to_plot, str):
         things_to_plot = (things_to_plot,)
@@ -200,7 +203,7 @@ class SpectrumPlot(SpectrumBase):
 
     def plot(
         self, label: str, fig: pyplot.Figure = None, ax: pyplot.Axes = None, ax_scale: str = "loglog"
-    ) -> Tuple[pyplot.Figure, pyplot.Axes]:
+    ) -> tuple[pyplot.Figure, pyplot.Axes]:
         """Plot a labelled spectrum for the current spectrum file.
 
         Parameters
@@ -224,6 +227,7 @@ class SpectrumPlot(SpectrumBase):
         Notes
         -----
         If fig and ax are not provided, they will be created.
+
         """
         if not fig and not ax:
             fig, ax = pyplot.subplots(1, 1, figsize=(12, 5))
@@ -239,7 +243,7 @@ class SpectrumPlot(SpectrumBase):
 
         return fig, ax
 
-    def plot_diagnostic_spectra(self) -> Tuple[pyplot.Figure, pyplot.Axes]:
+    def plot_diagnostic_spectra(self) -> tuple[pyplot.Figure, pyplot.Axes]:
         """Plot the diagnostic spec_tot files.
 
         Returns
@@ -252,6 +256,7 @@ class SpectrumPlot(SpectrumBase):
         Notes
         -----
         If fig and ax are not provided, they will be created.
+
         """
         fig, ax = pyplot.subplots(2, 1, figsize=(12, 9), sharex=True)
         current = self.current
@@ -288,7 +293,7 @@ class SpectrumPlot(SpectrumBase):
 
         return fig, ax
 
-    def plot_optical_depth(self) -> Tuple[pyplot.Figure, pyplot.Axes]:
+    def plot_optical_depth(self) -> tuple[pyplot.Figure, pyplot.Axes]:
         """Plot the optical depth.
 
         Returns
@@ -301,6 +306,7 @@ class SpectrumPlot(SpectrumBase):
         Notes
         -----
         If fig and ax are not provided, they will be created.
+
         """
         fig, ax = pyplot.subplots(1, 1, figsize=(12, 5))
         current = self.current
@@ -331,7 +337,8 @@ class SpectrumPlot(SpectrumBase):
         """Show plotted figures.
 
         Notes
-        ------
+        -----
         This is a wrapper around pyplot.show().
+
         """
         pyplot.show()

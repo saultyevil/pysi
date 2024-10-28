@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Equations for accretion discs.
 
 Includes temperature profiles, calculations for the Eddington luminosity
@@ -10,13 +9,11 @@ spectrum.
 from math import pi
 
 import numpy as np
-
-from astropy.constants import m_p, M_sun, sigma_sb, sigma, c, G  # pylint: disable=no-name-in-module
-from pysi.math.constants import MSOL_PER_YEAR
-
+from astropy.constants import G, M_sun, c, m_p, sigma, sigma_sb  # pylint: disable=no-name-in-module
 
 from pysi.math.blackbody import planck_lambda, planck_nu
 from pysi.math.blackhole import gravitational_radius, innermost_stable_circular_orbit
+from pysi.math.constants import MSOL_PER_YEAR
 
 
 def _calculate_disc_spectrum(m_co, mdot, radius, frequency_bins, modified_teff, freq_units, colour_correction=1):
@@ -43,8 +40,8 @@ def _calculate_disc_spectrum(m_co, mdot, radius, frequency_bins, modified_teff, 
     -------
     lum: np.ndarray
         The luminosity at the frequency bins.
-    """
 
+    """
     n_rings = len(radius)
     lum = np.zeros_like(frequency_bins)
 
@@ -87,8 +84,8 @@ def alpha_disc_effective_temperature(r, r_co, m_co, mdot):
     -------
     teff: np.ndarray or float
         The effective temperature at the provided radius or radii.
-    """
 
+    """
     m_co *= M_sun.cgs
     mdot *= M_sun.cgs_PER_YEAR
 
@@ -148,8 +145,8 @@ def create_disc_spectrum(
         The accretion disc spectrum. If in frequency units, the columns are
         "Freq." (Hz) and "Lum" (ergs/s/cm^2/Hz). If in wavelength units, the columns are
         "Lambda" (A) and "Lum" (ergs/s/cm^2/A).
-    """
 
+    """
     if freq_units:
         xlabel = "Freq."
     else:
@@ -182,8 +179,8 @@ def eddington_accretion_limit(mbh, efficiency):
     Returns
     -------
     The Eddington accretion rate in units of grams / second.
-    """
 
+    """
     mbh *= M_sun.cgs
 
     return (4 * pi * G.cgs * mbh * m_p.cgs) / (efficiency * c.cgs * sigma.cgs)
@@ -200,8 +197,8 @@ def eddington_luminosity_limit(mbh):
     Returns
     -------
     The Eddington luminosity for the black hole in units of ergs / second.
-    """
 
+    """
     mbh *= M_sun.cgs
 
     return (4 * pi * G.cgs * mbh * c.cgs * m_p.cgs) / sigma.cgs
@@ -224,8 +221,8 @@ def modified_eddington_alpha_disc_effective_temperature(r, m_co, mdot):
     -------
     teff: np.ndarray or float
         The effective temperature at the provided radius or radii.
-    """
 
+    """
     r_isco = innermost_stable_circular_orbit(m_co)
     rg = gravitational_radius(m_co)
     l_edd = eddington_luminosity_limit(m_co)

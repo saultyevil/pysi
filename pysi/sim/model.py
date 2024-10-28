@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Analyse or modify simulation conditions.
 
 This module contains functions for analysing the quality of a
@@ -39,12 +38,13 @@ def model_convergence(root, fp=".", return_per_cycle=False, return_converging=Fa
     convergence: float or int or list
         The convergence fraction in the final cycle of the simulation. If this
         is -1, then a convergence fraction was not found.
+
     """
     brief_summary_len = 9
     convergence = [-1]
     converging = [-1]
 
-    with open(f"{fp}/diag_{root}/{root}_0.diag", "r") as f:
+    with open(f"{fp}/diag_{root}/{root}_0.diag") as f:
         diag = f.readlines()
 
     prev = ""
@@ -113,6 +113,7 @@ def model_convergence_components(root, wd="."):
     n_hc: List[float]
         The fraction of cells which have passed the heating/cooling
         convergence test.
+
     """
     brief_summary_len = 7
     n_tr = []
@@ -121,16 +122,16 @@ def model_convergence_components(root, wd="."):
     n_te_max = []
     file_found = False
 
-    diag_path = "{}/diag_{}/{}_0.diag".format(wd, root, root)
+    diag_path = f"{wd}/diag_{root}/{root}_0.diag"
     try:
-        with open(diag_path, "r") as f:
+        with open(diag_path) as f:
             diag = f.readlines()
         file_found = True
-    except IOError:
+    except OSError:
         pass
 
     if not file_found:
-        print("unable to find {}_0.diag file".format(root))
+        print(f"unable to find {root}_0.diag file")
         return n_tr, n_te, n_hc, n_te_max
 
     for i in range(len(diag)):
@@ -180,6 +181,7 @@ def model_errors(root, directory=".", n_cores=-1, print_errors=False):
         A dictionary containing the total errors over all processors. The keys
         are the error messages and the values are the number of times that
         error occurred.
+
     """
     total_errors = {}
     diag_files = glob(f"{directory}/diag_{root}/{root}_*.diag")
@@ -200,9 +202,9 @@ def model_errors(root, directory=".", n_cores=-1, print_errors=False):
 
     for diag in diag_files:
         try:
-            with open(diag, "r") as f:
+            with open(diag) as f:
                 lines = f.readlines()
-        except IOError:
+        except OSError:
             broken_diag_files.append(diag)
             continue
 
@@ -275,11 +277,10 @@ def model_errors(root, directory=".", n_cores=-1, print_errors=False):
         print(
             f"Total errors reported from {n_reported} of {len(diag_files)} processes for {directory + root}, which {exit_msg}:"
         )
-        for key in total_errors.keys():
+        for key in total_errors:
             n_error = int(total_errors[key])
-            if n_error < 1:
-                n_error = 1
-            print("  {:6d} -- {}".format(n_error, key))
+            n_error = max(n_error, 1)
+            print(f"  {n_error:6d} -- {key}")
 
     return total_errors
 

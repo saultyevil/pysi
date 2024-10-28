@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Calculate basic quantities.
 
 This sub-module is intended to house various functions for calculating
@@ -9,6 +8,7 @@ quantities.
 """
 
 from astropy.constants import c  # pylint: disable=no-name-in-module
+
 from pysi.math.constants import ANGSTROM
 
 
@@ -23,8 +23,8 @@ def angstrom_to_hz(wavelength):
     Returns
     -------
     The frequency in Hertz.
-    """
 
+    """
     return c.cgs / (wavelength * ANGSTROM)
 
 
@@ -39,6 +39,6 @@ def hz_to_angstrom(frequency):
     Returns
     -------
     The wavelength in Angstroms.
-    """
 
+    """
     return c.cgs / frequency / ANGSTROM

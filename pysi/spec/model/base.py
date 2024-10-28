@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """Base class for reading in a spectrum."""
 
@@ -7,7 +6,6 @@ from __future__ import annotations
 
 import copy
 from pathlib import Path
-from typing import List, Union
 
 import numpy
 from astropy import constants
@@ -23,8 +21,8 @@ class SpectrumBase:
     def __init__(
         self,
         root: str,
-        directory: Union[str, Path] = Path("."),
-        default_scale: str = "log",  # todo: use pydantic or something to verify input
+        directory: str | Path = Path(),
+        default_scale: str = "log",  # TODO: use pydantic or something to verify input
         default_spectrum: str = None,
         smooth_width: int = 0,
     ) -> None:
@@ -43,6 +41,7 @@ class SpectrumBase:
             indexing the class.
         smooth_width: int
             The boxcar filter width to smooth spectra.
+
         """
         self.root = root
         self.directory = Path(directory)
@@ -82,7 +81,7 @@ class SpectrumBase:
 
     # Private methods ----------------------------------------------------------
 
-    def _set_units_and_distance_for_spectrum(self, line: List[str], spec_type: str, scale: str) -> None:
+    def _set_units_and_distance_for_spectrum(self, line: list[str], spec_type: str, scale: str) -> None:
         """_summary_
 
         Parameters
@@ -100,6 +99,7 @@ class SpectrumBase:
             _description_
         IOError
             _description_
+
         """
         if "Units:" in line:
             self.spectra[scale][spec_type]["units"] = enum.SpectrumUnits(line[4][1:-1])
@@ -117,7 +117,7 @@ class SpectrumBase:
             else:
                 self.spectra[scale][spec_type]["distance"] = 0
 
-    def _get_spectrum_file_contents(self, file: Path, spec_type: str, scale: str) -> List[List[str]]:
+    def _get_spectrum_file_contents(self, file: Path, spec_type: str, scale: str) -> list[list[str]]:
         """Returns the contents of a file as a list of words.
 
         In addition to reading in the contents of the file, this method will
@@ -136,8 +136,9 @@ class SpectrumBase:
         -------
         List[List[str]]
             The contents of the file, as a list of the sentences split.
+
         """
-        with open(file, "r", encoding="utf-8") as file_in:
+        with open(file, encoding="utf-8") as file_in:
             spectrum_file = file_in.readlines()
 
         contents = []
@@ -161,6 +162,7 @@ class SpectrumBase:
             The extension of the spectrum to read.
         scale: str
             The scale of the spectrum, either log or linear
+
         """
         if scale == "log" and spec_type != "spec_tau":
             extension = "log_"
@@ -188,7 +190,7 @@ class SpectrumBase:
 
         self._populate_spectrum_columns(spec_type, scale, spectrum_lines)
 
-    def _populate_spectrum_columns(self, spec_type: str, scale: str, spectrum_lines: List[List[str]]):
+    def _populate_spectrum_columns(self, spec_type: str, scale: str, spectrum_lines: list[list[str]]):
         """Get the headers for a spectrum.
 
         This function will retrieve the column headers in the spectrum file,
@@ -204,6 +206,7 @@ class SpectrumBase:
         spectrum_lines: List[List[str]
             A list of the contents of the spectrum file, where the line has been
             split into a list of words.
+
         """
         # Extract the header columns of the spectrum. This assumes the first
         # read line in the spectrum is the header.
@@ -245,6 +248,7 @@ class SpectrumBase:
         -------
         spectral_axis: SpectrumSpectralAxis
             The spectral axis units of the spectrum
+
         """
         if units in [enum.SpectrumUnits.F_LAM, enum.SpectrumUnits.F_LAM_LEGACY, enum.SpectrumUnits.L_LAM]:
             return enum.SpectrumSpectralAxis.WAVELENGTH
@@ -263,6 +267,7 @@ class SpectrumBase:
         ----------
         fn : callable
             The callable function to apply.
+
         """
         for scale in self.spectra:
             for spec_type, spectrum in self.spectra[scale].items():
@@ -329,8 +334,8 @@ class SpectrumBase:
         ----------
         distance : float
             The distance in parsecs.
-        """
 
+        """
         if not isinstance(distance, (float, int)):
             raise ValueError(f"{distance} is not a valid type for distance")
 
@@ -356,6 +361,7 @@ class SpectrumBase:
         ----------
         scaling : str
             The scaling, either log or linear.
+
         """
         scaling_lower = scaling.lower()
         if scaling_lower not in ["log", "linear"]:
@@ -369,12 +375,13 @@ class SpectrumBase:
         ----------
         spec_key: str
             The name of the spectrum to set default.
+
         """
         if spec_key not in self.spectra[self.scaling]:
             raise KeyError(f"{spec_key} not available in spectrum. Choose: {','.join(list(self.spectra.keys()))}")
         self.current = spec_key
 
-    def show_available(self) -> List[str]:
+    def show_available(self) -> list[str]:
         """Prints and return a list of the available spectra.
 
         Returns
@@ -382,6 +389,7 @@ class SpectrumBase:
         List[str]
             A list containing the names of the spectra which have been
             read in.
+
         """
         available_list = tuple([f"log_{key}" for key in self.spectra["columns"]] + list(self.spectra["columns"]))
         print(
@@ -403,6 +411,7 @@ class SpectrumBase:
         ----------
         boxcar_width: int
             The width of the boxcar filter.
+
         """
         # if not self.__original_spectra:
         #     self.__original_spectra = copy.deepcopy(self.spectra)
@@ -446,6 +455,7 @@ class SpectrumBase:
         ------
         IOError
             Raised when no spectrum files could be found/read in.
+
         """
         n_read = 0
 
@@ -455,8 +465,8 @@ class SpectrumBase:
                 try:
                     self._get_this_spectrum(spec_type, scale)
                     n_read += 1
-                except IOError:
+                except OSError:
                     continue
 
         if n_read == 0:
-            raise IOError(f"Unable to open any spectrum files for {self.root} in {self.directory}")
+            raise OSError(f"Unable to open any spectrum files for {self.root} in {self.directory}")

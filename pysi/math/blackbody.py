@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Blackbody functions for wavelength and frequency.
 
 In wavelength space, the blackbody function assumes that the wavelength
@@ -11,7 +10,6 @@ from math import pi
 import numpy as np
 from astropy import units
 from astropy.constants import c, h, k_B, sigma_sb  # pylint: disable=no-name-in-module
-
 
 from pysi.math.constants import ANGSTROM, WIEN_FREQUENCY, WIEN_WAVELENGTH
 
@@ -32,8 +30,8 @@ def planck_lambda(temperature, lamda):
     b_lamda: float
         The value of the Planck function with the provided temperature and
         wavelength. Has units ergs s^-1 cm^-2 A^-1.
-    """
 
+    """
     temperature *= units.K
     lcm = lamda * ANGSTROM * units.cm
     x = h.cgs * c.cgs / lcm / k_B.cgs / temperature
@@ -61,8 +59,8 @@ def planck_nu(temperature, frequency, factor=1):
     b_nu: float
         The value of the Planck function with the provided temperature and
         frequency. Has units ergs s^-1 cm^-2 Hz^-1.
-    """
 
+    """
     x = h.cgs * frequency / (factor * k_B.cgs * temperature)
     b_nu = (2 * h.cgs * frequency**3) / (factor**4 * c.cgs**2 * (np.exp(x) - 1))
 
@@ -84,6 +82,7 @@ def stefan_boltzmann(radius, temperature):
     -------
     lum: float
         The luminosity of the sphere.
+
     """
     return 4 * pi * radius**2 * sigma_sb.cgs * temperature**4
 
@@ -102,9 +101,8 @@ def wien_law(temperature, freq_space=False):
     -------
     The wavelength (in Angstrom) or frequency where the blackbody curve is
     at maximum.
-    """
 
+    """
     if freq_space:
         return WIEN_FREQUENCY * temperature
-    else:
-        return WIEN_WAVELENGTH / temperature / 1e-10
+    return WIEN_WAVELENGTH / temperature / 1e-10

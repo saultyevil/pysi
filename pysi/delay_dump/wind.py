@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """"""
 
 import numpy as np
@@ -11,7 +10,6 @@ def wind_bin_photon_weights(
     n_photons, nres, photon_x, photon_y, photon_z, photon_nres, photon_weight, x_points, z_points, nx, nz
 ):
     """Bin photon weights by extract location."""
-
     hist2d_weight = np.zeros((nx, nz))
     hist2d_count = np.zeros((nx, nz))
 

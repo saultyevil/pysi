@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Schlossman and Vitello CV wind model.
 
 TODO, add reference to paper
@@ -7,6 +6,7 @@ TODO, add reference to paper
 
 import numpy as np
 from astropy.constants import G, M_sun  # pylint: disable=no-name-in-module
+
 from pysi.math.constants import MSOL_PER_YEAR
 
 
@@ -54,8 +54,8 @@ class SchlossmanVitelloWind:
             accelerates to the acceleration length scale.
         v_inf:
             The terminal velocity, in units of escape velocity.
-        """
 
+        """
         self.v_0 = v0
         self.gamma = gamma
         self.m_co = m_co * M_sun.cgs
@@ -70,8 +70,8 @@ class SchlossmanVitelloWind:
 
     def find_theta(self, r0):
         """Determine the angle at which the wind emerges from at a special
-        radius r from the disk surface."""
-
+        radius r from the disk surface.
+        """
         x = ((r0 - self.r_min) / (self.r_max - self.r_min)) ** self.gamma
 
         if r0 <= self.r_min:
@@ -85,7 +85,6 @@ class SchlossmanVitelloWind:
 
     def r0_guess_func(self, r, x):
         """Note that r is a position along the disk."""
-
         theta = self.find_theta(r)
         rho = np.sqrt(x[0] ** 2 + x[1] ** 2)
         rho_guess = r + np.tan(theta) * x[2]
@@ -94,7 +93,6 @@ class SchlossmanVitelloWind:
 
     def find_r0(self, x):
         """Determine r0 for a point in the x, y plane."""
-
         # If the vector is in the x-y plane, then this is simple
         if x[2] == 0:
             return np.sqrt(x[0] ** 2 + x[1] ** 2)
@@ -106,26 +104,25 @@ class SchlossmanVitelloWind:
 
         if rho <= rho_min:
             return self.r_min * rho / rho_min
-        elif rho >= rho_max:
+        if rho >= rho_max:
             return self.r_max * rho - rho_max
-        else:
-            from scipy.optimize import brentq  # pylint: disable=import-outside-toplevel
+        from scipy.optimize import brentq  # pylint: disable=import-outside-toplevel
 
-            return brentq(
-                self.r0_guess_func,
-                self.r_min,
-                self.r_max,
-                args=x,
-            )
+        return brentq(
+            self.r0_guess_func,
+            self.r_min,
+            self.r_max,
+            args=x,
+        )
 
     def escape_velocity(self, r0):
         """Calculate the escape velocity at a point r0."""
-
         return np.sqrt(2 * G.cgs * self.m_co / r0)
 
     def polodial_velocity(self, dist, r0):
         """Calculate the polodial velocity for a polodial distance l along a
-        wind stream line with fixed."""
+        wind stream line with fixed.
+        """
         tmp = (dist / self.accel_length) ** self.accel_exp
         v_term = self.v_inf * self.escape_velocity(r0)
         v_l = self.v_0 + (v_term - self.v_0) * (tmp / (tmp + 1))

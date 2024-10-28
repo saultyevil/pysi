@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Functions for working with delay dump files."""
 
 from sys import exit
@@ -35,6 +34,7 @@ def read_dump_pd(root, fp="."):
     dumped_photons: pd.DataFrame
         An array containing the dumped photons with the quantities specified
         by the extract dict.
+
     """
     names = {
         "Np": np.int32,
@@ -116,10 +116,10 @@ def create_spectrum(
     filtered_spectrum: np.ndarray or pd.DataFrame
         A 2D array containing the frequency in the first column and the
         fluxes for each inclination angle in the other columns.
-    """
 
+    """
     if type(extract) != tuple:
-        print("extract_nres is not a tuple but is of type {}".format(type(extract)))
+        print(f"extract_nres is not a tuple but is of type {type(extract)}")
         exit(pysi.error.EXIT_FAIL)
 
     # If the frequency bins have been provided, we need to do some checks to make
@@ -186,11 +186,10 @@ def create_spectrum(
 
     if output_numpy:
         return dump_spectrum
-    else:
-        lamda = np.reshape(c.C / dump_spectrum[:, 0] * 1e8, (n_bins, 1))
-        dump_spectrum = np.append(lamda, dump_spectrum, axis=1)
-        df = pd.DataFrame(dump_spectrum, columns=["Lambda", "Freq."] + inclinations)
-        return df
+    lamda = np.reshape(c.C / dump_spectrum[:, 0] * 1e8, (n_bins, 1))
+    dump_spectrum = np.append(lamda, dump_spectrum, axis=1)
+    df = pd.DataFrame(dump_spectrum, columns=["Lambda", "Freq."] + inclinations)
+    return df
 
 
 def create_spectrum_breakdown(
@@ -226,8 +225,8 @@ def create_spectrum_breakdown(
     spectra: dict
         A dictionary where the keys are the name of the spectra and the values
         are pd.DataFrames of that corresponding spectrum.
-    """
 
+    """
     dump = read_dump_pd(root, fp)
     s = pysi.Spectrum(root, fp)
 
@@ -330,6 +329,7 @@ def create_wind_weight_contours(root, resonance, wind=None, fp=".", n_cores_norm
         The resonance weight binned per cell.
     count2d: np.ndarry
         The resonance count binned per cell.
+
     """
     if wind is None:
         wind = pysi.Wind(root, fp, masked=False)

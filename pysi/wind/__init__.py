@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """Contains the user facing Wind class."""
 
@@ -22,6 +21,7 @@ def create_wind_tables(root: str, directory: str, version: str = None):
         The directory containing the model
     version : str
         The version number of Python the model was run with
+
     """
     pysi.util.create_wind_save_tables(root, directory, ion_density=True, version=version)
     pysi.util.create_wind_save_tables(root, directory, ion_density=False, version=version)
@@ -41,6 +41,7 @@ class Wind(plot.WindPlot):
         directory: str
             The directory containing the simulation. By default this is assumed
             to be the current working directory.
+
         """
         super().__init__(root, directory, **kwargs)
         # self.grav_radius = self.__calculate_grav_radius()
@@ -61,13 +62,14 @@ class Wind(plot.WindPlot):
         """
         create_wind_tables(self.root, self.directory, self.version)
 
-    def change_units(self, new_units: Union[enum.DistanceUnits, enum.VelocityUnits]) -> None:
+    def change_units(self, new_units: enum.DistanceUnits | enum.VelocityUnits) -> None:
         """Change the spatial or velocity units.
 
         Parameters
         ----------
         new_units: Union[enum.DistanceUnits, enum.VelocityUnits]
             The new units to transform into.
+
         """
         if isinstance(new_units, enum.DistanceUnits):
             self.__change_distance_units(new_units)
@@ -85,6 +87,7 @@ class Wind(plot.WindPlot):
         ----------
         amount: int
             The pixel width for a boxcar filter.
+
         """
         for i in range(self.n_x):
             for j in range(self.n_z):
@@ -120,6 +123,7 @@ class Wind(plot.WindPlot):
         ----------
         new_units: enum.DistanceUnits
             The new distance units.
+
         """
         if self.distance_units == new_units:
             return
@@ -148,6 +152,7 @@ class Wind(plot.WindPlot):
         ----------
         new_units: enum.VelocityUnits
             The new velocity units.
+
         """
         if self.velocity_units == new_units:
             return

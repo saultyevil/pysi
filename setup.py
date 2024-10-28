@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
-from setuptools import setup
-from setuptools import find_packages
+from setuptools import find_packages, setup
 
 # get requirements from file
-with open("requirements.txt", "r", encoding="utf-8") as file_in:
+with open("requirements.txt", encoding="utf-8") as file_in:
     requirements = [line.strip("\n") for line in file_in.readlines()]
 # get version from pysi/__init__.py
-with open("pysi/__init__.py", "r", encoding="utf-8") as file_in:
+with open("pysi/__init__.py", encoding="utf-8") as file_in:
     lines = file_in.readlines()
 for line in lines:
     line = line.split()

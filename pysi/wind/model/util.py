@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """Utility class for Wind.
 
@@ -8,12 +7,12 @@ are a bit more abstracted.
 """
 
 import copy
-from typing import Callable, Union
+from collections.abc import Callable
 
 import numpy
 
-from pysi.wind import enum
 from pysi.math import vector
+from pysi.wind import enum
 from pysi.wind.model import base
 
 WIND_CELL_TYPES = [enum.WindCellPosition.INWIND.value, enum.WindCellPosition.PARTIALLY_INWIND.value]
@@ -26,7 +25,7 @@ class WindUtil(base.WindBase):
         self,
         root: str,
         directory: str,
-        mask_value: Union[int, Callable[[int], bool]] = enum.WindCellPosition.INWIND.value,
+        mask_value: int | Callable[[int], bool] = enum.WindCellPosition.INWIND.value,
         **kwargs,
     ):
         """Initialize the class."""
@@ -67,6 +66,7 @@ class WindUtil(base.WindBase):
         ----------
         theta: float
             The angle of the sight line to extract from, in degrees.
+
         """
         if self.coord_type == enum.CoordSystem.POLAR:
             return numpy.ones_like(self.x_coords) * theta
@@ -119,7 +119,7 @@ class WindUtil(base.WindBase):
         """Get a variable along a given sightline."""
         raise NotImplementedError("Method is not implemented yet.")
 
-    def mask_arrays(self, mask_value: Union[int, Callable[[int, int], bool]]) -> None:
+    def mask_arrays(self, mask_value: int | Callable[[int, int], bool]) -> None:
         """Create masked parameter arrays.
 
         It is possible to remask the parameter arrays by calling this function
@@ -130,6 +130,7 @@ class WindUtil(base.WindBase):
         ----------
         mask_value: int, Callable[int, int]
             The value of inwind to create a masked array with.
+
         """
         # Create the expression to mask with, this is either a callable, such
         # as a lambda function, or an int corresponding to what we want to keep

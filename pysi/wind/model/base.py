@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """The base class which contains variables containing the parameters of the
-wind, as well as the most basic variables which describe the wind."""
+wind, as well as the most basic variables which describe the wind.
+"""
 
 import pathlib
 import re
 import warnings
-from typing import List, Tuple
 
 import numpy
 from astropy.constants import h, k_B  # pylint: disable=no-name-in-module
@@ -31,17 +30,18 @@ class WindBase:
             The root name of the simulation.
         directory: str
             The directory file path containing the simulation.
+
         """
         self.root = str(root)
         self.directory = pathlib.Path(directory)
-        self.version = kwargs.get("version", None)
+        self.version = kwargs.get("version")
         self.check_version()
 
-        self.n_x = int(0)
-        self.n_z = int(0)
-        self.n_cells = int(0)
+        self.n_x = 0
+        self.n_z = 0
+        self.n_cells = 0
         self.coord_type = enum.CoordSystem.UNKNOWN
-        self.n_model_freq_bands = int(0)
+        self.n_model_freq_bands = 0
 
         self.parameters = {}
         self.things_read_in = []
@@ -75,9 +75,9 @@ class WindBase:
         """
         if not self.version:
             try:
-                with open(f"{self.directory}/.sirocco-version", "r") as file_in:
+                with open(f"{self.directory}/.sirocco-version") as file_in:
                     self.version = file_in.read()
-            except IOError:
+            except OSError:
                 self.version = "UNKNOWN"
 
         # print(f"Version: {self.version}")
@@ -88,10 +88,10 @@ class WindBase:
         cell_index: int,
         band_index: int,
         model_array: numpy.ndarray,
-        table_header: List[str],
+        table_header: list[str],
         n_freq_bins_per_band: int,
-        cell_frequency: List[numpy.ndarray],
-        cell_flux: List[numpy.ndarray],
+        cell_frequency: list[numpy.ndarray],
+        cell_flux: list[numpy.ndarray],
     ):
         """Update the J_nu model for a frequency band.
 
@@ -111,12 +111,14 @@ class WindBase:
             A list to store the frequency bins for the cell.
         cell_flux: List[numpy.ndarry]
             A list to store the fluxes for the cell.
+
         Returns
         -------
         cell_frequency: List[numpy.ndarray]
             The updated list with frequency bins for the cell.
         cell_flux: List[numpy.ndarry]
             The update list of flux for the cell.
+
         """
         # create a dict of the parameters for band j, the table is a
         # flat list of the parameters for cell 1, 2, 3, ... for BAND 0,
@@ -144,7 +146,7 @@ class WindBase:
             # model_type 1 == powerlaw model, otherwise 2 == exponential
             # this is the noclumentaure used in python :-)
 
-            model_type = parameters_for_band_j.get("spec_mod_type", parameters_for_band_j.get("spec_mod_", None))
+            model_type = parameters_for_band_j.get("spec_mod_type", parameters_for_band_j.get("spec_mod_"))
 
             if model_type is None:
                 warnings.warn(
@@ -178,10 +180,11 @@ class WindBase:
             The i-th index of the cell.
         j: int
             The j-th index of the cell.
+
         """
         return int(self.n_z * i + j)
 
-    def get_ij_from_elem_number(self, elem: int) -> Tuple[int, int]:
+    def get_ij_from_elem_number(self, elem: int) -> tuple[int, int]:
         """Get the i and j index for a given wind element number.
 
         Used when converting a wind element number into two indices for use
@@ -191,13 +194,14 @@ class WindBase:
         ----------
         elem: int
             The element number.
+
         """
         i = int(elem / self.n_z)
         j = int(elem - i * self.n_z)
 
         return i, j
 
-    def read_in_wind_table(self, table: str) -> Tuple[List[str], numpy.ndarray]:
+    def read_in_wind_table(self, table: str) -> tuple[list[str], numpy.ndarray]:
         """Get variables for a specific table type.
 
         Parameters
@@ -211,16 +215,16 @@ class WindBase:
             The table headers for each column.
         table_parameters: numpy.ndarray
             An array of the numerical values of the table.
-        """
 
+        """
         file_path = pathlib.Path(f"{self.directory}/{self.root}.{table}.txt")
 
         if file_path.is_file() is False:
-            file_path = pathlib.Path(f"{str(file_path.parent)}/tables/{file_path.stem}.txt")
+            file_path = pathlib.Path(f"{file_path.parent!s}/tables/{file_path.stem}.txt")
             if file_path.is_file() is False:
                 return [], {}
 
-        with open(file_path, "r", encoding="utf-8") as buffer:
+        with open(file_path, encoding="utf-8") as buffer:
             file_lines = [line.strip().split() for line in buffer.readlines() if not line.startswith("#")]
 
         if file_lines[0][0].isdigit() is True:
@@ -238,6 +242,7 @@ class WindBase:
         ----------
         n_freq_bins: int
             The number of frequency bins to use for the model.
+
         """
         table_header, models = self.read_in_wind_table("spec")
         if not table_header:
@@ -293,14 +298,13 @@ class WindBase:
 
     def read_in_wind_cell_spectra(self) -> None:
         """Read in the cell spectra."""
-
         spec_table_files = pysi.util.shell.find_file_with_pattern("*xspec.*.txt", self.directory)
         if len(spec_table_files) == 0:
             self.parameters["spec_freq"] = self.parameters["spec_flux"] = None
             return
 
         for file in spec_table_files:
-            with open(file, "r", encoding="utf-8") as buffer:
+            with open(file, encoding="utf-8") as buffer:
                 file_lines = [line.strip().split() for line in buffer.readlines() if not line.startswith("#")]
 
             if file_lines[0][0].isdigit() is True:
@@ -338,7 +342,7 @@ class WindBase:
                     self.parameters["spec_flux"][coords[0], :] = file_array[:, i + 1]
                     self.parameters["spec_freq"][coords[0], :] = file_array[:, 0]
 
-    def read_in_wind_ions(self, elements_to_read: List[str] = elements.ELEMENTS) -> None:
+    def read_in_wind_ions(self, elements_to_read: list[str] = elements.ELEMENTS) -> None:
         """Read in the different ions in the wind.
 
         Parameters
@@ -347,8 +351,8 @@ class WindBase:
             A list of atomic element names, e.g. H, He, whose ions in the wind
             will attempted to be read in. The default value is to try to read in
             all elements up to Cobalt.
-        """
 
+        """
         n_read = 0
 
         # We need to loop over "frac" and "den" because ions are printed in
@@ -375,12 +379,12 @@ class WindBase:
         self.things_read_in = self.parameters.keys()
 
         if n_read == 0:
-            raise IOError(f"Have been unable to read in any wind ion tables in {self.directory}")
+            raise OSError(f"Have been unable to read in any wind ion tables in {self.directory}")
 
     def read_in_wind_parameters(self) -> None:
         """Read in the different parameters which describe state of the
-        wind."""
-
+        wind.
+        """
         n_read = 0
 
         for table in ["master", "heat", "gradient", "converge"]:
@@ -396,7 +400,7 @@ class WindBase:
             n_read += 1
 
         if n_read == 0:
-            raise IOError(f"Have been unable to read in any wind parameter tables in {self.directory}")
+            raise OSError(f"Have been unable to read in any wind parameter tables in {self.directory}")
 
         self.things_read_in = self.parameters.keys()
 

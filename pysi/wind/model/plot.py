@@ -1,14 +1,11 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """Sub-class containing plotting functions."""
 
 from __future__ import annotations
 
-from typing import Tuple
-
-import numpy
 import matplotlib.pyplot as plt
+import numpy
 
 from pysi.util import plot
 from pysi.wind import enum
@@ -38,6 +35,7 @@ class WindPlot(util.WindUtil):
             The root name of the simulation.
         directory: str
             The directory containing the simulation.
+
         """
         super().__init__(root, directory, **kwargs)
 
@@ -48,11 +46,11 @@ class WindPlot(util.WindUtil):
         axes_scales: str = "loglog",
         fig: plt.Figure = None,
         ax: plt.Axes = None,
-        figsize: Tuple[int, int] = (8, 6),
+        figsize: tuple[int, int] = (8, 6),
         a_idx: int = 0,
         a_jdx: int = 0,
         **kwargs,
-    ) -> Tuple[plt.Figure, plt.Axes]:
+    ) -> tuple[plt.Figure, plt.Axes]:
         """Plot a wind parameter.
 
         Parmeters
@@ -66,6 +64,7 @@ class WindPlot(util.WindUtil):
             The create Figure object, containing the axes.
         ax: plt.Axes
             The axes object for the plot.
+
         """
         if not fig and not ax:
             if self.coord_type == enum.CoordSystem.POLAR:
@@ -95,8 +94,8 @@ class WindPlot(util.WindUtil):
         axes_scales: str = "loglog",
         fig: plt.Figure = None,
         ax: plt.Axes = None,
-        figsize: Tuple[int, int] = (12, 6),
-    ) -> Tuple[plt.Figure, plt.Axes]:
+        figsize: tuple[int, int] = (12, 6),
+    ) -> tuple[plt.Figure, plt.Axes]:
         """Plot a spectrum for a wind cell.
 
         Creates (and returns) a figure
@@ -116,6 +115,7 @@ class WindPlot(util.WindUtil):
             The create Figure object, containing the axes.
         ax: plt.Axes
             The axes object for the plot.
+
         """
         if self.parameters["spec_flux"] is None:
             raise ValueError("There are no cell spectra for this simulation.")
@@ -149,8 +149,8 @@ class WindPlot(util.WindUtil):
         axes_scales: str = "loglog",
         fig: plt.Figure = None,
         ax: plt.Axes = None,
-        figsize: Tuple[int, int] = (12, 6),
-    ) -> Tuple[plt.Figure, plt.Axes]:
+        figsize: tuple[int, int] = (12, 6),
+    ) -> tuple[plt.Figure, plt.Axes]:
         """Plot a spectrum for a wind cell.
 
         Creates (and returns) a figure
@@ -170,6 +170,7 @@ class WindPlot(util.WindUtil):
             The create Figure object, containing the axes.
         ax: plt.Axes
             The axes object for the plot.
+
         """
         if self.parameters["model_flux"] is None:
             raise ValueError("There are no cell models for this simulation.")
@@ -233,8 +234,8 @@ class WindPlot(util.WindUtil):
             The (updated) Figure object for the plot.
         ax: plt.Axes
             The (updated) axes array for the plot.
-        """
 
+        """
         n_coords = numpy.unique(x_points)
         for angle in angles:
             if self.coord_type == enum.CoordSystem.CYLINDRICAL:
@@ -274,6 +275,7 @@ class WindPlot(util.WindUtil):
         a_idx
 
         a_jdx
+
         """
         if self.coord_type == enum.CoordSystem.CYLINDRICAL:
             ax[a_idx, a_jdx].set_xlabel(f"$x$ {self.DISTANCE_AXIS_LABEL_LOOKUP[self.distance_units]}")
@@ -325,6 +327,7 @@ class WindPlot(util.WindUtil):
             The (updated) Figure object for the plot.
         ax: plt.Axes
             The (updated) axes array for the plot.
+
         """
         if fig is None or ax is None:
             fig, ax = plt.subplots(figsize=(8, 6), squeeze=False)
@@ -381,6 +384,7 @@ class WindPlot(util.WindUtil):
             The (updated) Figure object for the plot.
         ax: plt.Axes
             The (updated) axes array for the plot.
+
         """
         if fig is None or ax is None:
             if self.coord_type == enum.CoordSystem.CYLINDRICAL:
@@ -392,10 +396,10 @@ class WindPlot(util.WindUtil):
                     f"Unknown projection, expected {enum.CoordSystem.CYLINDRICAL} or {enum.CoordSystem.POLAR}"
                 )
 
-        vmin = kwargs.get("vmin", None)
-        vmax = kwargs.get("vmax", None)
+        vmin = kwargs.get("vmin")
+        vmax = kwargs.get("vmax")
         log_p = kwargs.get("log_p", True)
-        inclinations_to_plot = kwargs.get("inclinations_to_plot", None)
+        inclinations_to_plot = kwargs.get("inclinations_to_plot")
 
         if self.coord_type == enum.CoordSystem.CYLINDRICAL:
             x_points, z_points = self.parameters["x"], self.parameters["z"]

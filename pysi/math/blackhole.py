@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Calculate parameters relating to Schwarzchild black holes.
 
 All functions require the mass to be in units of solar masses and
@@ -21,6 +20,7 @@ def innermost_stable_circular_orbit(m_bh):
     Returns
     -------
     The radius of the innermost stable circular orbit in cm.
+
     """
     return 3 * schwarzschild_radius(m_bh)
 
@@ -36,6 +36,7 @@ def gravitational_radius(m_bh):
     Returns
     -------
     The gravitational radius in cm.
+
     """
     return G.cgs * m_bh * M_sun.cgs / c.cgs**2
 
@@ -51,6 +52,7 @@ def schwarzschild_radius(m_bh):
     Returns
     -------
     The Schwarzschild radius in cm.
+
     """
     return 2 * gravitational_radius(m_bh)
 
@@ -66,5 +68,6 @@ def tidal_disruption_radius(m_bh, m_star, r_star):
         The mass of the disrupted star in solar masses.
     r_star: float
         The radius of the disrupted star in solar radii.
+
     """
     return r_star * (m_bh / m_star) ** (1 / 3) * R_sun.cgs
