@@ -88,7 +88,7 @@ def run_windsave2table(  # noqa: PLR0913
 
 
 def run_py_optical_depth(
-    root: str, file_path: Path | str = ".", *, scatter_surface: float | None = None, verbose: bool = False
+    root: str, file_path: Path | str = Path(), *, scatter_surface: float | None = None, verbose: bool = False
 ) -> None:
     """Run `py_optical_depth` with the provided parameters.
 

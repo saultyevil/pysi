@@ -26,9 +26,24 @@ class WindUtil(base.WindBase):
         root: str,
         directory: str,
         mask_value: int | Callable[[int], bool] = enum.WindCellPosition.INWIND.value,
-        **kwargs,
-    ):
-        """Initialize the class."""
+        **kwargs: dict,
+    ) -> None:
+        """Initialize the class.
+
+        Parameters
+        ----------
+        root: str
+            The root name of the simulation.
+        directory: str
+            The directory containing the simulation.
+        mask_value: int | Callable[[int], bool]
+            The value to use for masking the wind cells. If this is a callable,
+            it will be called with the inwind value and should return True if
+            the cell should be masked.
+        **kwargs
+            Additional keyword arguments to pass to the WindBase class
+
+        """
         super().__init__(root, directory, **kwargs)
 
         self.x_coords = (
@@ -44,7 +59,7 @@ class WindUtil(base.WindBase):
             self.n_z = numpy.zeros_like(self.x_coords)
 
         if self.coord_type == enum.CoordSystem.CYLINDRICAL:
-            self.__project_cartesian_velocity_to_cylindrical()
+            self._calculate_cylindrical_velocities()
 
         # Create masked arrays
 
@@ -55,9 +70,8 @@ class WindUtil(base.WindBase):
 
     # Private methods ----------------------------------------------------------
 
-    def __get_sight_line_coordinates(self, theta: float):
-        """Get the vertical z coordinates for a given set of x coordinates and
-        inclination angle.
+    def _get_sight_line_coordinates(self, theta: float) -> numpy.ndarray:
+        """Return z coordinates for a set of x coordinates and angle.
 
         For a wind with a polar coordinate system, this returns an array of
         the given theta the size of the x axis.
@@ -67,13 +81,18 @@ class WindUtil(base.WindBase):
         theta: float
             The angle of the sight line to extract from, in degrees.
 
+        Returns
+        -------
+        numpy.ndarray
+            The vertical z coordinates of the sight line.
+
         """
         if self.coord_type == enum.CoordSystem.POLAR:
             return numpy.ones_like(self.x_coords) * theta
 
         return numpy.array(self.x_coords, dtype=numpy.float64) * numpy.tan(numpy.pi * 0.5 - numpy.deg2rad(theta))
 
-    def __project_cartesian_velocity_to_cylindrical(self):
+    def _calculate_cylindrical_velocities(self) -> None:
         """Project cartesian velocities into cylindrical velocities.
 
         This makes the variables v_r, v_rot and v_l available in
@@ -115,9 +134,10 @@ class WindUtil(base.WindBase):
 
     # Public methods -----------------------------------------------------------
 
-    def get_variable_along_sight_line(self, theta: float):
+    def get_variable_along_sight_line(self, theta: float) -> numpy.ndarray:
         """Get a variable along a given sightline."""
-        raise NotImplementedError("Method is not implemented yet.")
+        msg = "Method is not implemented yet."
+        raise NotImplementedError(msg)
 
     def mask_arrays(self, mask_value: int | Callable[[int, int], bool]) -> None:
         """Create masked parameter arrays.
@@ -139,7 +159,8 @@ class WindUtil(base.WindBase):
             mask_expression = mask_value(self.parameters["inwind"])
         else:
             if not isinstance(mask_value, int):
-                raise ValueError("The mask_value parameter should be a callable, or an int.")
+                msg = "The mask_value parameter should be a callable, or an int."
+                raise TypeError(msg)
             mask_expression = self.parameters["inwind"] != mask_value
 
         # Create a backup of the unmasked array, so we can restore if we want

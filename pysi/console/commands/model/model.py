@@ -20,4 +20,4 @@ def convergence():
     models = sorted(Path().rglob("*.pf"))
     for model in models:
         model_convergence = pysi.sim.model.model_convergence(model.stem, model.parent)
-        print(convergence)
+        print(model_convergence)

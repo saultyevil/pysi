@@ -10,7 +10,7 @@ from typing import Union
 
 from scipy.integrate import simpson
 
-from pysi import math, util
+from pysi.math import convert, util
 from pysi.spec import enum
 from pysi.spec.model.plot import SpectrumPlot
 
@@ -82,8 +82,8 @@ class Spectrum(SpectrumPlot):
         else:
             x_points = self.spectra[self.scaling][spec_key]["Freq."]
             tmp = xmin  # temp variable whilst we convert to frequency space, since the order swaps
-            xmin = math.angstrom_to_hz(xmax)
-            xmax = math.angstrom_to_hz(tmp)
+            xmin = convert.angstrom_to_hz(xmax)
+            xmax = convert.angstrom_to_hz(tmp)
 
         x_points, y_points = util.array.get_subset_in_second_array(
             x_points, self.spectra[self.scaling][spec_key][name], xmin, xmax

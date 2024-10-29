@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+import typing
+
 import matplotlib.pyplot as plt
 import numpy
 
@@ -13,13 +15,12 @@ from pysi.wind.model import util
 
 
 class WindPlot(util.WindUtil):
-    """An extension to the WindGrid base class which adds various plotting
-    functionality.
+    """An extension to the WindGrid base class adds plotting utilities.
 
     TODO: add general look up unit table for common quantities
     """
 
-    DISTANCE_AXIS_LABEL_LOOKUP = {
+    DISTANCE_AXIS_LABEL_LOOKUP: typing.ClassVar = {
         enum.DistanceUnits.CENTIMETRES: "[cm]",
         enum.DistanceUnits.METRES: "[m]",
         enum.DistanceUnits.KILOMETRES: "[km]",

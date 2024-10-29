@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""The base class which contains variables containing the parameters of the
+"""Base class for Wind objects.
+
+The base class which contains variables containing the parameters of the
 wind, as well as the most basic variables which describe the wind.
 """
 
@@ -8,11 +10,10 @@ import re
 import warnings
 
 import numpy
-from astropy.constants import h, k_B  # pylint: disable=no-name-in-module
+from astropy.constants import h, k_B
 
 import pysi
 import pysi.util.shell
-import pysi.utility
 from pysi.wind import elements, enum
 
 
@@ -60,30 +61,40 @@ class WindBase:
         self.read_in_wind_jnu_models()
 
     def __getitem__(self, key: str) -> numpy.ndarray:
+        """Get the value of a key.
+
+        Parameters
+        ----------
+        key : str
+            The key to get the value of.
+
+        Returns
+        -------
+        numpy.ndarray
+            The value of the key.
+
+        """
         # if no frac or den is no specified for an ion, default to fractional
         # populations
-        if re.match("[A-Z]_i[0-9]+", key):  # matches ion specification, e.g. C_i04
+        if re.match("[A-Z]_i[0-9]+", key):  # matches ion specification, e.g. C_i04  # noqa: SIM102
             if re.match("[A-Z]_i[0-9]+$", key):  # but no type specification at the end, e.g. C_i04_frac
                 key += "_frac"  # default to frac if not specified
 
         return self.parameters.get(key)
 
-    def check_version(self):
+    def check_version(self) -> None:
         """Get the Python version from file if not already set.
 
         If the .py-version file cannot be fine, the version is set to UNKNOWN.
         """
         if not self.version:
             try:
-                with open(f"{self.directory}/.sirocco-version") as file_in:
+                with pathlib.Path.open(f"{self.directory}/.sirocco-version") as file_in:
                     self.version = file_in.read()
             except OSError:
                 self.version = "UNKNOWN"
 
-        # print(f"Version: {self.version}")
-
-    # pylint: disable=too-many-arguments
-    def create_banded_jnu_models(
+    def create_banded_jnu_models(  # noqa: PLR0913
         self,
         cell_index: int,
         band_index: int,
@@ -92,7 +103,7 @@ class WindBase:
         n_freq_bins_per_band: int,
         cell_frequency: list[numpy.ndarray],
         cell_flux: list[numpy.ndarray],
-    ):
+    ) -> None:
         """Update the J_nu model for a frequency band.
 
         Parameters
@@ -151,6 +162,7 @@ class WindBase:
             if model_type is None:
                 warnings.warn(
                     "The header for the model file is improperly formatted and cannot find 'spec_mode_type'",
+                    stacklevel=2,
                 )
                 return [], []
 
@@ -224,11 +236,12 @@ class WindBase:
             if file_path.is_file() is False:
                 return [], {}
 
-        with open(file_path, encoding="utf-8") as buffer:
+        with pathlib.Path.open(file_path, encoding="utf-8") as buffer:
             file_lines = [line.strip().split() for line in buffer.readlines() if not line.startswith("#")]
 
         if file_lines[0][0].isdigit() is True:
-            raise Exception("File is formatted incorrectly and missing header")
+            msg = "File is formatted incorrectly and missing header"
+            raise Exception(msg)
 
         table_header = file_lines[0]
         table_parameters = numpy.array(file_lines[1:], dtype=numpy.float64)
@@ -240,7 +253,7 @@ class WindBase:
 
         Parameters
         ----------
-        n_freq_bins: int
+        n_freq_bins_per_band: int
             The number of frequency bins to use for the model.
 
         """
@@ -304,11 +317,12 @@ class WindBase:
             return
 
         for file in spec_table_files:
-            with open(file, encoding="utf-8") as buffer:
+            with pathlib.Path.open(file, encoding="utf-8") as buffer:
                 file_lines = [line.strip().split() for line in buffer.readlines() if not line.startswith("#")]
 
             if file_lines[0][0].isdigit() is True:
-                raise Exception("File is formatted incorrectly and missing header")
+                msg = "File is formatted incorrectly and missing header"
+                raise Exception(msg)
 
             # Get the header and turn the rest of the file into an array, as
             # this makes indexing what we want a lot easier
@@ -382,9 +396,7 @@ class WindBase:
             raise OSError(f"Have been unable to read in any wind ion tables in {self.directory}")
 
     def read_in_wind_parameters(self) -> None:
-        """Read in the different parameters which describe state of the
-        wind.
-        """
+        """Read in the different parameters which describe state of the wind."""
         n_read = 0
 
         for table in ["master", "heat", "gradient", "converge"]:

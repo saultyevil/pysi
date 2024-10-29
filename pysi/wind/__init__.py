@@ -3,14 +3,17 @@
 """Contains the user facing Wind class."""
 
 import copy
-from typing import Union
+import warnings
+from pathlib import Path
 
+import pysi.sim.grid
 import pysi.util
+from pysi.util.run import run_windsave2table
 from pysi.wind import enum
 from pysi.wind.model import plot
 
 
-def create_wind_tables(root: str, directory: str, version: str = None):
+def create_wind_tables(root: str, directory: str, version: str | None = None) -> None:
     """Force the creation of wind save tables for the model.
 
     Parameters
@@ -23,15 +26,15 @@ def create_wind_tables(root: str, directory: str, version: str = None):
         The version number of Python the model was run with
 
     """
-    pysi.util.create_wind_save_tables(root, directory, ion_density=True, version=version)
-    pysi.util.create_wind_save_tables(root, directory, ion_density=False, version=version)
-    pysi.util.create_wind_save_tables(root, directory, cell_spec=True, version=version)
+    run_windsave2table(root, directory, ion_density=True, version=version)
+    run_windsave2table(root, directory, ion_density=False, version=version)
+    run_windsave2table(root, directory, cell_spec=True, version=version)
 
 
 class Wind(plot.WindPlot):
     """Main wind class for PyPython."""
 
-    def __init__(self, root: str, directory: str = ".", **kwargs) -> None:
+    def __init__(self, root: str, directory: Path | str = Path(), **kwargs: dict) -> None:
         """Initialize the class.
 
         Parameters
@@ -41,17 +44,27 @@ class Wind(plot.WindPlot):
         directory: str
             The directory containing the simulation. By default this is assumed
             to be the current working directory.
+        **kwargs
+            Additional keyword arguments to pass to the WindBase class
 
         """
         super().__init__(root, directory, **kwargs)
-        # self.grav_radius = self.__calculate_grav_radius()
+        self.grav_radius = self._calculate_grav_radius()
 
     def __str__(self) -> str:
+        """Return a string representation of the Wind object.
+
+        Returns
+        -------
+        str: A string representation of the Wind object in the format
+            "Wind(root=<root> directory=<directory>)".
+
+        """
         return f"Wind(root={self.root!r} directory={str(self.directory)!r})"
 
     # Public methods -----------------------------------------------------------
 
-    def create_wind_tables(self):
+    def create_wind_tables(self) -> None:
         """Force the creation of wind save tables for the model.
 
         This is best used when a simulation has been re-run, as the
@@ -72,11 +85,11 @@ class Wind(plot.WindPlot):
 
         """
         if isinstance(new_units, enum.DistanceUnits):
-            self.__change_distance_units(new_units)
+            self._change_distance_units(new_units)
         elif isinstance(new_units, enum.VelocityUnits):
-            self.__change_velocity_units(new_units)
+            self._change_velocity_units(new_units)
         else:
-            raise ValueError(f"new_units not of type {type(enum.DistanceUnits)} or {type(enum.VelocityUnits)}")
+            raise ValueError(f"new_units not of type {type(enum.DistanceUnits)} or {type(enum.VelocityUnits)}")  # noqa: TRY004
 
     def smooth_cell_spectra(self, amount: int) -> None:
         """Smooth the cell spectra.
@@ -102,21 +115,34 @@ class Wind(plot.WindPlot):
 
     # Private methods ----------------------------------------------------------
 
-    def __calculate_grav_radius(self) -> float:
-        """Calculate the gravitational radius of the model."""
-        raise NotImplementedError("Method is not implemented yet.")
+    def _calculate_grav_radius(self, *, mass_msol: float | None = None) -> float:
+        """Calculate the gravitational radius of the model.
 
-        # if not co_mass_in_msol:
-        #     try:
-        #         co_mass_in_msol = float(pysi.simulation.grid.get_parameter(self.pf, "Central_object.mass(msol)"))
-        #     except Exception as ex
-        #         raise ValueError("unable to find CO mass from parameter file, please supply the mass instead") from ex
+        Parameters
+        ----------
+        mass_msol: float | None
+            The mass of the central object in solar masses. If None, will
+            be calculated from the parameter file.
 
-        # rg = pysi.physics.blackhole.gravitational_radius(co_mass_in_msol)
+        Returns
+        -------
+        float
+            The gravitational radius in centimetres.
 
-        # return 0
+        """
+        if not mass_msol:
+            try:
+                mass_msol = float(pysi.sim.grid.get_parameter_value(self.pf, "Central_object.mass(msol)"))
+            except (OSError, IndexError, ValueError):
+                warnings.warn(
+                    "Unable to find central mass from parameter file, please supply the mass instead with keyword mass_msol=mass",
+                    stacklevel=2,
+                )
+                return 0
 
-    def __change_distance_units(self, new_units: enum.DistanceUnits):
+        return pysi.physics.blackhole.gravitational_radius(mass_msol)
+
+    def _change_distance_units(self, new_units: enum.DistanceUnits) -> None:
         """Change the distance units of the wind.
 
         Parameters
@@ -132,7 +158,7 @@ class Wind(plot.WindPlot):
             enum.DistanceUnits.CENTIMETRES: 0.01,
             enum.DistanceUnits.METRES: 1,
             enum.DistanceUnits.KILOMETRES: 1000,
-            enum.DistanceUnits.GRAVITATIONAL_RADIUS: 0,
+            enum.DistanceUnits.GRAVITATIONAL_RADIUS: self.grav_radius / 100,  # convert to metres
         }
 
         conversion_factor = distance_conv_lookup[self.distance_units] / distance_conv_lookup[new_units]
@@ -142,10 +168,9 @@ class Wind(plot.WindPlot):
                 continue
             self.parameters[quant] *= conversion_factor
 
-        # self.grav_radius *= conversion_factor
         self.distance_units = new_units
 
-    def __change_velocity_units(self, new_units: enum.VelocityUnits) -> None:
+    def _change_velocity_units(self, new_units: enum.VelocityUnits) -> None:
         """Change the velocity units of the wind.
 
         Parameters
