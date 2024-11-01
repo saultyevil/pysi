@@ -1,24 +1,23 @@
-#!/usr/bin/env python
-
 """Class extension for plotting spectra."""
 
 from __future__ import annotations
 
 from collections.abc import Iterable
 
-from matplotlib import pyplot
+from matplotlib import pyplot  # noqa: ICN001
 
 import pysi.spec.enum
 from pysi.spec.model.base import SpectrumBase
 from pysi.util import array, plot
 
 
-def _add_flux_ax_labels(ax: pyplot.Axes, units: pysi.spec.enum.SpectrumUnits, distance: float | int):
-    """Add spectrum labels for flux, or luminosity multiplied by the spatial
-    unit.
+def _add_flux_ax_labels(ax: pyplot.Axes, units: pysi.spec.enum.SpectrumUnits, distance: float) -> pyplot.Axes:
+    """Add spectrum labels for flux, or luminosity multiplied by the spatial unit.
 
     Parameters
     ----------
+    ax : pyplot.Axes
+        The axes object to update.
     units: pysi.spectrum.SpectrumUnits
         The units of the spectrum
     distance: float
@@ -46,11 +45,13 @@ def _add_flux_ax_labels(ax: pyplot.Axes, units: pysi.spec.enum.SpectrumUnits, di
     return ax
 
 
-def _add_flux_density_ax_labels(ax: pyplot.Axes, units: pysi.spec.enum.SpectrumUnits, distance: float | int):
+def _add_flux_density_ax_labels(ax: pyplot.Axes, units: pysi.spec.enum.SpectrumUnits, distance: float) -> pyplot.Axes:
     """Add spectrum labels for a flux density, or luminosity.
 
     Parameters
     ----------
+    ax : pyplot.Axes
+        The axes object to update.
     units: pysi.spectrum.SpectrumUnits
         The units of the spectrum
     distance: float
@@ -81,10 +82,12 @@ def _add_flux_density_ax_labels(ax: pyplot.Axes, units: pysi.spec.enum.SpectrumU
 def _set_axes_labels(
     ax: pyplot.Axes,
     units: pysi.spec.enum.SpectrumUnits,
-    distance: float | int,
+    distance: float,
+    *,
     use_flux: bool = False,
 ) -> pyplot.Axes:
     """Set the units of a given matplotlib axes.
+
     todo: should have an else if the units are unknown, not for f_nu
 
     Parameters
@@ -95,7 +98,7 @@ def _set_axes_labels(
         The units of the spectrum
     distance: float
         The distance of the spectrum
-    multiply_by_spatial_units: bool
+    use_flux : bool
         If flux/nu Lnu is being plotted instead of flux density or
         luminosity.
 
@@ -105,15 +108,10 @@ def _set_axes_labels(
         The updated axes object.
 
     """
-    if use_flux:
-        ax = _add_flux_ax_labels(ax, units, distance)
-    else:
-        ax = _add_flux_density_ax_labels(ax, units, distance)
-
-    return ax
+    return _add_flux_ax_labels(ax, units, distance) if use_flux else _add_flux_density_ax_labels(ax, units, distance)
 
 
-def _create_plot(
+def _create_plot(  # noqa: PLR0913
     ax: pyplot.Axes,
     spectrum: pysi.spec.Spectrum,
     things_to_plot: Iterable[str] | str,
@@ -121,8 +119,9 @@ def _create_plot(
     xmax: float,
     alpha: float,
     scale: str,
+    *,
     use_flux: bool,
-):
+) -> pyplot.Axes:
     """Plot some things to a provided matplotlib ax object.
 
     This function is used to do a lot of the plotting heavy lifting in this
@@ -184,14 +183,12 @@ def _create_plot(
     ax.legend(loc="lower left")
     ax = plot.set_axes_scales(ax, scale)
 
-    ax = _set_axes_labels(
+    return _set_axes_labels(
         ax,
         units=spectrum[spectrum.current]["units"],
         distance=spectrum[spectrum.current]["distance"],
         use_flux=use_flux,
     )
-
-    return ax
 
 
 class SpectrumPlot(SpectrumBase):
@@ -232,14 +229,15 @@ class SpectrumPlot(SpectrumBase):
         if not fig and not ax:
             fig, ax = pyplot.subplots(1, 1, figsize=(12, 5))
         elif not fig and ax or fig and not ax:
-            raise ValueError("fig and ax need to be supplied together")
+            msg = "fig and ax need to be supplied together"
+            raise ValueError(msg)
 
         ax = _create_plot(ax, self, label, None, None, 1.0, ax_scale, False)
 
         # if label_lines:
         #     ax = add_line_ids(ax, common_lines(spectrum=spectrum), "none")
 
-        fig = plot.finish_figure(fig, label)
+        fig = plot.finish_figure(fig, title=label)
 
         return fig, ax
 
@@ -262,9 +260,9 @@ class SpectrumPlot(SpectrumBase):
         current = self.current
         try:
             self.set_spectrum("spec_tot")  # temporarily change the spectrum target
-        except KeyError:
-            print("Unable to open `spec_tot` spectrum")
-            return fig, ax
+        except KeyError as exc:
+            msg = "Unable to open `spec_tot` spectrum"
+            raise ValueError(msg) from exc
 
         ax[0] = _create_plot(
             ax[0],
@@ -274,7 +272,7 @@ class SpectrumPlot(SpectrumBase):
             None,
             0.75,
             "loglog",
-            False,
+            use_flux=False,
         )
         ax[1] = _create_plot(
             ax[1],
@@ -284,11 +282,11 @@ class SpectrumPlot(SpectrumBase):
             None,
             0.75,
             "loglog",
-            False,
+            use_flux=False,
         )
 
         ax[0].set_xlabel(None)
-        fig = plot.finish_figure(fig, "Diagnostic spectra", hspace=0)
+        fig = plot.finish_figure(fig, title="Diagnostic spectra", hspace=0)
         self.set_spectrum(current)
 
         return fig, ax
@@ -312,9 +310,9 @@ class SpectrumPlot(SpectrumBase):
         current = self.current
         try:
             self.set_spectrum("spec_tau")  # temporarily change the spectrum target
-        except KeyError:
-            print("Unable to open `spec_tau` spectrum")
-            return fig, ax
+        except KeyError as exc:
+            msg = "Unable to open `spec_tau` spectrum"
+            raise ValueError(msg) from exc
 
         ax = _create_plot(
             ax,
@@ -324,10 +322,10 @@ class SpectrumPlot(SpectrumBase):
             None,
             0.75,
             "loglog",
-            False,
+            use_flux=False,
         )
 
-        fig = plot.finish_figure(fig, "Continuum Optical Depth")
+        fig = plot.finish_figure(fig, title="Continuum Optical Depth")
         self.current = current
 
         return fig, ax
