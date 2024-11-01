@@ -232,7 +232,7 @@ class SpectrumPlot(SpectrumBase):
             msg = "fig and ax need to be supplied together"
             raise ValueError(msg)
 
-        ax = _create_plot(ax, self, label, None, None, 1.0, ax_scale, False)
+        ax = _create_plot(ax, self, label, None, None, 1.0, ax_scale, use_flux=False)
 
         # if label_lines:
         #     ax = add_line_ids(ax, common_lines(spectrum=spectrum), "none")
