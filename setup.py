@@ -18,7 +18,7 @@ with Path.open("pysi/__init__.py", encoding="utf-8") as file_in:
 # setup function
 setup(
     name="PySi",
-    python_requires=">=3.9",
+    python_requires=">=3.10",
     version=__version__,
     description="A package to make using SIROCCO a wee bit easier.",
     url="https://github.com/saultyevil/pysi",
