@@ -1,7 +1,8 @@
 """Utility functions for arrays."""
 
-import numpy  # noqa: ICN001
-from scipy.signal import boxcar, convolve
+import numpy
+from scipy.signal import convolve
+from scipy.signal.windows import boxcar
 
 
 def check_array_is_ascending_order(x_in: list | numpy.ndarray) -> bool:

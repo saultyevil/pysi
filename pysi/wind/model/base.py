@@ -13,7 +13,7 @@ import numpy
 from astropy.constants import h, k_B
 
 import pysi
-import pysi.util.shell
+import pysi.util
 from pysi.wind import elements, enum
 
 
@@ -46,6 +46,7 @@ class WindBase:
 
         self.parameters = {}
         self.things_read_in = []
+        self.ions_read_in = []
 
         # These units are the default in python. In a higher level class, you
         # should be able to modify the units
@@ -59,6 +60,7 @@ class WindBase:
         self.read_in_wind_ions()
         self.read_in_wind_cell_spectra()
         self.read_in_wind_jnu_models()
+        self.things_read_in = self.parameters.keys()
 
     def __getitem__(self, key: str) -> numpy.ndarray:
         """Get the value of a key.
@@ -384,13 +386,11 @@ class WindBase:
                     # the re.match here is to ignore any spatial parameters,
                     # e.g. x, z or i and j
                     if re.match("i[0-9]+", column) and column not in self.parameters:
-                        self.parameters[f"{element}_{column}_{ion_type}"] = table_parameters[:, i].reshape(
-                            self.n_x, self.n_z
-                        )
+                        ion_name = f"{element}_{column}_{ion_type}"
+                        self.parameters[ion_name] = table_parameters[:, i].reshape(self.n_x, self.n_z)
+                        self.ions_read_in.append(ion_name)
 
                 n_read += 1
-
-        self.things_read_in = self.parameters.keys()
 
         if n_read == 0:
             raise OSError(f"Have been unable to read in any wind ion tables in {self.directory}")

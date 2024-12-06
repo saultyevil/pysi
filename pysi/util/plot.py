@@ -5,7 +5,7 @@ to finish the plot. Included in pysi are functions to plot the
 spectrum files and the wind save tables.
 """
 
-from distutils.spawn import find_executable
+import shutil
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -191,7 +191,8 @@ def set_figure_style() -> dict:
         "savefig.dpi": 300,
         "pcolor.shading": "auto",
     }
-    if find_executable("pdflatex"):
+
+    if shutil.which("pdflatex"):
         parameters["text.usetex"] = True
         parameters["text.latex.preamble"] = r"\usepackage{amsmath}"
     plt.rcParams.update(parameters)

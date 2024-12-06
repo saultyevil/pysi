@@ -14,9 +14,9 @@ determine the quality, convergence and trustworthiness of a model.
 
 ## Installation
 
-PySi requires Python 3.10, although it may work on earlier versions with a
-bit of work (possibly down to 3.7). You can install PySi either by modifying
-your $PYTHONPATH variable, or by using Pip.
+PySi requires Python 3.10 or higher, although it may work on earlier versions
+with a bit of work (possibly down to 3.7). You can install PySi either by
+modifying your $PYTHONPATH variable, or by using Pip.
 
 ```bash
 shell$ pip install .
