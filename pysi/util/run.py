@@ -67,7 +67,7 @@ def run_windsave2table(  # noqa: PLR0913
 
     cmd = run_shell_command(command, file_path, verbose)
     if cmd.returncode != 0:
-        raise error.RunError(
+        raise error.ShellRunError(
             f"windsave2table has failed to run, possibly due to an incompatible version\n{cmd.stdout.decode('utf-8')}"
         )
 

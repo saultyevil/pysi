@@ -95,10 +95,10 @@ def plot(  # noqa: PLR0913
     # so at this point we will throw an error message and return
     if fig and not ax:
         msg = "fig has been provided, but ax has not. Both are required."
-        raise err.InvalidParameter(msg)
+        raise err.InvalidParameterError(msg)
     if not fig and ax:
         msg = "fig has not been provided, but ax has. Both are required."
-        raise err.InvalidParameter(msg)
+        raise err.InvalidParameterError(msg)
     if not fig and not ax:
         fig, ax = plt.subplots(1, 1, figsize=(12, 5))
 
