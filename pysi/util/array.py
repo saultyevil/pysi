@@ -6,7 +6,8 @@
 from typing import Tuple
 
 import numpy
-from scipy.signal import boxcar, convolve
+from scipy.signal import convolve
+from scipy.signal.windows import boxcar
 
 
 # Private functions ------------------------------------------------------------

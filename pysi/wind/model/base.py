@@ -12,7 +12,7 @@ import numpy
 from astropy.constants import h, k_B  # pylint: disable=no-name-in-module
 
 import pysi
-import pysi.utility
+import pysi.util
 from pysi.wind import elements, enum
 
 
@@ -44,6 +44,7 @@ class WindBase:
 
         self.parameters = {}
         self.things_read_in = []
+        self.ions_read_in = []
 
         # These units are the default in python. In a higher level class, you
         # should be able to modify the units
@@ -57,6 +58,7 @@ class WindBase:
         self.read_in_wind_ions()
         self.read_in_wind_cell_spectra()
         self.read_in_wind_jnu_models()
+        self.things_read_in = self.parameters.keys()
 
     def __getitem__(self, key: str) -> numpy.ndarray:
         # if no frac or den is no specified for an ion, default to fractional
@@ -78,8 +80,6 @@ class WindBase:
                     self.version = file_in.read()
             except IOError:
                 self.version = "UNKNOWN"
-
-        print(f"Version: {self.version}")
 
     # pylint: disable=too-many-arguments
     def create_banded_jnu_models(
@@ -293,7 +293,7 @@ class WindBase:
     def read_in_wind_cell_spectra(self) -> None:
         """Read in the cell spectra."""
 
-        spec_table_files = pysi.utility.find_files("*xspec.*.txt", self.directory)
+        spec_table_files = pysi.util.find_files("*xspec.*.txt", self.directory)
         if len(spec_table_files) == 0:
             self.parameters["spec_freq"] = self.parameters["spec_flux"] = None
             return
@@ -365,13 +365,11 @@ class WindBase:
                     # the re.match here is to ignore any spatial parameters,
                     # e.g. x, z or i and j
                     if re.match("i[0-9]+", column) and column not in self.parameters:
-                        self.parameters[f"{element}_{column}_{ion_type}"] = table_parameters[:, i].reshape(
-                            self.n_x, self.n_z
-                        )
+                        ion_name = f"{element}_{column}_{ion_type}"
+                        self.parameters[ion_name] = table_parameters[:, i].reshape(self.n_x, self.n_z)
+                        self.ions_read_in.append(ion_name)
 
                 n_read += 1
-
-        self.things_read_in = self.parameters.keys()
 
         if n_read == 0:
             raise IOError(f"Have been unable to read in any wind ion tables in {self.directory}")
