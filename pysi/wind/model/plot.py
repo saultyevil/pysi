@@ -67,14 +67,12 @@ class WindPlot(util.WindUtil):
         ax: plt.Axes
             The axes object for the plot.
         """
-        if not fig and not ax:
-            if self.coord_type == enum.CoordSystem.POLAR:
-                subplot_kw = {"projection": "polar"}
-            else:
-                subplot_kw = None
+        if fig is None and ax is None:
+            subplot_kw = {"projection": "polar"} if self.coord_type == enum.CoordSystem.POLAR else None
             fig, ax = plt.subplots(figsize=figsize, squeeze=False, subplot_kw=subplot_kw)
-        elif not fig and ax or fig and not ax:
-            raise ValueError("fig and ax need to be supplied together")
+        elif fig is None and ax is not None or fig is None and ax is not None:
+            msg = "fig and ax need to be supplied together"
+            raise ValueError(msg)
 
         if self.coord_type == enum.CoordSystem.SPHERICAL:
             fig, ax = self.__wind1d(thing, axes_scales, fig, ax, a_idx, a_jdx, **kwargs)
@@ -120,9 +118,9 @@ class WindPlot(util.WindUtil):
         if self.parameters["spec_flux"] is None:
             raise ValueError("There are no cell spectra for this simulation.")
 
-        if not fig and not ax:
+        if fig is None and ax is None:
             fig, ax = plt.subplots(figsize=figsize)
-        elif not fig and ax or fig and not ax:
+        elif fig is None and ax is not None or fig is not None and ax is None:
             raise ValueError("fig and ax need to be supplied together")
 
         if self.coord_type == "spherical":
@@ -174,9 +172,9 @@ class WindPlot(util.WindUtil):
         if self.parameters["model_flux"] is None:
             raise ValueError("There are no cell models for this simulation.")
 
-        if not fig and not ax:
+        if fig is None and ax is None:
             fig, ax = plt.subplots(figsize=figsize)
-        elif not fig and ax or fig and not ax:
+        elif fig is None and ax is not None or fig is not None and ax is None:
             raise ValueError("fig and ax need to be supplied together")
 
         print(self.coord_type)
@@ -196,6 +194,21 @@ class WindPlot(util.WindUtil):
         fig = plot.finish_figure(fig, f"Model ({idx}, {jdx}) spectrum")
 
         return fig, ax
+
+    def close_figures(self, fig: plt.Figure = None) -> None:
+        """Clsoe open figure windows.
+
+        Parameters
+        ----------
+        fig : plt.Figure, optional
+            The specific figure to close, by default None which closes all
+            figure windows.
+
+        """
+        if fig is not None:
+            plt.close(fig)
+        else:
+            plt.close("all")
 
     def show_figures(self) -> None:
         """Show any plot windows."""
