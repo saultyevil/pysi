@@ -199,6 +199,20 @@ class WindPlot(util.WindUtil):
 
         return fig, ax
 
+    def close_figures(self, fig: plt.Figure = None) -> None:
+        """Close a plot window(s).
+
+        Parameters
+        ----------
+        fig : plt.Figure
+            The figure to close, otherwise all figures will be closed
+
+        """
+        if fig:
+            plt.close(fig)
+        else:
+            plt.close("all")
+
     def show_figures(self) -> None:
         """Show any plot windows."""
         plt.show()
@@ -411,7 +425,8 @@ class WindPlot(util.WindUtil):
         if parameter_points is None:
             raise KeyError(f"Unknown parameter {thing}: {thing} not in wind tables")
         if log_p:
-            parameter_points = numpy.log10(parameter_points)
+            with numpy.errstate(over="ignore", divide="ignore"):
+                parameter_points = numpy.log10(parameter_points)
             ax[i, j].set_title(r"$\log_{10}(" + f"{thing})$")
         else:
             ax[i, j].set_title(f"{thing}")

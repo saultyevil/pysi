@@ -10,7 +10,7 @@ from shutil import which
 from subprocess import run
 
 from pysi import error
-from pysi.util import run_shell_command
+from pysi.util.shell import run_shell_command
 
 
 def run_windsave2table(  # noqa: PLR0913

@@ -22,21 +22,32 @@ class WindBase:
 
     # Special methods ----------------------------------------------------------
 
-    def __init__(self, root: str, directory: str, **kwargs) -> None:
+    def __init__(self, root: str, directory: str = pathlib.Path.cwd(), **kwargs) -> None:
         """Initialize the class.
 
         Parameters
         ----------
-        root: str
+        root : str
             The root name of the simulation.
-        directory: str
+        directory : str
             The directory file path containing the simulation.
+        **kwargs : dict
+            Various other keywords arguments.
 
         """
-        self.root = str(root)
-        self.directory = pathlib.Path(directory)
+        root_path = pathlib.Path(root)
+        if root_path.is_file():
+            self.root = root_path.stem
+            self.directory = root_path.parents
+        elif isinstance(root, str):
+            self.root = pysi.util.remove_suffix_from_string(root, ".pf")
+            self.directory = pathlib.Path(directory)
+        else:
+            raise ValueError(f"root must be a string or filepath, not {type(root)}")
+
         self.version = kwargs.get("version")
         self.check_version()
+        self.pf = f"{root}.pf"
 
         self.n_x = 0
         self.n_z = 0
@@ -168,15 +179,16 @@ class WindBase:
                 )
                 return [], []
 
-            if model_type == 1:
-                band_flux = 10 ** (
-                    parameters_for_band_j["pl_log_w"]
-                    + numpy.log10(band_frequency_bins) * parameters_for_band_j["pl_alpha"]
-                )
-            else:
-                band_flux = parameters_for_band_j["exp_w"] * numpy.exp(
-                    (-1 * h.cgs.value * band_frequency_bins) / (parameters_for_band_j["exp_temp"] * k_B.cgs.value)
-                )
+            with numpy.errstate(over="ignore"):
+                if model_type == 1:
+                    band_flux = 10 ** (
+                        parameters_for_band_j["pl_log_w"]
+                        + numpy.log10(band_frequency_bins) * parameters_for_band_j["pl_alpha"]
+                    )
+                else:
+                    band_flux = parameters_for_band_j["exp_w"] * numpy.exp(
+                        (-1 * h.cgs.value * band_frequency_bins) / (parameters_for_band_j["exp_temp"] * k_B.cgs.value)
+                    )
 
             cell_frequency.append(band_frequency_bins)
             cell_flux.append(band_flux)
