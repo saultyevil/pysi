@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Blackbody functions for wavelength and frequency.
 
 In wavelength space, the blackbody function assumes that the wavelength

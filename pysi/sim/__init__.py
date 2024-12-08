@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """Analyse or modify simulation conditions.
 
 This module contains functions for analysing the quality of a

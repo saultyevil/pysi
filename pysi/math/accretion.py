@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Equations for accretion discs.
 
 Includes temperature profiles, calculations for the Eddington luminosity

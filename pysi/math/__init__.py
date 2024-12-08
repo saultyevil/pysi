@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Calculate basic quantities.
 
 This sub-module is intended to house various functions for calculating

@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """Enumerators for the wind classes."""
 
 from enum import Enum, auto

@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """Modify parameter files and construct grids of parameter files."""
 
 from __future__ import annotations

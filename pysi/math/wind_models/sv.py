@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Schlossman and Vitello CV wind model.
 
 TODO, add reference to paper

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Calculate parameters relating to Schwarzchild black holes.
 
 All functions require the mass to be in units of solar masses and

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from matplotlib import pyplot  # noqa: ICN001
+from matplotlib import pyplot
 
 import pysi.spec.enum
 from pysi.spec.model.base import SpectrumBase

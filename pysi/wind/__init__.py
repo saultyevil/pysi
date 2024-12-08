@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """Contains the user facing Wind class."""
 
 import copy

@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """Enumerators for spectra."""
 
 from enum import auto
@@ -32,7 +30,7 @@ class SpectrumUnits(MultiValueEnum):
     L_LAM = auto(), "erg/s/A"
     F_NU = auto(), "erg/s/cm^-2/Hz"
     F_LAM = auto(), "erg/s/cm^-2/A"
-    F_LAM_LEGACY = auto(), "erg/s/cm^2/A"  # TODO, need to check what this is
+    F_LAM_LEGACY = auto(), "erg/s/cm^2/A"
     NONE = auto()
 
 

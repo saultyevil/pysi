@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """Basic vector functions used in Python and PyPython.
 
 These are taken directly from Python, so may be a little cursed and unpythonic.

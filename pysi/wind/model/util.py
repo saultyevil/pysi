@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """Utility class for Wind.
 
 Contains functions and variables which could be part of the WindBase class but
