@@ -117,7 +117,7 @@ class WindBase:
         if self.n_z > 1:
             self.z_coords = (
                 numpy.unique(self.parameters["z"])
-                if enum.CoordSystem.CYLINDRICAL
+                if self.coord_type == enum.CoordSystem.CYLINDRICAL
                 else numpy.unique(self.parameters["theta"])
             )
         else:
