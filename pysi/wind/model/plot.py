@@ -386,9 +386,9 @@ class WindPlot(util.WindUtil):
 
         log_parameter = kwargs.get("log_parameter", True)
 
-        if isinstance(self.parameters, numpy.ndarray):
+        if isinstance(thing, numpy.ndarray):
             parameter_points = thing
-        elif isinstance(self.parameters, str):
+        elif isinstance(thing, str):
             parameter_points = self[thing]
         else:
             raise TypeError(f"Unsupported type {type(self.parameters)} for plotting parameter")
@@ -465,9 +465,9 @@ class WindPlot(util.WindUtil):
         else:
             x_points, z_points = numpy.deg2rad(self.parameters["theta"]), numpy.log10(self.parameters["r"])
 
-        if isinstance(self.parameters, numpy.ndarray):
+        if isinstance(thing, numpy.ndarray):
             parameter_points = thing
-        elif isinstance(self.parameters, str):
+        elif isinstance(thing, str):
             parameter_points = self[thing]
         else:
             raise TypeError(f"Unsupported type {type(self.parameters)} for plotting parameter")
