@@ -1,16 +1,14 @@
 """Functions for working with delay dump files."""
 
+from pathlib import Path
 from sys import exit
 
 import numpy as np
 import pandas as pd
-from matplotlib import animation as ani
-from matplotlib import pyplot as plt
 
-import pysi
-import pysi.constants as c
 import pysi.delay_dump.spectrum
 import pysi.delay_dump.wind
+from pysi.wind import Wind
 
 BOUND_FREE_NRES = 20000
 UNFILTERED_SPECTRUM = -3
@@ -18,15 +16,16 @@ UNFILTERED_SPECTRUM = -3
 start = 0
 
 
-def read_dump_pd(root, fp="."):
+def get_delay_dump(root: str, fp: Path | str = Path.cwd()) -> pd.DataFrame:
     """Process the photons which have been dumped to the delay_dump file.
 
     Parameters
     ----------
     root: str
         The root name of the simulation.
-    fp: str
-        The directory containing the simulation.
+    fp: Path | str
+        The directory containing the simulation. Defaults to the current
+        working directory.
 
     Returns
     -------
@@ -133,7 +132,7 @@ def create_spectrum(
         n_bins = len(freq_bins)
 
     if dumped_photons is None:
-        dumped_photons = read_dump_pd(root, fp)
+        dumped_photons = get_delay_dump(root, fp)
 
     line_res = dumped_photons["LineRes."].values.astype(int)
     n_spec = int(np.max(dumped_photons["Spec."].values)) + 1
@@ -226,7 +225,7 @@ def create_spectrum_breakdown(
         are pd.DataFrames of that corresponding spectrum.
 
     """
-    dump = read_dump_pd(root, fp)
+    dump = get_delay_dump(root, fp)
     s = pysi.Spectrum(root, fp)
 
     # create dataframes for each physical process, what you can actually get
@@ -300,69 +299,69 @@ def create_spectrum_breakdown(
     return {contribution_names[i]: created_spectra[i] for i in range(n_spec)}
 
 
-def create_wind_weight_contours(root, resonance, wind=None, fp=".", n_cores_norm=1, spec=0):
-    """Bin photon interactions into the cells in which they happen.
-
-    Returns the weight and count the interaction happens, binned onto the 2D
-    coordinate grid of the wind.
+def bin_photon_interactions_in_wind(  # noqa: PLR0913
+    root: str,
+    target_interaction: int,
+    fp: Path | str = Path.cwd(),
+    wind: Wind | None = None,
+    n_cores_norm: int = 1,
+    spec: int = 0,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Create a histogram of a specific photon interaction in the wind.
 
     Parameters
     ----------
-    root: str
-        The root name of the model.
-    resonance: int
-        The resonance number of the photon to bin.
-    wind: pysi.Wind [optional]
-        The Wind object of the wind. If not provided, it will attempt to read
-        it in anyway.
-    fp: str [optional]
-        The directory containing the simulation.
-    n_cores_norm: int [optional]
-        The number of cores to normalize the binning by.
-    spec: int [optional]
-        The spectrum to extract photons from.
+    root : str
+        _description_
+    target_interaction : int
+        _description_
+    fp : Path | str, optional
+        _description_, by default Path.cwd()
+    wind : Wind | None, optional
+        _description_, by default None
+    n_cores_norm : int, optional
+        _description_, by default 1
+    spec : int, optional
+        _description_, by default 0
 
     Returns
     -------
-    weight2d: np.ndarray
-        The resonance weight binned per cell.
-    count2d: np.ndarry
-        The resonance count binned per cell.
+    tuple[np.ndarray, np.ndarray]
+        _description_
 
     """
     if wind is None:
-        wind = pysi.Wind(root, fp, masked=False)
+        wind = Wind(root, fp, mask_value=None)
+    delay_dump_df = get_delay_dump(root, fp)
+    if delay_dump_df.empty:
+        msg = f"The delay dump file {fp}/{root}.delay_dump is empty"
+        raise ValueError(msg)
 
-    dump = read_dump_pd(root, fp)
-    if dump.empty:
-        print("photon dataframe is empty")
-        exit(1)
+    delay_dump_df = delay_dump_df[delay_dump_df["LineRes."] == target_interaction]
+    delay_dump_df = delay_dump_df[delay_dump_df["Spec."] == spec]
+    if delay_dump_df.empty:
+        msg = f"There are no entries in {fp}/{root}.delay_dump for interaction {target_interaction} and spectrum {spec}"
+        raise ValueError(msg)
 
-    dump = dump[dump["LineRes."] == resonance]
-    dump = dump[dump["Spec."] == spec]
+    photon_positions = np.zeros((len(delay_dump_df), 3))
+    photon_positions[:, 0] = delay_dump_df["LastX"].to_numpy()
+    photon_positions[:, 1] = delay_dump_df["LastY"].to_numpy()
+    photon_positions[:, 2] = delay_dump_df["LastZ"].to_numpy()
 
-    if dump.empty:
-        print("photon dataframe is empty")
-        exit(1)
-
-    weight, count = pysi.delay_dump.wind.wind_bin_photon_weights(
-        len(dump),
-        resonance,
-        dump["LastX"].values,
-        dump["LastY"].values,
-        dump["LastZ"].values,
-        dump["LineRes."].values,
-        dump["Weight"].values,
+    hist_weight, hist_count = pysi.delay_dump.wind.create_interaction_histogram(
+        target_interaction,
+        photon_positions,
+        delay_dump_df["LineRes."].to_numpy(),
+        delay_dump_df["Weight"].to_numpy(),
         np.array(wind.x_axis_coords),
         np.array(wind.x_axis_coords),
-        wind.nz,
-        wind.nz,
     )
 
-    weight /= n_cores_norm
-    count /= n_cores_norm
+    hist_weight /= n_cores_norm
+    hist_count /= n_cores_norm
 
-    np.savetxt(f"{fp}/{root}_wind_res_{resonance}_" + "weight.txt", weight)
-    np.savetxt(f"{fp}/{root}_wind_res_{resonance}_" + "count.txt", count)
+    # TODO(EP): Use a more sensible output format
+    np.savetxt(f"{fp}/{root}_wind_res_{target_interaction}_" + "weight.txt", hist_weight)
+    np.savetxt(f"{fp}/{root}_wind_res_{target_interaction}_" + "count.txt", hist_count)
 
-    return weight, count
+    return hist_weight, hist_count
