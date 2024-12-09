@@ -93,7 +93,7 @@ class WindBase:
             if re.match("[A-Z]_i[0-9]+$", key):  # but no type specification at the end, e.g. C_i04_frac
                 key += "_frac"  # default to frac if not specified
 
-        return self.parameters.get(key)
+        return self.parameters[key]
 
     def check_version(self) -> None:
         """Get the Python version from file if not already set.
