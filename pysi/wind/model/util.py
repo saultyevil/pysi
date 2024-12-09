@@ -44,25 +44,10 @@ class WindUtil(base.WindBase):
         """
         super().__init__(root, directory, **kwargs)
 
-        self.x_coords = (
-            numpy.unique(self.parameters["x"]) if enum.CoordSystem.CYLINDRICAL else numpy.unique(self.parameters["r"])
-        )
-        if self.n_z > 1:
-            self.z_coords = (
-                numpy.unique(self.parameters["z"])
-                if enum.CoordSystem.CYLINDRICAL
-                else numpy.unique(self.parameters["theta"])
-            )
-        else:
-            self.n_z = numpy.zeros_like(self.x_coords)
-
         if self.coord_type == enum.CoordSystem.CYLINDRICAL:
             self._calculate_cylindrical_velocities()
 
-        # Create masked arrays
-
         self.__original_parameters = None
-
         if mask_value or mask_value in WIND_CELL_TYPES:
             self.mask_arrays(mask_value)
 

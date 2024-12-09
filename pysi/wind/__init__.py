@@ -4,8 +4,11 @@ import copy
 import warnings
 from pathlib import Path
 
+import numpy
+
 import pysi.sim.grid
 import pysi.util
+from pysi.math.blackhole import gravitational_radius
 from pysi.util.run import run_windsave2table
 from pysi.wind import enum
 from pysi.wind.model import plot
@@ -47,7 +50,8 @@ class Wind(plot.WindPlot):
 
         """
         super().__init__(root, directory, **kwargs)
-        self.grav_radius = self._calculate_grav_radius()
+        self.mass_msol = kwargs.get("mass_msol")
+        self.grav_radius = self._calculate_grav_radius(mass_msol=self.mass_msol)
 
     def __str__(self) -> str:
         """Return a string representation of the Wind object.
@@ -131,6 +135,7 @@ class Wind(plot.WindPlot):
         if not mass_msol:
             try:
                 mass_msol = float(pysi.sim.grid.get_parameter_value(self.pf, "Central_object.mass(msol)"))
+                self.mass_msol = mass_msol
             except (OSError, IndexError, ValueError):
                 warnings.warn(
                     "Unable to find central mass from parameter file, please supply the mass instead with keyword mass_msol=mass",
@@ -138,7 +143,7 @@ class Wind(plot.WindPlot):
                 )
                 return 0
 
-        return pysi.physics.blackhole.gravitational_radius(mass_msol)
+        return gravitational_radius(mass_msol)
 
     def _change_distance_units(self, new_units: enum.DistanceUnits) -> None:
         """Change the distance units of the wind.
@@ -162,11 +167,12 @@ class Wind(plot.WindPlot):
         conversion_factor = distance_conv_lookup[self.distance_units] / distance_conv_lookup[new_units]
 
         for quant in ("x", "z", "x_cen", "z_cen", "r", "r_cen"):
-            if quant not in self.parameter_keys:
+            if quant not in self.parameters:
                 continue
             self.parameters[quant] *= conversion_factor
 
         self.distance_units = new_units
+        self._set_axes_coords()
 
     def _change_velocity_units(self, new_units: enum.VelocityUnits) -> None:
         """Change the velocity units of the wind.
@@ -190,7 +196,7 @@ class Wind(plot.WindPlot):
         conversion_factor = velocity_conv_lookup[self.velocity_units] / velocity_conv_lookup[new_units]
 
         for quant in ("v_x", "v_y", "v_z", "v_r", "v_theta"):
-            if quant not in self.parameter_keys:
+            if quant not in self.parameters:
                 continue
             self.parameters[quant] *= conversion_factor
 

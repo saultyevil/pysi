@@ -47,12 +47,14 @@ class WindBase:
 
         self.version = kwargs.get("version")
         self.check_version()
-        self.pf = f"{root}.pf"
+        self.pf = f"{self.directory}/{root}.pf"
 
         self.n_x = 0
         self.n_z = 0
         self.n_cells = 0
         self.coord_type = enum.CoordSystem.UNKNOWN
+        self.x_coords = []
+        self.z_coords = []
         self.n_model_freq_bands = 0
 
         self.parameters = {}
@@ -72,6 +74,7 @@ class WindBase:
         self.read_in_wind_cell_spectra()
         self.read_in_wind_jnu_models()
         self.things_read_in = self.parameters.keys()
+        self._set_axes_coords()
 
     def __getitem__(self, key: str) -> numpy.ndarray:
         """Get the value of a key.
@@ -94,6 +97,20 @@ class WindBase:
                 key += "_frac"  # default to frac if not specified
 
         return self.parameters[key]
+
+    def _set_axes_coords(self) -> None:
+        """Set attributes for the x and z axes."""
+        self.x_coords = (
+            numpy.unique(self.parameters["x"]) if enum.CoordSystem.CYLINDRICAL else numpy.unique(self.parameters["r"])
+        )
+        if self.n_z > 1:
+            self.z_coords = (
+                numpy.unique(self.parameters["z"])
+                if enum.CoordSystem.CYLINDRICAL
+                else numpy.unique(self.parameters["theta"])
+            )
+        else:
+            self.z_coords = numpy.zeros_like(self.x_coords)
 
     def check_version(self) -> None:
         """Get the Python version from file if not already set.
