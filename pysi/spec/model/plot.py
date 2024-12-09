@@ -7,7 +7,7 @@ from collections.abc import Iterable
 from matplotlib import pyplot
 
 import pysi.spec.enum
-from pysi.spec.model.base import SpectrumBase
+from pysi.spec.model.util import SpectrumUtil
 from pysi.util import array, plot
 
 
@@ -191,7 +191,7 @@ def _create_plot(  # noqa: PLR0913
     )
 
 
-class SpectrumPlot(SpectrumBase):
+class SpectrumPlot(SpectrumUtil):
     """Class for plotting spectra."""
 
     def __init__(self, root: str, directory, **kwargs):

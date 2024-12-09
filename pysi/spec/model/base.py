@@ -95,6 +95,17 @@ class SpectrumBase:
         # that
         return self.spectra[self.scaling][self.current][key]
 
+    def __str__(self) -> str:
+        """Print a string representation of the class.
+
+        Returns
+        -------
+        str
+            A string representation of the class.
+
+        """
+        return f"Spectrum(root={self.root!r} directory={str(self.directory)!r})"
+
     # Static methods -----------------------------------------------------------
 
     @staticmethod

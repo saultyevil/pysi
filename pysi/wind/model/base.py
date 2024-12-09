@@ -98,6 +98,17 @@ class WindBase:
 
         return self.parameters[key]
 
+    def __str__(self) -> str:
+        """Return a string representation of the Wind object.
+
+        Returns
+        -------
+        str: A string representation of the Wind object in the format
+            "Wind(root=<root> directory=<directory>)".
+
+        """
+        return f"Wind(root={self.root!r} directory={str(self.directory)!r})"
+
     def _set_axes_coords(self) -> None:
         """Set attributes for the x and z axes."""
         self.x_coords = (
