@@ -10,7 +10,7 @@ import numpy
 from astropy import constants
 
 from pysi.spec import enum
-from pysi.util import array
+from pysi.util import array, remove_suffix_from_string
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -45,9 +45,17 @@ class SpectrumBase:
             The boxcar filter width to smooth spectra.
 
         """
-        self.root = root
-        self.directory = Path(directory)
+        root_path = Path(root)
+        if root_path.is_file():
+            self.root = root_path.stem
+            self.directory = root_path.parents
+        elif isinstance(root, str):
+            self.root = remove_suffix_from_string(root, ".pf")
+            self.directory = Path(directory)
+        else:
+            raise ValueError(f"root must be a string or filepath, not {type(root)}")
 
+        self.pf = f"{self.directory}/{root}.pf"
         self.spectra = {"log": {}, "lin": {}}
         self.load_spectra()
 
