@@ -61,11 +61,14 @@ class WindUtil(base.WindBase):
             The value to use for masking the wind cells. If this is a callable,
             it will be called with the inwind value and should return True if
             the cell should be masked.
+        mass_msol: float
+            The mass of the central object in solar masses.
         **kwargs
             Additional keyword arguments to pass to the WindBase class
 
         """
         super().__init__(root, directory, **kwargs)
+        self.mass_msol = mass_msol
 
         if self.coord_type == enum.CoordSystem.CYLINDRICAL:
             self._calculate_cylindrical_velocities()
@@ -74,8 +77,6 @@ class WindUtil(base.WindBase):
         if mask_value or mask_value in WIND_CELL_TYPES:
             self.mask_arrays(mask_value)
 
-        self.mass_msol = mass_msol
-        self.grav_radius = self._calculate_grav_radius(mass_msol=self.mass_msol)
 
     # Private methods ----------------------------------------------------------
 
@@ -120,13 +121,17 @@ class WindUtil(base.WindBase):
         if self.distance_units == new_units:
             return
 
+        self.grav_radius = self._calculate_grav_radius(mass_msol=self.mass_msol)
+        if self.grav_radius == 0 and new_units == enum.DistanceUnits.GRAVITATIONAL_RADIUS:
+            msg = "Unable to convert distances to gravitational radii, as no central mass has been set or found"
+            raise ValueError(msg)
+
         distance_conv_lookup = {
             enum.DistanceUnits.CENTIMETRES: 0.01,
             enum.DistanceUnits.METRES: 1,
             enum.DistanceUnits.KILOMETRES: 1000,
             enum.DistanceUnits.GRAVITATIONAL_RADIUS: self.grav_radius / 100,  # convert to metres
         }
-
         conversion_factor = distance_conv_lookup[self.distance_units] / distance_conv_lookup[new_units]
 
         for quant in ("x", "z", "x_cen", "z_cen", "r", "r_cen"):

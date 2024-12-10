@@ -35,19 +35,10 @@ class WindBase:
             Various other keywords arguments.
 
         """
-        root_path = pathlib.Path(root)
-        if root_path.is_file():
-            self.root = root_path.stem
-            self.directory = root_path.parents
-        elif isinstance(root, str):
-            self.root = pysi.util.remove_suffix_from_string(root, ".pf")
-            self.directory = pathlib.Path(directory)
-        else:
-            raise ValueError(f"root must be a string or filepath, not {type(root)}")
-
+        self.root, self.directory = pysi.util.split_root_and_directory(root, directory)
+        self.pf = f"{self.directory}/{root}.pf"
         self.version = kwargs.get("version")
         self.check_version()
-        self.pf = f"{self.directory}/{root}.pf"
 
         self.n_x = 0
         self.n_z = 0
@@ -124,9 +115,10 @@ class WindBase:
             self.z_coords = numpy.zeros_like(self.x_coords)
 
     def check_version(self) -> None:
-        """Get the Python version from file if not already set.
+        """Get the SIROCCO version from file if not already set.
 
-        If the .py-version file cannot be fine, the version is set to UNKNOWN.
+        If the .sirocco-version file cannot be fine, the version is set to
+        UNKNOWN.
         """
         if not self.version:
             try:
