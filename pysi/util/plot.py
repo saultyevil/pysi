@@ -35,7 +35,80 @@ def _check_axes_scale_string(scale: str) -> None:
         raise ValueError(f"{scale} is an unknown axes scale choice, allowed: logx, logy, linlin, loglog")
 
 
-def plot(  # noqa: PLR0913
+def plot_pcolor(  # noqa: PLR0913
+    x: np.ndarray,
+    y: np.ndarray,
+    v: np.ndarray,
+    *,
+    scale: str = "loglog",
+    vmin: float | None = None,
+    vmax: float | None = None,
+    xlabel: str | None = None,
+    ylabel: str | None = None,
+    fig: plt.Figure | None = None,
+    ax: plt.Axes | None = None,
+    display: bool = False,
+) -> tuple[plt.Figure, plt.Axes]:
+    """Plot x, y and v on a colour plot.
+
+    This function acts as a big wrapper around matplotlib, to plot and create
+    a nice set of figures. By providing a Figure and Axes object, one can
+    add additional data to an already existing plot.
+
+    Parameters
+    ----------
+    x: np.ndarray
+        The x values for the plot.
+    y : np.ndarray
+        The y values for the plot.
+    v : np.ndarray
+        The values to plot.
+    scale : str, optional
+        The scale for the x and y axes, by default "loglog".
+        Can be one of "logx", "logy", "linlin", "loglog".
+    vmin : float | None, optional
+        The minimum value for the colour bar, by default None.
+    vmax : float | None, optional
+        The maximum value for the colour bar, by default None.
+    xlabel : str | None, optional
+        The label for the x axis, by default None.
+    ylabel : str | None, optional
+        The label for the y axis, by default None.
+    fig : plt.Figure | None, optional
+        The figure to plot on, by default None.
+        If None, a new figure will be created.
+    ax : plt.Axes | None, optional
+        The axes to plot on, by default None.
+        If None, a new axes will be created.
+    display : bool, optional
+        Whether to display the plot, by default False.
+
+    Returns
+    -------
+    tuple[plt.Figure, plt.Axes]
+        _description_
+
+    """
+    fig, ax = prepare_fig_and_ax(fig, ax)
+
+    ax.pcolormesh(x, y, v, vmin=vmin, vmax=vmax)
+
+    if xlabel:
+        ax.set_xlabel(xlabel)
+    if ylabel:
+        ax.set_ylabel(ylabel)
+
+    ax = set_axes_scales(ax, scale)
+
+    if display:
+        plt.show()
+    else:
+        plt.close()
+
+    return fig, ax
+
+
+def plot_scatter(  # noqa: PLR0913
     x: np.ndarray,
     y: np.ndarray,
     *,
@@ -64,14 +137,14 @@ def plot(  # noqa: PLR0913
         The y data to ploy.
     xmin: float
         The lower boundary of the x axis.
-    xmax: flaot
+    xmax: float
         The upper boundary of the x axis.
     xlabel: str
         The label for the x axis.
     ylabel: str
         The label for the y axis.
     scale: str
-        The scalings for the axes, i.e. logx, loglog, linlin.
+        The scaling for the axes, i.e. logx, loglog, linlin.
     fig: plt.Figure
         A figure object to update.
     ax: plt.Axes
@@ -91,16 +164,7 @@ def plot(  # noqa: PLR0913
         The axes object.
 
     """
-    # It doesn't make sense to provide only fig and not ax, or ax and not fig
-    # so at this point we will throw an error message and return
-    if fig and not ax:
-        msg = "fig has been provided, but ax has not. Both are required."
-        raise err.InvalidParameterError(msg)
-    if not fig and ax:
-        msg = "fig has not been provided, but ax has. Both are required."
-        raise err.InvalidParameterError(msg)
-    if not fig and not ax:
-        fig, ax = plt.subplots(1, 1, figsize=(12, 5))
+    fig, ax = prepare_fig_and_ax(fig, ax)
 
     x, y = array.get_subset_in_second_array(x, y, xmin, xmax)
     ax.plot(x, y, label=label, alpha=alpha)
@@ -200,7 +264,7 @@ def set_figure_style() -> dict:
     return parameters
 
 
-def remove_extra_axee(fig: plt.Figure, ax: plt.Axes, n_wanted: int, n_panel: int) -> tuple[plt.Figure, plt.Axes]:
+def remove_extra_axes(fig: plt.Figure, ax: plt.Axes, n_wanted: int, n_panel: int) -> tuple[plt.Figure, plt.Axes]:
     """Remove additional axes which are included in a plot.
 
     This should be used if you have 4 x 2 = 8 panels but only want to use 7 of
@@ -266,7 +330,7 @@ def set_axes_scales(ax: plt.Axes, scale: str) -> plt.Axes:
     return ax
 
 
-def subplot_dims(n_plots: int) -> tuple[int, int]:
+def get_subplot_dims(n_plots: int) -> tuple[int, int]:
     """Get the number of rows and columns for the give number of plots.
 
     Returns how many rows and columns should be used to have the correct
@@ -294,3 +358,33 @@ def subplot_dims(n_plots: int) -> tuple[int, int]:
         n_rows = (1 + n_plots) // n_cols
 
     return n_rows, n_cols
+
+
+def prepare_fig_and_ax(
+    fig: plt.Figure, ax: plt.Axes, *, default_figsize: tuple[int, int] = (12, 5)
+) -> tuple[plt.Figure, plt.Axes]:
+    """Prepare a figure and axes object.
+
+    Checks if the provided fig and ax combination are valid. If both are None,
+    then a new fig and ax are created with dimensions (1, 1).
+
+    Parameters
+    ----------
+    fig : plt.Figure
+        The proposed Figure object.
+    ax : plt.Axes
+        The proposed Axes object.
+    default_figsize : tuple[int, int], optional
+        The size of the figure to create, by default (12, 5).
+
+    """
+    if fig is not None and ax is None:
+        msg = "fig has been provided, but ax has not. Both are required."
+        raise err.InvalidParameterError(msg)
+    if fig is None and ax is not None:
+        msg = "fig has not been provided, but ax has. Both are required."
+        raise err.InvalidParameterError(msg)
+    if fig is None and ax is None:
+        fig, ax = plt.subplots(1, 1, figsize=default_figsize)
+
+    return fig, ax
