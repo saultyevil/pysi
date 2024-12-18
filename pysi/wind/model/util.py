@@ -20,6 +20,7 @@ from pysi.wind.model import base
 
 WIND_CELL_TYPES = [enum.WindCellPosition.INWIND.value, enum.WindCellPosition.PARTIALLY_INWIND.value]
 
+
 def create_wind_tables(root: str, directory: str, version: str | None = None) -> None:
     """Force the creation of wind save tables for the model.
 
@@ -73,10 +74,8 @@ class WindUtil(base.WindBase):
         if self.coord_type == enum.CoordSystem.CYLINDRICAL:
             self._calculate_cylindrical_velocities()
 
-        self.__original_parameters = None
         if mask_value or mask_value in WIND_CELL_TYPES:
             self.mask_arrays(mask_value)
-
 
     # Private methods ----------------------------------------------------------
 
@@ -252,6 +251,8 @@ class WindUtil(base.WindBase):
             The value of inwind to create a masked array with.
 
         """
+        self.unmask_arrays()
+
         # Create the expression to mask with, this is either a callable, such
         # as a lambda function, or an int corresponding to what we want to keep
 
@@ -262,14 +263,6 @@ class WindUtil(base.WindBase):
                 msg = "The mask_value parameter should be a callable, or an int."
                 raise TypeError(msg)
             mask_expression = self.parameters["inwind"] != mask_value
-
-        # Create a backup of the unmasked array, so we can restore if we want
-        # to remask, or unmask
-
-        if self.__original_parameters:
-            self.parameters = copy.deepcopy(self.__original_parameters)
-        else:
-            self.__original_parameters = copy.deepcopy(self.parameters)
 
         # Create a list of items we DO NOT want to mask, otherwise plots will
         # look very strange
@@ -308,7 +301,15 @@ class WindUtil(base.WindBase):
         Uses a copy of the original table variables to revert the
         masking.
         """
-        self.parameters = copy.deepcopy(self.__original_parameters)
+        # Create a list of items to unmask
+        items_to_unmask = [item for item in self.parameters if isinstance(self.parameters[item], numpy.ma.MaskedArray)]
+
+        # Unmask each masked array by replacing it with its filled version
+        for item in items_to_unmask:
+            self.parameters[item] = self.parameters[item].filled()
+
+        # Reset mask_value as the arrays are now unmasked
+        self.mask_value = None
 
     def create_wind_tables(self) -> None:
         """Force the creation of wind save tables for the model.
@@ -358,5 +359,3 @@ class WindUtil(base.WindBase):
         Uses a copy of the original spectra to revert the smoothing.
         """
         self.parameters["spec"] = copy.deepcopy(self.__original_parameters["spec"])
-
-    # Private methods ----------------------------------------------------------

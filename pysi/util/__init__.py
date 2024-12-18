@@ -6,6 +6,34 @@ file.
 
 from pathlib import Path
 
+import numpy
+
+
+def read_file_with_header(file: str) -> tuple[list[str], numpy.ndarray]:
+    """Read a file and extract the header and the contents.
+
+    The first line of the file is assumed to be a header which is split into a
+    list of strings. The remaining part of the file is read into a numpy
+    array.
+
+    Parameters
+    ----------
+    file : str
+        The name of the file to read.
+
+    Returns
+    -------
+    tuple[list[str], numpy.ndarray]
+        A tuple containing the header and the contents of the file.
+
+    """
+    with Path.open(file, encoding="utf-8") as file_in:
+        header = file_in.readline().strip().split()
+
+    contents = numpy.loadtxt(file, skiprows=1)
+
+    return header, contents
+
 
 def remove_suffix_from_string(string: str, suffix: str) -> str:
     """Remove the provided suffix from a string.

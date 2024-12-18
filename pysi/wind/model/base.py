@@ -16,6 +16,10 @@ import pysi
 import pysi.util
 from pysi.wind import elements, enum
 
+# Do it once, because apparently this is expensive
+BOLTZMANN_CONSTANT = k_B.cgs.value
+PLANCK_CONSTANT = h.cgs.value
+
 
 class WindBase:
     """Base wind class for describing a wind object."""
@@ -164,54 +168,52 @@ class WindBase:
             The update list of flux for the cell.
 
         """
-        # create a dict of the parameters for band j, the table is a
-        # flat list of the parameters for cell 1, 2, 3, ... for BAND 0,
-        # and then the next section is the parameters for cell 1, 2,
-        # 3... for BAND 1. So we have to do some funky indexing to get
-        # to the correct row element in model_array
-
-        parameters_for_band_j = {
-            col: model_array[cell_index + band_index * self.n_cells, k] for k, col in enumerate(table_header)
-        }
+        # Extract parameters for the specific band
+        offset = cell_index + band_index * self.n_cells
+        parameters_for_band_j = {col: model_array[offset, k] for k, col in enumerate(table_header)}
 
         band_freq_min = parameters_for_band_j["fmin"]
         band_freq_max = parameters_for_band_j["fmax"]
 
-        # check first that the band hasn't broken in python or if the
-        # band is empty as when empty fmin == fmax == 0
+        # Skip processing if the band is invalid or empty
+        if band_freq_max <= band_freq_min:
+            return cell_frequency, cell_flux
 
-        if band_freq_max > band_freq_min:
-            band_frequency_bins = numpy.logspace(
-                numpy.log10(band_freq_min),
-                numpy.log10(band_freq_max),
-                n_freq_bins_per_band,
+        # Precompute logarithmic values for logspace to reduce overhead
+        log_freq_min = numpy.log10(band_freq_min)
+        log_freq_max = numpy.log10(band_freq_max)
+
+        band_frequency_bins = numpy.logspace(
+            log_freq_min,
+            log_freq_max,
+            n_freq_bins_per_band,
+        )
+
+        # Determine the model type
+        model_type = parameters_for_band_j.get("spec_mod_type", parameters_for_band_j.get("spec_mod_"))
+
+        if model_type is None:
+            warnings.warn(
+                "The header for the model file is improperly formatted and cannot find 'spec_mode_type'",
+                stacklevel=2,
             )
+            return cell_frequency, cell_flux
 
-            # model_type 1 == powerlaw model, otherwise 2 == exponential
-            # this is the noclumentaure used in python :-)
-
-            model_type = parameters_for_band_j.get("spec_mod_type", parameters_for_band_j.get("spec_mod_"))
-
-            if model_type is None:
-                warnings.warn(
-                    "The header for the model file is improperly formatted and cannot find 'spec_mode_type'",
-                    stacklevel=2,
+        # Compute the flux with minimal overhead
+        with numpy.errstate(over="ignore"):
+            if model_type == 1:  # Power-law model
+                log_freq_bins = numpy.log10(band_frequency_bins)
+                band_flux = 10 ** (
+                    parameters_for_band_j["pl_log_w"] + log_freq_bins * parameters_for_band_j["pl_alpha"]
                 )
-                return [], []
+            else:  # Exponential model
+                inverse_temp = 1 / (parameters_for_band_j["exp_temp"] * BOLTZMANN_CONSTANT)
+                band_flux = parameters_for_band_j["exp_w"] * numpy.exp(
+                    -PLANCK_CONSTANT * band_frequency_bins * inverse_temp
+                )
 
-            with numpy.errstate(over="ignore"):
-                if model_type == 1:
-                    band_flux = 10 ** (
-                        parameters_for_band_j["pl_log_w"]
-                        + numpy.log10(band_frequency_bins) * parameters_for_band_j["pl_alpha"]
-                    )
-                else:
-                    band_flux = parameters_for_band_j["exp_w"] * numpy.exp(
-                        (-1 * h.cgs.value * band_frequency_bins) / (parameters_for_band_j["exp_temp"] * k_B.cgs.value)
-                    )
-
-            cell_frequency.append(band_frequency_bins)
-            cell_flux.append(band_flux)
+        cell_frequency.append(band_frequency_bins)
+        cell_flux.append(band_flux)
 
         return cell_frequency, cell_flux
 
@@ -270,15 +272,7 @@ class WindBase:
             if file_path.is_file() is False:
                 return [], {}
 
-        with pathlib.Path.open(file_path, encoding="utf-8") as buffer:
-            file_lines = [line.strip().split() for line in buffer.readlines() if not line.startswith("#")]
-
-        if file_lines[0][0].isdigit() is True:
-            msg = "File is formatted incorrectly and missing header"
-            raise Exception(msg)
-
-        table_header = file_lines[0]
-        table_parameters = numpy.array(file_lines[1:], dtype=numpy.float64)
+        table_header, table_parameters = pysi.util.read_file_with_header(file_path)
 
         return table_header, table_parameters
 
@@ -351,18 +345,8 @@ class WindBase:
             return
 
         for file in spec_table_files:
-            with pathlib.Path.open(file, encoding="utf-8") as buffer:
-                file_lines = [line.strip().split() for line in buffer.readlines() if not line.startswith("#")]
-
-            if file_lines[0][0].isdigit() is True:
-                msg = "File is formatted incorrectly and missing header"
-                raise Exception(msg)
-
-            # Get the header and turn the rest of the file into an array, as
-            # this makes indexing what we want a lot easier
-
-            file_header = file_lines[0][1:]  # 1: skips the Freq.
-            file_array = numpy.array(file_lines[1:], dtype=numpy.float64)
+            file_header, file_array = pysi.util.read_file_with_header(file)
+            file_header = file_header[1:]  # remove the Freq. entry
 
             # Populate the parameters dict
 
