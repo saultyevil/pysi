@@ -131,13 +131,12 @@ class WindBase:
             except OSError:
                 self.version = "UNKNOWN"
 
-    def create_banded_jnu_models(  # noqa: PLR0913
-        self,
-        cell_index: int,
-        band_index: int,
-        model_array: numpy.ndarray,
-        table_header: list[str],
-        n_freq_bins_per_band: int,
+    @staticmethod
+    def _apply_jnu_model(  # noqa: PLR0913
+        model_type: int,
+        p1: float,
+        p2: float,
+        band_frequency_bins: numpy.ndarray,
         cell_frequency: list[numpy.ndarray],
         cell_flux: list[numpy.ndarray],
     ) -> None:
@@ -168,49 +167,13 @@ class WindBase:
             The update list of flux for the cell.
 
         """
-        # Extract parameters for the specific band
-        offset = cell_index + band_index * self.n_cells
-        parameters_for_band_j = {col: model_array[offset, k] for k, col in enumerate(table_header)}
-
-        band_freq_min = parameters_for_band_j["fmin"]
-        band_freq_max = parameters_for_band_j["fmax"]
-
-        # Skip processing if the band is invalid or empty
-        if band_freq_max <= band_freq_min:
-            return cell_frequency, cell_flux
-
-        # Precompute logarithmic values for logspace to reduce overhead
-        log_freq_min = numpy.log10(band_freq_min)
-        log_freq_max = numpy.log10(band_freq_max)
-
-        band_frequency_bins = numpy.logspace(
-            log_freq_min,
-            log_freq_max,
-            n_freq_bins_per_band,
-        )
-
-        # Determine the model type
-        model_type = parameters_for_band_j.get("spec_mod_type", parameters_for_band_j.get("spec_mod_"))
-
-        if model_type is None:
-            warnings.warn(
-                "The header for the model file is improperly formatted and cannot find 'spec_mode_type'",
-                stacklevel=2,
-            )
-            return cell_frequency, cell_flux
-
         # Compute the flux with minimal overhead
-        with numpy.errstate(over="ignore"):
-            if model_type == 1:  # Power-law model
-                log_freq_bins = numpy.log10(band_frequency_bins)
-                band_flux = 10 ** (
-                    parameters_for_band_j["pl_log_w"] + log_freq_bins * parameters_for_band_j["pl_alpha"]
-                )
-            else:  # Exponential model
-                inverse_temp = 1 / (parameters_for_band_j["exp_temp"] * BOLTZMANN_CONSTANT)
-                band_flux = parameters_for_band_j["exp_w"] * numpy.exp(
-                    -PLANCK_CONSTANT * band_frequency_bins * inverse_temp
-                )
+        if model_type == 1:  # Power-law model
+            log_freq_bins = numpy.log10(band_frequency_bins)
+            band_flux = 10 ** (p1 + log_freq_bins * p2)
+        else:  # Exponential model
+            inverse_temp = 1 / (p1 * BOLTZMANN_CONSTANT)
+            band_flux = p2 * numpy.exp(-PLANCK_CONSTANT * band_frequency_bins * inverse_temp)
 
         cell_frequency.append(band_frequency_bins)
         cell_flux.append(band_flux)
@@ -291,6 +254,7 @@ class WindBase:
             return
 
         model_array = numpy.array(models, dtype=numpy.float64)
+        model_dict = {col: model_array[:, k] for k, col in enumerate(table_header)}
 
         if model_array.size == 0:
             self.parameters["model_freq"] = self.parameters["model_flux"] = None
@@ -310,32 +274,59 @@ class WindBase:
             else:
                 self.parameters["model_flux"] = numpy.zeros(self.n_x, dtype=list)
 
-        # The next block will loop over each cell and constuct a model for each
-        # frequency band, and put that (and the frequency bins) into an array
-        # for each cell.
+        band_bins = numpy.zeros((n_bands, n_freq_bins_per_band))
+        with numpy.errstate(all="ignore"):
+            # Pre-compute the frequency bins for each band, saves a lot of time!
 
-        for cell_index in range(self.n_cells):
-            cell_frequency = []
-            cell_flux = []
-
-            for band_index in range(n_bands):
-                cell_frequency, cell_flux = self.create_banded_jnu_models(
-                    cell_index,
-                    band_index,
-                    model_array,
-                    table_header,
+            for n in range(n_bands):
+                band_offset = n * self.n_cells
+                band_bins[n, :] = numpy.logspace(
+                    numpy.log10(model_array[band_offset, table_header.index("fmin")]),
+                    numpy.log10(model_array[band_offset, table_header.index("fmax")]),
                     n_freq_bins_per_band,
-                    cell_frequency,
-                    cell_flux,
                 )
 
-            # If the lists are populated, then join them together as
-            # cell_frequency and cell_flux
+            # The next block will loop over each cell and constuct a model for each
+            # frequency band, and put that (and the frequency bins) into an array
+            # for each cell.
 
-            if len(cell_flux) != 0:
-                i_cell, j_cell = self.get_ij_from_elem_number(cell_index)
-                self.parameters["model_freq"][i_cell, j_cell] = numpy.hstack(cell_frequency)
-                self.parameters["model_flux"][i_cell, j_cell] = numpy.hstack(cell_flux)
+            for cell_index in range(self.n_cells):
+                cell_flux = []
+                cell_frequency = []
+
+                for band_index in range(n_bands):
+                    offset = cell_index + band_index * self.n_cells
+                    model_type = model_dict.get("spec_mod_type", model_dict.get("spec_mod_"))[offset]
+                    if model_type is None:
+                        warnings.warn(
+                            "The header for the model file is improperly formatted and cannot find 'spec_mode_type'",
+                            stacklevel=2,
+                        )
+                        continue
+
+                    if model_type == 1:
+                        p1 = model_dict["pl_log_w"][offset]
+                        p2 = model_dict["pl_alpha"][offset]
+                    else:
+                        p2 = model_dict["exp_temp"][offset]
+                        p1 = model_dict["exp_w"][offset]
+
+                    cell_frequency, cell_flux = self._apply_jnu_model(
+                        model_type,
+                        p1,
+                        p2,
+                        band_bins[band_index, :],
+                        cell_frequency,
+                        cell_flux,
+                    )
+
+                # If the lists are populated, then join them together as
+                # cell_frequency and cell_flux
+
+                if len(cell_flux) != 0:
+                    i_cell, j_cell = self.get_ij_from_elem_number(cell_index)
+                    self.parameters["model_freq"][i_cell, j_cell] = numpy.hstack(cell_frequency)
+                    self.parameters["model_flux"][i_cell, j_cell] = numpy.hstack(cell_flux)
 
     def read_in_wind_cell_spectra(self) -> None:
         """Read in the cell spectra."""
