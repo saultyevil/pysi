@@ -387,8 +387,10 @@ class WindPlot(util.WindUtil):
         log_parameter = kwargs.get("log_parameter", True)
 
         if isinstance(thing, numpy.ndarray):
+            thing = ""
             parameter_points = thing
         elif isinstance(thing, str):
+            title = thing
             parameter_points = self[thing]
         else:
             raise TypeError(f"Unsupported type {type(self.parameters)} for plotting parameter")
@@ -396,9 +398,9 @@ class WindPlot(util.WindUtil):
         if log_parameter:
             with numpy.errstate(over="ignore", divide="ignore"):
                 parameter_points = numpy.log10(parameter_points)
-            ax[a_idx, a_jdx].set_ylabel(r"$\log_{10}(" + f"{thing})$")
+            ax[a_idx, a_jdx].set_ylabel(r"$\log_{10}(" + f"{title})$")
         else:
-            ax[a_idx, a_jdx].set_ylabel(f"{thing}")
+            ax[a_idx, a_jdx].set_ylabel(f"{title}")
 
         ax[a_idx, a_jdx].plot(self.parameters["r"], parameter_points)
         ax[a_idx, a_jdx].set_xlabel(f"$R$ {self.DISTANCE_AXIS_LABEL_LOOKUP[self.distance_units]}")
@@ -466,8 +468,10 @@ class WindPlot(util.WindUtil):
             x_points, z_points = numpy.deg2rad(self.parameters["theta"]), numpy.log10(self.parameters["r"])
 
         if isinstance(thing, numpy.ndarray):
+            title = ""
             parameter_points = thing
         elif isinstance(thing, str):
+            title = thing
             parameter_points = self[thing]
         else:
             raise TypeError(f"Unsupported type {type(self.parameters)} for plotting parameter")
@@ -475,9 +479,9 @@ class WindPlot(util.WindUtil):
         if log_parameter:
             with numpy.errstate(over="ignore", divide="ignore"):
                 parameter_points = numpy.log10(parameter_points)
-            ax[a_idx, a_jdx].set_title(r"$\log_{10}(" + f"{thing})$")
+            ax[a_idx, a_jdx].set_title(r"$\log_{10}(" + f"{title})$")
         else:
-            ax[a_idx, a_jdx].set_title(f"{thing}")
+            ax[a_idx, a_jdx].set_title(f"{title}")
 
         im = ax[a_idx, a_jdx].pcolormesh(
             x_points,
