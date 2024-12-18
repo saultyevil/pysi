@@ -301,10 +301,9 @@ class WindBase:
 
                     band_start, band_stop = band_index * n_freq_bins_per_band, (band_index + 1) * n_freq_bins_per_band
 
-                    # Can't pre-compute the bins as it changes for each cell...
-                    band_bins[band_start:band_stop] = numpy.logspace(
-                        numpy.log10(model_array[offset, fmin_index]),
-                        numpy.log10(model_array[offset, fmax_index]),
+                    band_bins[band_start:band_stop] = numpy.linspace(
+                        model_array[offset, fmin_index],
+                        model_array[offset, fmax_index],
                         n_freq_bins_per_band,
                     )
 
