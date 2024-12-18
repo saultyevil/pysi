@@ -235,33 +235,28 @@ class WindBase:
             The number of frequency bins to use for the model.
 
         """
-        table_header, models = self.read_in_wind_table("spec")
-        if not table_header:
-            self.parameters["model_freq"] = self.parameters["model_flux"] = None
-            return
-
-        model_array = numpy.array(models, dtype=numpy.float64)
-
+        table_header, model_array = self.read_in_wind_table("spec")
         if model_array.size == 0:
             self.parameters["model_freq"] = self.parameters["model_flux"] = None
             return
-
         self.n_model_freq_bands = n_bands = int(numpy.max(model_array[:, table_header.index("nband")])) + 1
-        band_bins = numpy.zeros((n_bands * n_freq_bins_per_band,))
 
+        # Create empty arrays for these parameters
         if "model_freq" not in self.parameters:
             if self.n_z > 1:
                 self.parameters["model_freq"] = numpy.zeros((self.n_x, self.n_z), dtype=list)
             else:
                 self.parameters["model_freq"] = numpy.zeros((self.n_x, n_bands), dtype=list)
-
         if "model_flux" not in self.parameters:
             if self.n_z > 1:
                 self.parameters["model_flux"] = numpy.zeros((self.n_x, self.n_z), dtype=list)
             else:
                 self.parameters["model_flux"] = numpy.zeros(self.n_x, dtype=list)
 
+        # Ignore all numpy warnings because there are lots of overflows and
+        # divisions by 0 which we don't care about in this case
         with numpy.errstate(all="ignore"):
+            # Pre-compute indices in the model array to save time
             try:
                 model_type_index = table_header.index("spec_mod_type")
             except ValueError:
@@ -276,54 +271,39 @@ class WindBase:
             # The next block will loop over each cell and constuct a model for each
             # frequency band, and put that (and the frequency bins) into an array
             # for each cell.
-
+            band_freq_bins = numpy.zeros((n_bands * n_freq_bins_per_band,))
             for cell_index in range(self.n_cells):
                 model_flux = numpy.zeros(n_bands * n_freq_bins_per_band)
                 i, j = self.get_ij_from_elem_number(cell_index)
 
+                # Don't do anything for cells not in the wind
                 if self.parameters["inwind"][i, j] < 0:
-                    self.parameters["model_freq"][i, j] = numpy.array([])
-                    self.parameters["model_flux"][i, j] = numpy.array([])
                     continue
 
                 for band_index in range(n_bands):
                     offset = cell_index + band_index * self.n_cells
-
                     model_type = int(model_array[offset, model_type_index])
-                    if model_type is None:
-                        warnings.warn(
-                            "The header for the model file is improperly formatted and cannot find 'spec_mode_type'",
-                            stacklevel=2,
-                        )
-                        continue
-                    if model_type == 0:
-                        continue
-
                     band_start, band_stop = band_index * n_freq_bins_per_band, (band_index + 1) * n_freq_bins_per_band
-
-                    band_bins[band_start:band_stop] = numpy.linspace(
+                    band_freq_bins[band_start:band_stop] = numpy.linspace(
                         model_array[offset, fmin_index],
                         model_array[offset, fmax_index],
                         n_freq_bins_per_band,
                     )
-
                     if model_type == 1:
                         p1 = model_array[offset, m1p1_index]
                         p2 = model_array[offset, m1p2_index]
                     else:
                         p2 = model_array[offset, m2p1_index]
                         p1 = model_array[offset, m2p2_index]
-
                     band_flux = self._apply_jnu_model(
                         model_type,
                         p1,
                         p2,
-                        band_bins[band_start:band_stop],
+                        band_freq_bins[band_start:band_stop],
                     )
-
                     model_flux[band_start:band_stop] = band_flux
 
-                model_freq, indices = numpy.unique(band_bins, return_index=True)
+                model_freq, indices = numpy.unique(band_freq_bins, return_index=True)
                 self.parameters["model_freq"][i, j] = model_freq
                 self.parameters["model_flux"][i, j] = model_flux[indices]
 
