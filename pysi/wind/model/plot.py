@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pathlib
 import typing
 
 import matplotlib.pyplot as plt
@@ -25,7 +26,7 @@ class WindPlot(util.WindUtil):
         enum.DistanceUnits.GRAVITATIONAL_RADIUS: r"$ / R_{g}$",
     }
 
-    def __init__(self, root: str, directory: str, **kwargs) -> None:
+    def __init__(self, root: str, directory: str = pathlib.Path(), **kwargs) -> None:
         """Initialize the class.
 
         Parameters

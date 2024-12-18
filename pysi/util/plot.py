@@ -102,8 +102,8 @@ def plot_pcolor(  # noqa: PLR0913
 
     if display:
         plt.show()
-    else:
-        plt.close()
+    # else:
+    #     plt.close()
 
     return fig, ax
 
@@ -178,8 +178,8 @@ def plot_scatter(  # noqa: PLR0913
 
     if display:
         plt.show()
-    else:
-        plt.close()
+    # else:
+    #     plt.close()
 
     return fig, ax
 

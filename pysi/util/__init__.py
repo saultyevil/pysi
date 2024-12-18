@@ -27,7 +27,7 @@ def read_file_with_header(file: str) -> tuple[list[str], numpy.ndarray]:
         A tuple containing the header and the contents of the file.
 
     """
-    with Path.open(file, encoding="utf-8") as file_in:
+    with Path(file).open(encoding="utf-8") as file_in:
         header = file_in.readline().strip().split()
 
     contents = numpy.loadtxt(file, skiprows=1)
