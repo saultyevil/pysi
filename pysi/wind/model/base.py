@@ -132,50 +132,10 @@ class WindBase:
                 self.version = "unknown"
 
     @staticmethod
-    def _get_model_band_freq_bins(
-        bands: list[float] | numpy.ndarray,
-        fmin: list[float] | numpy.ndarray,
-        fmax: list[float] | numpy.ndarray,
-        n_freq_bins_per_band: int,
-    ) -> list[numpy.ndarray]:
-        """Get the frequency bins for each model band.
-
-        Parameters
-        ----------
-        bands : list[float] | numpy.ndarray
-            _description_
-        fmin : list[float] | numpy.ndarray
-            _description_
-        fmax : list[float] | numpy.ndarray
-            _description_
-        n_freq_bins_per_band : int
-            _description_
-
-        Returns
-        -------
-        list[numpy.ndarray]
-            _description_
-
-        """
-        unique_bands = numpy.unique(bands)
-        band_fmin = numpy.zeros(len(unique_bands))
-        band_fmax = numpy.zeros(len(unique_bands))
-
-        for i, band in enumerate(unique_bands):
-            mask = bands == band
-            band_fmin[i] = fmin[mask].min()
-            band_fmax[i] = fmax[mask].max()
-
-        return [
-            numpy.logspace(numpy.log10(band_fmin[i]), numpy.log10(band_fmax[i]), int(n_freq_bins_per_band))
-            for i in range(len(band_fmin))
-        ]
-
-    @staticmethod
     def _apply_jnu_model(
         model_type: int,
-        p1: float,
-        p2: float,
+        model_p1: float,
+        model_p2: float,
         band_frequency_bins: numpy.ndarray,
     ) -> numpy.ndarray:
         """Update the J_nu model for a frequency band.
@@ -184,9 +144,9 @@ class WindBase:
         ----------
         model_type: int
             The type of model to use.
-        p1: float
+        model_p1: float
             The first parameter of the model.
-        p2: float
+        model_p2: float
             The second parameter of the model.
         band_frequency_bins: numpy.ndarray
             The frequency bins for the band
@@ -199,12 +159,94 @@ class WindBase:
         """
         if model_type == 1:  # Power-law model
             log_freq_bins = numpy.log10(band_frequency_bins)
-            band_flux = 10 ** (p1 + log_freq_bins * p2)
+            band_flux = 10 ** (model_p1 + log_freq_bins * model_p2)
         else:  # Exponential model
-            inverse_temp = 1 / (p1 * BOLTZMANN_CONSTANT)
-            band_flux = p2 * numpy.exp(-PLANCK_CONSTANT * band_frequency_bins * inverse_temp)
+            inverse_temp = 1 / (model_p1 * BOLTZMANN_CONSTANT)
+            band_flux = model_p2 * numpy.exp(-PLANCK_CONSTANT * band_frequency_bins * inverse_temp)
 
         return band_flux
+
+    @staticmethod
+    def _adjust_overlapping_bins(
+        freq_min: numpy.ndarray, freq_max: numpy.ndarray, n_bins_per_band: int, *, tolerance: float = 1e-10
+    ) -> numpy.ndarray:
+        """Adjust the edges of the frequency bands to remove overlapping bins.
+
+        Parameters
+        ----------
+        freq_min : numpy.ndarray
+            The minimum frequency of the frequency bands.
+        freq_max : numpy.ndarray
+            The maximum frequency of the frequency bands.
+        n_bins_per_band : int
+            The number of frequency bins per band.
+        tolerance : float, optional
+            The floating point tolerance to use, by default 1e-10
+
+        Returns
+        -------
+        freq_min_adj : numpy.ndarray
+            The updated minimum frequencies
+        freq_max_adj : numpy.ndarray
+            The updated maximum frequencies
+
+        """
+        band_mask = numpy.array(
+            [numpy.any(numpy.isclose(freq_min[i], freq_max, atol=tolerance)) for i in range(len(freq_min))]
+        )
+        log_dfreq = (numpy.log10(freq_max[band_mask]) - numpy.log10(freq_min[band_mask])) / n_bins_per_band
+        freq_min_adj = freq_min.copy()
+        freq_min_adj[band_mask] = freq_min[band_mask] * 10**log_dfreq
+
+        return freq_min_adj, freq_max
+
+    def _get_model_band_freq_bins(
+        self,
+        band_index_col: list[float] | numpy.ndarray,
+        freq_min_col: list[float] | numpy.ndarray,
+        freq_max_col: list[float] | numpy.ndarray,
+        n_bins_per_band: int,
+    ) -> numpy.ndarray:
+        """Generate the frequency bins for each Jnu model band.
+
+        Parameters
+        ----------
+        band_index_col : list[float] | numpy.ndarray
+            The band indices column in the data.
+        freq_min_col : list[float] | numpy.ndarray
+            The frequency minimum column in the data.
+        freq_max_col : list[float] | numpy.ndarray
+            The frequency maximum column in the data.
+        n_bins_per_band : int
+            The number of frequency bins per band.
+
+        Returns
+        -------
+        list[numpy.ndarray]
+            The frequency bins for all bands in a 1D array.
+
+        """
+        band_index = numpy.unique(band_index_col)
+        freq_min = numpy.zeros(len(band_index))
+        freq_max = numpy.zeros(len(band_index))
+
+        for i, band in enumerate(band_index):
+            mask = band_index_col == band
+            freq_min[i] = freq_min_col[mask].min()
+            freq_max[i] = freq_max_col[mask].max()
+            # There is a bug in SIROCCO which sometimes means that the fmin
+            # and fmax columns in the .spec.txt file get swapped around. So we
+            # need to swap them back around
+            if freq_min[i] > freq_max[i]:
+                freq_min[i], freq_max[i] = freq_max[i], freq_min[i]
+
+        freq_min, freq_max = self._adjust_overlapping_bins(freq_min, freq_max, n_bins_per_band)
+        return numpy.concatenate(
+            [
+                numpy.logspace(numpy.log10(freq_min[i]), numpy.log10(freq_max[i]), int(n_bins_per_band))
+                for i in range(len(freq_min))
+            ]
+        )
 
     def get_elem_number_from_ij(self, i: int, j: int) -> int:
         """Get the wind element number for a given i and j index.
@@ -268,6 +310,8 @@ class WindBase:
     def read_in_wind_jnu_models(self, n_freq_bins_per_band: int = 250) -> None:
         """Read in the J_nu models for each cell.
 
+        TODO: this should be simplified in the future.
+
         Parameters
         ----------
         n_freq_bins_per_band: int
@@ -303,7 +347,7 @@ class WindBase:
         m2p1_index = table_header.index("exp_w")
         m2p2_index = table_header.index("exp_temp")
 
-        band_freq_bins = self._get_model_band_freq_bins(
+        freq_bins = self._get_model_band_freq_bins(
             filtered_array[:, table_header.index("nband")],
             filtered_array[:, table_header.index("fmin")],
             filtered_array[:, table_header.index("fmax")],
@@ -337,13 +381,12 @@ class WindBase:
                         model_type,
                         p1,
                         p2,
-                        band_freq_bins[band_index],
+                        freq_bins[band_start:band_stop],
                     )
                     model_flux[band_start:band_stop] = band_flux
 
-                model_freq, indices = numpy.unique(band_freq_bins, return_index=True)
-                self.parameters["model_freq"][i, j] = model_freq
-                self.parameters["model_flux"][i, j] = model_flux[indices]
+                self.parameters["model_freq"][i, j] = freq_bins
+                self.parameters["model_flux"][i, j] = model_flux
 
     def read_in_wind_cell_spectra(self) -> None:
         """Read in the cell spectra."""
