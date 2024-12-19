@@ -132,6 +132,46 @@ class WindBase:
                 self.version = "unknown"
 
     @staticmethod
+    def _get_model_band_freq_bins(
+        bands: list[float] | numpy.ndarray,
+        fmin: list[float] | numpy.ndarray,
+        fmax: list[float] | numpy.ndarray,
+        n_freq_bins_per_band: int,
+    ) -> list[numpy.ndarray]:
+        """Get the frequency bins for each model band.
+
+        Parameters
+        ----------
+        bands : list[float] | numpy.ndarray
+            _description_
+        fmin : list[float] | numpy.ndarray
+            _description_
+        fmax : list[float] | numpy.ndarray
+            _description_
+        n_freq_bins_per_band : int
+            _description_
+
+        Returns
+        -------
+        list[numpy.ndarray]
+            _description_
+
+        """
+        unique_bands = numpy.unique(bands)
+        band_fmin = numpy.zeros(len(unique_bands))
+        band_fmax = numpy.zeros(len(unique_bands))
+
+        for i, band in enumerate(unique_bands):
+            mask = bands == band
+            band_fmin[i] = fmin[mask].min()
+            band_fmax[i] = fmax[mask].max()
+
+        return [
+            numpy.logspace(numpy.log10(band_fmin[i]), numpy.log10(band_fmax[i]), int(n_freq_bins_per_band))
+            for i in range(len(band_fmin))
+        ]
+
+    @staticmethod
     def _apply_jnu_model(
         model_type: int,
         p1: float,
@@ -157,7 +197,6 @@ class WindBase:
             The computed flux for the band
 
         """
-        # Compute the flux with minimal overhead
         if model_type == 1:  # Power-law model
             log_freq_bins = numpy.log10(band_frequency_bins)
             band_flux = 10 ** (p1 + log_freq_bins * p2)
@@ -239,6 +278,7 @@ class WindBase:
         if model_array.size == 0:
             self.parameters["model_freq"] = self.parameters["model_flux"] = None
             return
+        filtered_array = model_array[model_array[:, table_header.index("inwind")] >= 0]
         self.n_model_freq_bands = n_bands = int(numpy.max(model_array[:, table_header.index("nband")])) + 1
 
         # Create empty arrays for these parameters
@@ -253,42 +293,40 @@ class WindBase:
             else:
                 self.parameters["model_flux"] = numpy.zeros(self.n_x, dtype=list)
 
+        try:
+            model_type_index = table_header.index("spec_mod_type")
+        except ValueError:
+            model_type_index = table_header.index("spec_mod_")
+
+        m1p1_index = table_header.index("pl_log_w")
+        m1p2_index = table_header.index("pl_alpha")
+        m2p1_index = table_header.index("exp_w")
+        m2p2_index = table_header.index("exp_temp")
+
+        band_freq_bins = self._get_model_band_freq_bins(
+            filtered_array[:, table_header.index("nband")],
+            filtered_array[:, table_header.index("fmin")],
+            filtered_array[:, table_header.index("fmax")],
+            n_freq_bins_per_band,
+        )
+
         # Ignore all numpy warnings because there are lots of overflows and
         # divisions by 0 which we don't care about in this case
         with numpy.errstate(all="ignore"):
-            # Pre-compute indices in the model array to save time
-            try:
-                model_type_index = table_header.index("spec_mod_type")
-            except ValueError:
-                model_type_index = table_header.index("spec_mod_")
-            fmin_index = table_header.index("fmin")
-            fmax_index = table_header.index("fmax")
-            m1p1_index = table_header.index("pl_log_w")
-            m1p2_index = table_header.index("pl_alpha")
-            m2p1_index = table_header.index("exp_w")
-            m2p2_index = table_header.index("exp_temp")
-
             # The next block will loop over each cell and constuct a model for each
             # frequency band, and put that (and the frequency bins) into an array
             # for each cell.
-            band_freq_bins = numpy.zeros((n_bands * n_freq_bins_per_band,))
             for cell_index in range(self.n_cells):
-                model_flux = numpy.zeros(n_bands * n_freq_bins_per_band)
                 i, j = self.get_ij_from_elem_number(cell_index)
-
-                # Don't do anything for cells not in the wind
                 if self.parameters["inwind"][i, j] < 0:
                     continue
+
+                model_flux = numpy.zeros(n_bands * n_freq_bins_per_band)
 
                 for band_index in range(n_bands):
                     offset = cell_index + band_index * self.n_cells
                     model_type = int(model_array[offset, model_type_index])
                     band_start, band_stop = band_index * n_freq_bins_per_band, (band_index + 1) * n_freq_bins_per_band
-                    band_freq_bins[band_start:band_stop] = numpy.linspace(
-                        model_array[offset, fmin_index],
-                        model_array[offset, fmax_index],
-                        n_freq_bins_per_band,
-                    )
                     if model_type == 1:
                         p1 = model_array[offset, m1p1_index]
                         p2 = model_array[offset, m1p2_index]
@@ -299,7 +337,7 @@ class WindBase:
                         model_type,
                         p1,
                         p2,
-                        band_freq_bins[band_start:band_stop],
+                        band_freq_bins[band_index],
                     )
                     model_flux[band_start:band_stop] = band_flux
 
