@@ -7,7 +7,6 @@ wind, as well as the most basic variables which describe the wind.
 
 import pathlib
 import re
-import warnings
 
 import numpy
 from astropy.constants import h, k_B
@@ -19,6 +18,8 @@ from pysi.wind import elements, enum
 # Do it once, because apparently this is expensive
 BOLTZMANN_CONSTANT = k_B.cgs.value
 PLANCK_CONSTANT = h.cgs.value
+
+DEFAULT_CELL_SPEC_BINS = 1000
 
 
 class WindBase:
@@ -248,6 +249,23 @@ class WindBase:
             ]
         )
 
+    def _create_empty_parameter_array(self, parameter_names: list[str]) -> None:
+        """Create an empty parameter array for each parameter in parameter_names.
+
+        Parameters
+        ----------
+        parameter_names : list[str]
+            The names of the parameters to create empty arrays for.
+
+        """
+        parameter_names = list(parameter_names)
+        for parameter in parameter_names:
+            if parameter not in self.parameters:
+                if self.n_z > 1:
+                    self.parameters[parameter] = numpy.zeros((self.n_x, self.n_z), dtype=object)
+                else:
+                    self.parameters[parameter] = numpy.zeros(self.n_x, dtype=object)
+
     def get_elem_number_from_ij(self, i: int, j: int) -> int:
         """Get the wind element number for a given i and j index.
 
@@ -307,52 +325,44 @@ class WindBase:
 
         return table_header, table_parameters
 
-    def read_in_wind_jnu_models(self, n_freq_bins_per_band: int = 250) -> None:
+    def read_in_wind_jnu_models(self, n_bins_per_band: int = 250) -> None:
         """Read in the J_nu models for each cell.
 
         TODO: this should be simplified in the future.
 
         Parameters
         ----------
-        n_freq_bins_per_band: int
+        n_bins_per_band: int
             The number of frequency bins to use for the model.
 
         """
+        self._create_empty_parameter_array(["model_freq", "model_flux"])
         table_header, model_array = self.read_in_wind_table("spec")
         if model_array.size == 0:
-            self.parameters["model_freq"] = self.parameters["model_flux"] = None
             return
-        filtered_array = model_array[model_array[:, table_header.index("inwind")] >= 0]
         self.n_model_freq_bands = n_bands = int(numpy.max(model_array[:, table_header.index("nband")])) + 1
 
-        # Create empty arrays for these parameters
-        if "model_freq" not in self.parameters:
-            if self.n_z > 1:
-                self.parameters["model_freq"] = numpy.zeros((self.n_x, self.n_z), dtype=list)
-            else:
-                self.parameters["model_freq"] = numpy.zeros((self.n_x, n_bands), dtype=list)
-        if "model_flux" not in self.parameters:
-            if self.n_z > 1:
-                self.parameters["model_flux"] = numpy.zeros((self.n_x, self.n_z), dtype=list)
-            else:
-                self.parameters["model_flux"] = numpy.zeros(self.n_x, dtype=list)
+        # Pre-compute the frequency bins for each band which is a massive time
+        # save. This means we ignore cell min/max frequencies and use what
+        # the photon banding is in the parameter file.
+        inwind_array = model_array[model_array[:, table_header.index("inwind")] >= 0]
+        freq_bins = self._get_model_band_freq_bins(
+            inwind_array[:, table_header.index("nband")],
+            inwind_array[:, table_header.index("fmin")],
+            inwind_array[:, table_header.index("fmax")],
+            n_bins_per_band,
+        )
 
+        # Indices of columns used in array - this is a lot faster than pandas
+        # is for some reason
         try:
             model_type_index = table_header.index("spec_mod_type")
         except ValueError:
             model_type_index = table_header.index("spec_mod_")
-
         m1p1_index = table_header.index("pl_log_w")
         m1p2_index = table_header.index("pl_alpha")
         m2p1_index = table_header.index("exp_w")
         m2p2_index = table_header.index("exp_temp")
-
-        freq_bins = self._get_model_band_freq_bins(
-            filtered_array[:, table_header.index("nband")],
-            filtered_array[:, table_header.index("fmin")],
-            filtered_array[:, table_header.index("fmax")],
-            n_freq_bins_per_band,
-        )
 
         # Ignore all numpy warnings because there are lots of overflows and
         # divisions by 0 which we don't care about in this case
@@ -365,12 +375,12 @@ class WindBase:
                 if self.parameters["inwind"][i, j] < 0:
                     continue
 
-                model_flux = numpy.zeros(n_bands * n_freq_bins_per_band)
+                model_flux = numpy.zeros(n_bands * n_bins_per_band)
 
                 for band_index in range(n_bands):
                     offset = cell_index + band_index * self.n_cells
                     model_type = int(model_array[offset, model_type_index])
-                    band_start, band_stop = band_index * n_freq_bins_per_band, (band_index + 1) * n_freq_bins_per_band
+                    band_start, band_stop = band_index * n_bins_per_band, (band_index + 1) * n_bins_per_band
                     if model_type == 1:
                         p1 = model_array[offset, m1p1_index]
                         p2 = model_array[offset, m1p2_index]
@@ -390,28 +400,14 @@ class WindBase:
 
     def read_in_wind_cell_spectra(self) -> None:
         """Read in the cell spectra."""
+        self._create_empty_parameter_array(["spec_freq", "spec_flux"])
         spec_table_files = pysi.util.shell.find_file_with_pattern("*xspec.*.txt", self.directory)
         if len(spec_table_files) == 0:
-            self.parameters["spec_freq"] = self.parameters["spec_flux"] = None
             return
 
         for file in spec_table_files:
             file_header, file_array = pysi.util.read_file_with_header(file)
             file_header = file_header[1:]  # remove the Freq. entry
-
-            # Populate the parameters dict
-
-            if "spec_freq" not in self.parameters:
-                if self.n_z > 1:
-                    self.parameters["spec_freq"] = numpy.zeros((self.n_x, self.n_z, len(file_array[:, 0])))
-                else:
-                    self.parameters["spec_freq"] = numpy.zeros((self.n_x, len(file_array[:, 0])))
-
-            if "spec_flux" not in self.parameters:
-                if self.n_z > 1:
-                    self.parameters["spec_flux"] = numpy.zeros((self.n_x, self.n_z, len(file_array[:, 0])))
-                else:
-                    self.parameters["spec_flux"] = numpy.zeros((self.n_x, len(file_array[:, 0])))
 
             # Go through each coord string and figure out the coords, and place
             # the spectrum into 1d/2d array
@@ -419,11 +415,11 @@ class WindBase:
             for i, coord_string in enumerate(file_header):
                 coords = numpy.array(coord_string[1:].split("_"), dtype=numpy.int32)
                 if self.n_z > 1:
-                    self.parameters["spec_flux"][coords[0], coords[1], :] = file_array[:, i + 1]
-                    self.parameters["spec_freq"][coords[0], coords[1], :] = file_array[:, 0]
+                    self.parameters["spec_flux"][coords[0], coords[1]] = file_array[:, i + 1]
+                    self.parameters["spec_freq"][coords[0], coords[1]] = file_array[:, 0]
                 else:
-                    self.parameters["spec_flux"][coords[0], :] = file_array[:, i + 1]
-                    self.parameters["spec_freq"][coords[0], :] = file_array[:, 0]
+                    self.parameters["spec_flux"][coords[0]] = file_array[:, i + 1]
+                    self.parameters["spec_freq"][coords[0]] = file_array[:, 0]
 
     def read_in_wind_ions(self, elements_to_read: list[str] = elements.ELEMENTS) -> None:
         """Read in the different ions in the wind.
