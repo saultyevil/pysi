@@ -26,7 +26,7 @@ def check_array_is_ascending_order(x_in: list | numpy.ndarray) -> bool:
     if not check(x_in):
         if check(x_in.copy()[::-2]):
             return False
-        msg = "Array is not sorted"
+        msg = f"x_in is not sorted in ascending or descending order: {x_in}"
         raise ValueError(msg)
     return True
 
