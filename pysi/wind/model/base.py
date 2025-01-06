@@ -92,7 +92,7 @@ class WindBase:
             if re.match("[A-Z]_i[0-9]+$", key):  # but no type specification at the end, e.g. C_i04_frac
                 key += "_frac"  # default to frac if not specified
 
-        return self.parameters[key]
+        return self.parameters[key] if self.n_z > 1 else self.parameters[key][:, 0]
 
     def __str__(self) -> str:
         """Return a string representation of the Wind object.
@@ -108,7 +108,9 @@ class WindBase:
     def _set_axes_coords(self) -> None:
         """Set attributes for the x and z axes."""
         self.x_coords = (
-            numpy.unique(self.parameters["x"]) if enum.CoordSystem.CYLINDRICAL else numpy.unique(self.parameters["r"])
+            numpy.unique(self.parameters.get["x"])
+            if self.coord_type == enum.CoordSystem.CYLINDRICAL
+            else numpy.unique(self.parameters["r"])
         )
         if self.n_z > 1:
             self.z_coords = (
@@ -261,10 +263,7 @@ class WindBase:
         parameter_names = list(parameter_names)
         for parameter in parameter_names:
             if parameter not in self.parameters:
-                if self.n_z > 1:
-                    self.parameters[parameter] = numpy.zeros((self.n_x, self.n_z), dtype=object)
-                else:
-                    self.parameters[parameter] = numpy.zeros(self.n_x, dtype=object)
+                self.parameters[parameter] = numpy.zeros((self.n_x, self.n_z), dtype=object)
 
     def get_elem_number_from_ij(self, i: int, j: int) -> int:
         """Get the wind element number for a given i and j index.
@@ -414,12 +413,13 @@ class WindBase:
 
             for i, coord_string in enumerate(file_header):
                 coords = numpy.array(coord_string[1:].split("_"), dtype=numpy.int32)
+                # todo(ep): no idea why they have to be separate cases, but should investigate
                 if self.n_z > 1:
                     self.parameters["spec_flux"][coords[0], coords[1]] = file_array[:, i + 1]
                     self.parameters["spec_freq"][coords[0], coords[1]] = file_array[:, 0]
                 else:
-                    self.parameters["spec_flux"][coords[0]] = file_array[:, i + 1]
-                    self.parameters["spec_freq"][coords[0]] = file_array[:, 0]
+                    self.parameters["spec_flux"][coords[0], 0] = file_array[:, i + 1]
+                    self.parameters["spec_freq"][coords[0], 0] = file_array[:, 0]
 
     def read_in_wind_ions(self, elements_to_read: list[str] = elements.ELEMENTS) -> None:
         """Read in the different ions in the wind.
