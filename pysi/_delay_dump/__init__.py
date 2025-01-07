@@ -6,8 +6,8 @@ from sys import exit
 import numpy as np
 import pandas as pd
 
-import pysi.delay_dump.spectrum
-import pysi.delay_dump.wind
+import pysi._delay_dump.spectrum
+import pysi._delay_dump.wind
 from pysi.wind import Wind
 
 BOUND_FREE_NRES = 20000
@@ -156,7 +156,7 @@ def create_spectrum(
     freq_max = np.max(dump_spectrum[:, 0])
     freq_min = np.min(dump_spectrum[:, 0])
 
-    dump_spectrum = pysi.delay_dump.spectrum.bin_photon_weights(
+    dump_spectrum = pysi._delay_dump.spectrum.bin_photon_weights(
         dump_spectrum,
         freq_min,
         freq_max,
@@ -171,14 +171,14 @@ def create_spectrum(
 
     dump_spectrum[:, 1:] /= n_cores_norm
 
-    dump_spectrum = pysi.delay_dump.spectrum.convert_weight_to_flux(dump_spectrum, spec_cycle_norm, d_norm_pc)
+    dump_spectrum = pysi._delay_dump.spectrum.convert_weight_to_flux(dump_spectrum, spec_cycle_norm, d_norm_pc)
 
     # Remove the first and last bin, consistent with Python
 
     n_bins -= 2
     dump_spectrum = dump_spectrum[1:-1, :]
 
-    dump_spectrum, inclinations = pysi.delay_dump.spectrum.write_delay_dump_spectrum_to_file(
+    dump_spectrum, inclinations = pysi._delay_dump.spectrum.write_delay_dump_spectrum_to_file(
         root, fp, dump_spectrum, extract, n_spec, n_bins, d_norm_pc, return_inclinations=True
     )
 
@@ -348,7 +348,7 @@ def bin_photon_interactions_in_wind(  # noqa: PLR0913
     photon_positions[:, 1] = delay_dump_df["LastY"].to_numpy()
     photon_positions[:, 2] = delay_dump_df["LastZ"].to_numpy()
 
-    hist_weight, hist_count = pysi.delay_dump.wind.create_interaction_histogram(
+    hist_weight, hist_count = pysi._delay_dump.wind.create_interaction_histogram(
         target_interaction,
         photon_positions,
         delay_dump_df["LineRes."].to_numpy(),

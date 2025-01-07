@@ -5,7 +5,7 @@ from numba import jit
 
 import pysi
 import pysi.constants as c
-from pysi import delay_dump
+from pysi import _delay_dump
 
 
 def write_delay_dump_spectrum_to_file(
@@ -40,7 +40,7 @@ def write_delay_dump_spectrum_to_file(
         An array of the inclination angles of the spectrum.
 
     """
-    if extract_nres[0] != delay_dump.UNFILTERED_SPECTRUM:
+    if extract_nres[0] != _delay_dump.UNFILTERED_SPECTRUM:
         fname = f"{wd}/{root}_line"
         for line in extract_nres:
             fname += f"_{line}"
@@ -83,7 +83,7 @@ def write_delay_dump_spectrum_to_file(
     # and write these out to file too
     # TODO: update to allow multiple lines to be written out at once
 
-    if extract_nres[0] != delay_dump.UNFILTERED_SPECTRUM and len(extract_nres) == 1:
+    if extract_nres[0] != _delay_dump.UNFILTERED_SPECTRUM and len(extract_nres) == 1:
         output_fname = f"{wd}/{root}_line"
         for line in extract_nres:
             output_fname += f"_{line}"
@@ -215,7 +215,7 @@ def bin_photon_weights(
         # that if nres < 0 or nres > NLINES, then it was a continuum scattering
         # event
 
-        if extract_nres[0] != delay_dump.UNFILTERED_SPECTRUM:
+        if extract_nres[0] != _delay_dump.UNFILTERED_SPECTRUM:
             # Loop over each nres which we want to extract
             for i in range(n_extract):
                 # If it's last interaction is the nres we want, then extract
