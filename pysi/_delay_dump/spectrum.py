@@ -1,7 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-""""""
-
 from copy import deepcopy
 
 import numpy as np
@@ -9,7 +5,7 @@ from numba import jit
 
 import pysi
 import pysi.constants as c
-import pysi.dump as dump
+from pysi import _delay_dump
 
 
 def write_delay_dump_spectrum_to_file(
@@ -42,24 +38,24 @@ def write_delay_dump_spectrum_to_file(
         The delay dump spectrum.
     inclinations: [optional] np.ndarray
         An array of the inclination angles of the spectrum.
-    """
 
-    if extract_nres[0] != dump.UNFILTERED_SPECTRUM:
-        fname = "{}/{}_line".format(wd, root)
+    """
+    if extract_nres[0] != _delay_dump.UNFILTERED_SPECTRUM:
+        fname = f"{wd}/{root}_line"
         for line in extract_nres:
-            fname += "_{}".format(line)
+            fname += f"_{line}"
         fname += ".delay_dump.spec"
     else:
-        fname = "{}/{}.delay_dump.spec".format(wd, root)
+        fname = f"{wd}/{root}.delay_dump.spec"
 
     f = open(fname, "w")
 
-    f.write("# Flux Flambda [erg / s / cm^2 / A at {} pc\n".format(d_norm_pc))
+    f.write(f"# Flux Flambda [erg / s / cm^2 / A at {d_norm_pc} pc\n")
 
     try:
         full_spec = pysi.Spectrum(root, wd)
         inclinations = list(full_spec.inclinations)
-    except IOError:
+    except OSError:
         inclinations = np.arange(0, n_spec)
 
     header = deepcopy(inclinations)
@@ -68,7 +64,7 @@ def write_delay_dump_spectrum_to_file(
 
     f.write("{:12s} {:12s}".format("Freq.", "Lambda"))
     for h in header:
-        f.write(" {:12s}".format(h))
+        f.write(f" {h:12s}")
     f.write("\n")
 
     # Now write out the spectrum
@@ -76,9 +72,9 @@ def write_delay_dump_spectrum_to_file(
     for i in range(n_bins):
         freq = spectrum[i, 0]
         wl_angstrom = pysi.physics.hz_to_angstrom(freq)
-        f.write("{:12e} {:12e}".format(freq, wl_angstrom))
+        f.write(f"{freq:12e} {wl_angstrom:12e}")
         for j in range(spectrum.shape[1] - 1):
-            f.write(" {:12e}".format(spectrum[i, j + 1]))
+            f.write(f" {spectrum[i, j + 1]:12e}")
         f.write("\n")
 
     f.close()
@@ -87,23 +83,22 @@ def write_delay_dump_spectrum_to_file(
     # and write these out to file too
     # TODO: update to allow multiple lines to be written out at once
 
-    if extract_nres[0] != dump.UNFILTERED_SPECTRUM and len(extract_nres) == 1:
-        output_fname = "{}/{}_line".format(wd, root)
+    if extract_nres[0] != _delay_dump.UNFILTERED_SPECTRUM and len(extract_nres) == 1:
+        output_fname = f"{wd}/{root}_line"
         for line in extract_nres:
-            output_fname += "_{}".format(line)
+            output_fname += f"_{line}"
         output_fname += ".line_luminosity.diag"
         f = open(output_fname, "w")
         f.write("Line luminosities -- units [erg / s]\n")
         for i in range(spectrum.shape[1] - 1):
             flux = np.sum(spectrum[:, i + 1])
             lum = 4 * np.pi * (d_norm_pc * c.PARSEC) ** 2 * flux
-            f.write("Spectrum {} : L = {} erg / s\n".format(header[i], lum))
+            f.write(f"Spectrum {header[i]} : L = {lum} erg / s\n")
         f.close()
 
     if return_inclinations:
         return spectrum, inclinations
-    else:
-        return spectrum
+    return spectrum
 
 
 def convert_weight_to_flux(spectrum, spec_cycle_norm, d_norm_pc):
@@ -127,8 +122,8 @@ def convert_weight_to_flux(spectrum, spec_cycle_norm, d_norm_pc):
     -------
     spectrum: np.ndarray
         The renormalized spectrum.
-    """
 
+    """
     n_bins = spectrum.shape[0]
     n_spec = spectrum.shape[1] - 1
     d_norm_cm = 4 * np.pi * (d_norm_pc * c.PARSEC) ** 2
@@ -191,8 +186,8 @@ def bin_photon_weights(
     -------
     spectrum: np.ndarray
         The spectrum where photon weights have been binned.
-    """
 
+    """
     n_extract = len(extract_nres)
     n_photons = photon_freqs.shape[0]
     n_bins = spectrum.shape[0]
@@ -220,16 +215,11 @@ def bin_photon_weights(
         # that if nres < 0 or nres > NLINES, then it was a continuum scattering
         # event
 
-        if extract_nres[0] != dump.UNFILTERED_SPECTRUM:
+        if extract_nres[0] != _delay_dump.UNFILTERED_SPECTRUM:
             # Loop over each nres which we want to extract
             for i in range(n_extract):
                 # If it's last interaction is the nres we want, then extract
-                if photon_nres[p] == extract_nres[i]:
-                    spectrum[k, photon_spc_i[p]] += photon_weights[p]
-                    break
-                # Or if it's "belongs" to the nres we want and it's last interaction
-                # was a continuum scatter, then extract
-                elif photon_line_nres[p] == extract_nres[i]:
+                if photon_nres[p] == extract_nres[i] or photon_line_nres[p] == extract_nres[i]:
                     spectrum[k, photon_spc_i[p]] += photon_weights[p]
                     break
         else:

@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Error codes and custom exceptions for pysi.
 
 These are pretty basic, and don't do much.
@@ -14,21 +12,20 @@ class CoordError(Exception):
 
 
 class DimensionError(Exception):
-    """Exception for when arrays with incorrect dimensions have been
-    supplied."""
+    """Exception for when arrays with incorrect dimensions have been supplied."""
 
 
-class InvalidFileContents(Exception):
+class InvalidFileContentsError(Exception):
     """Exception for when a file has a different contents than expected."""
 
 
-class InvalidParameter(Exception):
+class InvalidParameterError(Exception):
     """Exception for when a parameter is not recognised."""
 
 
-class PythonError(Exception):
-    """Exception for when Python has broken."""
+class SIROCCOError(Exception):
+    """Exception for when SIROCCO has broken."""
 
 
-class RunError(Exception):
+class ShellRunError(Exception):
     """Exception for when windsave2table, or etc., have failed to run."""

@@ -1,9 +1,6 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """The entry point for the plotting synthetic spectra."""
-
-from typing import Optional
 
 import click
 
@@ -18,7 +15,7 @@ def spectrum_entry():
 @spectrum_entry.command()
 @click.argument("root")
 @click.option("--angle", default=None, help="The angle to plot.")
-def observer(root: str, angle: Optional[str]) -> None:
+def observer(root: str, angle: str | None) -> None:
     """Plot the observer spectrum."""
     model_spectra = Spectrum(root)
     extracted_spectra = model_spectra["spec"]

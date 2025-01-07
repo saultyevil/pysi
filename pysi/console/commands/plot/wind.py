@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """The entry point for plotting wind properties."""
 
 import click
 import numpy
+
 from pysi.wind import Wind
 
 

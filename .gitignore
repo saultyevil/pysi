@@ -143,6 +143,5 @@ cython_debug/
 
 # Project files
 scratch
-
-# pyenv
 .python-version
+.DS_Store

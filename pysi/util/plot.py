@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """The basic/universal plotting functions of pysi.
 
 The module includes functions for normalizing the style, as well as ways
@@ -15,23 +13,116 @@ from matplotlib import pyplot as plt
 import pysi.error as err
 from pysi.util import array
 
-# Generic plotting function ----------------------------------------------------
+LARGE_NUM_PLOTS = 9
+SMALL_NUM_PLOTS = 2
 
 
-def plot(
-    x,
-    y,
-    xmin=None,
-    xmax=None,
-    xlabel=None,
-    ylabel=None,
-    scale="logy",
-    fig=None,
-    ax=None,
-    label=None,
-    alpha=1.0,
-    display=False,
-):
+def _check_axes_scale_string(scale: str) -> None:
+    """Check that the axes scales passed are recognised.
+
+    Parameters
+    ----------
+    scale: str
+        The scaling of the axes to check.
+
+    Raises
+    ------
+    ValueError
+        If the scale is not recognised.
+
+    """
+    if scale not in ["logx", "logy", "linlin", "loglog"]:
+        raise ValueError(f"{scale} is an unknown axes scale choice, allowed: logx, logy, linlin, loglog")
+
+
+def plot_pcolor(  # noqa: PLR0913
+    x: np.ndarray,
+    y: np.ndarray,
+    v: np.ndarray,
+    *,
+    scale: str = "loglog",
+    vmin: float | None = None,
+    vmax: float | None = None,
+    xlabel: str | None = None,
+    ylabel: str | None = None,
+    fig: plt.Figure | None = None,
+    ax: plt.Axes | None = None,
+    display: bool = False,
+) -> tuple[plt.Figure, plt.Axes]:
+    """Plot x, y and v on a colour plot.
+
+    This function acts as a big wrapper around matplotlib, to plot and create
+    a nice set of figures. By providing a Figure and Axes object, one can
+    add additional data to an already existing plot.
+
+    Parameters
+    ----------
+    x: np.ndarray
+        The x values for the plot.
+    y : np.ndarray
+        The y values for the plot.
+    v : np.ndarray
+        The values to plot.
+    scale : str, optional
+        The scale for the x and y axes, by default "loglog".
+        Can be one of "logx", "logy", "linlin", "loglog".
+    vmin : float | None, optional
+        The minimum value for the colour bar, by default None.
+    vmax : float | None, optional
+        The maximum value for the colour bar, by default None.
+    xlabel : str | None, optional
+        The label for the x axis, by default None.
+    ylabel : str | None, optional
+        The label for the y axis, by default None.
+    fig : plt.Figure | None, optional
+        The figure to plot on, by default None.
+        If None, a new figure will be created.
+    ax : plt.Axes | None, optional
+        The axes to plot on, by default None.
+        If None, a new axes will be created.
+    display : bool, optional
+        Whether to display the plot, by default False.
+
+    Returns
+    -------
+    tuple[plt.Figure, plt.Axes]
+        _description_
+
+    """
+    fig, ax = prepare_fig_and_ax(fig, ax)
+
+    ax.pcolormesh(x, y, v, vmin=vmin, vmax=vmax)
+
+    if xlabel:
+        ax.set_xlabel(xlabel)
+    if ylabel:
+        ax.set_ylabel(ylabel)
+
+    ax = set_axes_scales(ax, scale)
+
+    if display:
+        plt.show()
+    # else:
+    #     plt.close()
+
+    return fig, ax
+
+
+def plot_scatter(  # noqa: PLR0913
+    x: np.ndarray,
+    y: np.ndarray,
+    *,
+    xmin: float | None = None,
+    xmax: float | None = None,
+    xlabel: str | None = None,
+    ylabel: str | None = None,
+    scale: str = "logy",
+    fig: plt.Figure | None = None,
+    ax: plt.Axes | None = None,
+    label: str | None = None,
+    alpha: float = 1.0,
+    display: bool = False,
+) -> tuple[plt.Figure, plt.Axes]:
     """Plot a set of x and y data.
 
     This function acts as a big wrapper around matplotlib, to plot and create
@@ -46,14 +137,14 @@ def plot(
         The y data to ploy.
     xmin: float
         The lower boundary of the x axis.
-    xmax: flaot
+    xmax: float
         The upper boundary of the x axis.
     xlabel: str
         The label for the x axis.
     ylabel: str
         The label for the y axis.
     scale: str
-        The scalings for the axes, i.e. logx, loglog, linlin.
+        The scaling for the axes, i.e. logx, loglog, linlin.
     fig: plt.Figure
         A figure object to update.
     ax: plt.Axes
@@ -71,17 +162,9 @@ def plot(
         The figure object.
     ax: plt.Axes
         The axes object.
+
     """
-
-    # It doesn't make sense to provide only fig and not ax, or ax and not fig
-    # so at this point we will throw an error message and return
-
-    if fig and not ax:
-        raise err.InvalidParameter("fig has been provided, but ax has not. Both are required.")
-    elif not fig and ax:
-        raise err.InvalidParameter("fig has not been provided, but ax has. Both are required.")
-    elif not fig and not ax:
-        fig, ax = plt.subplots(1, 1, figsize=(12, 5))
+    fig, ax = prepare_fig_and_ax(fig, ax)
 
     x, y = array.get_subset_in_second_array(x, y, xmin, xmax)
     ax.plot(x, y, label=label, alpha=alpha)
@@ -95,29 +178,15 @@ def plot(
 
     if display:
         plt.show()
-    else:
-        plt.close()
+    # else:
+    #     plt.close()
 
     return fig, ax
 
 
-# Helper functions -------------------------------------------------------------
-
-
-def _check_axes_scale_string(scale):
-    """Check that the axes scales passed are recognised.
-
-    Parameters
-    ----------
-    scale: str
-        The scaling of the axes to check.
-    """
-
-    if scale not in ["logx", "logy", "linlin", "loglog"]:
-        raise ValueError(f"{scale} is an unknown axes scale choice, allowed: logx, logy, linlin, loglog")
-
-
-def finish_figure(fig, title=None, hspace=None, wspace=None):
+def finish_figure(
+    fig: plt.Figure, *, title: str | None = None, hspace: float | None = None, wspace: float | None = None
+) -> plt.Figure:
     """Add finishing touches to a figure.
 
     This function can be used to add a title or adjust the spacing between
@@ -134,13 +203,16 @@ def finish_figure(fig, title=None, hspace=None, wspace=None):
         The amount of vertical space between subplots.
     wspace: float
         The amount of horizontal space between subplots.
-    """
 
+    Returns
+    -------
+    plt.Figure
+        The updated Figure object.
+
+    """
     if title:
         fig.suptitle(title.replace("_", r"\_"))
-
     fig.tight_layout(rect=[0.015, 0.015, 0.985, 0.985])
-
     if hspace is not None:
         fig.subplots_adjust(hspace=hspace)
     if wspace is not None:
@@ -149,9 +221,15 @@ def finish_figure(fig, title=None, hspace=None, wspace=None):
     return fig
 
 
-def normalize_figure_style():
-    """Set default pysi matplotlib parameters."""
+def set_figure_style() -> dict:
+    """Set default pysi matplotlib parameters.
 
+    Returns
+    -------
+    dict
+        The parameters dictionary.
+
+    """
     parameters = {
         "font.serif": "cm",
         "font.size": 18,
@@ -181,13 +259,12 @@ def normalize_figure_style():
     if shutil.which("pdflatex"):
         parameters["text.usetex"] = True
         parameters["text.latex.preamble"] = r"\usepackage{amsmath}"
-
     plt.rcParams.update(parameters)
 
     return parameters
 
 
-def remove_extra_axes(fig, ax, n_wanted, n_panel):
+def remove_extra_axes(fig: plt.Figure, ax: plt.Axes, n_wanted: int, n_panel: int) -> tuple[plt.Figure, plt.Axes]:
     """Remove additional axes which are included in a plot.
 
     This should be used if you have 4 x 2 = 8 panels but only want to use 7 of
@@ -210,31 +287,26 @@ def remove_extra_axes(fig, ax, n_wanted, n_panel):
         The modified Figure.
     ax: plt.Axes
         The modified Axes.
-    """
 
-    if type(ax) != np.ndarray:
-        return fig, ax
-    elif len(ax) == 1:
+    """
+    if type(ax) is np.ndarray or len(ax) == 1:
         return fig, ax
 
     # Flatten the axes array to make life easier with indexing
-
     shape = ax.shape
     ax = ax.flatten()
-
     if n_panel > n_wanted:
         for i in range(n_wanted, n_panel):
             fig.delaxes(ax[i])
 
     # Return ax to the shape it was passed as
-
     ax = np.reshape(ax, (shape[0], shape[1]))
 
     return fig, ax
 
 
-def set_axes_scales(ax, scale):
-    """Set the scale for axes.
+def set_axes_scales(ax: plt.Axes, scale: str) -> plt.Axes:
+    """Set the axes scaling for an Axes object.
 
     Parameters
     ----------
@@ -242,18 +314,23 @@ def set_axes_scales(ax, scale):
         The matplotlib Axes to update.
     scale: str
         The axes scaling to use.
+
+    Returns
+    -------
+    plt.Axes
+        The updated matplotlib Axes.
+
     """
     _check_axes_scale_string(scale)
-
-    if scale == "logx" or scale == "loglog":
+    if scale in ("logx", "loglog"):
         ax.set_xscale("log")
-    if scale == "logy" or scale == "loglog":
+    if scale in ("logy", "loglog"):
         ax.set_yscale("log")
 
     return ax
 
 
-def subplot_dims(n_plots):
+def get_subplot_dims(n_plots: int) -> tuple[int, int]:
     """Get the number of rows and columns for the give number of plots.
 
     Returns how many rows and columns should be used to have the correct
@@ -267,13 +344,14 @@ def subplot_dims(n_plots):
 
     Returns
     -------
-    dims: Tuple[int, int]
+    dims: tuple[int, int]
         The dimensions of the subplots returned as (nrows, ncols)
+
     """
-    if n_plots > 9:
+    if n_plots > LARGE_NUM_PLOTS:
         n_cols = 3
         n_rows = (1 + n_plots) // n_cols
-    elif n_plots < 2:
+    elif n_plots < SMALL_NUM_PLOTS:
         n_rows = n_cols = 1
     else:
         n_cols = 2
@@ -282,4 +360,31 @@ def subplot_dims(n_plots):
     return n_rows, n_cols
 
 
-set_style = set_figure_style = normalize_figure_style
+def prepare_fig_and_ax(
+    fig: plt.Figure, ax: plt.Axes, *, default_figsize: tuple[int, int] = (12, 5)
+) -> tuple[plt.Figure, plt.Axes]:
+    """Prepare a figure and axes object.
+
+    Checks if the provided fig and ax combination are valid. If both are None,
+    then a new fig and ax are created with dimensions (1, 1).
+
+    Parameters
+    ----------
+    fig : plt.Figure
+        The proposed Figure object.
+    ax : plt.Axes
+        The proposed Axes object.
+    default_figsize : tuple[int, int], optional
+        The size of the figure to create, by default (12, 5).
+
+    """
+    if fig is not None and ax is None:
+        msg = "fig has been provided, but ax has not. Both are required."
+        raise err.InvalidParameterError(msg)
+    if fig is None and ax is not None:
+        msg = "fig has not been provided, but ax has. Both are required."
+        raise err.InvalidParameterError(msg)
+    if fig is None and ax is None:
+        fig, ax = plt.subplots(1, 1, figsize=default_figsize)
+
+    return fig, ax

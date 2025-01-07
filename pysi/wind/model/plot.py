@@ -1,14 +1,12 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 """Sub-class containing plotting functions."""
 
 from __future__ import annotations
 
-from typing import Tuple
+import pathlib
+import typing
 
-import numpy
 import matplotlib.pyplot as plt
+import numpy
 
 from pysi.util import plot
 from pysi.wind import enum
@@ -16,49 +14,65 @@ from pysi.wind.model import util
 
 
 class WindPlot(util.WindUtil):
-    """An extension to the WindGrid base class which adds various plotting
-    functionality.
+    """An extension to the WindGrid base class adds plotting utilities.
 
     TODO: add general look up unit table for common quantities
     """
 
-    DISTANCE_AXIS_LABEL_LOOKUP = {
+    DISTANCE_AXIS_LABEL_LOOKUP: typing.ClassVar = {
         enum.DistanceUnits.CENTIMETRES: "[cm]",
         enum.DistanceUnits.METRES: "[m]",
         enum.DistanceUnits.KILOMETRES: "[km]",
         enum.DistanceUnits.GRAVITATIONAL_RADIUS: r"$ / R_{g}$",
     }
 
-    def __init__(self, root: str, directory: str, **kwargs):
+    def __init__(self, root: str, directory: str = pathlib.Path(), **kwargs) -> None:
         """Initialize the class.
 
         Parameters
         ----------
-        root: str
+        root:  str
             The root name of the simulation.
-        directory: str
+        directory : str
             The directory containing the simulation.
+        kwargs : dict
+            Various other keywords arguments.
+
         """
         super().__init__(root, directory, **kwargs)
 
-    # pylint: disable=too-many-arguments
-    def plot_parameter(
+    def plot_parameter(  # noqa: PLR0913
         self,
-        thing: str,
+        thing: str | numpy.ndarray,
         axes_scales: str = "loglog",
         fig: plt.Figure = None,
         ax: plt.Axes = None,
-        figsize: Tuple[int, int] = (8, 6),
+        figsize: tuple[int, int] = (8, 6),
         a_idx: int = 0,
         a_jdx: int = 0,
-        **kwargs,
-    ) -> Tuple[plt.Figure, plt.Axes]:
+        **kwargs: dict,
+    ) -> tuple[plt.Figure, plt.Axes]:
         """Plot a wind parameter.
 
         Parmeters
         ---------
-        thing: str
-            The name of the parameter to plot.
+        thing: str | numpy.ndarray
+            The name of the parameter to plot, or a numpy array of the thing
+            to plot.
+        axes_scales: str [optional]
+            The scale types for each axis.
+        fig: plt.Figure [optional]
+            A Figure object to update, otherwise a new one will be created.
+        ax: plt.Axes [optional]
+            An axes array to update, otherwise a new one will be created.
+        figsize: tuple[int, int] [optional]
+            The size of the figure.
+        a_idx: int [optional]
+            The i index for the sub panel to plot onto.
+        a_jdx: int [optional]
+            The j index for the sub panel to plot onto.
+        kwargs: dict [optional]
+            Various other keyword arguments.
 
         Returns
         -------
@@ -66,6 +80,7 @@ class WindPlot(util.WindUtil):
             The create Figure object, containing the axes.
         ax: plt.Axes
             The axes object for the plot.
+
         """
         if fig is None and ax is None:
             subplot_kw = {"projection": "polar"} if self.coord_type == enum.CoordSystem.POLAR else None
@@ -75,38 +90,44 @@ class WindPlot(util.WindUtil):
             raise ValueError(msg)
 
         if self.coord_type == enum.CoordSystem.SPHERICAL:
-            fig, ax = self.__wind1d(thing, axes_scales, fig, ax, a_idx, a_jdx, **kwargs)
+            fig, ax = self._plot_wind1d(thing, axes_scales, fig, ax, a_idx, a_jdx, **kwargs)
         else:
-            fig, ax = self.__wind2d(thing, axes_scales, fig, ax, a_idx, a_jdx, **kwargs)
+            fig, ax = self._plot_wind2d(thing, axes_scales, fig, ax, a_idx, a_jdx, **kwargs)
 
         return fig, ax
 
-    def plot_parameter_along_sightline(self):
+    def plot_parameter_along_sightline(self) -> None:
         """Plot a variable along an given inclination angle."""
-        raise NotImplementedError("Method is not implemented yet.")
+        msg = "Method is not implemented yet."
+        raise NotImplementedError(msg)
 
-    # pylint: disable=too-many-arguments
-    def plot_cell_spectrum(
+    def plot_cell_spectrum(  # noqa: PLR0913
         self,
         idx: int,
         jdx: int = 0,
         axes_scales: str = "loglog",
         fig: plt.Figure = None,
         ax: plt.Axes = None,
-        figsize: Tuple[int, int] = (12, 6),
-    ) -> Tuple[plt.Figure, plt.Axes]:
+        figsize: tuple[int, int] = (12, 6),
+    ) -> tuple[plt.Figure, plt.Axes]:
         """Plot a spectrum for a wind cell.
 
         Creates (and returns) a figure
 
         Parameters
         ----------
-        i: int
+        idx: int
             The i-th cell index
-        j: int [optional]
+        jdx: int [optional]
             The j-th cell index
         axes_scales: str
             The scale types for each axis.
+        fig: plt.Figure [optional]
+            A Figure object to update, otherwise a new one will be created.
+        ax: plt.Axes [optional]
+            An axes array to update, otherwise a new one will be created.
+        figsize: tuple[int, int] [optional]
+            The size of the figure.
 
         Returns
         -------
@@ -114,14 +135,17 @@ class WindPlot(util.WindUtil):
             The create Figure object, containing the axes.
         ax: plt.Axes
             The axes object for the plot.
+
         """
         if self.parameters["spec_flux"] is None:
-            raise ValueError("There are no cell spectra for this simulation.")
+            msg = "There are no cell spectra for this simulation."
+            raise ValueError(msg)
 
         if fig is None and ax is None:
             fig, ax = plt.subplots(figsize=figsize)
         elif fig is None and ax is not None or fig is not None and ax is None:
-            raise ValueError("fig and ax need to be supplied together")
+            msg = "fig and ax need to be supplied together"
+            raise ValueError(msg)
 
         if self.coord_type == "spherical":
             spectrum = self.parameters["spec_flux"][idx]
@@ -139,28 +163,33 @@ class WindPlot(util.WindUtil):
 
         return fig, ax
 
-    # pylint: disable=too-many-arguments
-    def plot_cell_model(
+    def plot_cell_model(  # noqa: PLR0913
         self,
         idx: int,
         jdx: int = 0,
         axes_scales: str = "loglog",
         fig: plt.Figure = None,
         ax: plt.Axes = None,
-        figsize: Tuple[int, int] = (12, 6),
-    ) -> Tuple[plt.Figure, plt.Axes]:
+        figsize: tuple[int, int] = (12, 6),
+    ) -> tuple[plt.Figure, plt.Axes]:
         """Plot a spectrum for a wind cell.
 
         Creates (and returns) a figure
 
         Parameters
         ----------
-        i: int
+        idx: int
             The i-th cell index
-        j: int [optional]
+        jdx: int [optional]
             The j-th cell index
         axes_scales: str
             The scale types for each axis.
+        fig: plt.Figure [optional]
+            A Figure object to update, otherwise a new one will be created.
+        ax: plt.Axes [optional]
+            An axes array to update, otherwise a new one will be created.
+        figsize: tuple[int, int] [optional]
+            The size of the figure.
 
         Returns
         -------
@@ -168,16 +197,17 @@ class WindPlot(util.WindUtil):
             The create Figure object, containing the axes.
         ax: plt.Axes
             The axes object for the plot.
+
         """
         if self.parameters["model_flux"] is None:
-            raise ValueError("There are no cell models for this simulation.")
+            msg = "There are no cell models for this simulation."
+            raise ValueError(msg)
 
         if fig is None and ax is None:
             fig, ax = plt.subplots(figsize=figsize)
         elif fig is None and ax is not None or fig is not None and ax is None:
-            raise ValueError("fig and ax need to be supplied together")
-
-        print(self.coord_type)
+            msg = "fig and ax need to be supplied together"
+            raise ValueError(msg)
 
         if self.coord_type == enum.CoordSystem.SPHERICAL:
             spectrum = self.parameters["model_flux"][idx]
@@ -216,29 +246,31 @@ class WindPlot(util.WindUtil):
 
     # Private methods ----------------------------------------------------------
 
-    def __add_inclination_sight_lines(
+    def _add_inclination_sight_lines(
         self,
         angles: numpy.array | list,
         x_points: numpy.array | list,
         z_points: numpy.array | list,
         fig: plt.Figure,
         ax: plt.Axes,
-        **kwargs,
-    ):
+        **kwargs: dict,
+    ) -> tuple[plt.Figure, plt.Axes]:
         """Add lines to show what various inclination observers.
 
         Parameters
         ----------
         angles: List[float]
-
+            The inclination angles to plot
         x_points: numpy.ndarray
-
+            The X coordinates to use (???)
         z_points: numpy.ndarray
-
+            the Z coordinates to use (???)
         fig: plt.Figure
-
-        ax. plt.Axes
-
+            The Figure object to update
+        ax: plt.Axes
+            The Axes object to update
+        kwargs: dict
+            Various other keyword arguments
 
         Returns
         -------
@@ -246,8 +278,8 @@ class WindPlot(util.WindUtil):
             The (updated) Figure object for the plot.
         ax: plt.Axes
             The (updated) axes array for the plot.
-        """
 
+        """
         n_coords = numpy.unique(x_points)
         for angle in angles:
             if self.coord_type == enum.CoordSystem.CYLINDRICAL:
@@ -263,7 +295,7 @@ class WindPlot(util.WindUtil):
 
         return fig, ax
 
-    def __set_wind2d_axes_labels_limits(
+    def _set_wind2d_axes_labels_limits(  # noqa: PLR0913
         self,
         ax: plt.Axes,
         scale: str,
@@ -271,22 +303,29 @@ class WindPlot(util.WindUtil):
         z_points: numpy.array | list,
         a_idx: int,
         a_jdx: int,
-    ):
+    ) -> plt.Axes:
         """Set the axes labels and limits for a 2D wind.
 
         Parameters
         ----------
-        ax
-
-        scale
-
+        ax: plt.Axes
+            The Axes object to update
+        scale: str
+            The scaling of the axes: [logx, logy, loglog, linlin]
         x_points
-
+            The x points of the wind, used to determine the limits of the x axis
         z_points
-
+            The z points of the wind, used to determine the limits of the z axis
         a_idx
-
+            The i index for the sub panel to plot onto
         a_jdx
+            The j index for the sub panel to plot onto
+
+        Returns
+        -------
+        ax: plt.Axes
+            The updated Axes object
+
         """
         if self.coord_type == enum.CoordSystem.CYLINDRICAL:
             ax[a_idx, a_jdx].set_xlabel(f"$x$ {self.DISTANCE_AXIS_LABEL_LOOKUP[self.distance_units]}")
@@ -305,22 +344,89 @@ class WindPlot(util.WindUtil):
 
         return ax
 
-    def __wind1d(
+    def _plot_wind1d(  # noqa: PLR0913
         self,
-        thing: str,
+        thing: str | numpy.ndarray,
         axes_scales: str = "logx",
         fig: plt.Figure = None,
         ax: plt.Axes = None,
         a_idx: int = 0,
         a_jdx: int = 0,
-        **kwargs,  # pylint: disable=unused-argument
-    ):
+        **kwargs: dict,
+    ) -> tuple[plt.Figure, plt.Axes]:
         """Plot a 1D wind.
 
         Parameters
         ----------
-        thing: str
-            The name of the parameter to plot.
+        thing: str | numpy.ndarray
+            The name of the parameter to plot, or a numpy array of the thing
+            to plot.
+        axes_scales: str [optional]
+            The scaling of the axes: [logx, logy, loglog, linlin]
+        fig: plt.Figure [optional]
+            A Figure object to update, otherwise a new one will be created.
+        ax: plt.Axes [optional]
+            An axes array to update, otherwise a new one will be created.
+        a_idx: int [optional]
+            The i index for the sub panel to plot onto.
+        a_jdx: int [optional]
+            The j index for the sub panel to plot onto.
+        kwargs: dict
+            Various other keyword arguments
+
+        Returns
+        -------
+        fig: plt.Figure
+            The (updated) Figure object for the plot.
+        ax: plt.Axes
+            The (updated) axes array for the plot.
+
+        """
+        if fig is None or ax is None:
+            fig, ax = plt.subplots(figsize=(8, 6), squeeze=False)
+
+        log_parameter = kwargs.get("log_parameter", True)
+
+        if isinstance(thing, numpy.ndarray):
+            thing = ""
+            parameter_points = thing
+        elif isinstance(thing, str):
+            title = thing
+            parameter_points = self[thing]
+        else:
+            raise TypeError(f"Unsupported type {type(self.parameters)} for plotting parameter")
+
+        if log_parameter:
+            with numpy.errstate(over="ignore", divide="ignore"):
+                parameter_points = numpy.log10(parameter_points)
+            ax[a_idx, a_jdx].set_ylabel(r"$\log_{10}(" + f"{title})$")
+        else:
+            ax[a_idx, a_jdx].set_ylabel(f"{title}")
+
+        ax[a_idx, a_jdx].plot(self.parameters["r"], parameter_points)
+        ax[a_idx, a_jdx].set_xlabel(f"$R$ {self.DISTANCE_AXIS_LABEL_LOOKUP[self.distance_units]}")
+        ax[a_idx, a_jdx] = plot.set_axes_scales(ax[a_idx, a_jdx], axes_scales)
+        fig = plot.finish_figure(fig)
+
+        return fig, ax
+
+    def _plot_wind2d(  # noqa: PLR0913
+        self,
+        thing: str | numpy.ndarray,
+        scale: str = "loglog",
+        fig: plt.Figure = None,
+        ax: plt.Axes = None,
+        a_idx: int = 0,
+        a_jdx: int = 0,
+        **kwargs: dict,
+    ) -> tuple[plt.Figure, plt.Axes]:
+        """Plot a 2D wind using a contour plot.
+
+        Parameters
+        ----------
+        thing: str | numpy.ndarray
+            The name of the parameter to plot, or a numpy array of the thing
+            to plot.
         scale: str [optional]
             The scaling of the axes: [logx, logy, loglog, linlin]
         fig: plt.Figure [optional]
@@ -331,6 +437,8 @@ class WindPlot(util.WindUtil):
             The i index for the sub panel to plot onto.
         a_jdx: int [optional]
             The j index for the sub panel to plot onto.
+        kwargs: dict
+            Various other keyword arguments
 
         Returns
         -------
@@ -338,62 +446,7 @@ class WindPlot(util.WindUtil):
             The (updated) Figure object for the plot.
         ax: plt.Axes
             The (updated) axes array for the plot.
-        """
-        if fig is None or ax is None:
-            fig, ax = plt.subplots(figsize=(8, 6), squeeze=False)
 
-        parameter_points = self[thing]
-        if parameter_points is None:
-            raise KeyError(f"Unknown parameter {thing}: {thing} not in wind tables")
-
-        ax[a_idx, a_jdx].plot(self.parameters["r"], parameter_points)
-        ax[a_idx, a_jdx].set_xlabel(f"$R$ {self.DISTANCE_AXIS_LABEL_LOOKUP[self.distance_units]}")
-        ax[a_idx, a_jdx].set_ylabel(f"{thing}")
-        ax[a_idx, a_jdx] = plot.set_axes_scales(ax[a_idx, a_jdx], axes_scales)
-        fig = plot.finish_figure(fig)
-
-        return fig, ax
-
-    def __wind2d(
-        self,
-        thing: str,
-        scale: str = "loglog",
-        fig: plt.Figure = None,
-        ax: plt.Axes = None,
-        i: int = 0,
-        j: int = 0,
-        **kwargs,
-    ):
-        """Plot a 2D wind using a contour plot.
-
-        Parameters
-        ----------
-        thing: str
-            The name of the parameter to plot.
-        inclinations_to_plot: List[str] [optional]
-            A list of inclination angles to plot onto the ax[0, 0] sub panel. Must
-            be strings and 0 < inclination < 90.
-        scale: str [optional]
-            The scaling of the axes: [logx, logy, loglog, linlin]
-        vmin: float [optional]
-            The minimum value to plot.
-        vmax: float [optional]
-            The maximum value to plot.
-        fig: plt.Figure [optional]
-            A Figure object to update, otherwise a new one will be created.
-        ax: plt.Axes [optional]
-            An axes array to update, otherwise a new one will be created.
-        i: int [optional]
-            The i index for the sub panel to plot onto.
-        j: int [optional]
-            The j index for the sub panel to plot onto.
-
-        Returns
-        -------
-        fig: plt.Figure
-            The (updated) Figure object for the plot.
-        ax: plt.Axes
-            The (updated) axes array for the plot.
         """
         if fig is None or ax is None:
             if self.coord_type == enum.CoordSystem.CYLINDRICAL:
@@ -405,26 +458,33 @@ class WindPlot(util.WindUtil):
                     f"Unknown projection, expected {enum.CoordSystem.CYLINDRICAL} or {enum.CoordSystem.POLAR}"
                 )
 
-        vmin = kwargs.get("vmin", None)
-        vmax = kwargs.get("vmax", None)
-        log_p = kwargs.get("log_p", True)
-        inclinations_to_plot = kwargs.get("inclinations_to_plot", None)
+        vmin = kwargs.get("vmin")
+        vmax = kwargs.get("vmax")
+        log_parameter = kwargs.get("log_parameter", True)
+        inclinations_to_plot = kwargs.get("inclinations_to_plot")
 
         if self.coord_type == enum.CoordSystem.CYLINDRICAL:
             x_points, z_points = self.parameters["x"], self.parameters["z"]
         else:
             x_points, z_points = numpy.deg2rad(self.parameters["theta"]), numpy.log10(self.parameters["r"])
 
-        parameter_points = self[thing]
-        if parameter_points is None:
-            raise KeyError(f"Unknown parameter {thing}: {thing} not in wind tables")
-        if log_p:
-            parameter_points = numpy.log10(parameter_points)
-            ax[i, j].set_title(r"$\log_{10}(" + f"{thing})$")
+        if isinstance(thing, numpy.ndarray):
+            title = ""
+            parameter_points = thing
+        elif isinstance(thing, str):
+            title = thing
+            parameter_points = self[thing]
         else:
-            ax[i, j].set_title(f"{thing}")
+            raise TypeError(f"Unsupported type {type(self.parameters)} for plotting parameter")
 
-        im = ax[i, j].pcolormesh(
+        if log_parameter:
+            with numpy.errstate(over="ignore", divide="ignore"):
+                parameter_points = numpy.log10(parameter_points)
+            ax[a_idx, a_jdx].set_title(r"$\log_{10}(" + f"{title})$")
+        else:
+            ax[a_idx, a_jdx].set_title(f"{title}")
+
+        im = ax[a_idx, a_jdx].pcolormesh(
             x_points,
             z_points,
             parameter_points,
@@ -435,12 +495,12 @@ class WindPlot(util.WindUtil):
             rasterized=True,
         )
 
-        fig.colorbar(im, ax=ax[i, j])
+        fig.colorbar(im, ax=ax[a_idx, a_jdx])
 
         if inclinations_to_plot:
-            fig, ax = self.__add_inclination_sight_lines(inclinations_to_plot, x_points, z_points, fig, ax, **kwargs)
+            fig, ax = self._add_inclination_sight_lines(inclinations_to_plot, x_points, z_points, fig, ax, **kwargs)
 
-        ax = self.__set_wind2d_axes_labels_limits(ax, scale, x_points, z_points, i, j)
+        ax = self._set_wind2d_axes_labels_limits(ax, scale, x_points, z_points, a_idx, a_jdx)
         fig = plot.finish_figure(fig)
 
         return fig, ax

@@ -1,3 +1,21 @@
+<<<<<<< HEAD
+#!/usr/bin/env python3
+
+from setuptools import find_packages, setup
+
+# get requirements from file
+with open("requirements.txt", encoding="utf-8") as file_in:
+    requirements = [line.strip("\n") for line in file_in.readlines()]
+# get version from pysi/__init__.py
+with open("pysi/__init__.py", encoding="utf-8") as file_in:
+    lines = file_in.readlines()
+for line in lines:
+    line = line.split()
+    if len(line) < 1:
+        continue
+    if line[0] == "__version__":
+        __version__ = str(line[2]).strip('"').strip("'")
+=======
 from pathlib import Path
 
 from setuptools import find_packages, setup
@@ -15,6 +33,7 @@ with Path.open("pysi/__init__.py", encoding="utf-8") as file_in:
         if line[0] == "__version__":
             __version__ = str(line[2]).strip('"').strip("'")
 
+>>>>>>> main
 # setup function
 setup(
     name="PySi",

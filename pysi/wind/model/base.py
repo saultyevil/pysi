@@ -1,19 +1,25 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""The base class which contains variables containing the parameters of the
-wind, as well as the most basic variables which describe the wind."""
+"""Base class for Wind objects.
+
+The base class which contains variables containing the parameters of the
+wind, as well as the most basic variables which describe the wind.
+"""
 
 import pathlib
 import re
-import warnings
-from typing import List, Tuple
 
 import numpy
-from astropy.constants import h, k_B  # pylint: disable=no-name-in-module
+from astropy.constants import h, k_B
 
 import pysi
 import pysi.util
 from pysi.wind import elements, enum
+
+# Do it once, because apparently this is expensive
+BOLTZMANN_CONSTANT = k_B.cgs.value
+PLANCK_CONSTANT = h.cgs.value
+
+DEFAULT_CELL_SPEC_BINS = 1000
 
 
 class WindBase:
@@ -21,26 +27,31 @@ class WindBase:
 
     # Special methods ----------------------------------------------------------
 
-    def __init__(self, root: str, directory: str, **kwargs) -> None:
+    def __init__(self, root: str, directory: str = pathlib.Path(), **kwargs) -> None:
         """Initialize the class.
 
         Parameters
         ----------
-        root: str
+        root : str
             The root name of the simulation.
-        directory: str
+        directory : str
             The directory file path containing the simulation.
+        **kwargs : dict
+            Various other keywords arguments.
+
         """
-        self.root = str(root)
-        self.directory = pathlib.Path(directory)
-        self.version = kwargs.get("version", None)
+        self.root, self.directory = pysi.util.split_root_and_directory(root, directory)
+        self.pf = f"{self.directory}/{root}.pf"
+        self.version = kwargs.get("version")
         self.check_version()
 
-        self.n_x = int(0)
-        self.n_z = int(0)
-        self.n_cells = int(0)
+        self.n_x = 0
+        self.n_z = 0
+        self.n_cells = 0
         self.coord_type = enum.CoordSystem.UNKNOWN
-        self.n_model_freq_bands = int(0)
+        self.x_coords = []
+        self.z_coords = []
+        self.n_model_freq_bands = 0
 
         self.parameters = {}
         self.things_read_in = []
@@ -59,112 +70,200 @@ class WindBase:
         self.read_in_wind_cell_spectra()
         self.read_in_wind_jnu_models()
         self.things_read_in = self.parameters.keys()
+        self._set_axes_coords()
 
     def __getitem__(self, key: str) -> numpy.ndarray:
+        """Get the value of a key.
+
+        Parameters
+        ----------
+        key : str
+            The key to get the value of.
+
+        Returns
+        -------
+        numpy.ndarray
+            The value of the key.
+
+        """
         # if no frac or den is no specified for an ion, default to fractional
         # populations
-        if re.match("[A-Z]_i[0-9]+", key):  # matches ion specification, e.g. C_i04
+        if re.match("[A-Z]_i[0-9]+", key):  # matches ion specification, e.g. C_i04  # noqa: SIM102
             if re.match("[A-Z]_i[0-9]+$", key):  # but no type specification at the end, e.g. C_i04_frac
                 key += "_frac"  # default to frac if not specified
 
-        return self.parameters.get(key)
+        return self.parameters[key] if self.n_z > 1 else self.parameters[key][:, 0]
 
-    def check_version(self):
-        """Get the Python version from file if not already set.
+    def __str__(self) -> str:
+        """Return a string representation of the Wind object.
 
-        If the .py-version file cannot be fine, the version is set to UNKNOWN.
+        Returns
+        -------
+        str: A string representation of the Wind object in the format
+            "Wind(root=<root> directory=<directory>)".
+
+        """
+        return f"Wind(root={self.root!r} directory={str(self.directory)!r})"
+
+    def _set_axes_coords(self) -> None:
+        """Set attributes for the x and z axes."""
+        self.x_coords = (
+            numpy.unique(self.parameters.get["x"])
+            if self.coord_type == enum.CoordSystem.CYLINDRICAL
+            else numpy.unique(self.parameters["r"])
+        )
+        if self.n_z > 1:
+            self.z_coords = (
+                numpy.unique(self.parameters["z"])
+                if self.coord_type == enum.CoordSystem.CYLINDRICAL
+                else numpy.unique(self.parameters["theta"])
+            )
+        else:
+            self.z_coords = numpy.zeros_like(self.x_coords)
+
+    def check_version(self) -> None:
+        """Get the SIROCCO version from file if not already set.
+
+        If the .sirocco-version file cannot be fine, the version is set to
+        UNKNOWN.
         """
         if not self.version:
             try:
-                with open(f"{self.directory}/.sirocco-version", "r") as file_in:
+                with pathlib.Path(f"{self.directory}/.sirocco-version").open() as file_in:
                     self.version = file_in.read()
-            except IOError:
-                self.version = "UNKNOWN"
+            except OSError:
+                self.version = "unknown"
 
-    # pylint: disable=too-many-arguments
-    def create_banded_jnu_models(
-        self,
-        cell_index: int,
-        band_index: int,
-        model_array: numpy.ndarray,
-        table_header: List[str],
-        n_freq_bins_per_band: int,
-        cell_frequency: List[numpy.ndarray],
-        cell_flux: List[numpy.ndarray],
-    ):
+    @staticmethod
+    def _apply_jnu_model(
+        model_type: int,
+        model_p1: float,
+        model_p2: float,
+        band_frequency_bins: numpy.ndarray,
+    ) -> numpy.ndarray:
         """Update the J_nu model for a frequency band.
 
         Parameters
         ----------
-        cell_index: int
-            The index of the cell the model is for.
-        band_index: int
-            The index of the frequency band to model.
-        model_array: numpy.ndarray
-            An array of values from windsave2table.
-        table_header: List[str]
-            The header of the winds2table table.
-        n_freq_bins_per_band: int
-            The number of frequency bins in each frequency band model.
-        cell_frequency: List[numpy.ndarray]
-            A list to store the frequency bins for the cell.
-        cell_flux: List[numpy.ndarry]
-            A list to store the fluxes for the cell.
+        model_type: int
+            The type of model to use.
+        model_p1: float
+            The first parameter of the model.
+        model_p2: float
+            The second parameter of the model.
+        band_frequency_bins: numpy.ndarray
+            The frequency bins for the band
+
         Returns
         -------
-        cell_frequency: List[numpy.ndarray]
-            The updated list with frequency bins for the cell.
-        cell_flux: List[numpy.ndarry]
-            The update list of flux for the cell.
+        band_flux: List[numpy.ndarry]
+            The computed flux for the band
+
         """
-        # create a dict of the parameters for band j, the table is a
-        # flat list of the parameters for cell 1, 2, 3, ... for BAND 0,
-        # and then the next section is the parameters for cell 1, 2,
-        # 3... for BAND 1. So we have to do some funky indexing to get
-        # to the correct row element in model_array
+        if model_type == 1:  # Power-law model
+            log_freq_bins = numpy.log10(band_frequency_bins)
+            band_flux = 10 ** (model_p1 + log_freq_bins * model_p2)
+        else:  # Exponential model
+            inverse_temp = 1 / (model_p1 * BOLTZMANN_CONSTANT)
+            band_flux = model_p2 * numpy.exp(-PLANCK_CONSTANT * band_frequency_bins * inverse_temp)
 
-        parameters_for_band_j = {
-            col: model_array[cell_index + band_index * self.n_cells, k] for k, col in enumerate(table_header)
-        }
+        return band_flux
 
-        band_freq_min = parameters_for_band_j["fmin"]
-        band_freq_max = parameters_for_band_j["fmax"]
+    @staticmethod
+    def _adjust_overlapping_bins(
+        freq_min: numpy.ndarray, freq_max: numpy.ndarray, n_bins_per_band: int, *, tolerance: float = 1e-10
+    ) -> numpy.ndarray:
+        """Adjust the edges of the frequency bands to remove overlapping bins.
 
-        # check first that the band hasn't broken in python or if the
-        # band is empty as when empty fmin == fmax == 0
+        Parameters
+        ----------
+        freq_min : numpy.ndarray
+            The minimum frequency of the frequency bands.
+        freq_max : numpy.ndarray
+            The maximum frequency of the frequency bands.
+        n_bins_per_band : int
+            The number of frequency bins per band.
+        tolerance : float, optional
+            The floating point tolerance to use, by default 1e-10
 
-        if band_freq_max > band_freq_min:
-            band_frequency_bins = numpy.logspace(
-                numpy.log10(band_freq_min),
-                numpy.log10(band_freq_max),
-                n_freq_bins_per_band,
-            )
+        Returns
+        -------
+        freq_min_adj : numpy.ndarray
+            The updated minimum frequencies
+        freq_max_adj : numpy.ndarray
+            The updated maximum frequencies
 
-            # model_type 1 == powerlaw model, otherwise 2 == exponential
-            # this is the noclumentaure used in python :-)
+        """
+        band_mask = numpy.array(
+            [numpy.any(numpy.isclose(freq_min[i], freq_max, atol=tolerance)) for i in range(len(freq_min))]
+        )
+        log_dfreq = (numpy.log10(freq_max[band_mask]) - numpy.log10(freq_min[band_mask])) / n_bins_per_band
+        freq_min_adj = freq_min.copy()
+        freq_min_adj[band_mask] = freq_min[band_mask] * 10**log_dfreq
 
-            model_type = parameters_for_band_j.get("spec_mod_type", parameters_for_band_j.get("spec_mod_", None))
+        return freq_min_adj, freq_max
 
-            if model_type is None:
-                warnings.warn(
-                    "The header for the model file is improperly formatted and cannot find 'spec_mode_type'",
-                )
-                return [], []
+    def _get_model_band_freq_bins(
+        self,
+        band_index_col: list[float] | numpy.ndarray,
+        freq_min_col: list[float] | numpy.ndarray,
+        freq_max_col: list[float] | numpy.ndarray,
+        n_bins_per_band: int,
+    ) -> numpy.ndarray:
+        """Generate the frequency bins for each Jnu model band.
 
-            if model_type == 1:
-                band_flux = 10 ** (
-                    parameters_for_band_j["pl_log_w"]
-                    + numpy.log10(band_frequency_bins) * parameters_for_band_j["pl_alpha"]
-                )
-            else:
-                band_flux = parameters_for_band_j["exp_w"] * numpy.exp(
-                    (-1 * h.cgs.value * band_frequency_bins) / (parameters_for_band_j["exp_temp"] * k_B.cgs.value)
-                )
+        Parameters
+        ----------
+        band_index_col : list[float] | numpy.ndarray
+            The band indices column in the data.
+        freq_min_col : list[float] | numpy.ndarray
+            The frequency minimum column in the data.
+        freq_max_col : list[float] | numpy.ndarray
+            The frequency maximum column in the data.
+        n_bins_per_band : int
+            The number of frequency bins per band.
 
-            cell_frequency.append(band_frequency_bins)
-            cell_flux.append(band_flux)
+        Returns
+        -------
+        list[numpy.ndarray]
+            The frequency bins for all bands in a 1D array.
 
-        return cell_frequency, cell_flux
+        """
+        band_index = numpy.unique(band_index_col)
+        freq_min = numpy.zeros(len(band_index))
+        freq_max = numpy.zeros(len(band_index))
+
+        for i, band in enumerate(band_index):
+            mask = band_index_col == band
+            freq_min[i] = freq_min_col[mask].min()
+            freq_max[i] = freq_max_col[mask].max()
+            # There is a bug in SIROCCO which sometimes means that the fmin
+            # and fmax columns in the .spec.txt file get swapped around. So we
+            # need to swap them back around
+            if freq_min[i] > freq_max[i]:
+                freq_min[i], freq_max[i] = freq_max[i], freq_min[i]
+
+        freq_min, freq_max = self._adjust_overlapping_bins(freq_min, freq_max, n_bins_per_band)
+        return numpy.concatenate(
+            [
+                numpy.logspace(numpy.log10(freq_min[i]), numpy.log10(freq_max[i]), int(n_bins_per_band))
+                for i in range(len(freq_min))
+            ]
+        )
+
+    def _create_empty_parameter_array(self, parameter_names: list[str]) -> None:
+        """Create an empty parameter array for each parameter in parameter_names.
+
+        Parameters
+        ----------
+        parameter_names : list[str]
+            The names of the parameters to create empty arrays for.
+
+        """
+        parameter_names = list(parameter_names)
+        for parameter in parameter_names:
+            if parameter not in self.parameters:
+                self.parameters[parameter] = numpy.zeros((self.n_x, self.n_z), dtype=object)
 
     def get_elem_number_from_ij(self, i: int, j: int) -> int:
         """Get the wind element number for a given i and j index.
@@ -177,10 +276,11 @@ class WindBase:
             The i-th index of the cell.
         j: int
             The j-th index of the cell.
+
         """
         return int(self.n_z * i + j)
 
-    def get_ij_from_elem_number(self, elem: int) -> Tuple[int, int]:
+    def get_ij_from_elem_number(self, elem: int) -> tuple[int, int]:
         """Get the i and j index for a given wind element number.
 
         Used when converting a wind element number into two indices for use
@@ -190,13 +290,14 @@ class WindBase:
         ----------
         elem: int
             The element number.
+
         """
         i = int(elem / self.n_z)
         j = int(elem - i * self.n_z)
 
         return i, j
 
-    def read_in_wind_table(self, table: str) -> Tuple[List[str], numpy.ndarray]:
+    def read_in_wind_table(self, table: str) -> tuple[list[str], numpy.ndarray]:
         """Get variables for a specific table type.
 
         Parameters
@@ -210,134 +311,117 @@ class WindBase:
             The table headers for each column.
         table_parameters: numpy.ndarray
             An array of the numerical values of the table.
-        """
 
+        """
         file_path = pathlib.Path(f"{self.directory}/{self.root}.{table}.txt")
 
         if file_path.is_file() is False:
-            file_path = pathlib.Path(f"{str(file_path.parent)}/tables/{file_path.stem}.txt")
+            file_path = pathlib.Path(f"{file_path.parent!s}/tables/{file_path.stem}.txt")
             if file_path.is_file() is False:
                 return [], {}
 
-        with open(file_path, "r", encoding="utf-8") as buffer:
-            file_lines = [line.strip().split() for line in buffer.readlines() if not line.startswith("#")]
-
-        if file_lines[0][0].isdigit() is True:
-            raise Exception("File is formatted incorrectly and missing header")
-
-        table_header = file_lines[0]
-        table_parameters = numpy.array(file_lines[1:], dtype=numpy.float64)
+        table_header, table_parameters = pysi.util.read_file_with_header(file_path)
 
         return table_header, table_parameters
 
-    def read_in_wind_jnu_models(self, n_freq_bins_per_band: int = 250) -> None:
+    def read_in_wind_jnu_models(self, n_bins_per_band: int = 250) -> None:
         """Read in the J_nu models for each cell.
+
+        TODO: this should be simplified in the future.
 
         Parameters
         ----------
-        n_freq_bins: int
+        n_bins_per_band: int
             The number of frequency bins to use for the model.
+
         """
-        table_header, models = self.read_in_wind_table("spec")
-        if not table_header:
-            self.parameters["model_freq"] = self.parameters["model_flux"] = None
-            return
-
-        model_array = numpy.array(models, dtype=numpy.float64)
-
+        self._create_empty_parameter_array(["model_freq", "model_flux"])
+        table_header, model_array = self.read_in_wind_table("spec")
         if model_array.size == 0:
-            self.parameters["model_freq"] = self.parameters["model_flux"] = None
             return
-
         self.n_model_freq_bands = n_bands = int(numpy.max(model_array[:, table_header.index("nband")])) + 1
 
-        if "model_freq" not in self.parameters:
-            if self.n_z > 1:
-                self.parameters["model_freq"] = numpy.zeros((self.n_x, self.n_z), dtype=list)
-            else:
-                self.parameters["model_freq"] = numpy.zeros((self.n_x, n_bands), dtype=list)
+        # Pre-compute the frequency bins for each band which is a massive time
+        # save. This means we ignore cell min/max frequencies and use what
+        # the photon banding is in the parameter file.
+        inwind_array = model_array[model_array[:, table_header.index("inwind")] >= 0]
+        freq_bins = self._get_model_band_freq_bins(
+            inwind_array[:, table_header.index("nband")],
+            inwind_array[:, table_header.index("fmin")],
+            inwind_array[:, table_header.index("fmax")],
+            n_bins_per_band,
+        )
 
-        if "model_flux" not in self.parameters:
-            if self.n_z > 1:
-                self.parameters["model_flux"] = numpy.zeros((self.n_x, self.n_z), dtype=list)
-            else:
-                self.parameters["model_flux"] = numpy.zeros(self.n_x, dtype=list)
+        # Indices of columns used in array - this is a lot faster than pandas
+        # is for some reason
+        try:
+            model_type_index = table_header.index("spec_mod_type")
+        except ValueError:
+            model_type_index = table_header.index("spec_mod_")
+        m1p1_index = table_header.index("pl_log_w")
+        m1p2_index = table_header.index("pl_alpha")
+        m2p1_index = table_header.index("exp_w")
+        m2p2_index = table_header.index("exp_temp")
 
-        # The next block will loop over each cell and constuct a model for each
-        # frequency band, and put that (and the frequency bins) into an array
-        # for each cell.
+        # Ignore all numpy warnings because there are lots of overflows and
+        # divisions by 0 which we don't care about in this case
+        with numpy.errstate(all="ignore"):
+            # The next block will loop over each cell and constuct a model for each
+            # frequency band, and put that (and the frequency bins) into an array
+            # for each cell.
+            for cell_index in range(self.n_cells):
+                i, j = self.get_ij_from_elem_number(cell_index)
+                if self.parameters["inwind"][i, j] < 0:
+                    continue
 
-        for cell_index in range(self.n_cells):
-            cell_frequency = []
-            cell_flux = []
+                model_flux = numpy.zeros(n_bands * n_bins_per_band)
 
-            for band_index in range(n_bands):
-                cell_frequency, cell_flux = self.create_banded_jnu_models(
-                    cell_index,
-                    band_index,
-                    model_array,
-                    table_header,
-                    n_freq_bins_per_band,
-                    cell_frequency,
-                    cell_flux,
-                )
+                for band_index in range(n_bands):
+                    offset = cell_index + band_index * self.n_cells
+                    model_type = int(model_array[offset, model_type_index])
+                    band_start, band_stop = band_index * n_bins_per_band, (band_index + 1) * n_bins_per_band
+                    if model_type == 1:
+                        p1 = model_array[offset, m1p1_index]
+                        p2 = model_array[offset, m1p2_index]
+                    else:
+                        p2 = model_array[offset, m2p1_index]
+                        p1 = model_array[offset, m2p2_index]
+                    band_flux = self._apply_jnu_model(
+                        model_type,
+                        p1,
+                        p2,
+                        freq_bins[band_start:band_stop],
+                    )
+                    model_flux[band_start:band_stop] = band_flux
 
-            # If the lists are populated, then join them together as
-            # cell_frequency and cell_flux
-
-            if len(cell_flux) != 0:
-                i_cell, j_cell = self.get_ij_from_elem_number(cell_index)
-                self.parameters["model_freq"][i_cell, j_cell] = numpy.hstack(cell_frequency)
-                self.parameters["model_flux"][i_cell, j_cell] = numpy.hstack(cell_flux)
+                self.parameters["model_freq"][i, j] = freq_bins
+                self.parameters["model_flux"][i, j] = model_flux
 
     def read_in_wind_cell_spectra(self) -> None:
         """Read in the cell spectra."""
-
-        spec_table_files = pysi.util.find_files("*xspec.*.txt", self.directory)
+        self._create_empty_parameter_array(["spec_freq", "spec_flux"])
+        spec_table_files = pysi.util.shell.find_file_with_pattern("*xspec.*.txt", self.directory)
         if len(spec_table_files) == 0:
-            self.parameters["spec_freq"] = self.parameters["spec_flux"] = None
             return
 
         for file in spec_table_files:
-            with open(file, "r", encoding="utf-8") as buffer:
-                file_lines = [line.strip().split() for line in buffer.readlines() if not line.startswith("#")]
-
-            if file_lines[0][0].isdigit() is True:
-                raise Exception("File is formatted incorrectly and missing header")
-
-            # Get the header and turn the rest of the file into an array, as
-            # this makes indexing what we want a lot easier
-
-            file_header = file_lines[0][1:]  # 1: skips the Freq.
-            file_array = numpy.array(file_lines[1:], dtype=numpy.float64)
-
-            # Populate the parameters dict
-
-            if "spec_freq" not in self.parameters:
-                if self.n_z > 1:
-                    self.parameters["spec_freq"] = numpy.zeros((self.n_x, self.n_z, len(file_array[:, 0])))
-                else:
-                    self.parameters["spec_freq"] = numpy.zeros((self.n_x, len(file_array[:, 0])))
-
-            if "spec_flux" not in self.parameters:
-                if self.n_z > 1:
-                    self.parameters["spec_flux"] = numpy.zeros((self.n_x, self.n_z, len(file_array[:, 0])))
-                else:
-                    self.parameters["spec_flux"] = numpy.zeros((self.n_x, len(file_array[:, 0])))
+            file_header, file_array = pysi.util.read_file_with_header(file)
+            file_header = file_header[1:]  # remove the Freq. entry
 
             # Go through each coord string and figure out the coords, and place
             # the spectrum into 1d/2d array
 
             for i, coord_string in enumerate(file_header):
                 coords = numpy.array(coord_string[1:].split("_"), dtype=numpy.int32)
+                # todo(ep): no idea why they have to be separate cases, but should investigate
                 if self.n_z > 1:
-                    self.parameters["spec_flux"][coords[0], coords[1], :] = file_array[:, i + 1]
-                    self.parameters["spec_freq"][coords[0], coords[1], :] = file_array[:, 0]
+                    self.parameters["spec_flux"][coords[0], coords[1]] = file_array[:, i + 1]
+                    self.parameters["spec_freq"][coords[0], coords[1]] = file_array[:, 0]
                 else:
-                    self.parameters["spec_flux"][coords[0], :] = file_array[:, i + 1]
-                    self.parameters["spec_freq"][coords[0], :] = file_array[:, 0]
+                    self.parameters["spec_flux"][coords[0], 0] = file_array[:, i + 1]
+                    self.parameters["spec_freq"][coords[0], 0] = file_array[:, 0]
 
-    def read_in_wind_ions(self, elements_to_read: List[str] = elements.ELEMENTS) -> None:
+    def read_in_wind_ions(self, elements_to_read: list[str] = elements.ELEMENTS) -> None:
         """Read in the different ions in the wind.
 
         Parameters
@@ -346,8 +430,8 @@ class WindBase:
             A list of atomic element names, e.g. H, He, whose ions in the wind
             will attempted to be read in. The default value is to try to read in
             all elements up to Cobalt.
-        """
 
+        """
         n_read = 0
 
         # We need to loop over "frac" and "den" because ions are printed in
@@ -372,12 +456,10 @@ class WindBase:
                 n_read += 1
 
         if n_read == 0:
-            raise IOError(f"Have been unable to read in any wind ion tables in {self.directory}")
+            raise OSError(f"Have been unable to read in any wind ion tables in {self.directory}")
 
     def read_in_wind_parameters(self) -> None:
-        """Read in the different parameters which describe state of the
-        wind."""
-
+        """Read in the different parameters which describe state of the wind."""
         n_read = 0
 
         for table in ["master", "heat", "gradient", "converge"]:
@@ -393,7 +475,7 @@ class WindBase:
             n_read += 1
 
         if n_read == 0:
-            raise IOError(f"Have been unable to read in any wind parameter tables in {self.directory}")
+            raise OSError(f"Have been unable to read in any wind parameter tables in {self.directory}")
 
         self.things_read_in = self.parameters.keys()
 

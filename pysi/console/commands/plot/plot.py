@@ -1,12 +1,11 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """The entry point for the PyPython CLI."""
 
 import click
 
-from .wind import wind_entry
 from .spectrum import spectrum_entry
+from .wind import wind_entry
 
 
 @click.group(name="plot")
