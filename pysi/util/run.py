@@ -46,7 +46,7 @@ def run_windsave2table(  # noqa: PLR0913
     name = "windsave2table"
     if version:
         name += version
-        with Path.open(f"{file_path}/.sirocco-version", "w") as file_out:
+        with Path(f"{file_path}/.sirocco-version").open(mode="w", encoding="utf-8") as file_out:
             file_out.write(f"{version}\n")
 
     in_path = which(name)
@@ -138,13 +138,13 @@ def run_py_wind(root: str, commands: list[str], file_path: Path | str = Path()) 
     """
     cmd_file = f"{file_path}/.tmpcmds.txt"
 
-    with Path.open(cmd_file, "w", encoding="utf-8") as file_out:
+    with Path(cmd_file).open(mode="w", encoding="utf-8") as file_out:
         for command in commands:
             file_out.write(f"{command}\n")
 
     # This isn't using `run_shell_command` because we also need to pass stdin,
     # which is not what we want to do with that function.
-    with Path.open(cmd_file, "r", encoding="utf-8") as stdin:
+    with Path(cmd_file).open(encoding="utf-8") as stdin:
         sh_out = run(["py_wind", root], stdin=stdin, capture_output=True, cwd=file_path, check=True)  # noqa: S603, S607
 
     Path(cmd_file).unlink()

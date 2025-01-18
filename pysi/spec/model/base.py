@@ -63,8 +63,6 @@ class SpectrumBase:
         self.set_scale(self.scaling)
         self.set_spectrum(self.current)
 
-        self._original_spectra = None
-
         if smooth_width:
             self.smooth_all_spectra(smooth_width)
 
@@ -186,7 +184,7 @@ class SpectrumBase:
             The contents of the file, as a list of the sentences split.
 
         """
-        with Path.open(file, encoding="utf-8") as file_in:
+        with Path(file).open(encoding="utf-8") as file_in:
             spectrum_file = file_in.readlines()
 
         contents = []
@@ -433,22 +431,12 @@ class SpectrumBase:
             The width of the boxcar filter.
 
         """
-        if not self._original_spectra:
-            self._original_spectra = copy.deepcopy(self.spectra)
-
         for scaling, spec_types in self.spectra.items():
             for spec_type, spec in spec_types.items():
                 for thing, values in spec.items():
                     if isinstance(values, numpy.ndarray) and thing not in ["Freq.", "Lambda"]:
                         # pylint: disable=unnecessary-dict-index-lookup
                         self.spectra[scaling][spec_type][thing] = array.smooth_array(values, boxcar_width)
-
-    def unsmooth_all_spectra(self) -> None:
-        """Reset the spectra to the original unsmoothed versions."""
-        if not self._original_spectra:
-            return
-
-        self.spectra = copy.deepcopy(self._original_spectra)
 
     def load_spectra(
         self, files_to_read: str | Iterable[str] = ("spec", "spec_tot", "spec_tot_wind", "spec_wind", "spec_tau")
