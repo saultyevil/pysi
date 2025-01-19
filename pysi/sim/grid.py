@@ -37,7 +37,7 @@ def add_parameter(
         raise OSError(f"provided file path {filepath} is not a .pf parameter file")
     if backup_original:
         copyfile(filepath, filepath + ".bak")
-    with Path.open(filepath, encoding="utf-8") as f:
+    with Path(filepath).open(encoding="utf-8") as f:
         lines = f.readlines()
 
     # Get the parameters and values into a list. Removes blank lines and
@@ -55,7 +55,7 @@ def add_parameter(
         where = names.index(insert_after) + 1 if insert_after else len(names)
         names.insert(where, parameter_name)
         values.insert(where, parameter_value)
-        with Path.open(filepath, "w", encoding="utf-8") as f:
+        with Path(filepath).open(mode="w", encoding="utf-8") as f:
             for name, value in zip(names, values, strict=True):
                 f.write(f"{name:40s} {value}\n")
 
@@ -82,7 +82,7 @@ def get_parameter_value(filepath: str, parameter_name: str) -> str:
     """
     if filepath.find(".pf") == -1:
         raise OSError(f"Provided file path {filepath} is not to a parameter file")
-    with Path.open(filepath, encoding="utf-8") as file_in:
+    with Path(filepath).open(encoding="utf-8") as file_in:
         lines = file_in.readlines()
 
     value = None
@@ -122,7 +122,7 @@ def update_parameter_value(
         raise OSError(f"The provided file path {filepath} is not to a parameter file")
     if backup_original:
         copyfile(filepath, filepath + ".bak")
-    with Path.open(filepath, encoding="utf-8") as file_in:
+    with Path(filepath).open(encoding="utf-8") as file_in:
         lines = file_in.readlines()
 
     old = ""
@@ -136,7 +136,7 @@ def update_parameter_value(
     if not old and not new:
         raise ValueError(f"Could not find the parameter {parameter_name} in {filepath}")
 
-    with Path.open(filepath, mode="w", encoding="utf-8") as file_out:
+    with Path(filepath).open(mode="w", encoding="utf-8") as file_out:
         file_out.writelines(lines)
 
 
