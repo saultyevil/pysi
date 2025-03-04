@@ -11,7 +11,7 @@ from collections.abc import Callable
 import numpy
 
 import pysi.sim.grid
-import pysi.util
+import pysi.util.files
 from pysi.math import vector
 from pysi.math.blackhole import gravitational_radius
 from pysi.util.array import find_where_target_in_array

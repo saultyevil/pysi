@@ -7,7 +7,7 @@ with Path("requirements.txt").open(encoding="utf-8") as file_in:
     requirements = [line.strip("\n") for line in file_in]
 
 # Get the library version fomr __version__.py
-with Path("pysi/__init__.py").open(encoding="utf-8") as file_in:
+with Path("src/pysi/__init__.py").open(encoding="utf-8") as file_in:
     for line_in in file_in:
         line = line_in.split()
         if len(line) < 1:

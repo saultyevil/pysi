@@ -10,7 +10,8 @@ import numpy
 from astropy import constants
 
 from pysi.spec import enum
-from pysi.util import array, split_root_and_directory
+from pysi.util import array
+from pysi.util.files import split_root_and_directory
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
