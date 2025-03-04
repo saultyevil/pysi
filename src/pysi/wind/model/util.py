@@ -11,9 +11,10 @@ from collections.abc import Callable
 import numpy
 
 import pysi.sim.grid
-import pysi.util
+import pysi.util.files
 from pysi.math import vector
 from pysi.math.blackhole import gravitational_radius
+from pysi.util.array import find_where_target_in_array
 from pysi.util.run import run_windsave2table
 from pysi.wind import enum
 from pysi.wind.model import base
@@ -71,7 +72,7 @@ class WindUtil(base.WindBase):
         super().__init__(root, directory, **kwargs)
         self.mass_msol = mass_msol
 
-        if self.coord_type == enum.CoordSystem.CYLINDRICAL:
+        if self.coord_type in [enum.CoordSystem.CYLINDRICAL, enum.CoordSystem.POLAR]:
             self._calculate_cylindrical_velocities()
 
         if mask_value or mask_value in WIND_CELL_TYPES:
@@ -162,7 +163,7 @@ class WindUtil(base.WindBase):
 
         conversion_factor = velocity_conv_lookup[self.velocity_units] / velocity_conv_lookup[new_units]
 
-        for quant in ("v_x", "v_y", "v_z", "v_r", "v_theta"):
+        for quant in ("v_x", "v_y", "v_z", "v_r", "v_theta", "v_l", "v_r", "v_rot"):
             if quant not in self.parameters:
                 continue
             self.parameters[quant] *= conversion_factor
@@ -233,10 +234,43 @@ class WindUtil(base.WindBase):
 
     # Public methods -----------------------------------------------------------
 
-    def get_variable_along_sight_line(self, theta: float) -> numpy.ndarray:
-        """Get a variable along a given sightline."""
-        msg = "Method is not implemented yet."
-        raise NotImplementedError(msg)
+    def get_variable_along_sight_line(self, theta: float, parameter: str) -> numpy.ndarray:
+        """Get a variable along a given sightline.
+
+        Parameters
+        ----------
+        parameter : str
+            The parameter to extract.
+        theta : float
+            The angle of the sight line to extract from, in degrees.
+
+        """
+        if not isinstance(theta, float):
+            try:
+                theta = float(theta)
+            except ValueError as exc:
+                msg = "The theta parameter should be a float."
+                raise TypeError(msg) from exc
+
+        if parameter not in self.parameters:
+            msg = f"Parameter {parameter} does not exist."
+            raise KeyError(msg)
+
+        x_coords = numpy.array(self.x_coords, dtype=numpy.float64)
+        output = numpy.zeros_like(x_coords, dtype=numpy.float64)
+        if self.coord_type == enum.CoordSystem.POLAR:
+            z_coords = numpy.ones_like(x_coords) * theta
+        else:
+            z_coords = numpy.array(x_coords, dtype=numpy.float64) * numpy.tan(numpy.pi * 0.5 - numpy.deg2rad(theta))
+
+        # TODO(EP): I don't understand why I do it like this?
+        for i, z in enumerate(z_coords):
+            j = find_where_target_in_array(self.z_coords, z)
+            output[i] = self.parameters[parameter][i, j]
+
+        output = numpy.nan_to_num(output)
+
+        return x_coords, z_coords, output
 
     def mask_arrays(self, mask_value: int | Callable[[int, int], bool]) -> None:
         """Create masked parameter arrays.

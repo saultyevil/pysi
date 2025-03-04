@@ -65,7 +65,7 @@ def find_file_with_pattern(pattern: str, file_path: Path | str = Path()) -> list
         The list of files found.
 
     """
-    file_path = Path.expanduser(file_path)
+    file_path = Path(file_path).expanduser()
     files = [str(file_) for file_ in Path(f"{file_path}").rglob(pattern)]
     if ".pf" in pattern:
         files = [this_file for this_file in files if "out.pf" not in this_file and "py_wind" not in this_file]

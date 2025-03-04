@@ -12,7 +12,7 @@ import numpy
 from astropy.constants import h, k_B
 
 import pysi
-import pysi.util
+import pysi.util.files
 from pysi.wind import elements, enum
 
 # Do it once, because apparently this is expensive
@@ -40,7 +40,7 @@ class WindBase:
             Various other keywords arguments.
 
         """
-        self.root, self.directory = pysi.util.split_root_and_directory(root, directory)
+        self.root, self.directory = pysi.util.files.split_root_and_directory(root, directory)
         self.pf = f"{self.directory}/{root}.pf"
         self.version = kwargs.get("version")
         self.check_version()
@@ -320,7 +320,7 @@ class WindBase:
             if file_path.is_file() is False:
                 return [], {}
 
-        table_header, table_parameters = pysi.util.read_file_with_header(file_path)
+        table_header, table_parameters = pysi.util.files.read_file_with_header(file_path)
 
         return table_header, table_parameters
 
@@ -405,7 +405,7 @@ class WindBase:
             return
 
         for file in spec_table_files:
-            file_header, file_array = pysi.util.read_file_with_header(file)
+            file_header, file_array = pysi.util.files.read_file_with_header(file)
             file_header = file_header[1:]  # remove the Freq. entry
 
             # Go through each coord string and figure out the coords, and place

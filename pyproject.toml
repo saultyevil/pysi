@@ -1,12 +1,13 @@
 [tool.poetry]
-name = "pysi"
-version = "4.0.1"
+name = "PySi"
+version = "4.1.2"
 description = "PySi is a package and command line tool designed to make using the Monte Carlo radiative transfer and ionization code SIROCCO a wee bit easier to use."
 authors = ["Edward J. Parkinson <saultyevil@gmail.com>"]
 readme = "README.md"
+packages = [{ include = "pysi", from = "src" }]
 
 [tool.poetry.scripts]
-pypython = "pysi.console.cli:cli"
+pysi = "pysi.console.cli:cli"
 
 [tool.poetry.dependencies]
 python = ">=3.10"
@@ -55,7 +56,7 @@ exclude = [
 ]
 line-length = 120
 indent-width = 4
-target-version = "py310"
+target-version = "py313"
 
 [tool.ruff.lint]
 select = ["ALL"]
