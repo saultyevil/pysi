@@ -318,7 +318,7 @@ def plot_model_convergence(
     ax.legend()
     ax.set_xlabel("Cycle")
     ax.set_ylabel("Fraction of cells passed")
-    fig = pysi.plot.finish_figure(fig, f"Final convergence = {float(convergence[-1]) * 100:4.2f}%")
+    fig = pysi.plot.finish_figure(fig, title=f"Final convergence = {float(convergence[-1]) * 100:4.2f}%")
 
     if display:
         plt.show()

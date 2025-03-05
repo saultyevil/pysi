@@ -159,7 +159,7 @@ class WindPlot(util.WindUtil):
         ax.set_ylabel(r"$\nu ~ J_{\nu}$ [ergs s$^{-1}$ cm$^{-2}$]")
 
         ax = plot.set_axes_scales(ax, axes_scales)
-        fig = plot.finish_figure(fig, f"Cell ({idx}, {jdx}) spectrum")
+        fig = plot.finish_figure(fig, title=f"Cell ({idx}, {jdx}) spectrum")
 
         return fig, ax
 
@@ -221,7 +221,7 @@ class WindPlot(util.WindUtil):
         ax.set_ylabel(r"$\nu ~ J_{\nu}$ [ergs s$^{-1}$ cm$^{-2}$]")
 
         ax = plot.set_axes_scales(ax, axes_scales)
-        fig = plot.finish_figure(fig, f"Model ({idx}, {jdx}) spectrum")
+        fig = plot.finish_figure(fig, title=f"Model ({idx}, {jdx}) spectrum")
 
         return fig, ax
 
