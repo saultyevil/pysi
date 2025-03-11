@@ -47,6 +47,7 @@ class WindBase:
 
         self.n_x = 0
         self.n_z = 0
+        self.dims = (0, 0)
         self.n_cells = 0
         self.coord_type = enum.CoordSystem.UNKNOWN
         self.x_coords = []
@@ -487,6 +488,7 @@ class WindBase:
             self.n_z = int(numpy.max(self.parameters["j"]) + 1)
         else:
             self.n_z = 1
+        self.dims = (self.n_x, self.n_z)
         self.n_cells = int(self.n_x * self.n_z)
 
         if "r" in self.parameters and "theta" in self.parameters:
