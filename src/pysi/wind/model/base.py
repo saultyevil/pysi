@@ -73,6 +73,42 @@ class WindBase:
         self.things_read_in = self.parameters.keys()
         self._set_axes_coords()
 
+        # get a list of all the heating and cooling processes
+        self.heating = [f for f in self.things_read_in if "heat_" in f]
+        self.cooling = [f for f in self.things_read_in if "cool_" in f]
+
+        self.descriptions = {
+            "x": "left-hand lower cell corner x-coordinate, cm",
+            "z": "left-hand lower cell corner z-coordinate, cm",
+            "xcen": "cell centre x-coordinate, cm",
+            "zcen": "cell centre z-coordinate, cm",
+            "i": "cell index (column)",
+            "j": "cell index (row)",
+            "inwind": "is the cell in wind (0), partially in wind (1) or out of wind (<0)",
+            "converge": "how many convergence criteria is the cell failing?",
+            "v_x": "x-velocity, cm/s",
+            "v_y": "y-velocity, cm/s",
+            "v_z": "z-velocity, cm/s",
+            "vol": "volume in cm^3",
+            "rho": "density in g/cm^3",
+            "ne": "electron density in cm^-3",
+            "t_e": "electron temperature in K",
+            "t_r": "radiation temperature in K",
+            "h1": "H1 ion fraction",
+            "he2": "He2 ion fraction",
+            "c4": "C4 ion fraction",
+            "n5": "N5 ion fraction",
+            "o6": "O6 ion fraction",
+            "dmo_dt_x": "momentum rate, x-direction",
+            "dmo_dt_y": "momentum rate, y-direction",
+            "dmo_dt_z": "momentum rate, z-direction",
+            "ip": "U ionization parameter",
+            "xi": "xi ionization parameter",
+            "ntot": "total photons passing through cell",
+            "nrad": "total wind photons produced in cell",
+            "nioniz": "total ionizing photons passing through cell",
+        }
+
     def __getitem__(self, key: str) -> numpy.ndarray:
         """Get the value of a key.
 

@@ -51,6 +51,7 @@ def model_convergence(
     converging = -1
     convergence = -1
     prev_line = ""
+
     convergence_per_cycle = []
     converging_per_cycle = []
     with Path(f"{path}/diag_{root}/{root}_00.diag").open() as f:
@@ -95,6 +96,7 @@ def model_convergence_components(
     """Get the convergence statistics for a SIROCCO simulation.
 
     Returns a break down in terms of the number of cells which have passed
+
     the convergence checks on radiation temperature, electron temperature and
     heating and cooling balance.
 
@@ -104,7 +106,6 @@ def model_convergence_components(
         The root name of the SIROCCO simulation
     path: str [optional]
         The working directory of the SIROCCO simulation
-
     Returns
     -------
     n_tr: List[float]
@@ -129,6 +130,7 @@ def model_convergence_components(
     file_found = False
 
     diag_path = f"{path}/diag_{root}/{root}_00.diag"
+
     try:
         with Path(diag_path).open() as f:
             diag = f.readlines()
@@ -175,6 +177,7 @@ def model_errors(root: str, path: str | Path = Path(), n_cores: int = -1, print_
         The root name of the SIROCCO simulation
     path: str [optional]
         The working directory of the SIROCCO simulation
+
     n_cores: int [optional]
         If this is provided, then only the first n_cores processes will be
         checked for errors
@@ -300,13 +303,13 @@ def plot_model_convergence(
     tr, te, te_max, hc = model_convergence_components(root, path)
 
     cycles = np.arange(1, len(convergence) + 1, 1)
-    ax.set_ylim(0, 1)
+    ax.set_ylim(0, 1.05)
 
     # As the bare minimum, we need the convergence per cycle but if the other
     # convergence stats are passed as well, plot those too
 
     ax.plot(cycles, convergence, label="Convergence")
-    ax.plot(cycles, converging, label="Converging")
+    # ax.plot(cycles, converging, label="Converging")
     ax.plot(cycles, tr, "--", label="Radiation temperature", alpha=0.65)
     ax.plot(cycles, te, "--", label="Electron temperature", alpha=0.65)
     ax.plot(cycles, hc, "--", label="Heating and cooling", alpha=0.65)
