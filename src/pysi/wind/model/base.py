@@ -145,7 +145,7 @@ class WindBase:
     def _set_axes_coords(self) -> None:
         """Set attributes for the x and z axes."""
         self.x_coords = (
-            numpy.unique(self.parameters.get["x"])
+            numpy.unique(self.parameters["x"])
             if self.coord_type == enum.CoordSystem.CYLINDRICAL
             else numpy.unique(self.parameters["r"])
         )
@@ -170,6 +170,25 @@ class WindBase:
                     self.version = file_in.read()
             except OSError:
                 self.version = "unknown"
+
+    def get_windsave_descriptions(self, key: str | None = None) -> None:
+        """Print a description of the windsave parameters.
+
+        Parameters
+        ----------
+        key : str | None, optional
+            The parameter to get the description of, by default None which will
+            print all.
+
+        """
+        if key is None:
+            for name in self.descriptions:
+                print(f"{name:10s} --  {self.descriptions[name]}")
+        else:
+            try:
+                print(f"{key:10s} --  {self.descriptions[key]}")
+            except KeyError:
+                print(f"no description for parameter {key}")
 
     @staticmethod
     def _apply_jnu_model(

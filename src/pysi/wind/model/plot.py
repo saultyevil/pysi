@@ -126,7 +126,8 @@ class WindPlot(util.WindUtil):
         -----
         This method adapts the subplot configuration based on the specified coordinate system,
         which can be either POLAR or SPHERICAL. The plotting logic is delegated to the
-        `__wind1d` and `__wind2d` methods based on the coordinate type.
+        `_plot_wind1d` and `_plot_wind2d` methods based on the coordinate type.
+
         """
         if self.coord_type == enum.CoordSystem.POLAR:
             subplot_kw = {"projection": "polar"}
@@ -140,9 +141,9 @@ class WindPlot(util.WindUtil):
             i, j = numpy.unravel_index(n, ax.shape)
 
             if self.coord_type == enum.CoordSystem.SPHERICAL:
-                fig, ax = self.__wind1d(things, axes_scales, fig, ax, i, j, **kwargs)
+                fig, ax = self._plot_wind1d(things, axes_scales, fig, ax, i, j, **kwargs)
             else:
-                fig, ax = self.__wind2d(thing, axes_scales, fig, ax, i, j, **kwargs)
+                fig, ax = self._plot_wind2d(thing, axes_scales, fig, ax, i, j, **kwargs)
 
         return fig, ax
 
