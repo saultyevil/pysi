@@ -22,6 +22,7 @@ def model_convergence(
     directory: str | Path = Path(),
     return_per_cycle: bool = False,  # noqa: FBT001, FBT002
     return_converging: bool = False,  # noqa: FBT001, FBT002
+    **kwargs,
 ) -> float | list[float]:
     """Check the convergence of a SIROCCO simulation.
 
@@ -48,6 +49,9 @@ def model_convergence(
         is -1, then a convergence fraction was not found.
 
     """
+    if "fp" in kwargs:
+        directory = kwargs["fp"]
+
     converging = -1
     convergence = -1
     prev_line = ""
@@ -91,7 +95,7 @@ def model_convergence(
 
 
 def model_convergence_components(
-    root: str, directory: str | Path = Path()
+    root: str, directory: str | Path = Path(), **kwargs
 ) -> tuple[list[float], list[float], list[float], list[float]]:
     """Get the convergence statistics for a SIROCCO simulation.
 
@@ -123,6 +127,9 @@ def model_convergence_components(
         convergence test.
 
     """
+    if "fp" in kwargs:
+        directory = kwargs["fp"]
+
     brief_summary_len = 7
     n_tr = []
     n_te = []
@@ -166,7 +173,9 @@ def model_convergence_components(
     return n_tr, n_te, n_te_max, n_hc
 
 
-def model_errors(root: str, directory: str | Path = Path(), n_cores: int = -1, *, print_errors: bool = False) -> dict:
+def model_errors(
+    root: str, directory: str | Path = Path(), n_cores: int = -1, *, print_errors: bool = False, **kwargs
+) -> dict:
     """Get the error summary for a SIROCCO simulation.
 
     TODO(EP): this is too complex
@@ -192,6 +201,9 @@ def model_errors(root: str, directory: str | Path = Path(), n_cores: int = -1, *
         error occurred.
 
     """
+    if "fp" in kwargs:
+        directory = kwargs["fp"]
+
     total_errors = {}
     diag_files = list(Path(f"{directory}/diag_{root}").glob("*.diag"))
     diag_files.sort(key=lambda var: [int(x) if x.isdigit() else x for x in re.findall(r"[^0-9]|[0-9]+", str(var))])
@@ -278,7 +290,7 @@ def model_errors(root: str, directory: str | Path = Path(), n_cores: int = -1, *
 
 
 def plot_model_convergence(
-    root: str, directory: str | Path = Path(), *, display: bool = False
+    root: str, directory: str | Path = Path(), *, display: bool = False, **kwargs
 ) -> tuple[plt.Figure, plt.Axes]:
     """Plot the convergence of the model.
 
@@ -297,6 +309,9 @@ def plot_model_convergence(
         A tuple of the figure and axes objects containing the plot of the model convergence.
 
     """
+    if "fp" in kwargs:
+        directory = kwargs["fp"]
+
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     convergence = model_convergence(root, directory, return_per_cycle=True)
     converging = model_convergence(root, directory, return_per_cycle=True, return_converging=True)
