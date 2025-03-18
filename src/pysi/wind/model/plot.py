@@ -436,7 +436,12 @@ class WindPlot(util.WindUtil):
         if fig is None or ax is None:
             fig, ax = plt.subplots(figsize=(8, 6), squeeze=False)
 
-        log_parameter = kwargs.get("log_parameter", True)
+        if "log_p" in kwargs:
+            log_parameter = kwargs["log_p"]
+        elif "log_parameter" in kwargs:
+            log_parameter = kwargs["log_parameter"]
+        else:
+            log_parameter = True
 
         if isinstance(thing, numpy.ndarray):
             thing = ""
@@ -511,8 +516,14 @@ class WindPlot(util.WindUtil):
 
         vmin = kwargs.get("vmin")
         vmax = kwargs.get("vmax")
-        log_parameter = kwargs.get("log_parameter", True)
         inclinations_to_plot = kwargs.get("inclinations_to_plot")
+
+        if "log_p" in kwargs:
+            log_parameter = kwargs["log_p"]
+        elif "log_parameter" in kwargs:
+            log_parameter = kwargs["log_parameter"]
+        else:
+            log_parameter = True
 
         if self.coord_type == enum.CoordSystem.CYLINDRICAL:
             x_points, z_points = self.parameters["x"], self.parameters["z"]
