@@ -58,7 +58,7 @@ def remove_suffix_from_string(string: str, suffix: str) -> str:
     return string
 
 
-def split_root_and_directory(root: str | Path, directory: str | Path) -> tuple[str, Path]:
+def split_root_and_directory(root: str | Path, directory: str | Path | None) -> tuple[str, Path]:
     """Split the root name from its parent directories.
 
     This exists for cases where the root name and parents directory are provided
@@ -73,7 +73,7 @@ def split_root_and_directory(root: str | Path, directory: str | Path) -> tuple[s
     ----------
     root : str | Path
         The root name of the simulation.
-    directory : str | Path
+    directory : str | Path | None
         The directory containing the simulation.
 
     Returns
@@ -90,13 +90,21 @@ def split_root_and_directory(root: str | Path, directory: str | Path) -> tuple[s
 
     """
     root_path = Path(root)
-    if root_path.is_file():
-        root = root_path.stem
-        directory = root_path.parents
-    elif isinstance(root, str):
-        root = remove_suffix_from_string(root, ".pf")
-        directory = Path(directory)
-    else:
-        raise ValueError(f"Root must be a string or filepath, not {type(root)}")
+    suffix = root_path.suffix.removeprefix(".")
+    root = root_path.stem
 
-    return root, directory
+    # If directory is not passed, then root_path.parent should be the current
+    # working directory
+    if not directory:
+        directory = root_path.parent.absolute()
+
+    # Perform some checks to check that the directory exists and that it has
+    # the requested simulation files
+    check = Path(directory)
+    if not check.is_dir():
+        raise ValueError(f"Directory {directory} does not exist.")
+    root_files = check.glob(f"{root}.*")
+    if len(list(root_files)) == 0:
+        raise ValueError(f"No files with root {root} exist in directory {directory}.")
+
+    return root, directory, suffix

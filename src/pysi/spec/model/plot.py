@@ -194,10 +194,6 @@ def _create_plot(  # noqa: PLR0913
 class SpectrumPlot(SpectrumUtil):
     """Class for plotting spectra."""
 
-    def __init__(self, root: str, directory, **kwargs):
-        """Initialize the class."""
-        super().__init__(root, directory, **kwargs)
-
     def plot(
         self, label: str, fig: pyplot.Figure = None, ax: pyplot.Axes = None, ax_scale: str = "loglog"
     ) -> tuple[pyplot.Figure, pyplot.Axes]:

@@ -26,21 +26,6 @@ class WindPlot(util.WindUtil):
         enum.DistanceUnits.GRAVITATIONAL_RADIUS: r"$ / R_{g}$",
     }
 
-    def __init__(self, root: str, directory: str = pathlib.Path(), **kwargs) -> None:
-        """Initialize the class.
-
-        Parameters
-        ----------
-        root:  str
-            The root name of the simulation.
-        directory : str
-            The directory containing the simulation.
-        kwargs : dict
-            Various other keywords arguments.
-
-        """
-        super().__init__(root, directory, **kwargs)
-
     def plot_parameter(  # noqa: PLR0913
         self,
         thing: str | numpy.ndarray,

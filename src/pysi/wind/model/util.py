@@ -7,6 +7,7 @@ are a bit more abstracted.
 import copy
 import warnings
 from collections.abc import Callable
+from pathlib import Path
 
 import numpy
 
@@ -46,7 +47,7 @@ class WindUtil(base.WindBase):
     def __init__(
         self,
         root: str,
-        directory: str,
+        directory: str | None = None,
         mask_value: int | Callable[[int], bool] = enum.WindCellPosition.INWIND.value,
         mass_msol: float | None = None,
         **kwargs: dict,

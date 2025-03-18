@@ -17,10 +17,6 @@ from pysi.util import array
 class SpectrumUtil(SpectrumBase):
     """Main spectrum class."""
 
-    def __init__(self, root: str, directory: str | Path = Path(), **kwargs: dict) -> None:
-        """Initialize the class."""
-        super().__init__(root, directory, **kwargs)
-
     def integrate(self, name: str, spec_type: str | None = None) -> float:
         """Integrate the entire spectrum.
 

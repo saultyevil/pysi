@@ -27,7 +27,7 @@ class WindBase:
 
     # Special methods ----------------------------------------------------------
 
-    def __init__(self, root: str, directory: str = pathlib.Path(), **kwargs) -> None:
+    def __init__(self, root: str, directory: str | None = None, **kwargs) -> None:
         """Initialize the class.
 
         Parameters
@@ -40,7 +40,7 @@ class WindBase:
             Various other keywords arguments.
 
         """
-        self.root, self.directory = pysi.util.files.split_root_and_directory(root, directory)
+        self.root, self.directory, _ = pysi.util.files.split_root_and_directory(root, directory)
         self.pf = f"{self.directory}/{root}.pf"
         self.version = kwargs.get("version")
         self.check_version()

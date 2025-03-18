@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import copy
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -17,6 +16,10 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 
+AVAILABLE_SPECTRA_TYPES = ("spec", "spec_tot", "spec_tot_wind", "spec_wind", "spec_tau")
+AVAILABLE_SPECTRA_TYPES_LOG = ("log_spec", "log_spec_tot", "log_spec_tot_wind", "log_spec_wind", "log_spec_tau")
+
+
 class SpectrumBase:
     """The base class."""
 
@@ -24,8 +27,8 @@ class SpectrumBase:
     def __init__(
         self,
         root: str,
-        directory: str | Path = Path(),
-        default_scale: str = "log",
+        directory: str | Path | None = None,
+        default_scale: str | None = None,
         default_spectrum: str | None = None,
         smooth_width: int = 0,
     ) -> None:
@@ -46,20 +49,28 @@ class SpectrumBase:
             The boxcar filter width to smooth spectra.
 
         """
-        self.root, self.directory = split_root_and_directory(root, directory)
+        self.root, self.directory, suffix = split_root_and_directory(root, directory)
         self.pf = f"{self.directory}/{root}.pf"
         self.spectra = {"log": {}, "lin": {}}
         self.load_spectra()
 
-        if default_scale:
-            self.scaling = default_scale
-        else:
-            self.scaling = "log"
-
         if default_spectrum:
             self.current = default_spectrum
+        elif suffix in AVAILABLE_SPECTRA_TYPES or suffix in AVAILABLE_SPECTRA_TYPES_LOG:
+            self.current = suffix
         else:
-            self.current = next(iter(self.spectra[self.scaling].keys()))
+            self.current = next(iter(self.spectra["log"].keys()))
+
+        if default_scale:
+            self.scaling = default_scale
+        elif "log" in suffix:
+            self.scaling = "log"
+            self.current = self.current.replace("log_", "")
+        elif suffix in AVAILABLE_SPECTRA_TYPES:
+            self.scaling = "lin"
+            self.current = self.current.replace("lin_", "")
+        else:
+            self.scaling = "log"
 
         self.set_scale(self.scaling)
         self.set_spectrum(self.current)
@@ -383,8 +394,8 @@ class SpectrumBase:
 
         """
         scaling_lower = scaling.lower()
-        if scaling_lower not in ["log", "linear"]:
-            raise ValueError(f"{scaling} is not a valid scale. Choose either 'log' or 'linear'.")
+        if scaling_lower not in ["log", "lin"]:
+            raise ValueError(f"{scaling} is not a valid scale. Choose either 'log' or 'lin'.")
         self.scaling = scaling_lower
 
     def set_spectrum(self, spec_key: str) -> None:
@@ -396,9 +407,18 @@ class SpectrumBase:
             The name of the spectrum to set default.
 
         """
-        if spec_key not in self.spectra[self.scaling]:
-            raise KeyError(f"{spec_key} not available in spectrum. Choose: {','.join(list(self.spectra.keys()))}")
+        if "log" in spec_key or "lin" in spec_key:
+            scaling = spec_key.split("_")[0]
+            spec_key = spec_key.split("_")[1]
+        else:
+            scaling = self.scaling
+
+        if spec_key not in self.spectra[scaling]:
+            raise KeyError(
+                f"The spectrum {spec_key} is not available, does it exist? Available in {scaling}: {' ,'.join(list(self.spectra[scaling].keys()))}"
+            )
         self.current = spec_key
+        self.set_scale(scaling)
 
     def show_available(self) -> list[str]:
         """Print and return a list of the available spectra.
@@ -439,9 +459,7 @@ class SpectrumBase:
                         # pylint: disable=unnecessary-dict-index-lookup
                         self.spectra[scaling][spec_type][thing] = array.smooth_array(values, boxcar_width)
 
-    def load_spectra(
-        self, files_to_read: str | Iterable[str] = ("spec", "spec_tot", "spec_tot_wind", "spec_wind", "spec_tau")
-    ) -> None:
+    def load_spectra(self, files_to_read: str | Iterable[str] = AVAILABLE_SPECTRA_TYPES) -> None:
         """Read in all of the spectrum from the simulation.
 
         This function (by default) will read in both the linear and logarithmic
@@ -477,6 +495,7 @@ class SpectrumBase:
                     self._get_this_spectrum(spec_type, scale)
                     n_read += 1
                 except OSError:  # noqa: PERF203
+                    self.spectra[scale].pop(spec_type)
                     continue
 
         if n_read == 0:
