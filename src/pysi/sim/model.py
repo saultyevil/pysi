@@ -19,7 +19,7 @@ END_SUMMARY_LINES = 9
 
 def model_convergence(
     root: str,
-    path: str | Path = Path(),
+    directory: str | Path = Path(),
     return_per_cycle: bool = False,  # noqa: FBT001, FBT002
     return_converging: bool = False,  # noqa: FBT001, FBT002
 ) -> float | list[float]:
@@ -33,7 +33,7 @@ def model_convergence(
     ----------
     root: str
         The root name of the SIROCCO simulation
-    path: str [optional]
+    directory : str [optional]
         The working directory of the simulation
     return_per_cycle: bool [optional]
         Return the convergence fraction for each cycle
@@ -54,7 +54,7 @@ def model_convergence(
 
     convergence_per_cycle = []
     converging_per_cycle = []
-    with Path(f"{path}/diag_{root}/{root}_00.diag").open() as f:
+    with Path(f"{directory}/diag_{root}/{root}_00.diag").open() as f:
         diag_lines = f.readlines()
 
     for i in range(len(diag_lines)):
@@ -91,7 +91,7 @@ def model_convergence(
 
 
 def model_convergence_components(
-    root: str, path: str | Path = Path()
+    root: str, directory: str | Path = Path()
 ) -> tuple[list[float], list[float], list[float], list[float]]:
     """Get the convergence statistics for a SIROCCO simulation.
 
@@ -104,8 +104,9 @@ def model_convergence_components(
     ----------
     root: str
         The root name of the SIROCCO simulation
-    path: str [optional]
+    directory: str [optional]
         The working directory of the SIROCCO simulation
+
     Returns
     -------
     n_tr: List[float]
@@ -129,7 +130,7 @@ def model_convergence_components(
     n_te_max = []
     file_found = False
 
-    diag_path = f"{path}/diag_{root}/{root}_00.diag"
+    diag_path = f"{directory}/diag_{root}/{root}_00.diag"
 
     try:
         with Path(diag_path).open() as f:
@@ -165,7 +166,7 @@ def model_convergence_components(
     return n_tr, n_te, n_te_max, n_hc
 
 
-def model_errors(root: str, path: str | Path = Path(), n_cores: int = -1, print_errors: bool = False) -> dict:
+def model_errors(root: str, directory: str | Path = Path(), n_cores: int = -1, *, print_errors: bool = False) -> dict:
     """Get the error summary for a SIROCCO simulation.
 
     TODO(EP): this is too complex
@@ -175,9 +176,8 @@ def model_errors(root: str, path: str | Path = Path(), n_cores: int = -1, print_
     ----------
     root: str
         The root name of the SIROCCO simulation
-    path: str [optional]
+    directory: str [optional]
         The working directory of the SIROCCO simulation
-
     n_cores: int [optional]
         If this is provided, then only the first n_cores processes will be
         checked for errors
@@ -193,11 +193,11 @@ def model_errors(root: str, path: str | Path = Path(), n_cores: int = -1, print_
 
     """
     total_errors = {}
-    diag_files = Path(f"{path}/diag_{root}").glob("*.diag")
-    diag_files.sort(key=lambda var: [int(x) if x.isdigit() else x for x in re.findall(r"[^0-9]|[0-9]+", var)])
+    diag_files = list(Path(f"{directory}/diag_{root}").glob("*.diag"))
+    diag_files.sort(key=lambda var: [int(x) if x.isdigit() else x for x in re.findall(r"[^0-9]|[0-9]+", str(var))])
     n_diag_files = n_cores if n_cores > 0 else len(diag_files)
     if n_diag_files == 0:
-        raise ValueError(f"No .diag files were found in {path}/diag_{root} so cannot find any errors")
+        raise ValueError(f"No .diag files were found in {directory}/diag_{root} so cannot find any errors")
 
     broken_diag_files = []
     exit_msg = "ended for unknown reasons"
@@ -262,12 +262,12 @@ def model_errors(root: str, path: str | Path = Path(), n_cores: int = -1, print_
             broken_diag_files.append(diag)
 
     if len(broken_diag_files) == len(diag_files):
-        raise OSError(f"Unable to find any error summaries for {root + path}")
+        raise OSError(f"Unable to find any error summaries for {root + directory}")
 
     if print_errors:
         n_reported = len(diag_files) - len(broken_diag_files)
         print(  # noqa: T201
-            f"Total errors reported from {n_reported} of {len(diag_files)} processes for {path + root}, which {exit_msg}:"
+            f"Total errors reported from {n_reported} of {len(diag_files)} processes for {directory + root}, which {exit_msg}:"
         )
         for key in total_errors:
             n_error = int(total_errors[key])
@@ -278,7 +278,7 @@ def model_errors(root: str, path: str | Path = Path(), n_cores: int = -1, print_
 
 
 def plot_model_convergence(
-    root: str, path: str | Path = Path(), *, display: bool = False
+    root: str, directory: str | Path = Path(), *, display: bool = False
 ) -> tuple[plt.Figure, plt.Axes]:
     """Plot the convergence of the model.
 
@@ -286,7 +286,7 @@ def plot_model_convergence(
     ----------
     root : str
         The root name of the simulation.
-    path : str | Path, optional
+    directory : str | Path, optional
         The directory containing the simulation, by default Path()
     display : bool, optional
         Whether to display the figure, by default False
@@ -298,9 +298,9 @@ def plot_model_convergence(
 
     """
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
-    convergence = model_convergence(root, path, return_per_cycle=True)
-    converging = model_convergence(root, path, return_per_cycle=True, return_converging=True)
-    tr, te, te_max, hc = model_convergence_components(root, path)
+    convergence = model_convergence(root, directory, return_per_cycle=True)
+    converging = model_convergence(root, directory, return_per_cycle=True, return_converging=True)
+    tr, te, te_max, hc = model_convergence_components(root, directory)
 
     cycles = np.arange(1, len(convergence) + 1, 1)
     ax.set_ylim(0, 1.05)
@@ -309,7 +309,7 @@ def plot_model_convergence(
     # convergence stats are passed as well, plot those too
 
     ax.plot(cycles, convergence, label="Convergence")
-    # ax.plot(cycles, converging, label="Converging")
+    ax.plot(cycles, converging, label="Converging")
     ax.plot(cycles, tr, "--", label="Radiation temperature", alpha=0.65)
     ax.plot(cycles, te, "--", label="Electron temperature", alpha=0.65)
     ax.plot(cycles, hc, "--", label="Heating and cooling", alpha=0.65)
@@ -321,7 +321,7 @@ def plot_model_convergence(
     ax.legend()
     ax.set_xlabel("Cycle")
     ax.set_ylabel("Fraction of cells passed")
-    fig = pysi.plot.finish_figure(fig, title=f"Final convergence = {float(convergence[-1]) * 100:4.2f}%")
+    fig = pysi.util.plot.finish_figure(fig, title=f"Final convergence = {float(convergence[-1]) * 100:4.2f}%")
 
     if display:
         plt.show()
